@@ -9,6 +9,13 @@ abstract interface class AuthDataSource {
     required String password,
   });
 
+  Future<UserModel> addDetails({
+    required String username,
+    required String password,
+  });
+
+  Future<UserModel> signInWithGoogle();
+
   Future<UserModel> verifyOtp({required String email, required String token});
 
   Future<bool> sendOtp({required String email});

@@ -12,18 +12,36 @@ class AuthRepositoryImpl implements AuthRepository {
     : _authDataSource = authDataSource;
 
   @override
-  Future<Either<AppFailure, User>> currentUser() {
-    // TODO: implement currentUser
-    throw UnimplementedError();
+  Future<Either<AppFailure, User>> currentUser() async {
+    try {
+      final session = _authDataSource.currentUserSession;
+      if (session == null) return left(AppFailure('User not logged in!'));
+
+      final user = await _authDataSource.currentUser();
+      if (user == null) return left(AppFailure('User data not found!'));
+
+      return right(user);
+    } on ServerException catch (e) {
+      return left(AppFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<AppFailure, User>> signInWithGoogle() async {
+    return _getUser(() async => await _authDataSource.signInWithGoogle());
   }
 
   @override
   Future<Either<AppFailure, User>> loginWithEmailPassword({
     required String email,
     required String password,
-  }) {
-    // TODO: implement loginWithEmailPassword
-    throw UnimplementedError();
+  }) async {
+    return _getUser(
+      () async => await _authDataSource.loginWithEmailPassword(
+        email: email,
+        password: password,
+      ),
+    );
   }
 
   @override
@@ -33,6 +51,19 @@ class AuthRepositoryImpl implements AuthRepository {
   }) {
     return _getUser(
       () async => await _authDataSource.verifyOtp(email: email, token: token),
+    );
+  }
+
+  @override
+  Future<Either<AppFailure, User>> addDetails({
+    required String username,
+    required String password,
+  }) {
+    return _getUser(
+      () async => await _authDataSource.addDetails(
+        username: username,
+        password: password,
+      ),
     );
   }
 

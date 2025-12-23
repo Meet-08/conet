@@ -19,4 +19,24 @@ class UserModel extends User {
 
   factory UserModel.fromJson(Map<String, dynamic> source) =>
       _$UserModelFromJson(source);
+
+  UserModel copyWith({
+    String? id,
+    String? email,
+    String? fullName,
+    String? username,
+    String? profilePicUrl,
+    UserRole? userRole,
+    bool? isVerified,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      fullName: fullName ?? this.fullName,
+      username: username ?? this.username,
+      profilePicUrl: profilePicUrl ?? this.profilePicUrl,
+      userRole: userRole ?? this.userRole,
+      isVerified: isVerified ?? this.isVerified,
+    );
+  }
 }
