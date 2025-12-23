@@ -5,6 +5,7 @@ import 'package:conet_app/feature/auth/data/repository/auth_repository_impl.dart
 import 'package:conet_app/feature/auth/domain/repository/auth_repository.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_login.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_send_otp.dart';
+import 'package:conet_app/feature/auth/domain/usecases/user_signin_with_google.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_verify_otp.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:get_it/get_it.dart';

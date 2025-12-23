@@ -1,4 +1,3 @@
-import 'package:bcrypt/bcrypt.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/auth/data/data_source/auth_data_source.dart';
 import 'package:conet_app/feature/auth/data/model/user_model.dart';
@@ -18,16 +17,16 @@ class SupabaseDataSourceImpl implements AuthDataSource {
   @override
   Future<UserModel?> currentUser() async {
     try {
-      if (currentUserSession == null) return null;
+      final session = currentUserSession;
+      if (session == null) return null;
+
       final userData = await supabaseClient
           .from('users')
           .select()
-          .eq('id', currentUserSession!.user.id)
+          .eq('email', session.user.email!)
           .single();
 
-      return UserModel.fromJson(
-        userData,
-      ).copyWith(email: currentUserSession!.user.email);
+      return UserModel.fromJson(userData).copyWith(email: session.user.email);
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -36,10 +35,15 @@ class SupabaseDataSourceImpl implements AuthDataSource {
   @override
   Future<UserModel> signInWithGoogle() async {
     try {
-      final scopes = ["email", "profile"];
+      logger.i('Starting Google Sign-In');
+
+      final scopes = ['email', 'profile'];
       final googleSignIn = GoogleSignIn.instance;
 
-      googleSignIn.initialize(clientId: dotenv.env["IOS_CLIENT_ID"]);
+      googleSignIn.initialize(
+        serverClientId: dotenv.env['WEB_CLIENT_ID'],
+        clientId: dotenv.env['IOS_CLIENT_ID'],
+      );
 
       final googleUser = await googleSignIn.authenticate();
       final authorization =
@@ -47,7 +51,9 @@ class SupabaseDataSourceImpl implements AuthDataSource {
           await googleUser.authorizationClient.authorizeScopes(scopes);
 
       final idToken = googleUser.authentication.idToken;
-      if (idToken == null) throw const AuthException('No ID Token found.');
+      if (idToken == null) {
+        throw const AuthException('No ID token returned from Google');
+      }
 
       final res = await supabaseClient.auth.signInWithIdToken(
         provider: .google,
@@ -55,17 +61,15 @@ class SupabaseDataSourceImpl implements AuthDataSource {
         accessToken: authorization.accessToken,
       );
 
-      if (res.user == null) {
-        logger.w("User not exist");
-        throw ServerException("Login failed");
-      }
+      final user = res.user;
+      if (user == null) throw ServerException('Google login failed');
 
-      return _getUserModel(res.user!.id);
+      return await _insertUserIfNotExists(user);
     } on AuthException catch (e) {
-      logger.e('AuthException during login: ${e.message}');
+      logger.e('Auth error: ${e.message}');
       throw ServerException(e.message);
     } catch (e) {
-      logger.e('Error signing in with Google: $e');
+      logger.e('Google sign-in error: $e');
       throw ServerException(e.toString());
     }
   }
@@ -76,24 +80,17 @@ class SupabaseDataSourceImpl implements AuthDataSource {
     required String password,
   }) async {
     try {
-      logger.i('Attempting to log in user with email: $email');
-      final user = await supabaseClient
-          .from("users")
-          .select()
-          .eq('email', email)
-          .single();
+      final res = await supabaseClient.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
 
-      if (!BCrypt.checkpw(password, user['password'])) {
-        logger.w('Invalid password for email: $email');
-        throw ServerException('Invalid email or password');
-      }
+      if (res.user == null) throw ServerException('Login failed');
 
-      return UserModel.fromJson(user);
+      return UserModel.fromJson(res.user!.toJson());
     } on AuthException catch (e) {
-      logger.e('AuthException during login: ${e.message}');
       throw ServerException(e.message);
     } catch (e) {
-      logger.e('Error logging in user: $e');
       throw ServerException(e.toString());
     }
   }
@@ -110,14 +107,13 @@ class SupabaseDataSourceImpl implements AuthDataSource {
         token: token,
       );
 
-      if (res.user == null) {
-        logger.w('OTP verification failed: No user returned from Supabase');
+      final user = res.user;
+      if (user == null) {
         throw ServerException('OTP verification failed');
       }
 
-      return _getUserModel(res.user!.id);
+      return _getUserModel(user.id);
     } catch (e) {
-      logger.e('Error Verifying OTP to $email: $e');
       throw ServerException(e.toString());
     }
   }
@@ -125,50 +121,98 @@ class SupabaseDataSourceImpl implements AuthDataSource {
   @override
   Future<UserModel> addDetails({
     required String username,
-    required String password,
+    String? firstName,
+    String? lastName,
+    String? password,
   }) async {
     try {
       final session = supabaseClient.auth.currentSession;
       if (session == null) {
-        logger.w('No active session found while adding details');
         throw ServerException('User not logged in');
       }
-      final hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
-      await supabaseClient
-          .from('users')
-          .update({'username': username, 'password': hashedPassword})
-          .eq('id', session.user.id);
+
+      if (password != null) {
+        await supabaseClient.auth.updateUser(
+          UserAttributes(password: password),
+        );
+      }
+
+      final data = <String, dynamic>{
+        'username': username,
+        if (firstName != null) 'first_name': firstName,
+        if (lastName != null) 'last_name': lastName,
+      };
+
+      await supabaseClient.from('users').update(data).eq('id', session.user.id);
 
       return _getUserModel(session.user.id);
     } catch (e) {
-      logger.e('Error adding details for user: $e');
       throw ServerException(e.toString());
     }
   }
 
   @override
-  Future<bool> sendOtp({required String email}) {
+  Future<bool> sendOtp({
+    required String email,
+    required String firstName,
+    required String lastName,
+  }) async {
     try {
-      logger.i('Sending OTP to email: $email');
-      supabaseClient.auth.signInWithOtp(email: email);
-      return Future.value(true);
+      await supabaseClient.auth.signInWithOtp(
+        email: email,
+        data: {'first_name': firstName, 'last_name': lastName},
+      );
+      return true;
     } catch (e) {
-      logger.e('Error sending OTP to $email: $e');
+      throw ServerException(e.toString());
+    }
+  }
+
+  /// Inserts a user into `users` table only if they don't already exist.
+  /// Google sign-in safe. Idempotent.
+  Future<UserModel> _insertUserIfNotExists(User user) async {
+    try {
+      final email = user.email;
+      if (email == null) {
+        throw ServerException('Authenticated user has no email');
+      }
+
+      final existing = await supabaseClient
+          .from('users')
+          .select()
+          .eq('email', email)
+          .maybeSingle();
+
+      if (existing != null) {
+        logger.i('User already exists: $email');
+        return UserModel.fromJson(existing);
+      }
+
+      final inserted = await supabaseClient
+          .from('users')
+          .insert({
+            'id': user.id,
+            'email': email,
+            'first_name': user.userMetadata!["full_name"],
+            'profile_pic_url': user.userMetadata!["avatar_url"],
+          })
+          .select()
+          .single();
+
+      logger.i('Inserted new user: $email');
+      return UserModel.fromJson(inserted);
+    } catch (e) {
       throw ServerException(e.toString());
     }
   }
 
   Future<UserModel> _getUserModel(String id) async {
     final user = await supabaseClient
-        .from("users")
+        .from('users')
         .select()
         .eq('id', id)
         .single();
 
-    if (user.isEmpty) {
-      logger.w('User not found with id: $id');
-      throw ServerException('User not found');
-    }
     return UserModel.fromJson(user);
   }
 }

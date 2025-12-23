@@ -35,7 +35,7 @@ class MyApp extends StatelessWidget {
         title: 'Conet App',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+          colorScheme: .fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,
         ),
         routerConfig: AppRouter.router,

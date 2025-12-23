@@ -8,7 +8,15 @@ class UserSendOtp {
   UserSendOtp({required AuthRepository authRepository})
     : _authRepository = authRepository;
 
-  Future<Either<AppFailure, bool>> call({required String email}) {
-    return _authRepository.sendOtp(email: email);
+  Future<Either<AppFailure, bool>> call({
+    required String email,
+    required String firstName,
+    required String lastName,
+  }) {
+    return _authRepository.sendOtp(
+      email: email,
+      firstName: firstName,
+      lastName: lastName,
+    );
   }
 }

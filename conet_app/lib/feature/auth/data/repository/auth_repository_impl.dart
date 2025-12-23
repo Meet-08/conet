@@ -57,7 +57,9 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<AppFailure, User>> addDetails({
     required String username,
-    required String password,
+    String? firstName,
+    String? lastName,
+    String? password,
   }) {
     return _getUser(
       () async => await _authDataSource.addDetails(
@@ -77,9 +79,17 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<AppFailure, bool>> sendOtp({required String email}) async {
+  Future<Either<AppFailure, bool>> sendOtp({
+    required String email,
+    required String firstName,
+    required String lastName,
+  }) async {
     try {
-      final result = await _authDataSource.sendOtp(email: email);
+      final result = await _authDataSource.sendOtp(
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+      );
       return right(result);
     } on ServerException catch (e) {
       return left(AppFailure(e.message));

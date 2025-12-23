@@ -7,7 +7,11 @@ abstract interface class AuthRepository {
 
   Future<Either<AppFailure, User>> signInWithGoogle();
 
-  Future<Either<AppFailure, bool>> sendOtp({required String email});
+  Future<Either<AppFailure, bool>> sendOtp({
+    required String email,
+    required String firstName,
+    required String lastName,
+  });
 
   Future<Either<AppFailure, User>> verifyOtp({
     required String email,
@@ -16,7 +20,9 @@ abstract interface class AuthRepository {
 
   Future<Either<AppFailure, User>> addDetails({
     required String username,
-    required String password,
+    String? firstName,
+    String? lastName,
+    String? password,
   });
 
   Future<Either<AppFailure, User>> loginWithEmailPassword({

@@ -20,6 +20,11 @@ void _initAuth() {
     ..registerFactory<UserVerifyOtp>(
       () => UserVerifyOtp(authRepository: serviceLocator<AuthRepository>()),
     )
+    ..registerFactory<UserSigninWithGoogle>(
+      () => UserSigninWithGoogle(
+        authRepository: serviceLocator<AuthRepository>(),
+      ),
+    )
     ..registerFactory<UserSendOtp>(
       () => UserSendOtp(authRepository: serviceLocator<AuthRepository>()),
     )
@@ -28,6 +33,7 @@ void _initAuth() {
       () => AuthBloc(
         userLogin: serviceLocator<UserLogin>(),
         userSendOtp: serviceLocator<UserSendOtp>(),
+        userSigninWithGoogle: serviceLocator<UserSigninWithGoogle>(),
         userVerifyOtp: serviceLocator<UserVerifyOtp>(),
         appUserCubit: serviceLocator<AppUserCubit>(),
       ),

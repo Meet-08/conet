@@ -3,7 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 abstract interface class AuthDataSource {
   Session? get currentUserSession;
+
   Future<UserModel?> currentUser();
+
   Future<UserModel> loginWithEmailPassword({
     required String email,
     required String password,
@@ -11,12 +13,18 @@ abstract interface class AuthDataSource {
 
   Future<UserModel> addDetails({
     required String username,
-    required String password,
+    String? firstName,
+    String? lastName,
+    String? password,
   });
 
   Future<UserModel> signInWithGoogle();
 
   Future<UserModel> verifyOtp({required String email, required String token});
 
-  Future<bool> sendOtp({required String email});
+  Future<bool> sendOtp({
+    required String email,
+    required String firstName,
+    required String lastName,
+  });
 }
