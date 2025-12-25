@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/widgets/splash_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/add_details_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/login_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/register_page.dart';
@@ -11,27 +12,24 @@ import 'package:go_router/go_router.dart';
 
 class AppRouter {
   static final router = GoRouter(
-    initialLocation: "/welcome", //Create splash screen later
+    initialLocation: "/",
     refreshListenable: GoRouterRefreshStream(
       serviceLocator<AppUserCubit>().stream,
     ),
     redirect: (context, state) {
       final userState = serviceLocator<AppUserCubit>().state;
 
-      // Allow access to auth pages when user is unknown or unauthenticated here?
-      // But first, let's enable navigation between auth pages.
+      if (userState is AppUserUnknown) {
+        return null;
+      }
 
-      final loggingIn =
+      final isAuthPath =
           state.uri.toString() == '/login' ||
           state.uri.toString() == '/register' ||
           state.uri.toString() == '/welcome';
 
-      if (userState is AppUserUnknown || userState is AppUserUnauthenticated) {
-        if (state.uri.toString() == '/login' ||
-            state.uri.toString() == '/register') {
-          return null;
-        }
-        return '/welcome';
+      if (userState is AppUserUnauthenticated) {
+        return isAuthPath ? null : '/welcome';
       }
 
       if (userState is AppUserAuthenticated) {
@@ -42,21 +40,22 @@ class AppRouter {
 
         if (userState.user.username.isNotEmpty &&
             state.uri.toString() == '/add-details') {
-          return '/';
+          return '/home';
         }
 
-        if (loggingIn) return '/';
+        if (isAuthPath || state.uri.toString() == '/') return '/home';
       }
 
       return null;
     },
     routes: [
+      GoRoute(path: '/', builder: (context, state) => const SplashPage()),
       GoRoute(
         path: '/welcome',
         builder: (context, state) => const WelcomePage(),
       ),
       GoRoute(
-        path: '/',
+        path: '/home',
         builder: (context, state) =>
             const Scaffold(body: Center(child: Text('You are logged in'))),
       ),
