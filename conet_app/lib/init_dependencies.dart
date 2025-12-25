@@ -3,6 +3,8 @@ import 'package:conet_app/feature/auth/data/data_source/auth_data_source.dart';
 import 'package:conet_app/feature/auth/data/data_source/supabase_data_source_impl.dart';
 import 'package:conet_app/feature/auth/data/repository/auth_repository_impl.dart';
 import 'package:conet_app/feature/auth/domain/repository/auth_repository.dart';
+import 'package:conet_app/feature/auth/domain/usecases/user_add_details.dart';
+import 'package:conet_app/feature/auth/domain/usecases/user_current.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_login.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_send_otp.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_signin_with_google.dart';

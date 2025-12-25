@@ -6,13 +6,9 @@ sealed class AuthEvent {}
 final class AuthSendOtp extends AuthEvent {
   final String email;
   final String firstName;
-  final String lastName;
+  final String? lastName;
 
-  AuthSendOtp({
-    required this.email,
-    required this.firstName,
-    required this.lastName,
-  });
+  AuthSendOtp({required this.email, required this.firstName, this.lastName});
 }
 
 final class AuthVerifyOtp extends AuthEvent {
@@ -30,5 +26,19 @@ final class AuthLogin extends AuthEvent {
 }
 
 final class AuthSigninWithGoogle extends AuthEvent {}
+
+final class AuthAddDetails extends AuthEvent {
+  final String username;
+  final String? firstName;
+  final String? lastName;
+  final String? password;
+
+  AuthAddDetails({
+    required this.username,
+    this.firstName,
+    this.lastName,
+    this.password,
+  });
+}
 
 final class AuthIsUserLoggedIn extends AuthEvent {}

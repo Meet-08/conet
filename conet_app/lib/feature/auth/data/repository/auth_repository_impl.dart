@@ -64,6 +64,8 @@ class AuthRepositoryImpl implements AuthRepository {
     return _getUser(
       () async => await _authDataSource.addDetails(
         username: username,
+        firstName: firstName,
+        lastName: lastName,
         password: password,
       ),
     );
@@ -82,7 +84,7 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<AppFailure, bool>> sendOtp({
     required String email,
     required String firstName,
-    required String lastName,
+    String? lastName,
   }) async {
     try {
       final result = await _authDataSource.sendOtp(

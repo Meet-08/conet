@@ -11,7 +11,7 @@ class UserSendOtp {
   Future<Either<AppFailure, bool>> call({
     required String email,
     required String firstName,
-    required String lastName,
+    String? lastName,
   }) {
     return _authRepository.sendOtp(
       email: email,

@@ -25,6 +25,6 @@ abstract interface class AuthDataSource {
   Future<bool> sendOtp({
     required String email,
     required String firstName,
-    required String lastName,
+    String? lastName,
   });
 }

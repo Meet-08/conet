@@ -23,11 +23,12 @@ class SupabaseDataSourceImpl implements AuthDataSource {
       final userData = await supabaseClient
           .from('users')
           .select()
-          .eq('email', session.user.email!)
+          .eq('id', session.user.id)
           .single();
 
       return UserModel.fromJson(userData).copyWith(email: session.user.email);
     } catch (e) {
+      logger.e('Error getting current user: ${e.toString()}');
       throw ServerException(e.toString());
     }
   }
@@ -64,12 +65,23 @@ class SupabaseDataSourceImpl implements AuthDataSource {
       final user = res.user;
       if (user == null) throw ServerException('Google login failed');
 
-      return await _insertUserIfNotExists(user);
+      // Check if user exists in 'users' table
+      final userData = await supabaseClient
+          .from('users')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+
+      if (userData == null) {
+        return UserModel.fromJson(user.toJson());
+      }
+
+      return UserModel.fromJson(userData).copyWith(email: user.email);
     } on AuthException catch (e) {
       logger.e('Auth error: ${e.message}');
       throw ServerException(e.message);
     } catch (e) {
-      logger.e('Google sign-in error: $e');
+      logger.e('Google sign-in error: ${e.toString()}');
       throw ServerException(e.toString());
     }
   }
@@ -87,10 +99,11 @@ class SupabaseDataSourceImpl implements AuthDataSource {
 
       if (res.user == null) throw ServerException('Login failed');
 
-      return UserModel.fromJson(res.user!.toJson());
+      return _getUserModel(res.user!.id);
     } on AuthException catch (e) {
       throw ServerException(e.message);
     } catch (e) {
+      logger.e("login failed: ${e.toString()}");
       throw ServerException(e.toString());
     }
   }
@@ -112,8 +125,11 @@ class SupabaseDataSourceImpl implements AuthDataSource {
         throw ServerException('OTP verification failed');
       }
 
+      await Future.delayed(const Duration(seconds: 1));
+      logger.i("Email ${user.email}");
       return _getUserModel(user.id);
     } catch (e) {
+      logger.e('OTP verification error: ${e.toString()}');
       throw ServerException(e.toString());
     }
   }
@@ -147,6 +163,7 @@ class SupabaseDataSourceImpl implements AuthDataSource {
 
       return _getUserModel(session.user.id);
     } catch (e) {
+      logger.e("Error in updating user: ${e.toString()}");
       throw ServerException(e.toString());
     }
   }
@@ -155,53 +172,19 @@ class SupabaseDataSourceImpl implements AuthDataSource {
   Future<bool> sendOtp({
     required String email,
     required String firstName,
-    required String lastName,
+    String? lastName,
   }) async {
     try {
       await supabaseClient.auth.signInWithOtp(
         email: email,
-        data: {'first_name': firstName, 'last_name': lastName},
+        data: {
+          'first_name': firstName,
+          if (lastName != null) 'last_name': lastName,
+        },
       );
       return true;
     } catch (e) {
-      throw ServerException(e.toString());
-    }
-  }
-
-  /// Inserts a user into `users` table only if they don't already exist.
-  /// Google sign-in safe. Idempotent.
-  Future<UserModel> _insertUserIfNotExists(User user) async {
-    try {
-      final email = user.email;
-      if (email == null) {
-        throw ServerException('Authenticated user has no email');
-      }
-
-      final existing = await supabaseClient
-          .from('users')
-          .select()
-          .eq('email', email)
-          .maybeSingle();
-
-      if (existing != null) {
-        logger.i('User already exists: $email');
-        return UserModel.fromJson(existing);
-      }
-
-      final inserted = await supabaseClient
-          .from('users')
-          .insert({
-            'id': user.id,
-            'email': email,
-            'first_name': user.userMetadata!["full_name"],
-            'profile_pic_url': user.userMetadata!["avatar_url"],
-          })
-          .select()
-          .single();
-
-      logger.i('Inserted new user: $email');
-      return UserModel.fromJson(inserted);
-    } catch (e) {
+      logger.e('OTP sending error: ${e.toString()}');
       throw ServerException(e.toString());
     }
   }

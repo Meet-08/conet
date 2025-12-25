@@ -8,7 +8,8 @@ class UserModel extends User {
   const UserModel({
     required super.id,
     required super.email,
-    required super.fullName,
+    required super.firstName,
+    required super.lastName,
     required super.username,
     required super.profilePicUrl,
     required super.userRole,
@@ -23,7 +24,8 @@ class UserModel extends User {
   UserModel copyWith({
     String? id,
     String? email,
-    String? fullName,
+    String? firstName,
+    String? lastName,
     String? username,
     String? profilePicUrl,
     UserRole? userRole,
@@ -32,7 +34,8 @@ class UserModel extends User {
     return UserModel(
       id: id ?? this.id,
       email: email ?? this.email,
-      fullName: fullName ?? this.fullName,
+      firstName: firstName ?? this.firstName,
+      lastName: lastName ?? this.lastName,
       username: username ?? this.username,
       profilePicUrl: profilePicUrl ?? this.profilePicUrl,
       userRole: userRole ?? this.userRole,

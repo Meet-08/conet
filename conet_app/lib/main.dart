@@ -18,28 +18,41 @@ void main() async {
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
   await initDependencies();
-  runApp(const MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiBlocProvider(
+  runApp(
+    MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => serviceLocator<AppUserCubit>()),
         BlocProvider(create: (_) => serviceLocator<AuthBloc>()),
       ],
-      child: MaterialApp.router(
-        title: 'Conet App',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-        ),
-        routerConfig: AppRouter.router,
+      child: const MyApp(),
+    ),
+  );
+}
+
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    context.read<AuthBloc>().add(AuthIsUserLoggedIn());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp.router(
+      title: 'Conet App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: .fromSeed(seedColor: Colors.deepPurpleAccent),
+        useMaterial3: true,
       ),
+      routerConfig: AppRouter.router,
     );
   }
 }

@@ -10,7 +10,7 @@ abstract interface class AuthRepository {
   Future<Either<AppFailure, bool>> sendOtp({
     required String email,
     required String firstName,
-    required String lastName,
+    String? lastName,
   });
 
   Future<Either<AppFailure, User>> verifyOtp({

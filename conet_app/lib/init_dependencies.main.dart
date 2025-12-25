@@ -28,6 +28,12 @@ void _initAuth() {
     ..registerFactory<UserSendOtp>(
       () => UserSendOtp(authRepository: serviceLocator<AuthRepository>()),
     )
+    ..registerFactory<UserCurrent>(
+      () => UserCurrent(authRepository: serviceLocator<AuthRepository>()),
+    )
+    ..registerFactory<UserAddDetails>(
+      () => UserAddDetails(authRepository: serviceLocator<AuthRepository>()),
+    )
     // Bloc
     ..registerLazySingleton<AuthBloc>(
       () => AuthBloc(
@@ -35,6 +41,8 @@ void _initAuth() {
         userSendOtp: serviceLocator<UserSendOtp>(),
         userSigninWithGoogle: serviceLocator<UserSigninWithGoogle>(),
         userVerifyOtp: serviceLocator<UserVerifyOtp>(),
+        userCurrent: serviceLocator<UserCurrent>(),
+        userAddDetails: serviceLocator<UserAddDetails>(),
         appUserCubit: serviceLocator<AppUserCubit>(),
       ),
     );

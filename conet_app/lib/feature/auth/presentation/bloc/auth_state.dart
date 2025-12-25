@@ -13,7 +13,8 @@ final class AuthOtpSentSuccess extends AuthState {}
 
 final class AuthSuccess extends AuthState {
   final User user;
-  const AuthSuccess(this.user);
+  final bool isNewUser;
+  const AuthSuccess(this.user, {this.isNewUser = false});
 }
 
 final class AuthFailure extends AuthState {

@@ -22,25 +22,29 @@ class User extends Equatable {
   final String id;
   final String email;
 
-  @JsonKey(defaultValue: "")
-  final String fullName;
+  @JsonKey(name: 'first_name', defaultValue: "")
+  final String firstName;
+
+  @JsonKey(name: 'last_name', defaultValue: "")
+  final String lastName;
 
   @JsonKey(defaultValue: "")
   final String username;
 
-  @JsonKey(defaultValue: "")
+  @JsonKey(name: 'profile_pic_url', defaultValue: "")
   final String profilePicUrl;
 
-  @JsonKey(defaultValue: UserRole.user)
+  @JsonKey(name: 'user_role', defaultValue: UserRole.user)
   final UserRole userRole;
 
-  @JsonKey(defaultValue: false)
+  @JsonKey(name: 'is_verified', defaultValue: false)
   final bool isVerified;
 
   const User({
     required this.id,
     required this.email,
-    required this.fullName,
+    required this.firstName,
+    required this.lastName,
     required this.username,
     required this.profilePicUrl,
     required this.userRole,
@@ -51,7 +55,8 @@ class User extends Equatable {
   List<Object?> get props => [
     id,
     email,
-    fullName,
+    firstName,
+    lastName,
     username,
     profilePicUrl,
     userRole,
