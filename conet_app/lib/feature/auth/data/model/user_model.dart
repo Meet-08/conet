@@ -16,6 +16,7 @@ class UserModel extends User {
     required super.isVerified,
   });
 
+  @override
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
 
   factory UserModel.fromJson(Map<String, dynamic> source) =>

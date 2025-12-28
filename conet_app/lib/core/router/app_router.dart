@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/widgets/main_scaffold.dart';
 import 'package:conet_app/core/widgets/splash_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/add_details_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/login_page.dart';
@@ -18,32 +19,29 @@ class AppRouter {
     ),
     redirect: (context, state) {
       final userState = serviceLocator<AppUserCubit>().state;
+      final location = state.uri.toString();
 
-      if (userState is AppUserUnknown) {
-        return null;
-      }
+      if (userState is AppUserUnknown) return null;
 
-      final isAuthPath =
-          state.uri.toString() == '/login' ||
-          state.uri.toString() == '/register' ||
-          state.uri.toString() == '/welcome';
+      final isAuthRoute = [
+        '/login',
+        '/register',
+        '/welcome',
+      ].contains(location);
 
       if (userState is AppUserUnauthenticated) {
-        return isAuthPath ? null : '/welcome';
+        return isAuthRoute ? null : '/welcome';
       }
 
       if (userState is AppUserAuthenticated) {
-        if (userState.user.username.isEmpty &&
-            state.uri.toString() != '/add-details') {
+        if (userState.user.username.isEmpty && location != '/add-details') {
           return '/add-details';
         }
 
         if (userState.user.username.isNotEmpty &&
-            state.uri.toString() == '/add-details') {
+            (isAuthRoute || location == '/')) {
           return '/home';
         }
-
-        if (isAuthPath || state.uri.toString() == '/') return '/home';
       }
 
       return null;
@@ -53,11 +51,6 @@ class AppRouter {
       GoRoute(
         path: '/welcome',
         builder: (context, state) => const WelcomePage(),
-      ),
-      GoRoute(
-        path: '/home',
-        builder: (context, state) =>
-            const Scaffold(body: Center(child: Text('You are logged in'))),
       ),
       GoRoute(
         path: '/register',
@@ -70,6 +63,17 @@ class AppRouter {
           final isGoogle = state.extra as bool? ?? true;
           return AddDetailsPage(isGoogle: isGoogle);
         },
+      ),
+      ShellRoute(
+        builder: (context, state, child) {
+          return MainScaffold(child: child);
+        },
+        routes: [
+          GoRoute(path: '/home', builder: (_, _) => const Placeholder()),
+          GoRoute(path: '/event', builder: (_, _) => const Placeholder()),
+          GoRoute(path: '/chat', builder: (_, _) => const Placeholder()),
+          GoRoute(path: '/profile', builder: (_, _) => const Placeholder()),
+        ],
       ),
     ],
   );
