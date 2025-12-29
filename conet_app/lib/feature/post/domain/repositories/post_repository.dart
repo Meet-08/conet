@@ -15,8 +15,6 @@ abstract interface class PostRepository {
     int limit = 20,
   });
 
-  Future<Either<AppFailure, Post>> getPostById(String postId);
-
   Future<Either<AppFailure, List<Post>>> getUserPosts({
     required String userId,
     int page = 1,
@@ -25,7 +23,7 @@ abstract interface class PostRepository {
 
   Future<Either<AppFailure, Unit>> deletePost(String postId);
 
-  Future<Either<AppFailure, Unit>> likePost(String postId);
+  Future<Either<AppFailure, Unit>> toggleLikePost(String postId);
 
   Future<Either<AppFailure, Unit>> commentPost(String postId);
 }

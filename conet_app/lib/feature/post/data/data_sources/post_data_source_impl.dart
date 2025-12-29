@@ -44,18 +44,34 @@ class PostDataSourceImpl implements PostDataSource {
   }
 
   @override
-  Future<Unit> commentPost(String postId) {
-    // TODO: implement commentPost
-    throw UnimplementedError();
+  Future<Unit> commentPost(String postId) async {
+    try {
+      logger.i("Commenting on post $postId");
+      final res = await dioClient.dio.post(
+        "/post/comment",
+        data: {"postId": postId},
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to comment on post");
+      }
+      logger.i("Post commented $postId");
+      return unit;
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
   }
 
   @override
   Future<Unit> deletePost(String postId) async {
-    logger.i("Deleting post $postId");
-    final res = await dioClient.dio.delete("/post", data: {"postId": postId});
-    if (res.statusCode != 200) throw ServerException("Failed to delete post");
-    logger.i("Post deleted $postId");
-    return unit;
+    try {
+      logger.i("Deleting post $postId");
+      final res = await dioClient.dio.delete("/post", data: {"postId": postId});
+      if (res.statusCode != 200) throw ServerException("Failed to delete post");
+      logger.i("Post deleted $postId");
+      return unit;
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
   }
 
   @override
@@ -70,18 +86,37 @@ class PostDataSourceImpl implements PostDataSource {
   }
 
   @override
-  Future<List<Post>?> getUserPosts({
+  Future<List<Post>> getUserPosts({
     required String userId,
     int page = 1,
     int limit = 20,
-  }) {
-    // TODO: implement getUserPosts
-    throw UnimplementedError();
+  }) async {
+    try {
+      final res = await dioClient.dio.get(
+        "/post/$userId",
+        queryParameters: {"page": page, "limit": limit},
+      );
+      if (res.statusCode != 200) throw ServerException("Failed to get posts");
+      final data = jsonDecode(res.data) as Map<String, dynamic>;
+      return data['posts'].map((e) => PostModel.fromJson(e)).toList();
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
   }
 
   @override
-  Future<Unit> likePost(String postId) {
-    // TODO: implement likePost
-    throw UnimplementedError();
+  Future<Unit> toggleLikePost(String postId) async {
+    try {
+      logger.i("Liking post $postId");
+      final res = await dioClient.dio.put(
+        "/post/like",
+        data: {"postId": postId},
+      );
+      if (res.statusCode != 200) throw ServerException("Failed to like post");
+      logger.i("Post liked $postId");
+      return unit;
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
   }
 }

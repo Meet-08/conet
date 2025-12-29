@@ -14,6 +14,7 @@ class PostModel extends Post {
     required super.likeCount,
     required super.commentCount,
     required super.isLiked,
+    required super.createdAt,
   });
 
   factory PostModel.fromJson(Map<String, dynamic> json) =>
@@ -29,6 +30,7 @@ class PostModel extends Post {
     int? likeCount,
     int? commentCount,
     bool? isLiked,
+    DateTime? createdAt,
   }) {
     return PostModel(
       id: id ?? this.id,
@@ -38,6 +40,7 @@ class PostModel extends Post {
       likeCount: likeCount ?? this.likeCount,
       commentCount: commentCount ?? this.commentCount,
       isLiked: isLiked ?? this.isLiked,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

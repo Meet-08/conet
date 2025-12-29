@@ -18,7 +18,6 @@ void main(List<String> args) {
     '$baseDir/domain/repositories',
     '$baseDir/domain/entities',
     '$baseDir/domain/usecases',
-    '$baseDir/presentation/bloc',
     '$baseDir/presentation/pages',
     '$baseDir/presentation/widgets',
   ];

@@ -19,6 +19,9 @@ class Post extends Equatable {
   @JsonKey(name: 'is_liked', defaultValue: false)
   final bool isLiked;
 
+  @JsonKey(name: 'created_at')
+  final DateTime createdAt;
+
   const Post({
     required this.id,
     required this.user,
@@ -27,6 +30,7 @@ class Post extends Equatable {
     required this.likeCount,
     required this.commentCount,
     required this.isLiked,
+    required this.createdAt,
   });
 
   @override
@@ -37,5 +41,7 @@ class Post extends Equatable {
     mediaUrls,
     likeCount,
     commentCount,
+    isLiked,
+    createdAt,
   ];
 }

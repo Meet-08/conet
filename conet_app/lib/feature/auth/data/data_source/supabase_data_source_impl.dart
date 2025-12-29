@@ -192,7 +192,16 @@ class SupabaseDataSourceImpl implements AuthDataSource {
   Future<UserModel> _getUserModel(String id) async {
     final user = await supabaseClient
         .from('users')
-        .select()
+        .select('''
+              id,
+              username,
+              first_name,
+              last_name,
+              email,
+              profile_pic_url,
+              user_role,
+              is_verified
+        ''')
         .eq('id', id)
         .single();
 
