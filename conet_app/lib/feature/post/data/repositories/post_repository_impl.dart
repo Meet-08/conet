@@ -14,8 +14,8 @@ class PostRepositoryImpl implements PostRepository {
     : _postDataSource = postDataSource;
 
   @override
-  Future<Either<AppFailure, Unit>> commentPost(String postId) {
-    return _getResult<Unit>(() => _postDataSource.commentPost(postId));
+  Future<Either<AppFailure, Unit>> commentPost(String postId, String comment) {
+    return _getResult<Unit>(() => _postDataSource.commentPost(postId, comment));
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/router/app_router.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
+import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,6 +24,7 @@ void main() async {
       providers: [
         BlocProvider(create: (_) => serviceLocator<AppUserCubit>()),
         BlocProvider(create: (_) => serviceLocator<AuthBloc>()),
+        BlocProvider(create: (_) => serviceLocator<PostBloc>()),
       ],
       child: const MyApp(),
     ),

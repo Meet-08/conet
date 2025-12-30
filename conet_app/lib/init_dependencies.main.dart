@@ -47,3 +47,56 @@ void _initAuth() {
       ),
     );
 }
+
+void _initPost() {
+  // Data Source
+  serviceLocator
+    ..registerLazySingleton<DioClient>(
+      () => DioClient(
+        dio: Dio(),
+        supabaseClient: serviceLocator<SupabaseClient>(),
+      ),
+    )
+    ..registerLazySingleton<FileDataSource>(
+      () => SupabaseFileDataSource(
+        supabaseClient: serviceLocator<SupabaseClient>(),
+      ),
+    )
+    ..registerFactory<PostDataSource>(
+      () => PostDataSourceImpl(
+        dioClient: serviceLocator<DioClient>(),
+        fileDataSource: serviceLocator<FileDataSource>(),
+      ),
+    )
+    // Repository
+    ..registerFactory<PostRepository>(
+      () =>
+          PostRepositoryImpl(postDataSource: serviceLocator<PostDataSource>()),
+    )
+    // Use Cases
+    ..registerFactory<PostCreate>(
+      () => PostCreate(postRepository: serviceLocator<PostRepository>()),
+    )
+    ..registerFactory<PostDelete>(
+      () => PostDelete(postRepository: serviceLocator<PostRepository>()),
+    )
+    ..registerFactory<PostGetPosts>(
+      () => PostGetPosts(postRepository: serviceLocator<PostRepository>()),
+    )
+    ..registerFactory(
+      () => PostComment(postRepository: serviceLocator<PostRepository>()),
+    )
+    ..registerFactory<PostToggleLike>(
+      () => PostToggleLike(postRepository: serviceLocator<PostRepository>()),
+    )
+    // Bloc
+    ..registerLazySingleton<PostBloc>(
+      () => PostBloc(
+        getPosts: serviceLocator<PostGetPosts>(),
+        createPost: serviceLocator<PostCreate>(),
+        deletePost: serviceLocator<PostDelete>(),
+        toggleLike: serviceLocator<PostToggleLike>(),
+        commentPost: serviceLocator<PostComment>(),
+      ),
+    );
+}

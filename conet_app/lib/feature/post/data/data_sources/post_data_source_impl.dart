@@ -44,12 +44,12 @@ class PostDataSourceImpl implements PostDataSource {
   }
 
   @override
-  Future<Unit> commentPost(String postId) async {
+  Future<Unit> commentPost(String postId, String comment) async {
     try {
       logger.i("Commenting on post $postId");
       final res = await dioClient.dio.post(
-        "/post/comment",
-        data: {"postId": postId},
+        "/post/comment/$postId",
+        data: {"comment": comment},
       );
       if (res.statusCode != 200) {
         throw ServerException("Failed to comment on post");

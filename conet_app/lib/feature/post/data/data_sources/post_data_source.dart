@@ -19,5 +19,5 @@ abstract class PostDataSource {
 
   Future<Unit> toggleLikePost(String postId);
 
-  Future<Unit> commentPost(String postId);
+  Future<Unit> commentPost(String postId, String comment);
 }
