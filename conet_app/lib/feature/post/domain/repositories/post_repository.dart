@@ -10,6 +10,10 @@ abstract interface class PostRepository {
     required List<File> media,
   });
 
+  Future<Either<AppFailure, Unit>> deletePost(String postId);
+  Future<Either<AppFailure, Unit>> toggleLikePost(String postId);
+  Future<Either<AppFailure, Unit>> commentPost(String postId, String comment);
+
   Future<Either<AppFailure, List<Post>>> getPosts({
     int page = 1,
     int limit = 20,
@@ -21,9 +25,6 @@ abstract interface class PostRepository {
     int limit = 20,
   });
 
-  Future<Either<AppFailure, Unit>> deletePost(String postId);
-
-  Future<Either<AppFailure, Unit>> toggleLikePost(String postId);
-
-  Future<Either<AppFailure, Unit>> commentPost(String postId, String comment);
+  Stream<List<Post>> watchPosts();
+  Stream<Post> watchPost(String postId);
 }

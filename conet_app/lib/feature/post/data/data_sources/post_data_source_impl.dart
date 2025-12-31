@@ -8,7 +8,7 @@ import 'package:conet_app/feature/post/data/data_sources/post_data_source.dart';
 import 'package:conet_app/feature/post/data/models/post_model.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/main.dart';
-import 'package:fpdart/src/unit.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:uuid/uuid.dart';
 
 class PostDataSourceImpl implements PostDataSource {

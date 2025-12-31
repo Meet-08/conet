@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:conet_app/feature/post/domain/entities/post.dart';
@@ -6,6 +7,7 @@ import 'package:conet_app/feature/post/domain/usecases/post_create.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_delete.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_watch_posts.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -18,6 +20,9 @@ class PostBloc extends Bloc<PostEvent, PostState> {
   final PostDelete _deletePost;
   final PostToggleLike _toggleLike;
   final PostComment _commentPost;
+  final PostWatchPosts _watchPosts;
+
+  StreamSubscription<List<Post>>? _postSub;
 
   PostBloc({
     required PostGetPosts getPosts,
@@ -25,28 +30,39 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     required PostDelete deletePost,
     required PostToggleLike toggleLike,
     required PostComment commentPost,
+    required PostWatchPosts watchPosts,
   }) : _getPosts = getPosts,
        _createPost = createPost,
        _deletePost = deletePost,
        _toggleLike = toggleLike,
        _commentPost = commentPost,
+       _watchPosts = watchPosts,
        super(PostInitial()) {
-    on<PostGetPostsEvent>(_onGetPosts);
+    on<PostSubscribeEvent>(_onSubscribe);
     on<PostCreatePostEvent>(_onCreatePost);
     on<PostDeletePostEvent>(_onDeletePost);
     on<PostToggleLikePostEvent>(_onToggleLike);
     on<PostCommentEvent>(_onComment);
   }
 
-  Future<void> _onGetPosts(
-    PostGetPostsEvent event,
+  Future<void> _onSubscribe(
+    PostSubscribeEvent event,
     Emitter<PostState> emit,
   ) async {
     emit(PostLoading());
-    final result = await _getPosts(page: event.page, limit: event.limit);
-    result.fold(
+
+    // Initial load
+    final initial = await _getPosts();
+    initial.fold(
       (failure) => emit(PostFailure(failure.message)),
       (posts) => emit(PostLoaded(posts)),
+    );
+
+    // Realtime stream
+    await emit.forEach<List<Post>>(
+      _watchPosts(),
+      onData: (posts) => PostLoaded(posts),
+      onError: (error, _) => PostFailure(error.toString()),
     );
   }
 
@@ -54,27 +70,21 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     PostCreatePostEvent event,
     Emitter<PostState> emit,
   ) async {
-    emit(PostActionInProgress());
     final result = await _createPost(
       content: event.content,
       media: event.media,
     );
-    result.fold(
-      (failure) => emit(PostFailure(failure.message)),
-      (post) => emit(PostActionSuccess()),
-    );
+
+    result.fold((failure) => emit(PostFailure(failure.message)), (_) {});
   }
 
   Future<void> _onDeletePost(
     PostDeletePostEvent event,
     Emitter<PostState> emit,
   ) async {
-    emit(PostActionInProgress());
     final result = await _deletePost(event.postId);
-    result.fold(
-      (failure) => emit(PostFailure(failure.message)),
-      (_) => emit(PostActionSuccess()),
-    );
+
+    result.fold((failure) => emit(PostFailure(failure.message)), (_) {});
   }
 
   Future<void> _onToggleLike(
@@ -82,21 +92,22 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     Emitter<PostState> emit,
   ) async {
     final result = await _toggleLike(event.postId);
-    result.fold(
-      (failure) => emit(PostFailure(failure.message)),
-      (_) => emit(PostActionSuccess()),
-    );
+
+    result.fold((failure) => emit(PostFailure(failure.message)), (_) {});
   }
 
   Future<void> _onComment(
     PostCommentEvent event,
     Emitter<PostState> emit,
   ) async {
-    emit(PostActionInProgress());
     final result = await _commentPost(event.postId, event.comment);
-    result.fold(
-      (failure) => emit(PostFailure(failure.message)),
-      (_) => emit(PostActionSuccess()),
-    );
+
+    result.fold((failure) => emit(PostFailure(failure.message)), (_) {});
+  }
+
+  @override
+  Future<void> close() {
+    _postSub?.cancel();
+    return super.close();
   }
 }

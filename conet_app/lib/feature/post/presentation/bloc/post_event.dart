@@ -1,6 +1,5 @@
 part of 'post_bloc.dart';
 
-@immutable
 sealed class PostEvent {
   const PostEvent();
 }
@@ -37,3 +36,7 @@ class PostCommentEvent extends PostEvent {
 
   const PostCommentEvent({required this.postId, required this.comment});
 }
+
+class PostSubscribeEvent extends PostEvent {}
+
+class PostUnsubscribeEvent extends PostEvent {}
