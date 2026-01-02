@@ -4,6 +4,7 @@ import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_data_source.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_real_time_data_source.dart';
+import 'package:conet_app/feature/post/domain/entities/comment.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/domain/repositories/post_repository.dart';
 import 'package:fpdart/fpdart.dart';
@@ -60,6 +61,13 @@ class PostRepositoryImpl implements PostRepository {
         page: page,
         limit: limit,
       ),
+    );
+  }
+
+  @override
+  Future<Either<AppFailure, List<Comment>>> getPostComments(String postId) {
+    return _getResult<List<Comment>>(
+      () => _postDataSource.getPostComments(postId),
     );
   }
 

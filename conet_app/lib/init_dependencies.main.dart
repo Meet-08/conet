@@ -99,6 +99,9 @@ void _initPost() {
   serviceLocator.registerFactory(
     () => PostComment(postRepository: serviceLocator()),
   );
+  serviceLocator.registerFactory(
+    () => PostGetPostComments(postRepository: serviceLocator()),
+  );
 
   // Bloc
   serviceLocator.registerFactory(
@@ -108,6 +111,13 @@ void _initPost() {
       createPost: serviceLocator(),
       deletePost: serviceLocator(),
       toggleLike: serviceLocator(),
+      commentPost: serviceLocator(),
+    ),
+  );
+
+  serviceLocator.registerFactory(
+    () => PostDetailBloc(
+      getPostComments: serviceLocator(),
       commentPost: serviceLocator(),
     ),
   );

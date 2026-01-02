@@ -1,6 +1,7 @@
 import 'dart:core';
 import 'dart:io';
 
+import 'package:conet_app/feature/post/domain/entities/comment.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -20,4 +21,6 @@ abstract class PostDataSource {
   Future<Unit> toggleLikePost(String postId);
 
   Future<Unit> commentPost(String postId, String comment);
+
+  Future<List<Comment>> getPostComments(String postId);
 }

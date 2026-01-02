@@ -22,10 +22,12 @@ import 'package:conet_app/feature/post/domain/repositories/post_repository.dart'
 import 'package:conet_app/feature/post/domain/usecases/post_comment.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_create.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_delete.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_get_post_comments.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_watch_posts.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
+import 'package:conet_app/feature/post/presentation/bloc/post_detail_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

@@ -5,7 +5,9 @@ import 'package:conet_app/core/api/dio_client.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/post/data/data_sources/file_data_source.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_data_source.dart';
+import 'package:conet_app/feature/post/data/models/comment_model.dart';
 import 'package:conet_app/feature/post/data/models/post_model.dart';
+import 'package:conet_app/feature/post/domain/entities/comment.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/main.dart';
 import 'package:fpdart/fpdart.dart';
@@ -56,6 +58,21 @@ class PostDataSourceImpl implements PostDataSource {
       }
       logger.i("Post commented $postId");
       return unit;
+    } catch (e) {
+      throw ServerException(e.toString());
+    }
+  }
+
+  @override
+  Future<List<Comment>> getPostComments(String postId) async {
+    try {
+      logger.i("Getting comments for post $postId");
+      final res = await dioClient.dio.get("/post/comment/$postId");
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to get comments for post");
+      }
+      logger.i("Post comments $postId");
+      return res.data.map((e) => CommentModel.fromJson(e)).toList();
     } catch (e) {
       throw ServerException(e.toString());
     }

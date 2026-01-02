@@ -7,7 +7,9 @@ import 'package:conet_app/feature/auth/presentation/pages/add_details_page.dart'
 import 'package:conet_app/feature/auth/presentation/pages/login_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/register_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/welcome_page.dart';
+import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/presentation/pages/home_page.dart';
+import 'package:conet_app/feature/post/presentation/pages/post_page.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -64,6 +66,10 @@ class AppRouter {
           final isGoogle = state.extra as bool? ?? true;
           return AddDetailsPage(isGoogle: isGoogle);
         },
+      ),
+      GoRoute(
+        path: '/post',
+        builder: (context, state) => PostPage(post: state.extra as Post),
       ),
       ShellRoute(
         builder: (context, state, child) {
