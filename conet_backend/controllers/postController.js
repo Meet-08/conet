@@ -1,19 +1,25 @@
-const asyncHandler = require("express-async-handler");
-const Post = require("../models/post");
+import asyncHandler from "express-async-handler";
+import prisma from "../config/prisma.js";
 
 // CREATE POST
-const createPost = asyncHandler(async (req, res) => {
-  const { name, description, image } = req.body;
+export const createPost = asyncHandler(async (req, res) => {
+  const { content, media_urls } = req.body;
+  const user_id = req.user.id;
 
-  if (!name || !description) {
+  if (!content) {
     res.status(400);
-    throw new Error("Name and description are required");
+    throw new Error("Content is required");
   }
 
-  const post = await Post.create({
-    name,
-    description,
-    image, // image URL or filename
+  const post = await prisma.posts.create({
+    data: {
+      content,
+      media_urls: media_urls || [],
+      user_id,
+    },
+    include: {
+      user: true,
+    },
   });
 
   res.status(201).json({
@@ -23,27 +29,125 @@ const createPost = asyncHandler(async (req, res) => {
   });
 });
 
+// GET ALL POSTS
+export const getAllPosts = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
 
-
-// UPDATE POST
-const updatePost = asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  const { name, description, image } = req.body;
-
-  const post = await Post.findByIdAndUpdate(
-    id,
-    {
-      name,
-      description,
-      image,
+  const posts = await prisma.posts.findMany({
+    skip,
+    take: limit,
+    orderBy: { created_at: "desc" },
+    include: {
+      user: true,
+      post_likes: true,
     },
-    { new: true }
-  );
+  });
+
+  const total = await prisma.posts.count();
+
+  res.status(200).json({
+    success: true,
+    count: posts.length,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+    posts,
+  });
+});
+
+// GET SINGLE POST
+export const getPost = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const post = await prisma.posts.findUnique({
+    where: { id },
+    include: {
+      user: true,
+      post_likes: true,
+      post_comments: {
+        include: { user: true },
+        orderBy: { created_at: "desc" },
+      },
+    },
+  });
 
   if (!post) {
     res.status(404);
     throw new Error("Post not found");
   }
+
+  res.status(200).json({
+    success: true,
+    post,
+  });
+});
+
+// GET USER POSTS
+export const getUserPosts = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
+
+  const posts = await prisma.posts.findMany({
+    where: { user_id: userId },
+    skip,
+    take: limit,
+    orderBy: { created_at: "desc" },
+    include: {
+      user: true,
+      post_likes: true,
+    },
+  });
+
+  const total = await prisma.posts.count({
+    where: { user_id: userId },
+  });
+
+  res.status(200).json({
+    success: true,
+    count: posts.length,
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+    posts,
+  });
+});
+
+// UPDATE POST
+export const updatePost = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { content, media_urls } = req.body;
+  const user_id = req.user.id;
+
+  const existingPost = await prisma.posts.findUnique({
+    where: { id },
+  });
+
+  if (!existingPost) {
+    res.status(404);
+    throw new Error("Post not found");
+  }
+
+  // Ensure user owns the post
+  if (existingPost.user_id !== user_id) {
+    res.status(403);
+    throw new Error("Not authorized to update this post");
+  }
+
+  const post = await prisma.posts.update({
+    where: { id },
+    data: {
+      content,
+      media_urls,
+      updated_at: new Date(),
+    },
+    include: {
+      user: true,
+    },
+  });
 
   res.status(200).json({
     success: true,
@@ -52,145 +156,246 @@ const updatePost = asyncHandler(async (req, res) => {
   });
 });
 
-// // LIKE POST
-// const likePost = asyncHandler(async (req, res) => {
-//   const { id } = req.params;
-
-//   const post = await Post.findById(id);
-
-//   if (!post) {
-//     res.status(404);
-//     throw new Error("Post not found");
-//   }
-
-//   post.likes += 1;
-//   await post.save();
-
-//   res.json({
-//     success: true,
-//     likes: post.likes,
-//   });
-// });
-
-const toggleLike = asyncHandler(async (req, res) => {
+// DELETE POST
+export const deletePost = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const userId = req.body.userId; // later from auth
+  const user_id = req.user.id;
 
-  const post = await Post.findById(id);
+  const existingPost = await prisma.posts.findUnique({
+    where: { id },
+  });
+
+  if (!existingPost) {
+    res.status(404);
+    throw new Error("Post not found");
+  }
+
+  // Ensure user owns the post
+  if (existingPost.user_id !== user_id) {
+    res.status(403);
+    throw new Error("Not authorized to delete this post");
+  }
+
+  // Delete related likes and comments first
+  await prisma.post_likes.deleteMany({
+    where: { post_id: id },
+  });
+
+  await prisma.post_comments.deleteMany({
+    where: { post_id: id },
+  });
+
+  await prisma.posts.delete({
+    where: { id },
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Post deleted successfully",
+  });
+});
+
+// TOGGLE LIKE
+export const toggleLike = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const user_id = req.user.id;
+
+  const post = await prisma.posts.findUnique({
+    where: { id },
+  });
+
   if (!post) {
     res.status(404);
     throw new Error("Post not found");
   }
 
-  const isLiked = post.likes.includes(userId);
+  const existingLike = await prisma.post_likes.findUnique({
+    where: {
+      post_id_user_id: {
+        post_id: id,
+        user_id,
+      },
+    },
+  });
 
-  if (isLiked) {
-    // DISLIKE (remove like)
-    post.likes = post.likes.filter((uid) => uid !== userId);
+  let liked;
+  if (existingLike) {
+    // Unlike
+    await prisma.post_likes.delete({
+      where: {
+        post_id_user_id: {
+          post_id: id,
+          user_id,
+        },
+      },
+    });
+
+    liked = false;
   } else {
-    // LIKE
-    post.likes.push(userId);
+    // Like
+    await prisma.post_likes.create({
+      data: {
+        post_id: id,
+        user_id,
+      },
+    });
+
+    liked = true;
   }
 
-  await post.save();
+  const updatedPost = await prisma.posts.findUnique({
+    where: { id },
+  });
 
   res.json({
     success: true,
-    liked: !isLiked,
-    totalLikes: post.likes.length,
+    liked,
+    like_count: updatedPost.like_count,
   });
 });
 
 // ADD COMMENT
-const addComment = asyncHandler(async (req, res) => {
+export const addComment = asyncHandler(async (req, res) => {
   const { id } = req.params;
-  const { text, user } = req.body;
+  const { content } = req.body;
+  const user_id = req.user.id;
 
-  if (!text) {
+  if (!content) {
     res.status(400);
-    throw new Error("Comment text required");
+    throw new Error("Comment content is required");
   }
 
-  const post = await Post.findById(id);
+  const post = await prisma.posts.findUnique({
+    where: { id },
+  });
 
   if (!post) {
     res.status(404);
     throw new Error("Post not found");
   }
 
-  post.comments.push({
-    text,
-    user,
+  const comment = await prisma.post_comments.create({
+    data: {
+      post_id: id,
+      user_id,
+      content,
+    },
+    include: {
+      user: true,
+    },
   });
 
-  await post.save();
-
-  res.json({
+  res.status(201).json({
     success: true,
-    comments: post.comments,
+    message: "Comment added successfully",
+    comment,
   });
-
-
-
-
-
-
 });
 
+// GET POST COMMENTS
+export const getPostComments = asyncHandler(async (req, res) => {
+  const { id } = req.params;
 
+  const post = await prisma.posts.findUnique({
+    where: { id },
+  });
 
-const getAllPosts = asyncHandler(async (req, res) => {
-  const posts = await Post.find()
-    .sort({ createdAt: -1 }); // 🔥 newest first
+  if (!post) {
+    res.status(404);
+    throw new Error("Post not found");
+  }
+
+  const comments = await prisma.post_comments.findMany({
+    where: { post_id: id },
+    orderBy: { created_at: "desc" },
+    include: {
+      user: true,
+    },
+  });
+
+  const formattedComments = comments.map((comment) => ({
+    id: comment.id,
+    post_id: comment.post_id,
+    user_id: comment.user_id,
+    username: comment.user.username,
+    profile_pic_url: comment.user.profile_pic_url,
+    content: comment.content,
+  }));
 
   res.status(200).json({
     success: true,
-    count: posts.length,
-    posts,
+    count: comments.length,
+    comments: formattedComments,
   });
 });
-const editComment = asyncHandler(async (req, res) => {
+
+// EDIT COMMENT
+export const editComment = asyncHandler(async (req, res) => {
   const { postId, commentId } = req.params;
-  const { text } = req.body;
+  const { content } = req.body;
+  const user_id = req.user.id;
 
-  if (!text) {
+  if (!content) {
     res.status(400);
-    throw new Error("Comment text is required");
+    throw new Error("Comment content is required");
   }
 
-  const post = await Post.findById(postId);
-
-  if (!post) {
-    res.status(404);
-    throw new Error("Post not found");
-  }
-
-  // find comment inside post
-  const comment = post.comments.id(commentId);
+  const comment = await prisma.post_comments.findUnique({
+    where: { id: commentId },
+  });
 
   if (!comment) {
     res.status(404);
     throw new Error("Comment not found");
   }
 
-  // update comment
-  comment.text = text;
+  // Ensure user owns the comment
+  if (comment.user_id !== user_id) {
+    res.status(403);
+    throw new Error("Not authorized to edit this comment");
+  }
 
-  await post.save();
+  const updatedComment = await prisma.post_comments.update({
+    where: { id: commentId },
+    data: { content },
+    include: {
+      user: true,
+    },
+  });
 
   res.json({
     success: true,
     message: "Comment updated successfully",
-    comment,
+    comment: updatedComment,
   });
 });
 
+// DELETE COMMENT
+export const deleteComment = asyncHandler(async (req, res) => {
+  const { postId, commentId } = req.params;
+  const user_id = req.user.id;
 
-module.exports = {
-  createPost,
-  updatePost,
-  toggleLike,
-  addComment,
-  getAllPosts,
-  editComment,
-};
+  const comment = await prisma.post_comments.findUnique({
+    where: { id: commentId, post_id: postId },
+  });
+
+  if (!comment) {
+    res.status(404);
+    throw new Error("Comment not found");
+  }
+
+  // Ensure user owns the comment
+  if (comment.user_id !== user_id) {
+    res.status(403);
+    throw new Error("Not authorized to delete this comment");
+  }
+
+  await prisma.post_comments.delete({
+    where: { id: commentId },
+  });
+
+  res.json({
+    success: true,
+    message: "Comment deleted successfully",
+  });
+});

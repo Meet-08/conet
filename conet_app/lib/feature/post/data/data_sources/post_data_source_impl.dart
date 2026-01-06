@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:conet_app/core/api/dio_client.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/post/data/data_sources/file_data_source.dart';
@@ -32,14 +30,14 @@ class PostDataSourceImpl implements PostDataSource {
       );
 
       final res = await dioClient.dio.post(
-        "/post",
-        data: {"postId": postId, "content": content, "mediaUrls": mediaUrls},
+        "/posts",
+        data: {"content": content, "media_urls": mediaUrls},
       );
 
       if (res.statusCode != 201) throw ServerException("Post creation failed");
-      final data = jsonDecode(res.data) as Map<String, dynamic>;
+      final data = res.data as Map<String, dynamic>;
       logger.i("Post created $data");
-      return PostModel.fromJson(data);
+      return PostModel.fromJson(data['post']);
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -50,10 +48,10 @@ class PostDataSourceImpl implements PostDataSource {
     try {
       logger.i("Commenting on post $postId");
       final res = await dioClient.dio.post(
-        "/post/comment/$postId",
-        data: {"comment": comment},
+        "/posts/comment/$postId",
+        data: {"content": comment},
       );
-      if (res.statusCode != 200) {
+      if (res.statusCode != 201) {
         throw ServerException("Failed to comment on post");
       }
       logger.i("Post commented $postId");
@@ -67,13 +65,17 @@ class PostDataSourceImpl implements PostDataSource {
   Future<List<Comment>> getPostComments(String postId) async {
     try {
       logger.i("Getting comments for post $postId");
-      final res = await dioClient.dio.get("/post/comment/$postId");
+      final res = await dioClient.dio.get("/posts/$postId/comments");
       if (res.statusCode != 200) {
         throw ServerException("Failed to get comments for post");
       }
       logger.i("Post comments $postId");
-      return res.data.map((e) => CommentModel.fromJson(e)).toList();
+      final data = res.data as Map<String, dynamic>;
+      logger.i("Post comments $data");
+      final comments = data['comments'] as List;
+      return comments.map((e) => CommentModel.fromJson(e)).toList();
     } catch (e) {
+      logger.e("Failed to get comments for post $postId", error: e);
       throw ServerException(e.toString());
     }
   }
@@ -82,7 +84,7 @@ class PostDataSourceImpl implements PostDataSource {
   Future<Unit> deletePost(String postId) async {
     try {
       logger.i("Deleting post $postId");
-      final res = await dioClient.dio.delete("/post", data: {"postId": postId});
+      final res = await dioClient.dio.delete("/posts/$postId");
       if (res.statusCode != 200) throw ServerException("Failed to delete post");
       logger.i("Post deleted $postId");
       return unit;
@@ -94,12 +96,13 @@ class PostDataSourceImpl implements PostDataSource {
   @override
   Future<List<Post>> getPosts({int page = 1, int limit = 20}) async {
     final res = await dioClient.dio.get(
-      "/post",
+      "/posts",
       queryParameters: {"page": page, "limit": limit},
     );
     if (res.statusCode != 200) throw ServerException("Failed to get posts");
-    final data = jsonDecode(res.data) as Map<String, dynamic>;
-    return data['posts'].map((e) => PostModel.fromJson(e)).toList();
+    final data = res.data as Map<String, dynamic>;
+    final posts = data['posts'] as List;
+    return posts.map((e) => PostModel.fromJson(e)).toList();
   }
 
   @override
@@ -110,12 +113,13 @@ class PostDataSourceImpl implements PostDataSource {
   }) async {
     try {
       final res = await dioClient.dio.get(
-        "/post/$userId",
+        "/posts/user/$userId",
         queryParameters: {"page": page, "limit": limit},
       );
       if (res.statusCode != 200) throw ServerException("Failed to get posts");
-      final data = jsonDecode(res.data) as Map<String, dynamic>;
-      return data['posts'].map((e) => PostModel.fromJson(e)).toList();
+      final data = res.data as Map<String, dynamic>;
+      final posts = data['posts'] as List;
+      return posts.map((e) => PostModel.fromJson(e)).toList();
     } catch (e) {
       throw ServerException(e.toString());
     }
@@ -125,10 +129,7 @@ class PostDataSourceImpl implements PostDataSource {
   Future<Unit> toggleLikePost(String postId) async {
     try {
       logger.i("Liking post $postId");
-      final res = await dioClient.dio.put(
-        "/post/like",
-        data: {"postId": postId},
-      );
+      final res = await dioClient.dio.put("/posts/like/$postId");
       if (res.statusCode != 200) throw ServerException("Failed to like post");
       logger.i("Post liked $postId");
       return unit;

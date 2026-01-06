@@ -62,8 +62,8 @@ void _initPost() {
 
   // Data sources
   serviceLocator.registerFactory<PostDataSource>(
-    () => SupabasePostDataSource(
-      supabaseClient: serviceLocator<SupabaseClient>(),
+    () => PostDataSourceImpl(
+      dioClient: serviceLocator<DioClient>(),
       fileDataSource: serviceLocator<FileDataSource>(),
     ),
   );
