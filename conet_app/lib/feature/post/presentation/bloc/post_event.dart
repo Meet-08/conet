@@ -13,7 +13,7 @@ class PostGetPostsEvent extends PostEvent {
 
 class PostCreatePostEvent extends PostEvent {
   final String content;
-  final List<File> media;
+  final List<PlatformFile> media;
 
   const PostCreatePostEvent({required this.content, required this.media});
 }

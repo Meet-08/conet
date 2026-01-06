@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_comment.dart';
@@ -8,6 +7,7 @@ import 'package:conet_app/feature/post/domain/usecases/post_delete.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_watch_posts.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -39,10 +39,16 @@ class PostBloc extends Bloc<PostEvent, PostState> {
        _watchPosts = watchPosts,
        super(PostInitial()) {
     on<PostSubscribeEvent>(_onSubscribe);
+    on<PostUnsubscribeEvent>(_onUnsubscribe);
     on<PostCreatePostEvent>(_onCreatePost);
     on<PostDeletePostEvent>(_onDeletePost);
     on<PostToggleLikePostEvent>(_onToggleLike);
     on<PostCommentEvent>(_onComment);
+  }
+
+  void _onUnsubscribe(PostUnsubscribeEvent event, Emitter<PostState> emit) {
+    _postSub?.cancel();
+    _postSub = null;
   }
 
   Future<void> _onSubscribe(
@@ -91,9 +97,28 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     PostToggleLikePostEvent event,
     Emitter<PostState> emit,
   ) async {
+    if (state is! PostLoaded) return;
+
+    final current = (state as PostLoaded).posts;
+
+    final updated = current.map((post) {
+      if (post.id == event.postId) {
+        return post.copyWith(
+          isLiked: !post.isLiked,
+          likeCount: post.isLiked ? post.likeCount - 1 : post.likeCount + 1,
+        );
+      }
+      return post;
+    }).toList();
+
+    emit(PostLoaded(updated));
+
     final result = await _toggleLike(event.postId);
 
-    result.fold((failure) => emit(PostFailure(failure.message)), (_) {});
+    result.fold((failure) {
+      // rollback if needed
+      emit(PostLoaded(current));
+    }, (_) {});
   }
 
   Future<void> _onComment(

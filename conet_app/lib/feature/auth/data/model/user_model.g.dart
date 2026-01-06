@@ -8,11 +8,11 @@ part of 'user_model.dart';
 
 UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
   id: json['id'] as String,
-  email: json['email'] as String,
+  email: json['email'] as String? ?? '',
   firstName: json['first_name'] as String? ?? '',
   lastName: json['last_name'] as String? ?? '',
   username: json['username'] as String? ?? '',
-  profilePicUrl: json['profile_pic_url'] as String? ?? '',
+  profilePicUrl: json['profile_pic_url'] as String?,
   userRole:
       $enumDecodeNullable(_$UserRoleEnumMap, json['user_role']) ??
       UserRole.user,

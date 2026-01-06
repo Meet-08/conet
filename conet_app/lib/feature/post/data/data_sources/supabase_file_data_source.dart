@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/post/data/data_sources/file_data_source.dart';
 import 'package:conet_app/main.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseFileDataSource implements FileDataSource {
@@ -12,26 +11,31 @@ class SupabaseFileDataSource implements FileDataSource {
 
   @override
   Future<List<String>> uploadFiles({
-    required List<File> files,
+    required List<PlatformFile> files,
     required String postId,
   }) async {
     try {
-      final urls = <String>[];
+      final bucket = supabaseClient.storage.from('post');
 
-      for (final file in files) {
-        final fileName = file.path.split('/').last;
-        final path = '$postId/$fileName';
+      final futures = files.map((file) async {
+        final path = '$postId/${file.name}';
 
-        await supabaseClient.storage.from('post').upload(path, file);
+        await bucket.uploadBinary(
+          path,
+          file.bytes!,
+          fileOptions: FileOptions(
+            contentType: file.extension,
+            cacheControl: '3600', // 1 hour CDN cache
+            upsert: false,
+          ),
+        );
 
-        final url = supabaseClient.storage.from('post').getPublicUrl(path);
+        return bucket.getPublicUrl(path);
+      });
 
-        urls.add(url);
-      }
-
-      return urls;
+      return await Future.wait(futures);
     } on StorageException catch (e) {
-      logger.e(e.toString());
+      logger.e(e.message);
       throw ServerException(e.message);
     } catch (e) {
       logger.e(e.toString());

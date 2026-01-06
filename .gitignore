@@ -1,3 +1,5 @@
 .vscode/
 .idea/
 .gemini/
+conet_backend/node_modules
+.env

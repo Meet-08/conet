@@ -1,8 +1,8 @@
-import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 
 abstract interface class FileDataSource {
   Future<List<String>> uploadFiles({
-    required List<File> files,
+    required List<PlatformFile> files,
     required String postId,
   });
 }

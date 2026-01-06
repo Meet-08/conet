@@ -1,14 +1,13 @@
-import 'dart:io';
-
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/post/domain/entities/comment.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:fpdart/fpdart.dart';
 
 abstract interface class PostRepository {
   Future<Either<AppFailure, Post>> createPost({
     required String content,
-    required List<File> media,
+    required List<PlatformFile> media,
   });
 
   Future<Either<AppFailure, Unit>> deletePost(String postId);

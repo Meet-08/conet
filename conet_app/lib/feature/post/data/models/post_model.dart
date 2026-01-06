@@ -21,26 +21,4 @@ class PostModel extends Post {
       _$PostModelFromJson(json);
 
   Map<String, dynamic> toJson() => _$PostModelToJson(this);
-
-  PostModel copyWith({
-    String? id,
-    User? user,
-    String? content,
-    List<String>? mediaUrls,
-    int? likeCount,
-    int? commentCount,
-    bool? isLiked,
-    DateTime? createdAt,
-  }) {
-    return PostModel(
-      id: id ?? this.id,
-      user: user ?? this.user,
-      content: content ?? this.content,
-      mediaUrls: mediaUrls ?? this.mediaUrls,
-      likeCount: likeCount ?? this.likeCount,
-      commentCount: commentCount ?? this.commentCount,
-      isLiked: isLiked ?? this.isLiked,
-      createdAt: createdAt ?? this.createdAt,
-    );
-  }
 }

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:conet_app/core/api/dio_client.dart';
 import 'package:conet_app/core/error/server_exception.dart';
@@ -10,6 +9,7 @@ import 'package:conet_app/feature/post/data/models/post_model.dart';
 import 'package:conet_app/feature/post/domain/entities/comment.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/main.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:uuid/uuid.dart';
 
@@ -22,7 +22,7 @@ class PostDataSourceImpl implements PostDataSource {
   @override
   Future<Post> createPost({
     required String content,
-    required List<File> media,
+    required List<PlatformFile> media,
   }) async {
     String postId = const Uuid().v4();
     try {

@@ -1,12 +1,15 @@
 import 'dart:core';
-import 'dart:io';
 
 import 'package:conet_app/feature/post/domain/entities/comment.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:fpdart/fpdart.dart';
 
 abstract class PostDataSource {
-  Future<Post> createPost({required String content, required List<File> media});
+  Future<Post> createPost({
+    required String content,
+    required List<PlatformFile> media,
+  });
 
   Future<List<Post>> getPosts({int page = 1, int limit = 20});
 

@@ -23,6 +23,8 @@ enum UserRole {
 @JsonSerializable()
 class User extends Equatable {
   final String id;
+
+  @JsonKey(defaultValue: "")
   final String email;
 
   @JsonKey(name: 'first_name', defaultValue: "")
@@ -34,8 +36,8 @@ class User extends Equatable {
   @JsonKey(defaultValue: "")
   final String username;
 
-  @JsonKey(name: 'profile_pic_url', defaultValue: "")
-  final String profilePicUrl;
+  @JsonKey(name: 'profile_pic_url')
+  final String? profilePicUrl;
 
   @JsonKey(name: 'user_role', defaultValue: UserRole.user)
   final UserRole userRole;
@@ -49,7 +51,7 @@ class User extends Equatable {
     required this.firstName,
     required this.lastName,
     required this.username,
-    required this.profilePicUrl,
+    this.profilePicUrl,
     required this.userRole,
     this.isVerified = false,
   });

@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_data_source.dart';
@@ -7,6 +5,7 @@ import 'package:conet_app/feature/post/data/data_sources/post_real_time_data_sou
 import 'package:conet_app/feature/post/domain/entities/comment.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/domain/repositories/post_repository.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:fpdart/fpdart.dart';
 
 class PostRepositoryImpl implements PostRepository {
@@ -27,7 +26,7 @@ class PostRepositoryImpl implements PostRepository {
   @override
   Future<Either<AppFailure, Post>> createPost({
     required String content,
-    required List<File> media,
+    required List<PlatformFile> media,
   }) {
     return _getResult<Post>(
       () => _postDataSource.createPost(content: content, media: media),
