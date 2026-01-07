@@ -81,7 +81,9 @@ class PostBloc extends Bloc<PostEvent, PostState> {
       media: event.media,
     );
 
-    result.fold((failure) => emit(PostFailure(failure.message)), (_) {});
+    result.fold((failure) => emit(PostFailure(failure.message)), (post) {
+      emit(PostLoaded([...(state as PostLoaded).posts, post]));
+    });
   }
 
   Future<void> _onDeletePost(
