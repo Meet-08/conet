@@ -122,3 +122,55 @@ void _initPost() {
     ),
   );
 }
+
+void _initMessage() {
+  // Data Source
+  serviceLocator.registerFactory<MessageDataSource>(
+    () => SupabaseMessageDataSourceImpl(serviceLocator()),
+  );
+
+  serviceLocator.registerFactory<MessageRealTimeDatasource>(
+    () =>
+        SupabaseMessageRealTimeDataSourceImpl(supabaseClient: serviceLocator()),
+  );
+
+  // Repository
+  serviceLocator.registerFactory<MessageRepository>(
+    () => MessageRepositoryImpl(
+      messageDataSource: serviceLocator(),
+      messageRealTimeDatasource: serviceLocator(),
+    ),
+  );
+
+  // Use Cases
+  serviceLocator.registerFactory(
+    () => MessageGetConversations(messageRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
+    () => MessageCreateConversation(messageRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
+    () => MessageGetMessages(messageRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
+    () => MessageSendMessage(messageRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
+    () => MessageMarkAsRead(messageRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
+    () => MessageWatchMessages(messageRepository: serviceLocator()),
+  );
+
+  // Bloc
+  serviceLocator.registerLazySingleton(
+    () => MessageBloc(
+      createConversation: serviceLocator(),
+      getConversationsUsecase: serviceLocator(),
+      getMessages: serviceLocator(),
+      sendMessage: serviceLocator(),
+      markAsRead: serviceLocator(),
+      watchMessages: serviceLocator(),
+    ),
+  );
+}

@@ -39,6 +39,7 @@ class PostDataSourceImpl implements PostDataSource {
       logger.i("Post created $data");
       return PostModel.fromJson(data['post']);
     } catch (e) {
+      logger.e("Failed to create post", error: e);
       throw ServerException(e.toString());
     }
   }
@@ -57,6 +58,7 @@ class PostDataSourceImpl implements PostDataSource {
       logger.i("Post commented $postId");
       return unit;
     } catch (e) {
+      logger.e("Failed to comment on post $postId", error: e);
       throw ServerException(e.toString());
     }
   }
@@ -89,20 +91,26 @@ class PostDataSourceImpl implements PostDataSource {
       logger.i("Post deleted $postId");
       return unit;
     } catch (e) {
+      logger.e("Failed to delete post $postId", error: e);
       throw ServerException(e.toString());
     }
   }
 
   @override
   Future<List<Post>> getPosts({int page = 1, int limit = 20}) async {
-    final res = await dioClient.dio.get(
-      "/posts",
-      queryParameters: {"page": page, "limit": limit},
-    );
-    if (res.statusCode != 200) throw ServerException("Failed to get posts");
-    final data = res.data as Map<String, dynamic>;
-    final posts = data['posts'] as List;
-    return posts.map((e) => PostModel.fromJson(e)).toList();
+    try {
+      final res = await dioClient.dio.get(
+        "/posts",
+        queryParameters: {"page": page, "limit": limit},
+      );
+      if (res.statusCode != 200) throw ServerException("Failed to get posts");
+      final data = res.data as Map<String, dynamic>;
+      final posts = data['posts'] as List;
+      return posts.map((e) => PostModel.fromJson(e)).toList();
+    } catch (e) {
+      logger.e("Failed to get posts", error: e);
+      throw ServerException(e.toString());
+    }
   }
 
   @override
@@ -121,6 +129,7 @@ class PostDataSourceImpl implements PostDataSource {
       final posts = data['posts'] as List;
       return posts.map((e) => PostModel.fromJson(e)).toList();
     } catch (e) {
+      logger.e("Failed to get posts for user $userId", error: e);
       throw ServerException(e.toString());
     }
   }
@@ -134,6 +143,7 @@ class PostDataSourceImpl implements PostDataSource {
       logger.i("Post liked $postId");
       return unit;
     } catch (e) {
+      logger.e("Failed to toggle like on post $postId", error: e);
       throw ServerException(e.toString());
     }
   }
