@@ -126,7 +126,10 @@ void _initPost() {
 void _initMessage() {
   // Data Source
   serviceLocator.registerFactory<MessageDataSource>(
-    () => SupabaseMessageDataSourceImpl(serviceLocator()),
+    () => MessageDataSourceImpl(
+      dioClient: serviceLocator<DioClient>(),
+      realTimeDatasource: serviceLocator<MessageRealTimeDatasource>(),
+    ),
   );
 
   serviceLocator.registerFactory<MessageRealTimeDatasource>(

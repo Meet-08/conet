@@ -11,16 +11,20 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logger/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-var logger = Logger(level: kDebugMode ? .debug : .error);
+var logger = Logger(level: kDebugMode ? Level.debug : Level.error);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await dotenv.load();
+
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
     anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
+
   await initDependencies();
+
   runApp(
     MultiBlocProvider(
       providers: [
@@ -54,7 +58,9 @@ class _MyAppState extends State<MyApp> {
       title: 'Conet App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: .fromSeed(seedColor: Colors.deepPurpleAccent),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurpleAccent,
+        ),
         useMaterial3: true,
       ),
       routerConfig: AppRouter.router,

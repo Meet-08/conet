@@ -13,7 +13,7 @@ import 'package:conet_app/feature/auth/domain/usecases/user_verify_otp.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_real_time_datasource.dart';
-import 'package:conet_app/feature/message/data/data_sources/supabase_message_data_source_impl.dart';
+import 'package:conet_app/feature/message/data/data_sources/message_data_source_impl.dart';
 import 'package:conet_app/feature/message/data/data_sources/supabase_message_real_time_data_source_impl.dart';
 import 'package:conet_app/feature/message/data/repositories/message_repository_impl.dart';
 import 'package:conet_app/feature/message/domain/repositories/message_repository.dart';

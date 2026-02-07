@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:conet_app/core/utils/pick_files.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +15,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final TextEditingController _contentController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  List<File> _selectedFiles = [];
+  List<PlatformFile> _selectedFiles = [];
 
   @override
   void initState() {
@@ -143,8 +142,16 @@ class _HomePageState extends State<HomePage> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundImage: NetworkImage(post.user.profilePicUrl),
+                  backgroundImage: post.user.profilePicUrl != null && post.user.profilePicUrl!.isNotEmpty
+                      ? NetworkImage(post.user.profilePicUrl!)
+                      : null,
                   radius: 20,
+                  child: (post.user.profilePicUrl == null || post.user.profilePicUrl!.isEmpty)
+                      ? Text(
+                          post.user.username.isNotEmpty ? post.user.username[0].toUpperCase() : '?',
+                          style: const TextStyle(fontSize: 18),
+                        )
+                      : null,
                 ),
                 const SizedBox(width: 8),
                 Text(
