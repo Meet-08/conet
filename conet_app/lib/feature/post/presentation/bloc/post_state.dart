@@ -11,7 +11,9 @@ class PostLoading extends PostState {}
 
 class PostLoaded extends PostState {
   final List<Post> posts;
-  const PostLoaded(this.posts);
+  final bool recentlyCreated;
+
+  const PostLoaded(this.posts, {this.recentlyCreated = false});
 }
 
 class PostFailure extends PostState {

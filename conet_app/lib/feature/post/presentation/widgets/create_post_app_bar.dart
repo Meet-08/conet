@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class CreatePostAppBar extends StatelessWidget implements PreferredSizeWidget {
-  const CreatePostAppBar({super.key});
+  final VoidCallback onPost;
+  final bool isLoading;
+
+  const CreatePostAppBar({
+    super.key,
+    required this.onPost,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,8 +33,14 @@ class CreatePostAppBar extends StatelessWidget implements PreferredSizeWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            onPressed: null, // enable later
-            child: const Text('Post'),
+            onPressed: isLoading ? null : onPost,
+            child: isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Post'),
           ),
         ),
       ],

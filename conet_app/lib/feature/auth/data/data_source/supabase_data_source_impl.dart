@@ -92,10 +92,12 @@ class SupabaseDataSourceImpl implements AuthDataSource {
     required String password,
   }) async {
     try {
+      logger.i("Login Started $email");
       final res = await supabaseClient.auth.signInWithPassword(
         email: email,
         password: password,
       );
+      logger.i("Supabase signInWithPassword finished. User: ${res.user?.id}");
 
       if (res.user == null) throw ServerException('Login failed');
 
@@ -207,6 +209,7 @@ class SupabaseDataSourceImpl implements AuthDataSource {
   }
 
   Future<UserModel> _getUserModel(String id) async {
+    logger.i("Fetching user model for id: $id");
     final user = await supabaseClient
         .from('users')
         .select('''
@@ -221,6 +224,7 @@ class SupabaseDataSourceImpl implements AuthDataSource {
         ''')
         .eq('id', id)
         .single();
+    logger.i("User model fetched successfully");
 
     return UserModel.fromJson(user);
   }

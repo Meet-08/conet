@@ -233,7 +233,11 @@ void main() {
       },
       act: (bloc) =>
           bloc.add(PostCreatePostEvent(content: tContent, media: tMedia)),
-      expect: () => [],
+      expect: () => [
+        isA<PostLoaded>()
+            .having((s) => s.posts, 'posts', [tPost])
+            .having((s) => s.recentlyCreated, 'recentlyCreated', true),
+      ],
     );
   });
 

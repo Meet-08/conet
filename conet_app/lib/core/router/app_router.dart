@@ -9,10 +9,10 @@ import 'package:conet_app/feature/auth/presentation/pages/login_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/welcome_page.dart';
 import 'package:conet_app/feature/event/pages/event_page.dart';
 import 'package:conet_app/feature/explore/pages/explore_page.dart';
-import 'package:conet_app/feature/home/pages/home_page.dart';
 import 'package:conet_app/feature/messages/pages/chat_detail_page.dart';
 import 'package:conet_app/feature/messages/pages/messages_page.dart';
-import 'package:conet_app/feature/postcreate/pages/create_post_page.dart';
+import 'package:conet_app/feature/post/presentation/pages/create_post_page.dart';
+import 'package:conet_app/feature/post/presentation/pages/feed_page.dart';
 import 'package:conet_app/feature/profile/pages/profile_page.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
@@ -130,7 +130,7 @@ class AppRouter {
           return MainScaffold(child: child);
         },
         routes: [
-          GoRoute(path: '/home', builder: (_, _) => const HomePage()),
+          GoRoute(path: '/home', builder: (_, _) => const FeedPage()),
           GoRoute(path: '/explore', builder: (_, _) => const ExplorePage()),
           GoRoute(path: '/event', builder: (_, _) => const EventPage()),
           GoRoute(path: '/messages', builder: (_, _) => const MessagesPage()),

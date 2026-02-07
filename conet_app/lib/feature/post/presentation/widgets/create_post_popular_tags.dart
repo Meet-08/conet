@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 
-class PopularTags extends StatelessWidget {
-  const PopularTags({super.key});
+class CreatePostPopularTags extends StatelessWidget {
+  final ValueChanged<String> onTagSelected;
+
+  const CreatePostPopularTags({super.key, required this.onTagSelected});
 
   @override
   Widget build(BuildContext context) {
     final tags = [
-      '#programming',
-      '#webdev',
-      '#react',
-      '#javascript',
-      '#python',
-      '#ai',
-      '#machinelearning',
-      '#design',
+      'programming',
+      'webdev',
+      'react',
+      'javascript',
+      'python',
+      'ai',
+      'machinelearning',
+      'design',
     ];
 
     return Column(
@@ -29,9 +31,10 @@ class PopularTags extends StatelessWidget {
           runSpacing: 8,
           children: tags
               .map(
-                (tag) => Chip(
-                  label: Text(tag),
+                (tag) => ActionChip(
+                  label: Text('#$tag'),
                   backgroundColor: Colors.grey.shade100,
+                  onPressed: () => onTagSelected(tag),
                 ),
               )
               .toList(),

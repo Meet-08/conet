@@ -1,4 +1,4 @@
-import 'package:conet_app/feature/home/widgets/home_bottom_nav.dart';
+import 'package:conet_app/feature/post/presentation/widgets/app_bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,7 +17,7 @@ class MainScaffold extends StatelessWidget {
 
     return Scaffold(
       body: child,
-      bottomNavigationBar: HomeBottomNav(
+      bottomNavigationBar: AppBottomNav(
         currentIndex: selectedIndex,
         onTap: (i) => context.go(tabs[i]),
       ),

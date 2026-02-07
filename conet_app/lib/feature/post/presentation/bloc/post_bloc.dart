@@ -82,7 +82,10 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     );
 
     result.fold((failure) => emit(PostFailure(failure.message)), (post) {
-      emit(PostLoaded([...(state as PostLoaded).posts, post]));
+      final currentPosts = state is PostLoaded
+          ? (state as PostLoaded).posts
+          : <Post>[];
+      emit(PostLoaded([...currentPosts, post], recentlyCreated: true));
     });
   }
 
