@@ -1,7 +1,7 @@
+import 'package:conet_app/feature/explore/widgets/explore_app_bar.dart';
+import 'package:conet_app/feature/explore/widgets/explore_post_card.dart';
+import 'package:conet_app/feature/explore/widgets/trending_topics.dart';
 import 'package:flutter/material.dart';
-import '../widgets/explore_app_bar.dart';
-import '../widgets/explore_post_card.dart';
-import '../widgets/trending_topics.dart';
 
 class ExplorePage extends StatelessWidget {
   const ExplorePage({super.key});

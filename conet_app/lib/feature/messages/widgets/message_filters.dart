@@ -5,12 +5,12 @@ class MessageFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
-          children: const [
+          children: [
             _FilterChip(label: 'All', isActive: true),
             _FilterChip(label: 'Groups'),
             _FilterChip(label: 'Communities'),
@@ -26,10 +26,7 @@ class _FilterChip extends StatelessWidget {
   final String label;
   final bool isActive;
 
-  const _FilterChip({
-    required this.label,
-    this.isActive = false,
-  });
+  const _FilterChip({required this.label, this.isActive = false});
 
   @override
   Widget build(BuildContext context) {

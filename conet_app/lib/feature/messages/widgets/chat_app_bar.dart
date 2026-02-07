@@ -11,46 +11,29 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
         icon: const Icon(Icons.arrow_back),
         onPressed: () => Navigator.pop(context),
       ),
-      title: Row(
+      title: const Row(
         children: [
-          const CircleAvatar(
-            child: Text('RK'),
-          ),
-          const SizedBox(width: 8),
+          CircleAvatar(child: Text('RK')),
+          SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
+            children: [
               Text(
                 'Rahul Kumar',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
               Text(
                 'Last seen 2 hours ago',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 11, color: Colors.grey),
               ),
             ],
           ),
         ],
       ),
       actions: [
-        IconButton(
-          icon: const Icon(Icons.call_outlined),
-          onPressed: () {},
-        ),
-        IconButton(
-          icon: const Icon(Icons.videocam_outlined),
-          onPressed: () {},
-        ),
-        IconButton(
-          icon: const Icon(Icons.more_vert),
-          onPressed: () {},
-        ),
+        IconButton(icon: const Icon(Icons.call_outlined), onPressed: () {}),
+        IconButton(icon: const Icon(Icons.videocam_outlined), onPressed: () {}),
+        IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
       ],
     );
   }

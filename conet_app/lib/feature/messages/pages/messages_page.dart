@@ -1,21 +1,19 @@
+import 'package:conet_app/feature/messages/widgets/conversation_list.dart';
+import 'package:conet_app/feature/messages/widgets/message_app_bar.dart';
+import 'package:conet_app/feature/messages/widgets/message_filters.dart';
 import 'package:flutter/material.dart';
-import '../widgets/message_app_bar.dart';
-import '../widgets/message_filters.dart';
-import '../widgets/conversation_list.dart';
 
 class MessagesPage extends StatelessWidget {
   const MessagesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: const MessageAppBar(),
+    return const Scaffold(
+      appBar: MessageAppBar(),
       body: Column(
-        children: const [
+        children: [
           MessageFilters(),
-          Expanded(
-            child: ConversationList(),
-          ),
+          Expanded(child: ConversationList()),
         ],
       ),
     );

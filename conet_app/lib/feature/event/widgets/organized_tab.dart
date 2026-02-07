@@ -1,5 +1,5 @@
+import 'package:conet_app/feature/event/widgets/event_card.dart';
 import 'package:flutter/material.dart';
-import 'event_card.dart';
 
 class OrganizedTab extends StatelessWidget {
   const OrganizedTab({super.key});
@@ -8,9 +8,7 @@ class OrganizedTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
-      children: const [
-        EventCard(showAnalytics: true),
-      ],
+      children: const [EventCard(showAnalytics: true)],
     );
   }
 }

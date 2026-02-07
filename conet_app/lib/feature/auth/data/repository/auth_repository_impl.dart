@@ -97,4 +97,16 @@ class AuthRepositoryImpl implements AuthRepository {
       return left(AppFailure(e.message));
     }
   }
+
+  @override
+  Future<Either<AppFailure, bool>> checkUsernameAvailable(
+    String username,
+  ) async {
+    try {
+      final result = await _authDataSource.checkUsernameAvailable(username);
+      return right(result);
+    } on ServerException catch (e) {
+      return left(AppFailure(e.message));
+    }
+  }
 }

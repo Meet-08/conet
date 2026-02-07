@@ -5,8 +5,8 @@ class PostActionsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: const [
+    return const Row(
+      children: [
         Icon(Icons.image_outlined),
         SizedBox(width: 16),
         Icon(Icons.format_bold),

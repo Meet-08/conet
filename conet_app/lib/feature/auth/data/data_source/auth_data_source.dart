@@ -27,4 +27,7 @@ abstract interface class AuthDataSource {
     required String firstName,
     String? lastName,
   });
+
+  /// Checks if a username is available (not already taken)
+  Future<bool> checkUsernameAvailable(String username);
 }

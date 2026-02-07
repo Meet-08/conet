@@ -8,9 +8,7 @@ class ExplorePostCard extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -19,9 +17,7 @@ class ExplorePostCard extends StatelessWidget {
               // Header
               Row(
                 children: [
-                  const CircleAvatar(
-                    child: Text('DP'),
-                  ),
+                  const CircleAvatar(child: Text('DP')),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
@@ -55,9 +51,9 @@ class ExplorePostCard extends StatelessWidget {
               const SizedBox(height: 8),
 
               // Tags
-              Wrap(
+              const Wrap(
                 spacing: 8,
-                children: const [
+                children: [
                   _Tag('#MachineLearning'),
                   _Tag('#AI'),
                   _Tag('#Conference'),
@@ -68,8 +64,8 @@ class ExplorePostCard extends StatelessWidget {
               const SizedBox(height: 12),
 
               // Actions
-              Row(
-                children: const [
+              const Row(
+                children: [
                   _Action(icon: Icons.favorite_border, count: '567'),
                   SizedBox(width: 16),
                   _Action(icon: Icons.chat_bubble_outline, count: '89'),
@@ -104,19 +100,12 @@ class _Action extends StatelessWidget {
   final IconData icon;
   final String count;
 
-  const _Action({
-    required this.icon,
-    required this.count,
-  });
+  const _Action({required this.icon, required this.count});
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: [
-        Icon(icon, size: 20),
-        const SizedBox(width: 4),
-        Text(count),
-      ],
+      children: [Icon(icon, size: 20), const SizedBox(width: 4), Text(count)],
     );
   }
 }

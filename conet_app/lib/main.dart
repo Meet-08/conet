@@ -49,7 +49,10 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    context.read<AuthBloc>().add(AuthIsUserLoggedIn());
+    // Defer auth check until after first frame to avoid assertion errors
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AuthBloc>().add(AuthIsUserLoggedIn());
+    });
   }
 
   @override
@@ -58,9 +61,7 @@ class _MyAppState extends State<MyApp> {
       title: 'Conet App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurpleAccent,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurpleAccent),
         useMaterial3: true,
       ),
       routerConfig: AppRouter.router,

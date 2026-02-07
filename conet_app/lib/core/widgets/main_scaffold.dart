@@ -1,7 +1,6 @@
+import 'package:conet_app/feature/home/widgets/home_bottom_nav.dart';
 import 'package:flutter/material.dart';
-
 import 'package:go_router/go_router.dart';
-import '../../feature/home/widgets/home_bottom_nav.dart';
 
 class MainScaffold extends StatelessWidget {
   final Widget child;

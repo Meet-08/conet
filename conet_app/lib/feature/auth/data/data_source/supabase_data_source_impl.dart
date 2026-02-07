@@ -189,6 +189,23 @@ class SupabaseDataSourceImpl implements AuthDataSource {
     }
   }
 
+  @override
+  Future<bool> checkUsernameAvailable(String username) async {
+    try {
+      final result = await supabaseClient
+          .from('users')
+          .select('username')
+          .eq('username', username.toLowerCase())
+          .maybeSingle();
+
+      // If no result, username is available
+      return result == null;
+    } catch (e) {
+      logger.e('Username check error: ${e.toString()}');
+      throw ServerException(e.toString());
+    }
+  }
+
   Future<UserModel> _getUserModel(String id) async {
     final user = await supabaseClient
         .from('users')

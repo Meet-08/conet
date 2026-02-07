@@ -20,8 +20,8 @@ class InterestsSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: const [
+            const Row(
+              children: [
                 Text(
                   'Interests',
                   style: TextStyle(fontWeight: FontWeight.w600),

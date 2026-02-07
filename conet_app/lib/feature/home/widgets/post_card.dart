@@ -71,9 +71,9 @@ class PostCard extends StatelessWidget {
               const SizedBox(height: 8),
 
               // Tags
-              Wrap(
+              const Wrap(
                 spacing: 8,
-                children: const [
+                children: [
                   _TagChip(text: '#MachineLearning'),
                   _TagChip(text: '#AI'),
                   _TagChip(text: '#Project'),
@@ -83,15 +83,15 @@ class PostCard extends StatelessWidget {
               const SizedBox(height: 12),
 
               // Actions
-              Row(
+              const Row(
                 children: [
                   _ActionItem(icon: Icons.favorite_border, label: '24'),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   _ActionItem(icon: Icons.chat_bubble_outline, label: '8'),
-                  const SizedBox(width: 16),
-                  const Icon(Icons.share_outlined),
-                  const Spacer(),
-                  const Icon(Icons.bookmark_border),
+                  SizedBox(width: 16),
+                  Icon(Icons.share_outlined),
+                  Spacer(),
+                  Icon(Icons.bookmark_border),
                 ],
               ),
             ],

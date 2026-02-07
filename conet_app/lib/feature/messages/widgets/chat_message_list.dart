@@ -1,5 +1,5 @@
+import 'package:conet_app/feature/messages/widgets/chat_message_bubble.dart';
 import 'package:flutter/material.dart';
-import 'chat_message_bubble.dart';
 
 class ChatMessageList extends StatelessWidget {
   const ChatMessageList({super.key});

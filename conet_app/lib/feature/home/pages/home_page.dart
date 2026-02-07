@@ -1,11 +1,24 @@
+import 'package:conet_app/feature/home/widgets/create_post_fab.dart';
+import 'package:conet_app/feature/home/widgets/home_app_bar.dart';
+import 'package:conet_app/feature/home/widgets/post_card.dart';
+import 'package:conet_app/feature/home/widgets/profile_completion_card.dart';
 import 'package:flutter/material.dart';
-import '../widgets/home_app_bar.dart';
-import '../widgets/profile_completion_card.dart';
-import '../widgets/post_card.dart';
-import '../widgets/create_post_fab.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool isOpen = false;
+
+  void toggleCompletion() {
+    setState(() {
+      isOpen = !isOpen;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,10 +47,14 @@ class HomePage extends StatelessWidget {
           const Positioned(bottom: 110, right: 16, child: CreatePostFab()),
 
           // Floating profile card
-          const Align(
-            alignment: Alignment.bottomCenter,
-            child: ProfileCompletionCard(),
-          ),
+          if (isOpen)
+            GestureDetector(
+              onTap: toggleCompletion,
+              child: const Align(
+                alignment: Alignment.bottomCenter,
+                child: ProfileCompletionCard(),
+              ),
+            ),
         ],
       ),
     );

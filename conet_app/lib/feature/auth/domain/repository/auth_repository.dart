@@ -29,4 +29,7 @@ abstract interface class AuthRepository {
     required String email,
     required String password,
   });
+
+  /// Checks if username is available (not taken)
+  Future<Either<AppFailure, bool>> checkUsernameAvailable(String username);
 }

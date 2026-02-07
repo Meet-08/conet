@@ -1,5 +1,5 @@
+import 'package:conet_app/feature/messages/pages/chat_detail_page.dart';
 import 'package:flutter/material.dart';
-import '../pages/chat_detail_page.dart';
 
 class ConversationTile extends StatelessWidget {
   final String initials;
@@ -23,9 +23,7 @@ class ConversationTile extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => const ChatDetailPage(),
-          ),
+          MaterialPageRoute(builder: (_) => const ChatDetailPage()),
         );
       },
       child: Padding(
@@ -36,7 +34,8 @@ class ConversationTile extends StatelessWidget {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: Colors.primaries[name.hashCode % Colors.primaries.length]
+                color: Colors
+                    .primaries[name.hashCode % Colors.primaries.length]
                     .shade100,
                 borderRadius: BorderRadius.circular(16),
               ),

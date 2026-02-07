@@ -5,10 +5,10 @@ class EmptyEventsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
+        children: [
           Icon(Icons.event_available_outlined, size: 48),
           SizedBox(height: 12),
           Text(

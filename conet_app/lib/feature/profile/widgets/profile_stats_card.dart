@@ -12,9 +12,9 @@ class ProfileStatsCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade200),
       ),
-      child: Row(
+      child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: const [
+        children: [
           _StatItem(label: 'Posts', value: '12'),
           _VerticalDivider(),
           _StatItem(label: 'Followers', value: '1.2k'),
@@ -31,11 +31,7 @@ class _VerticalDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 30,
-      width: 1,
-      color: Colors.grey.shade300,
-    );
+    return Container(height: 30, width: 1, color: Colors.grey.shade300);
   }
 }
 

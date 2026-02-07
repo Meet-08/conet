@@ -3,3 +3,5 @@
 .gemini/
 **/node_modules
 .env
+
+.agent/

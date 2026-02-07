@@ -1,5 +1,5 @@
+import 'package:conet_app/feature/event/widgets/empty_events_state.dart';
 import 'package:flutter/material.dart';
-import 'empty_events_state.dart';
 
 class DiscoverTab extends StatelessWidget {
   const DiscoverTab({super.key});

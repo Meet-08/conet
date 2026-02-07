@@ -4,27 +4,24 @@ import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/widgets/main_scaffold.dart';
 import 'package:conet_app/core/widgets/splash_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/add_details_page.dart';
-import 'package:conet_app/feature/emailsign/pages/email_signup_page.dart';
-import 'package:conet_app/feature/login/pages/login_page.dart';
-import 'package:conet_app/feature/welcome/screens/welcome_screen.dart';
-import 'package:conet_app/feature/googlesign/add_details_page.dart'
-    as googlesign;
-
-import 'package:conet_app/feature/postcreate/pages/create_post_page.dart';
+import 'package:conet_app/feature/auth/presentation/pages/email_signup_page.dart';
+import 'package:conet_app/feature/auth/presentation/pages/login_page.dart';
+import 'package:conet_app/feature/auth/presentation/pages/welcome_page.dart';
 import 'package:conet_app/feature/event/pages/event_page.dart';
-import 'package:conet_app/feature/profile/pages/profile_page.dart';
-import 'package:conet_app/feature/messages/pages/chat_detail_page.dart';  
-import 'package:conet_app/feature/messages/pages/messages_page.dart'; 
-import 'package:conet_app/feature/explore/pages/explore_page.dart'; 
-import 'package:conet_app/feature/post/domain/entities/post.dart';
+import 'package:conet_app/feature/explore/pages/explore_page.dart';
 import 'package:conet_app/feature/home/pages/home_page.dart';
+import 'package:conet_app/feature/messages/pages/chat_detail_page.dart';
+import 'package:conet_app/feature/messages/pages/messages_page.dart';
+import 'package:conet_app/feature/postcreate/pages/create_post_page.dart';
+import 'package:conet_app/feature/profile/pages/profile_page.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
   static final router = GoRouter(
-    initialLocation: '/welcome',
+    // Start on splash page during auth check
+    initialLocation: '/',
 
     refreshListenable: GoRouterRefreshStream(
       serviceLocator<AppUserCubit>().stream,
@@ -34,35 +31,55 @@ class AppRouter {
       final userState = serviceLocator<AppUserCubit>().state;
       final location = state.uri.toString();
 
-      if (userState is AppUserUnknown) return null;
-
-      final isAuthRoute = [
-        '/login',
-        '/home',
-        '/register',
+      // Auth pages that unauthenticated users can access
+      final publicAuthRoutes = [
         '/welcome',
+        '/login',
+        '/register',
+        '/email-signup',
+        '/add-details',
+      ];
+
+      // Routes that authenticated users with complete profile can access
+      final protectedRoutes = [
+        '/home',
         '/create-post',
         '/profile',
         '/event',
-        '/explore', 
+        '/explore',
         '/messages',
-        '/chat-detail', 
-        '/emailsign',
-        '/googlesign',
-      ].contains(location);
+        '/chat-detail',
+      ];
 
-      if (userState is AppUserUnauthenticated) {
-        return isAuthRoute ? null : '/welcome';
+      // While auth state is unknown, stay on/go to splash
+      if (userState is AppUserUnknown) {
+        return location == '/' ? null : '/';
       }
 
+      // User is not authenticated
+      if (userState is AppUserUnauthenticated) {
+        // If on splash or protected route, go to welcome
+        if (location == '/' || protectedRoutes.contains(location)) {
+          return '/welcome';
+        }
+        // Otherwise stay where they are (login, signup, etc.)
+        return null;
+      }
+
+      // User is authenticated
       if (userState is AppUserAuthenticated) {
-        if (userState.user.username.isEmpty && location != '/add-details') {
+        final hasUsername = userState.user.username.isNotEmpty;
+
+        // If user doesn't have username, force to add-details
+        if (!hasUsername && location != '/add-details') {
           return '/add-details';
         }
 
-        if (userState.user.username.isNotEmpty &&
-            (isAuthRoute || location == '/')) {
-          return '/home';
+        // If user has complete profile and is on splash/auth routes, go home
+        if (hasUsername) {
+          if (location == '/' || publicAuthRoutes.contains(location)) {
+            return '/home';
+          }
         }
       }
 
@@ -70,44 +87,31 @@ class AppRouter {
     },
 
     routes: [
-      // 🔹 Kept as-is (not default anymore)
+      // Splash page shown during auth check
       GoRoute(path: '/', builder: (context, state) => const SplashPage()),
 
       GoRoute(
         path: '/welcome',
-        builder: (context, state) => const WelcomeScreen(),
+        builder: (context, state) => const WelcomePage(),
       ),
 
       GoRoute(
         path: '/register',
         builder: (context, state) => const LoginPage(),
       ),
-  
+
       GoRoute(
         path: '/create-post',
         builder: (context, state) => const CreatePostPage(),
       ),
+
       GoRoute(
-        path: '/emailsign',
+        path: '/email-signup',
         builder: (context, state) => const EmailSignupPage(),
       ),
+
       GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
 
-      GoRoute(
-        path: '/googlesign',
-        builder: (context, state) =>
-            const googlesign.AddDetailsPage(isGoogle: true),
-      ),
-     
-      GoRoute(
-        path: '/chat-detail',
-        builder: (context, state) => const ChatDetailPage(),
-      ),  
-
-      // GoRoute(
-      //   path: '/profile',
-      //   builder: (context, state) => const ProfilePage(),
-      // ),
       GoRoute(
         path: '/add-details',
         builder: (context, state) {
@@ -116,17 +120,21 @@ class AppRouter {
         },
       ),
 
+      GoRoute(
+        path: '/chat-detail',
+        builder: (context, state) => const ChatDetailPage(),
+      ),
+
       ShellRoute(
         builder: (context, state, child) {
           return MainScaffold(child: child);
         },
         routes: [
           GoRoute(path: '/home', builder: (_, _) => const HomePage()),
-          GoRoute(path: '/explore', builder: (_, _) => const ExplorePage()), // Added Explore
-          GoRoute(path: '/event', builder: (_, _) => const EventPage()), // Moved EventPage here
-          GoRoute(path: '/messages', builder: (_, _) => const MessagesPage()), // Switched to MessagesPage
-          GoRoute(path: '/profile', builder: (_, _) => const ProfilePage()), // Use ProfilePage or Placeholder? Kept Placeholder in orig but ProfilePage exists. Using Placeholder to match orig shell route unless user wants full profile. Reverting to Placeholder for internal tab if ProfilePage is top-level?
-                                                                             
+          GoRoute(path: '/explore', builder: (_, _) => const ExplorePage()),
+          GoRoute(path: '/event', builder: (_, _) => const EventPage()),
+          GoRoute(path: '/messages', builder: (_, _) => const MessagesPage()),
+          GoRoute(path: '/profile', builder: (_, _) => const ProfilePage()),
         ],
       ),
     ],
@@ -137,7 +145,10 @@ class GoRouterRefreshStream extends ChangeNotifier {
   late final StreamSubscription _subscription;
 
   GoRouterRefreshStream(Stream<dynamic> stream) {
-    notifyListeners();
+    // Defer initial notification until after first frame to avoid assertion error
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
     _subscription = stream.listen((_) => notifyListeners());
   }
 

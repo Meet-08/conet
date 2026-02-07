@@ -1,5 +1,5 @@
+import 'package:conet_app/feature/messages/widgets/conversation_tile.dart';
 import 'package:flutter/material.dart';
-import 'conversation_tile.dart';
 
 class ConversationList extends StatelessWidget {
   const ConversationList({super.key});
