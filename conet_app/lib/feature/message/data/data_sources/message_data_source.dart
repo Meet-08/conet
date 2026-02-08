@@ -1,3 +1,4 @@
+import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:fpdart/fpdart.dart';
@@ -18,4 +19,6 @@ abstract interface class MessageDataSource {
   Future<Unit> markAsRead({required String conversationId});
 
   Future<List<Conversation>> getConversations();
+
+  Future<List<User>> searchUsers({required String query, int limit = 3});
 }

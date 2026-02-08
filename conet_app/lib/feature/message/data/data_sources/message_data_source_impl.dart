@@ -1,4 +1,5 @@
 import 'package:conet_app/core/api/dio_client.dart';
+import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_real_time_datasource.dart';
@@ -96,5 +97,10 @@ class MessageDataSourceImpl implements MessageDataSource {
   Future<List<Conversation>> getConversations() {
     // TODO: implement getConversations
     throw UnimplementedError();
+  }
+
+  @override
+  Future<List<User>> searchUsers({required String query, int limit = 3}) {
+    throw ServerException('Search users not supported for REST data source');
   }
 }

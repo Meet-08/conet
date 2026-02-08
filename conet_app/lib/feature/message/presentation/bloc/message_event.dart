@@ -36,3 +36,10 @@ class MessageConversationCreated extends MessageEvent {
 }
 
 class MessageConversationsRequested extends MessageEvent {}
+
+class MessageUserSearchRequested extends MessageEvent {
+  final String query;
+  MessageUserSearchRequested(this.query);
+}
+
+class MessageUserSearchCleared extends MessageEvent {}

@@ -126,10 +126,7 @@ void _initPost() {
 void _initMessage() {
   // Data Source
   serviceLocator.registerFactory<MessageDataSource>(
-    () => MessageDataSourceImpl(
-      dioClient: serviceLocator<DioClient>(),
-      realTimeDatasource: serviceLocator<MessageRealTimeDatasource>(),
-    ),
+    () => SupabaseMessageDataSourceImpl(serviceLocator<SupabaseClient>()),
   );
 
   serviceLocator.registerFactory<MessageRealTimeDatasource>(
@@ -162,6 +159,9 @@ void _initMessage() {
     () => MessageMarkAsRead(messageRepository: serviceLocator()),
   );
   serviceLocator.registerFactory(
+    () => MessageSearchUsers(messageRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
     () => MessageWatchMessages(messageRepository: serviceLocator()),
   );
 
@@ -174,6 +174,7 @@ void _initMessage() {
       sendMessage: serviceLocator(),
       markAsRead: serviceLocator(),
       watchMessages: serviceLocator(),
+      searchUsers: serviceLocator(),
     ),
   );
 }

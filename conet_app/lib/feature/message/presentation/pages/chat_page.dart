@@ -1,3 +1,4 @@
+import 'package:conet_app/feature/message/presentation/pages/messages_page.dart';
 import 'package:flutter/material.dart';
 
 class ChatPage extends StatelessWidget {
@@ -5,9 +6,6 @@ class ChatPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Chat')),
-      body: const Center(child: Text('Chat - conversations will appear here')),
-    );
+    return const MessagesPage();
   }
 }

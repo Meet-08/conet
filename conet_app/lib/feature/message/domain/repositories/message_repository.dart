@@ -1,3 +1,4 @@
+import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
@@ -21,4 +22,9 @@ abstract class MessageRepository {
   Stream<List<Message>> watchMessages(String conversationId);
 
   Future<Either<AppFailure, List<Conversation>>> getConversations();
+
+  Future<Either<AppFailure, List<User>>> searchUsers(
+    String query, {
+    int limit = 3,
+  });
 }

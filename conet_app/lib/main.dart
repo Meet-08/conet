@@ -49,7 +49,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // Defer auth check until after first frame to avoid assertion errors
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthBloc>().add(AuthIsUserLoggedIn());
     });

@@ -9,8 +9,9 @@ import 'package:conet_app/feature/auth/presentation/pages/login_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/welcome_page.dart';
 import 'package:conet_app/feature/event/pages/event_page.dart';
 import 'package:conet_app/feature/explore/pages/explore_page.dart';
-import 'package:conet_app/feature/messages/pages/chat_detail_page.dart';
-import 'package:conet_app/feature/messages/pages/messages_page.dart';
+import 'package:conet_app/feature/message/domain/entities/conversation.dart';
+import 'package:conet_app/feature/message/presentation/pages/chat_detail_page.dart';
+import 'package:conet_app/feature/message/presentation/pages/messages_page.dart';
 import 'package:conet_app/feature/post/presentation/pages/create_post_page.dart';
 import 'package:conet_app/feature/post/presentation/pages/feed_page.dart';
 import 'package:conet_app/feature/profile/pages/profile_page.dart';
@@ -122,7 +123,10 @@ class AppRouter {
 
       GoRoute(
         path: '/chat-detail',
-        builder: (context, state) => const ChatDetailPage(),
+        builder: (context, state) {
+          final conversation = state.extra as Conversation;
+          return ChatDetailPage(conversation: conversation);
+        },
       ),
 
       ShellRoute(

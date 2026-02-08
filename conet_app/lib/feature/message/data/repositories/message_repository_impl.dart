@@ -1,3 +1,4 @@
+import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source.dart';
@@ -65,6 +66,16 @@ class MessageRepositoryImpl implements MessageRepository {
   @override
   Future<Either<AppFailure, List<Conversation>>> getConversations() {
     return _getResult(() => _messageDataSource.getConversations());
+  }
+
+  @override
+  Future<Either<AppFailure, List<User>>> searchUsers(
+    String query, {
+    int limit = 3,
+  }) {
+    return _getResult(
+      () => _messageDataSource.searchUsers(query: query, limit: limit),
+    );
   }
 
   Future<Either<AppFailure, T>> _getResult<T>(Future<T> Function() fn) async {

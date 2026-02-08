@@ -1,11 +1,13 @@
 import 'dart:async';
 
+import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_conversation.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_conversations.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_watch_messages.dart';
 import 'package:flutter/foundation.dart';
@@ -21,7 +23,9 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   final MessageSendMessage _sendMessage;
   final MessageMarkAsRead _markAsRead;
   final MessageWatchMessages _watchMessages;
+  final MessageSearchUsers _searchUsers;
   StreamSubscription<List<Message>>? _messagesSubscription;
+  int _searchToken = 0;
 
   MessageBloc({
     required MessageCreateConversation createConversation,
@@ -30,12 +34,14 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     required MessageSendMessage sendMessage,
     required MessageMarkAsRead markAsRead,
     required MessageWatchMessages watchMessages,
+    required MessageSearchUsers searchUsers,
   }) : _createConversation = createConversation,
        _getConversationsUsecase = getConversationsUsecase,
        _getMessages = getMessages,
        _sendMessage = sendMessage,
        _markAsRead = markAsRead,
        _watchMessages = watchMessages,
+       _searchUsers = searchUsers,
        super(MessageState()) {
     on<MessageWatchStarted>(_onWatchStarted);
     on<MessageListUpdated>(_onListUpdated);
@@ -44,6 +50,8 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     on<MessageMarkAsReadRequested>(_onMarkAsReadRequested);
     on<MessageConversationCreated>(_onConversationCreated);
     on<MessageConversationsRequested>(_onConversationsRequested);
+    on<MessageUserSearchRequested>(_onUserSearchRequested);
+    on<MessageUserSearchCleared>(_onUserSearchCleared);
   }
 
   @override
@@ -71,12 +79,24 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     MessageConversationCreated event,
     Emitter<MessageState> emit,
   ) async {
+    emit(state.copyWith(status: MessageStatus.loading));
     final result = await _createConversation(userId: event.userId);
-    result.fold((l) => emit(state.copyWith(errorMessage: l.message)), (r) {
-      // Optionally handle success, e.g., navigate or start watching the new conversation
-      // For now, we might just want to start refreshing or emit a specific state if needed
-      // Assuming the UI will handle navigation or we might want to emit a "ConversationCreated" side effect if using BlocListener
-    });
+    result.fold(
+      (l) => emit(
+        state.copyWith(status: MessageStatus.failure, errorMessage: l.message),
+      ),
+      (r) {
+        emit(
+          state.copyWith(
+            status: MessageStatus.success,
+            userSuggestions: const [],
+            userSearchError: null,
+            isSearchingUsers: false,
+          ),
+        );
+        add(MessageConversationsRequested());
+      },
+    );
   }
 
   void _onWatchStarted(MessageWatchStarted event, Emitter<MessageState> emit) {
@@ -129,6 +149,49 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     result.fold(
       (l) => emit(state.copyWith(errorMessage: l.message)),
       (r) => null,
+    );
+  }
+
+  Future<void> _onUserSearchRequested(
+    MessageUserSearchRequested event,
+    Emitter<MessageState> emit,
+  ) async {
+    final query = event.query.trim();
+    if (query.isEmpty) {
+      emit(
+        state.copyWith(
+          userSuggestions: const [],
+          userSearchError: null,
+          isSearchingUsers: false,
+        ),
+      );
+      return;
+    }
+
+    final token = ++_searchToken;
+    emit(state.copyWith(isSearchingUsers: true, userSearchError: null));
+    await Future.delayed(const Duration(milliseconds: 350));
+    if (token != _searchToken) return;
+
+    final result = await _searchUsers(query: query, limit: 3);
+    result.fold(
+      (l) => emit(
+        state.copyWith(isSearchingUsers: false, userSearchError: l.message),
+      ),
+      (r) => emit(state.copyWith(isSearchingUsers: false, userSuggestions: r)),
+    );
+  }
+
+  void _onUserSearchCleared(
+    MessageUserSearchCleared event,
+    Emitter<MessageState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        userSuggestions: const [],
+        userSearchError: null,
+        isSearchingUsers: false,
+      ),
     );
   }
 }
