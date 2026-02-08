@@ -1,3 +1,4 @@
+import 'package:conet_app/core/common/data_sources/file_upload_data_source.dart';
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/core/error/server_exception.dart';
@@ -6,17 +7,21 @@ import 'package:conet_app/feature/message/data/data_sources/message_real_time_da
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/domain/repositories/message_repository.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:fpdart/fpdart.dart';
 
 class MessageRepositoryImpl implements MessageRepository {
   final MessageDataSource _messageDataSource;
   final MessageRealTimeDatasource _messageRealTimeDatasource;
+  final FileUploadDataSource _fileUploadDataSource;
 
   MessageRepositoryImpl({
     required MessageDataSource messageDataSource,
     required MessageRealTimeDatasource messageRealTimeDatasource,
+    required FileUploadDataSource fileUploadDataSource,
   }) : _messageDataSource = messageDataSource,
-       _messageRealTimeDatasource = messageRealTimeDatasource;
+       _messageRealTimeDatasource = messageRealTimeDatasource,
+       _fileUploadDataSource = fileUploadDataSource;
 
   @override
   Future<Either<AppFailure, Conversation>> createConversation(String userId) {
@@ -48,14 +53,32 @@ class MessageRepositoryImpl implements MessageRepository {
   @override
   Future<Either<AppFailure, Unit>> sendMessage(
     String conversationId,
-    String message,
-  ) {
-    return _getResult(
-      () => _messageDataSource.sendMessage(
+    String message, {
+    List<String>? mediaUrls,
+    List<PlatformFile>? files,
+  }) async {
+    return _getResult(() async {
+      List<String>? uploadedUrls = mediaUrls;
+
+      // If files are provided, upload them first to get URLs
+      if (files != null && files.isNotEmpty) {
+        final fileUrls = await _fileUploadDataSource.uploadFiles(
+          files: files,
+          bucket: 'message',
+          folder: conversationId,
+        );
+
+        // Combine with any existing mediaUrls
+        uploadedUrls = [...?uploadedUrls, ...fileUrls];
+      }
+
+      // Send message with the uploaded URLs
+      return await _messageDataSource.sendMessage(
         conversationId: conversationId,
         content: message,
-      ),
-    );
+        mediaUrls: uploadedUrls,
+      );
+    });
   }
 
   @override

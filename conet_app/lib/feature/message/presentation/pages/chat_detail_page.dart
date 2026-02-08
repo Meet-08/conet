@@ -1,8 +1,10 @@
+import 'package:conet_app/core/utils/pick_files.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/message/presentation/widgets/chat_app_bar.dart';
 import 'package:conet_app/feature/message/presentation/widgets/chat_input_bar.dart';
 import 'package:conet_app/feature/message/presentation/widgets/chat_message_list.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -18,6 +20,7 @@ class ChatDetailPage extends StatefulWidget {
 
 class _ChatDetailPageState extends State<ChatDetailPage> {
   final TextEditingController _controller = TextEditingController();
+  List<PlatformFile> _selectedFiles = [];
 
   @override
   void initState() {
@@ -34,12 +37,28 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   void _sendMessage() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (_controller.text.trim().isEmpty) return;
+
     context.read<MessageBloc>().add(
-      MessageSent(conversationId: widget.conversation.id, content: text),
+      MessageSent(
+        conversationId: widget.conversation.id,
+        content: _controller.text.trim(),
+        files: _selectedFiles.isNotEmpty ? _selectedFiles : null,
+      ),
     );
     _controller.clear();
+    setState(() {
+      _selectedFiles = [];
+    });
+  }
+
+  Future<void> _pickFiles() async {
+    final files = await pickFiles();
+    if (files != null) {
+      setState(() {
+        _selectedFiles = files;
+      });
+    }
   }
 
   @override
@@ -59,7 +78,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               },
             ),
           ),
-          ChatInputBar(controller: _controller, onSend: _sendMessage),
+          ChatInputBar(
+            controller: _controller,
+            onSend: _sendMessage,
+            onFilesSelected: _pickFiles,
+          ),
         ],
       ),
     );

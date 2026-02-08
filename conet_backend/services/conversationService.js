@@ -1,15 +1,5 @@
+import { USER_SELECT_FIELDS, UUID_REGEX } from "../config/constants.js";
 import prisma from "../config/prisma.js";
-
-const USER_SELECT_FIELDS = {
-  id: true,
-  email: true,
-  first_name: true,
-  last_name: true,
-  username: true,
-  profile_pic_url: true,
-  user_role: true,
-  is_verified: true,
-};
 
 /**
  * Normalize conversation pair so user_one < user_two (alphabetical UUID sort).
@@ -41,17 +31,37 @@ const mapConversation = (row, currentUserId) => {
 // ─── Create or retrieve a conversation ──────────────────────────────────────
 
 export const createConversationService = async (currentUserId, otherUserId) => {
-  if (currentUserId === otherUserId) {
+  let targetUserId = otherUserId;
+
+  if (!UUID_REGEX.test(otherUserId)) {
+    // Try to find user by username or email
+    const user = await prisma.users.findFirst({
+      where: {
+        OR: [{ username: otherUserId }, { email: otherUserId }],
+      },
+      select: { id: true },
+    });
+
+    if (!user) {
+      const err = new Error("User not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    targetUserId = user.id;
+  }
+
+  if (currentUserId === targetUserId) {
     const err = new Error("Cannot create conversation with yourself");
     err.statusCode = 400;
     throw err;
   }
 
-  const pair = normalizePair(currentUserId, otherUserId);
+  const pair = normalizePair(currentUserId, targetUserId);
 
   // Verify the other user exists
   const otherUser = await prisma.users.findUnique({
-    where: { id: otherUserId },
+    where: { id: targetUserId },
     select: USER_SELECT_FIELDS,
   });
 
@@ -64,7 +74,7 @@ export const createConversationService = async (currentUserId, otherUserId) => {
   // Upsert: find existing or create new
   const conversation = await prisma.conversations.upsert({
     where: {
-      unique_pair: {
+      user_one_user_two: {
         user_one: pair.user_one,
         user_two: pair.user_two,
       },
@@ -115,12 +125,18 @@ export const getMessagesService = async (conversationId, limit = 20) => {
     content: m.content,
     created_at: m.created_at?.toISOString() ?? null,
     is_read: m.is_read ?? false,
+    media_urls: m.media_urls ?? [],
   }));
 };
 
 // ─── Send a message ─────────────────────────────────────────────────────────
 
-export const sendMessageService = async (conversationId, senderId, content) => {
+export const sendMessageService = async (
+  conversationId,
+  senderId,
+  content,
+  mediaUrls = [],
+) => {
   // Verify conversation exists and user is a participant
   const conversation = await prisma.conversations.findUnique({
     where: { id: conversationId },
@@ -146,6 +162,7 @@ export const sendMessageService = async (conversationId, senderId, content) => {
       conversation_id: conversationId,
       sender_id: senderId,
       content,
+      media_urls: mediaUrls,
     },
   });
 
@@ -156,6 +173,7 @@ export const sendMessageService = async (conversationId, senderId, content) => {
     content: message.content,
     created_at: message.created_at?.toISOString() ?? null,
     is_read: message.is_read ?? false,
+    media_urls: message.media_urls ?? [],
   };
 };
 

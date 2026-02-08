@@ -113,13 +113,10 @@ class _MessagesPageState extends State<MessagesPage> {
                           ),
                           subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
                           onTap: () {
-                            final selected = user.email.isNotEmpty
-                                ? user.email
-                                : user.username;
                             dialogContext.read<MessageBloc>().add(
                               MessageUserSearchCleared(),
                             );
-                            Navigator.pop(dialogContext, selected);
+                            Navigator.pop(dialogContext, user.id);
                           },
                         );
                       },

@@ -1,5 +1,7 @@
 import 'package:conet_app/core/api/dio_client.dart';
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/common/data_sources/file_upload_data_source.dart';
+import 'package:conet_app/core/common/data_sources/supabase_file_upload_data_source.dart';
 import 'package:conet_app/feature/auth/data/data_source/auth_data_source.dart';
 import 'package:conet_app/feature/auth/data/data_source/supabase_data_source_impl.dart';
 import 'package:conet_app/feature/auth/data/repository/auth_repository_impl.dart';

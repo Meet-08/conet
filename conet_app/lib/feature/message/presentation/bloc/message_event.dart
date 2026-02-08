@@ -17,7 +17,15 @@ class MessageListUpdated extends MessageEvent {
 class MessageSent extends MessageEvent {
   final String conversationId;
   final String content;
-  MessageSent({required this.conversationId, required this.content});
+  final List<String>? mediaUrls;
+  final List<PlatformFile>? files;
+
+  MessageSent({
+    required this.conversationId,
+    required this.content,
+    this.mediaUrls,
+    this.files,
+  });
 }
 
 class MessageFetchHistoryRequested extends MessageEvent {

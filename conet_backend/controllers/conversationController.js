@@ -50,7 +50,7 @@ export const getMessages = asyncHandler(async (req, res) => {
 // POST /api/conversations/:conversationId/messages  { content }
 export const sendMessage = asyncHandler(async (req, res) => {
   const { conversationId } = req.params;
-  const { content } = req.body;
+  const { content, mediaUrls } = req.body;
   const senderId = req.user.id;
 
   if (!content) {
@@ -58,7 +58,12 @@ export const sendMessage = asyncHandler(async (req, res) => {
     throw new Error("content is required");
   }
 
-  const message = await sendMessageService(conversationId, senderId, content);
+  const message = await sendMessageService(
+    conversationId,
+    senderId,
+    content,
+    mediaUrls,
+  );
 
   res.status(201).json({
     success: true,

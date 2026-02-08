@@ -9,6 +9,7 @@ abstract interface class MessageDataSource {
   Future<Unit> sendMessage({
     required String conversationId,
     required String content,
+    List<String>? mediaUrls,
   });
 
   Future<List<Message>> getMessages({

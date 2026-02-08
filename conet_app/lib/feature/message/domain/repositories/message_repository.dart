@@ -2,15 +2,18 @@ import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:fpdart/fpdart.dart';
 
-abstract class MessageRepository {
+abstract interface class MessageRepository {
   Future<Either<AppFailure, Conversation>> createConversation(String userId);
 
   Future<Either<AppFailure, Unit>> sendMessage(
     String conversationId,
-    String message,
-  );
+    String message, {
+    List<String>? mediaUrls,
+    List<PlatformFile>? files,
+  });
 
   Future<Either<AppFailure, List<Message>>> getMessages(
     String conversationId, {

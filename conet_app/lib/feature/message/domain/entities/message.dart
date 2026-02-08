@@ -18,6 +18,9 @@ class Message extends Equatable {
   @JsonKey(name: 'is_read')
   final bool isRead;
 
+  @JsonKey(name: 'media_urls')
+  final List<String> mediaUrls;
+
   const Message({
     required this.id,
     required this.conversationId,
@@ -25,6 +28,7 @@ class Message extends Equatable {
     required this.content,
     required this.createdAt,
     this.isRead = false,
+    this.mediaUrls = const [],
   });
 
   @override
@@ -35,5 +39,6 @@ class Message extends Equatable {
     content,
     createdAt,
     isRead,
+    mediaUrls,
   ];
 }

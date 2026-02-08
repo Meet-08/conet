@@ -1,0 +1,155 @@
+import 'package:conet_app/core/error/app_failure.dart';
+import 'package:conet_app/feature/message/domain/entities/message.dart';
+import 'package:conet_app/feature/message/domain/repositories/message_repository.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:fpdart/fpdart.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockMessageRepository extends Mock implements MessageRepository {}
+
+void main() {
+  late MessageGetMessages usecase;
+  late MockMessageRepository mockMessageRepository;
+
+  setUp(() {
+    mockMessageRepository = MockMessageRepository();
+    usecase = MessageGetMessages(messageRepository: mockMessageRepository);
+  });
+
+  const tConversationId = 'conversation-123';
+  final tMessage = Message(
+    id: 'message-123',
+    conversationId: tConversationId,
+    senderId: 'user-123',
+    content: 'Hello, this is a test message',
+    createdAt: DateTime(2024, 1, 1),
+    isRead: false,
+  );
+
+  final tMessageList = [tMessage];
+
+  group('MessageGetMessages', () {
+    test('should call getMessages with correct params', () async {
+      when(
+        () => mockMessageRepository.getMessages(
+          any(),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => Right(tMessageList));
+
+      await usecase(conversationId: tConversationId);
+
+      verify(
+        () => mockMessageRepository.getMessages(tConversationId, limit: 20),
+      ).called(1);
+    });
+
+    test('should call getMessages with custom limit', () async {
+      when(
+        () => mockMessageRepository.getMessages(
+          any(),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => Right(tMessageList));
+
+      await usecase(conversationId: tConversationId, limit: 50);
+
+      verify(
+        () => mockMessageRepository.getMessages(tConversationId, limit: 50),
+      ).called(1);
+    });
+
+    test('should return Right<List<Message>> on success', () async {
+      when(
+        () => mockMessageRepository.getMessages(
+          any(),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => Right(tMessageList));
+
+      final result = await usecase(conversationId: tConversationId);
+
+      expect(result.isRight(), true);
+      result.fold(
+        (_) => fail('Expected Right'),
+        (messages) => expect(messages.length, 1),
+      );
+    });
+
+    test('should return Right with empty list when no messages', () async {
+      when(
+        () => mockMessageRepository.getMessages(
+          any(),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => const Right(<Message>[]));
+
+      final result = await usecase(conversationId: tConversationId);
+
+      expect(result.isRight(), true);
+      result.fold(
+        (_) => fail('Expected Right'),
+        (messages) => expect(messages.isEmpty, true),
+      );
+    });
+
+    test('should return Left<AppFailure> on failure', () async {
+      final tFailure = AppFailure('Failed to fetch messages');
+      when(
+        () => mockMessageRepository.getMessages(
+          any(),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => Left(tFailure));
+
+      final result = await usecase(conversationId: tConversationId);
+
+      expect(result.isLeft(), true);
+      result.fold(
+        (failure) => expect(failure.message, 'Failed to fetch messages'),
+        (_) => fail('Expected Left'),
+      );
+    });
+
+    test('should return messages with media URLs', () async {
+      // arrange
+      final tMessageWithMedia = Message(
+        id: 'message-456',
+        conversationId: tConversationId,
+        senderId: 'user-456',
+        content: 'Check out these images!',
+        createdAt: DateTime(2024, 1, 2),
+        isRead: false,
+        mediaUrls: const [
+          'https://example.com/image1.jpg',
+          'https://example.com/image2.jpg',
+        ],
+      );
+      when(
+        () => mockMessageRepository.getMessages(
+          any(),
+          limit: any(named: 'limit'),
+        ),
+      ).thenAnswer((_) async => Right([tMessageWithMedia]));
+
+      // act
+      final result = await usecase(conversationId: tConversationId);
+
+      // assert
+      expect(result.isRight(), true);
+      result.fold((_) => fail('Expected Right'), (messages) {
+        expect(messages.length, 1);
+        expect(messages.first.mediaUrls.length, 2);
+        expect(
+          messages.first.mediaUrls,
+          contains('https://example.com/image1.jpg'),
+        );
+        expect(
+          messages.first.mediaUrls,
+          contains('https://example.com/image2.jpg'),
+        );
+      });
+    });
+  });
+}

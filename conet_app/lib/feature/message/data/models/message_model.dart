@@ -11,6 +11,8 @@ class MessageModel extends Message {
     required super.senderId,
     required super.content,
     required super.createdAt,
+    super.isRead,
+    super.mediaUrls = const [],
   });
 
   factory MessageModel.fromJson(Map<String, dynamic> json) =>

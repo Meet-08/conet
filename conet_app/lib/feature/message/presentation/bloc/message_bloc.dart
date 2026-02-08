@@ -10,7 +10,9 @@ import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.d
 import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_watch_messages.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 part 'message_event.dart';
@@ -122,6 +124,8 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     final result = await _sendMessage(
       conversationId: event.conversationId,
       content: event.content,
+      mediaUrls: event.mediaUrls,
+      files: event.files,
     );
     result.fold(
       (l) => emit(state.copyWith(errorMessage: l.message)),

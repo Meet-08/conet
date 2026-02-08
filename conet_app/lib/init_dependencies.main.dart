@@ -54,9 +54,16 @@ void _initPost() {
         DioClient(dio: Dio(), supabaseClient: serviceLocator<SupabaseClient>()),
   );
 
+  // Core - File Upload
+  serviceLocator.registerFactory<FileUploadDataSource>(
+    () => SupabaseFileUploadDataSource(
+      supabaseClient: serviceLocator<SupabaseClient>(),
+    ),
+  );
+
   serviceLocator.registerLazySingleton<FileDataSource>(
     () => SupabaseFileDataSource(
-      supabaseClient: serviceLocator<SupabaseClient>(),
+      fileUploadDataSource: serviceLocator<FileUploadDataSource>(),
     ),
   );
 
@@ -137,11 +144,12 @@ void _initMessage() {
         SupabaseMessageRealTimeDataSourceImpl(supabaseClient: serviceLocator()),
   );
 
-  // Repository
+  // Message feature repositories
   serviceLocator.registerFactory<MessageRepository>(
     () => MessageRepositoryImpl(
       messageDataSource: serviceLocator(),
       messageRealTimeDatasource: serviceLocator(),
+      fileUploadDataSource: serviceLocator(),
     ),
   );
 

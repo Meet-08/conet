@@ -79,11 +79,16 @@ class MessageDataSourceImpl implements MessageDataSource {
   Future<Unit> sendMessage({
     required String conversationId,
     required String content,
+    List<String>? mediaUrls,
   }) async {
     try {
+      final data = <String, dynamic>{"content": content};
+      if (mediaUrls != null && mediaUrls.isNotEmpty) {
+        data['mediaUrls'] = mediaUrls;
+      }
       final res = await _dioClient.dio.post(
         "/conversations/$conversationId/messages",
-        data: {"content": content},
+        data: data,
       );
       if (res.statusCode != 201) {
         throw ServerException("Failed to send message");

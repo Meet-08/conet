@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class ChatInputBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
+  final VoidCallback onFilesSelected;
 
   const ChatInputBar({
     super.key,
     required this.controller,
     required this.onSend,
+    required this.onFilesSelected,
   });
 
   @override
@@ -17,7 +19,10 @@ class ChatInputBar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
         child: Row(
           children: [
-            IconButton(icon: const Icon(Icons.attach_file), onPressed: () {}),
+            IconButton(
+              icon: const Icon(Icons.attach_file),
+              onPressed: onFilesSelected,
+            ),
             Expanded(
               child: TextField(
                 controller: controller,
