@@ -68,7 +68,7 @@ class _MessagesPageState extends State<MessagesPage> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: state.userSuggestions.length,
-                      separatorBuilder: (_, __) => const Divider(height: 8),
+                      separatorBuilder: (_, _) => const Divider(height: 8),
                       itemBuilder: (context, index) {
                         final user = state.userSuggestions[index];
                         final displayName = '${user.firstName} ${user.lastName}'

@@ -49,7 +49,9 @@ class MessageDataSourceImpl implements MessageDataSource {
       if (res.statusCode != 200) {
         throw ServerException("Failed to get messages");
       }
-      final messages = res.data as List<Map<String, dynamic>>;
+      final messages = (res.data as List<dynamic>)
+          .map((e) => e as Map<String, dynamic>)
+          .toList();
       return messages.map((e) => MessageModel.fromJson(e)).toList();
     } catch (e) {
       logger.e("Failed to get messages: ${e.toString()}");
@@ -94,13 +96,39 @@ class MessageDataSourceImpl implements MessageDataSource {
   }
 
   @override
-  Future<List<Conversation>> getConversations() {
-    // TODO: implement getConversations
-    throw UnimplementedError();
+  Future<List<Conversation>> getConversations() async {
+    try {
+      final res = await _dioClient.dio.get("/conversations");
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to get conversations");
+      }
+      final conversations = (res.data as List<dynamic>)
+          .map((e) => ConversationModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+      return conversations;
+    } catch (e) {
+      logger.e("Failed to get conversations: ${e.toString()}");
+      throw ServerException(e.toString());
+    }
   }
 
   @override
-  Future<List<User>> searchUsers({required String query, int limit = 3}) {
-    throw ServerException('Search users not supported for REST data source');
+  Future<List<User>> searchUsers({required String query, int limit = 3}) async {
+    try {
+      final res = await _dioClient.dio.get(
+        "/conversations/search_users",
+        queryParameters: {"query": query, "limit": limit},
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to search users");
+      }
+      final users = (res.data as List<dynamic>)
+          .map((e) => User.fromJson(e as Map<String, dynamic>))
+          .toList();
+      return users;
+    } catch (e) {
+      logger.e("Failed to search users: ${e.toString()}");
+      throw ServerException(e.toString());
+    }
   }
 }
