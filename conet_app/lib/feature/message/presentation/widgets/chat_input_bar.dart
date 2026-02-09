@@ -4,12 +4,14 @@ class ChatInputBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
   final VoidCallback onFilesSelected;
+  final int selectedFilesCount;
 
   const ChatInputBar({
     super.key,
     required this.controller,
     required this.onSend,
     required this.onFilesSelected,
+    this.selectedFilesCount = 0,
   });
 
   @override
@@ -19,9 +21,39 @@ class ChatInputBar extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
         child: Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.attach_file),
-              onPressed: onFilesSelected,
+            Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.attach_file),
+                  onPressed: onFilesSelected,
+                ),
+                if (selectedFilesCount > 0)
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 18,
+                        minHeight: 18,
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$selectedFilesCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             Expanded(
               child: TextField(

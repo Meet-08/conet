@@ -20,7 +20,7 @@ class _FeedPageState extends State<FeedPage> {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PostBloc>().add(PostSubscribeEvent());
+      context.read<PostBloc>().add(const PostGetPostsEvent(page: 1, limit: 20));
     });
   }
 
@@ -56,9 +56,9 @@ class _FeedPageState extends State<FeedPage> {
 
           return RefreshIndicator(
             onRefresh: () async {
-              final bloc = context.read<PostBloc>();
-              bloc.add(PostUnsubscribeEvent());
-              bloc.add(PostSubscribeEvent());
+              context.read<PostBloc>().add(
+                const PostGetPostsEvent(page: 1, limit: 20),
+              );
             },
             child: ListView(
               controller: _scrollController,

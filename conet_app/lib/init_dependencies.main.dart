@@ -75,24 +75,14 @@ void _initPost() {
     ),
   );
 
-  serviceLocator.registerFactory<PostRealtimeDataSource>(
-    () => SupabasePostRealTimeDatasourceImpl(supabaseClient: serviceLocator()),
-  );
-
   // Repository (singleton!)
   serviceLocator.registerLazySingleton<PostRepository>(
-    () => PostRepositoryImpl(
-      postDataSource: serviceLocator(),
-      postRealtimeSource: serviceLocator(),
-    ),
+    () => PostRepositoryImpl(postDataSource: serviceLocator()),
   );
 
   // Use cases
   serviceLocator.registerFactory(
     () => PostGetPosts(postRepository: serviceLocator()),
-  );
-  serviceLocator.registerFactory(
-    () => PostWatchPosts(postRepository: serviceLocator()),
   );
   serviceLocator.registerFactory(
     () => PostCreate(postRepository: serviceLocator()),
@@ -114,11 +104,11 @@ void _initPost() {
   serviceLocator.registerFactory(
     () => PostBloc(
       getPosts: serviceLocator(),
-      watchPosts: serviceLocator(),
       createPost: serviceLocator(),
       deletePost: serviceLocator(),
       toggleLike: serviceLocator(),
       commentPost: serviceLocator(),
+      getPostComments: serviceLocator(),
     ),
   );
 

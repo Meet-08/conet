@@ -1,12 +1,11 @@
-import 'dart:async';
-
+import 'package:conet_app/feature/post/domain/entities/comment.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_comment.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_create.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_delete.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_get_post_comments.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
-import 'package:conet_app/feature/post/domain/usecases/post_watch_posts.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -20,9 +19,7 @@ class PostBloc extends Bloc<PostEvent, PostState> {
   final PostDelete _deletePost;
   final PostToggleLike _toggleLike;
   final PostComment _commentPost;
-  final PostWatchPosts _watchPosts;
-
-  StreamSubscription<List<Post>>? _postSub;
+  final PostGetPostComments _getPostComments;
 
   PostBloc({
     required PostGetPosts getPosts,
@@ -30,45 +27,32 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     required PostDelete deletePost,
     required PostToggleLike toggleLike,
     required PostComment commentPost,
-    required PostWatchPosts watchPosts,
+    required PostGetPostComments getPostComments,
   }) : _getPosts = getPosts,
        _createPost = createPost,
        _deletePost = deletePost,
        _toggleLike = toggleLike,
        _commentPost = commentPost,
-       _watchPosts = watchPosts,
+       _getPostComments = getPostComments,
        super(PostInitial()) {
-    on<PostSubscribeEvent>(_onSubscribe);
-    on<PostUnsubscribeEvent>(_onUnsubscribe);
+    on<PostGetPostsEvent>(_onGetPosts);
     on<PostCreatePostEvent>(_onCreatePost);
     on<PostDeletePostEvent>(_onDeletePost);
     on<PostToggleLikePostEvent>(_onToggleLike);
     on<PostCommentEvent>(_onComment);
+    on<PostGetCommentsEvent>(_onGetComments);
   }
 
-  void _onUnsubscribe(PostUnsubscribeEvent event, Emitter<PostState> emit) {
-    _postSub?.cancel();
-    _postSub = null;
-  }
-
-  Future<void> _onSubscribe(
-    PostSubscribeEvent event,
+  Future<void> _onGetPosts(
+    PostGetPostsEvent event,
     Emitter<PostState> emit,
   ) async {
     emit(PostLoading());
 
-    // Initial load
-    final initial = await _getPosts();
-    initial.fold(
+    final result = await _getPosts(page: event.page, limit: event.limit);
+    result.fold(
       (failure) => emit(PostFailure(failure.message)),
       (posts) => emit(PostLoaded(posts)),
-    );
-
-    // Realtime stream
-    await emit.forEach<List<Post>>(
-      _watchPosts(),
-      onData: (posts) => PostLoaded(posts),
-      onError: (error, _) => PostFailure(error.toString()),
     );
   }
 
@@ -135,9 +119,17 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     result.fold((failure) => emit(PostFailure(failure.message)), (_) {});
   }
 
-  @override
-  Future<void> close() {
-    _postSub?.cancel();
-    return super.close();
+  Future<void> _onGetComments(
+    PostGetCommentsEvent event,
+    Emitter<PostState> emit,
+  ) async {
+    emit(PostCommentsLoading());
+
+    final result = await _getPostComments(event.postId);
+
+    result.fold(
+      (failure) => emit(PostFailure(failure.message)),
+      (comments) => emit(PostCommentsLoaded(comments)),
+    );
   }
 }

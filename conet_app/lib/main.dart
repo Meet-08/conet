@@ -60,7 +60,7 @@ class _MyAppState extends State<MyApp> {
       title: 'Conet App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurpleAccent),
+        colorScheme: .fromSeed(seedColor: Colors.deepPurpleAccent),
         useMaterial3: true,
       ),
       routerConfig: AppRouter.router,

@@ -1,7 +1,6 @@
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_data_source.dart';
-import 'package:conet_app/feature/post/data/data_sources/post_real_time_data_source.dart';
 import 'package:conet_app/feature/post/data/models/comment_model.dart';
 import 'package:conet_app/feature/post/data/models/post_model.dart';
 import 'package:conet_app/feature/post/data/repositories/post_repository_impl.dart';
@@ -14,23 +13,15 @@ import 'package:mocktail/mocktail.dart';
 
 class MockPostDataSource extends Mock implements PostDataSource {}
 
-class MockPostRealtimeDataSource extends Mock
-    implements PostRealtimeDataSource {}
-
 class MockPlatformFile extends Mock implements PlatformFile {}
 
 void main() {
   late PostRepositoryImpl repository;
   late MockPostDataSource mockDataSource;
-  late MockPostRealtimeDataSource mockRealtimeSource;
 
   setUp(() {
     mockDataSource = MockPostDataSource();
-    mockRealtimeSource = MockPostRealtimeDataSource();
-    repository = PostRepositoryImpl(
-      postDataSource: mockDataSource,
-      postRealtimeSource: mockRealtimeSource,
-    );
+    repository = PostRepositoryImpl(postDataSource: mockDataSource);
   });
 
   const tUser = User(
@@ -463,64 +454,6 @@ void main() {
         (failure) => expect(failure.message, 'User not found'),
         (_) => fail('Expected Left'),
       );
-    });
-  });
-
-  group('watchPosts', () {
-    test('should return stream of posts from realtime source', () {
-      when(
-        () => mockRealtimeSource.watchPosts(),
-      ).thenAnswer((_) => Stream.value(tPostList));
-
-      final stream = repository.watchPosts();
-
-      expect(stream, isA<Stream<List<Post>>>());
-      verify(() => mockRealtimeSource.watchPosts()).called(1);
-    });
-
-    test('should emit multiple post updates', () async {
-      final updatedPostList = [tPostModel.copyWith(likeCount: 15)];
-
-      when(
-        () => mockRealtimeSource.watchPosts(),
-      ).thenAnswer((_) => Stream.fromIterable([tPostList, updatedPostList]));
-
-      final stream = repository.watchPosts();
-      final emissions = await stream.toList();
-
-      expect(emissions.length, 2);
-      expect(emissions[0].first.likeCount, 10);
-      expect(emissions[1].first.likeCount, 15);
-    });
-  });
-
-  group('watchPost', () {
-    const tPostId = 'post-123';
-
-    test('should return stream of single post from realtime source', () {
-      when(
-        () => mockRealtimeSource.watchPost(any()),
-      ).thenAnswer((_) => Stream.value(tPostModel));
-
-      final stream = repository.watchPost(tPostId);
-
-      expect(stream, isA<Stream<Post>>());
-      verify(() => mockRealtimeSource.watchPost(tPostId)).called(1);
-    });
-
-    test('should emit post updates', () async {
-      final updatedPost = tPostModel.copyWith(likeCount: 20, isLiked: true);
-
-      when(
-        () => mockRealtimeSource.watchPost(any()),
-      ).thenAnswer((_) => Stream.fromIterable([tPostModel, updatedPost]));
-
-      final stream = repository.watchPost(tPostId);
-      final emissions = await stream.toList();
-
-      expect(emissions.length, 2);
-      expect(emissions[0].isLiked, false);
-      expect(emissions[1].isLiked, true);
     });
   });
 }

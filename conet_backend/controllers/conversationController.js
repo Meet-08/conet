@@ -47,15 +47,15 @@ export const getMessages = asyncHandler(async (req, res) => {
   res.status(200).json(messages);
 });
 
-// POST /api/conversations/:conversationId/messages  { content }
+// POST /api/conversations/:conversationId/messages  { content, mediaUrls }
 export const sendMessage = asyncHandler(async (req, res) => {
   const { conversationId } = req.params;
   const { content, mediaUrls } = req.body;
   const senderId = req.user.id;
 
-  if (!content) {
+  if (!content && (!mediaUrls || mediaUrls.length === 0)) {
     res.status(400);
-    throw new Error("content is required");
+    throw new Error("content or mediaUrls is required");
   }
 
   const message = await sendMessageService(

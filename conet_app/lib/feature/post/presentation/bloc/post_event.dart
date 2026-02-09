@@ -37,6 +37,8 @@ class PostCommentEvent extends PostEvent {
   const PostCommentEvent({required this.postId, required this.comment});
 }
 
-class PostSubscribeEvent extends PostEvent {}
+class PostGetCommentsEvent extends PostEvent {
+  final String postId;
 
-class PostUnsubscribeEvent extends PostEvent {}
+  const PostGetCommentsEvent({required this.postId});
+}

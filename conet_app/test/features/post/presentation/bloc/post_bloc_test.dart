@@ -5,9 +5,9 @@ import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_comment.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_create.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_delete.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_get_post_comments.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
-import 'package:conet_app/feature/post/domain/usecases/post_watch_posts.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,7 +24,7 @@ class MockPostToggleLike extends Mock implements PostToggleLike {}
 
 class MockPostComment extends Mock implements PostComment {}
 
-class MockPostWatchPosts extends Mock implements PostWatchPosts {}
+class MockPostGetPostComments extends Mock implements PostGetPostComments {}
 
 class MockPlatformFile extends Mock implements PlatformFile {}
 
@@ -35,7 +35,7 @@ void main() {
   late MockPostDelete mockDeletePost;
   late MockPostToggleLike mockToggleLike;
   late MockPostComment mockCommentPost;
-  late MockPostWatchPosts mockWatchPosts;
+  late MockPostGetPostComments mockGetPostComments;
 
   const tUser = User(
     id: 'user-123',
@@ -67,7 +67,7 @@ void main() {
     mockDeletePost = MockPostDelete();
     mockToggleLike = MockPostToggleLike();
     mockCommentPost = MockPostComment();
-    mockWatchPosts = MockPostWatchPosts();
+    mockGetPostComments = MockPostGetPostComments();
 
     postBloc = PostBloc(
       getPosts: mockGetPosts,
@@ -75,7 +75,7 @@ void main() {
       deletePost: mockDeletePost,
       toggleLike: mockToggleLike,
       commentPost: mockCommentPost,
-      watchPosts: mockWatchPosts,
+      getPostComments: mockGetPostComments,
     );
   });
 
@@ -91,9 +91,9 @@ void main() {
     expect(postBloc.state, isA<PostInitial>());
   });
 
-  group('PostSubscribeEvent', () {
+  group('PostGetPostsEvent', () {
     blocTest<PostBloc, PostState>(
-      'emits [PostLoading, PostLoaded] when getPosts succeeds and watchPosts emits',
+      'emits [PostLoading, PostLoaded] when getPosts succeeds',
       build: () {
         when(
           () => mockGetPosts(
@@ -101,18 +101,15 @@ void main() {
             limit: any(named: 'limit'),
           ),
         ).thenAnswer((_) async => Right(tPostList));
-        when(() => mockWatchPosts()).thenAnswer((_) => Stream.value(tPostList));
         return postBloc;
       },
-      act: (bloc) => bloc.add(PostSubscribeEvent()),
+      act: (bloc) => bloc.add(const PostGetPostsEvent(page: 1, limit: 20)),
       expect: () => [
         isA<PostLoading>(),
         isA<PostLoaded>().having((s) => s.posts, 'posts', tPostList),
-        isA<PostLoaded>(), // from stream
       ],
       verify: (_) {
-        verify(() => mockGetPosts()).called(1);
-        verify(() => mockWatchPosts()).called(1);
+        verify(() => mockGetPosts(page: 1, limit: 20)).called(1);
       },
     );
 
@@ -125,10 +122,9 @@ void main() {
             limit: any(named: 'limit'),
           ),
         ).thenAnswer((_) async => Left(AppFailure('Failed to fetch posts')));
-        when(() => mockWatchPosts()).thenAnswer((_) => Stream.value(tPostList));
         return postBloc;
       },
-      act: (bloc) => bloc.add(PostSubscribeEvent()),
+      act: (bloc) => bloc.add(const PostGetPostsEvent(page: 1, limit: 20)),
       expect: () => [
         isA<PostLoading>(),
         isA<PostFailure>().having(
@@ -136,7 +132,6 @@ void main() {
           'message',
           'Failed to fetch posts',
         ),
-        isA<PostLoaded>(), // from stream
       ],
     );
 
@@ -149,10 +144,9 @@ void main() {
             limit: any(named: 'limit'),
           ),
         ).thenAnswer((_) async => const Right(<Post>[]));
-        when(() => mockWatchPosts()).thenAnswer((_) => Stream.value(<Post>[]));
         return postBloc;
       },
-      act: (bloc) => bloc.add(PostSubscribeEvent()),
+      act: (bloc) => bloc.add(const PostGetPostsEvent(page: 1, limit: 20)),
       expect: () => [
         isA<PostLoading>(),
         isA<PostLoaded>().having(
@@ -160,17 +154,7 @@ void main() {
           'posts is empty',
           true,
         ),
-        isA<PostLoaded>(),
       ],
-    );
-  });
-
-  group('PostUnsubscribeEvent', () {
-    blocTest<PostBloc, PostState>(
-      'handles unsubscribe event',
-      build: () => postBloc,
-      act: (bloc) => bloc.add(PostUnsubscribeEvent()),
-      expect: () => [],
     );
   });
 

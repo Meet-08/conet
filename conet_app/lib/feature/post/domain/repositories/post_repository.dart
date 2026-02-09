@@ -25,7 +25,4 @@ abstract interface class PostRepository {
     int page = 1,
     int limit = 20,
   });
-
-  Stream<List<Post>> watchPosts();
-  Stream<Post> watchPost(String postId);
 }

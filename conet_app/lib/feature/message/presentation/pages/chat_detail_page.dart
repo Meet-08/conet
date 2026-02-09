@@ -37,7 +37,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   void _sendMessage() {
-    if (_controller.text.trim().isEmpty) return;
+    final hasText = _controller.text.trim().isNotEmpty;
+    final hasFiles = _selectedFiles.isNotEmpty;
+
+    // Allow sending if there's text OR files
+    if (!hasText && !hasFiles) return;
 
     context.read<MessageBloc>().add(
       MessageSent(
@@ -61,6 +65,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     }
   }
 
+  void _removeFile(int index) {
+    setState(() {
+      _selectedFiles.removeAt(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUserId = Supabase.instance.client.auth.currentUser?.id;
@@ -78,10 +88,72 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               },
             ),
           ),
+          // Image preview section
+          if (_selectedFiles.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                border: Border(top: BorderSide(color: Colors.grey.shade300)),
+              ),
+              child: SizedBox(
+                height: 80,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _selectedFiles.length,
+                  itemBuilder: (context, index) {
+                    final file = _selectedFiles[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: file.bytes != null
+                                ? Image.memory(
+                                    file.bytes!,
+                                    width: 80,
+                                    height: 80,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Container(
+                                    width: 80,
+                                    height: 80,
+                                    color: Colors.grey.shade300,
+                                    child: const Icon(Icons.image),
+                                  ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: GestureDetector(
+                              onTap: () => _removeFile(index),
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  color: Colors.black54,
+                                  shape: BoxShape.circle,
+                                ),
+                                padding: const EdgeInsets.all(4),
+                                child: const Icon(
+                                  Icons.close,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
           ChatInputBar(
             controller: _controller,
             onSend: _sendMessage,
             onFilesSelected: _pickFiles,
+            selectedFilesCount: _selectedFiles.length,
           ),
         ],
       ),

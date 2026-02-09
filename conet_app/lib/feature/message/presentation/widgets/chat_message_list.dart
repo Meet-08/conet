@@ -30,7 +30,12 @@ class ChatMessageList extends StatelessWidget {
         final time = TimeOfDay.fromDateTime(
           message.createdAt.toLocal(),
         ).format(context);
-        return ChatMessageBubble(text: message.content, time: time, isMe: isMe);
+        return ChatMessageBubble(
+          text: message.content,
+          time: time,
+          isMe: isMe,
+          mediaUrls: message.mediaUrls,
+        );
       },
     );
   }

@@ -16,6 +16,14 @@ class PostLoaded extends PostState {
   const PostLoaded(this.posts, {this.recentlyCreated = false});
 }
 
+class PostCommentsLoading extends PostState {}
+
+class PostCommentsLoaded extends PostState {
+  final List<Comment> comments;
+
+  const PostCommentsLoaded(this.comments);
+}
+
 class PostFailure extends PostState {
   final String message;
   const PostFailure(this.message);

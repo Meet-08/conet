@@ -1,7 +1,6 @@
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_data_source.dart';
-import 'package:conet_app/feature/post/data/data_sources/post_real_time_data_source.dart';
 import 'package:conet_app/feature/post/domain/entities/comment.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/domain/repositories/post_repository.dart';
@@ -10,13 +9,9 @@ import 'package:fpdart/fpdart.dart';
 
 class PostRepositoryImpl implements PostRepository {
   final PostDataSource _postDataSource;
-  final PostRealtimeDataSource _postRealtimeSource;
 
-  PostRepositoryImpl({
-    required PostDataSource postDataSource,
-    required PostRealtimeDataSource postRealtimeSource,
-  }) : _postDataSource = postDataSource,
-       _postRealtimeSource = postRealtimeSource;
+  PostRepositoryImpl({required PostDataSource postDataSource})
+    : _postDataSource = postDataSource;
 
   @override
   Future<Either<AppFailure, Unit>> commentPost(String postId, String comment) {
@@ -83,15 +78,5 @@ class PostRepositoryImpl implements PostRepository {
     } catch (e) {
       return Left(AppFailure(e.toString()));
     }
-  }
-
-  @override
-  Stream<Post> watchPost(String postId) {
-    return _postRealtimeSource.watchPost(postId);
-  }
-
-  @override
-  Stream<List<Post>> watchPosts() {
-    return _postRealtimeSource.watchPosts();
   }
 }
