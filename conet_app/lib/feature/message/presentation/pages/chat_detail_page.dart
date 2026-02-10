@@ -88,10 +88,10 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               },
             ),
           ),
-          // Image preview section
+
           if (_selectedFiles.isNotEmpty)
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const .symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.grey.shade100,
                 border: Border(top: BorderSide(color: Colors.grey.shade300)),
@@ -99,16 +99,16 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               child: SizedBox(
                 height: 80,
                 child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
+                  scrollDirection: .horizontal,
                   itemCount: _selectedFiles.length,
                   itemBuilder: (context, index) {
                     final file = _selectedFiles[index];
                     return Padding(
-                      padding: const EdgeInsets.only(right: 8),
+                      padding: const .only(right: 8),
                       child: Stack(
                         children: [
                           ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: .circular(8),
                             child: file.bytes != null
                                 ? Image.memory(
                                     file.bytes!,
