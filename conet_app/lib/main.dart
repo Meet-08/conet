@@ -3,6 +3,7 @@ import 'package:conet_app/core/router/app_router.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
+import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +12,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logger/logger.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-var logger = Logger(level: kDebugMode ? Level.debug : Level.error);
+var logger = Logger(level: kDebugMode ? .debug : .error);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,7 @@ void main() async {
         BlocProvider(create: (_) => serviceLocator<AuthBloc>()),
         BlocProvider(create: (_) => serviceLocator<PostBloc>()),
         BlocProvider(create: (_) => serviceLocator<MessageBloc>()),
+        BlocProvider(create: (_) => serviceLocator<ProfileBloc>()),
       ],
       child: const MyApp(),
     ),

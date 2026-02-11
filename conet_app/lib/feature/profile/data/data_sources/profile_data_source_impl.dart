@@ -1,0 +1,197 @@
+import 'package:conet_app/core/api/dio_client.dart';
+import 'package:conet_app/core/common/entities/social_links.dart';
+import 'package:conet_app/core/error/server_exception.dart';
+import 'package:conet_app/feature/auth/data/model/user_model.dart';
+import 'package:conet_app/feature/post/data/data_sources/file_data_source.dart';
+import 'package:conet_app/feature/profile/data/data_sources/profile_data_source.dart';
+import 'package:conet_app/feature/profile/data/models/user_profile_model.dart';
+import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
+import 'package:conet_app/main.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:uuid/uuid.dart';
+
+class ProfileDataSourceImpl implements ProfileDataSource {
+  final FileDataSource fileDataSource;
+  final DioClient dioClient;
+
+  ProfileDataSourceImpl({
+    required this.fileDataSource,
+    required this.dioClient,
+  });
+
+  @override
+  Future<UserProfile> getUserProfile(String uid) async {
+    try {
+      final res = await dioClient.dio.get("/profile/$uid");
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to fetch user profile");
+      }
+      final data = res.data as Map<String, dynamic>;
+      logger.i("User profile fetched $data");
+      return UserProfileModel.fromJson(data['profile']);
+    } catch (e) {
+      logger.e("Failed to fetch user profile", error: e);
+      throw ServerException("Failed to fetch user profile");
+    }
+  }
+
+  @override
+  Future<UserModel> updateAboutMe(String aboutMe) async {
+    try {
+      final res = await dioClient.dio.put(
+        "/profile/about-me",
+        data: {"about_me": aboutMe},
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to update about me");
+      }
+      final data = res.data as Map<String, dynamic>;
+      logger.i("About me updated $data");
+      return UserModel.fromJson(data['user']);
+    } catch (e) {
+      logger.e("Failed to update about me", error: e);
+      throw ServerException("Failed to update about me");
+    }
+  }
+
+  @override
+  Future<UserModel> updateAcademicInfo({
+    required String collegeName,
+    required String course,
+    String? major,
+    int? startYear,
+    int? endYear,
+  }) async {
+    try {
+      final res = await dioClient.dio.put(
+        "/profile/academic-info",
+        data: {
+          "college_name": collegeName,
+          "course": course,
+          "major": major,
+          "start_year": startYear,
+          "end_year": endYear,
+        },
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to update academic info");
+      }
+      final data = res.data as Map<String, dynamic>;
+      logger.i("Academic info updated $data");
+      return UserModel.fromJson(data['user']);
+    } catch (e) {
+      logger.e("Failed to update academic info", error: e);
+      throw ServerException("Failed to update academic info");
+    }
+  }
+
+  @override
+  Future<UserModel> updateInterests(List<String> interests) async {
+    try {
+      final res = await dioClient.dio.put(
+        "/profile/interests",
+        data: {"interests": interests},
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to update interests");
+      }
+      final data = res.data as Map<String, dynamic>;
+      logger.i("Interests updated $data");
+      return UserModel.fromJson(data['user']);
+    } catch (e) {
+      logger.e("Failed to update interests", error: e);
+      throw ServerException("Failed to update interests");
+    }
+  }
+
+  @override
+  Future<UserModel> updatePersonalInfo({
+    String? firstName,
+    String? lastName,
+    DateTime? dateOfBirth,
+  }) async {
+    try {
+      final res = await dioClient.dio.put(
+        "/profile/personal-info",
+        data: {
+          if (firstName != null) "first_name": firstName,
+          if (lastName != null) "last_name": lastName,
+          if (dateOfBirth != null) "date_of_birth": dateOfBirth.toIso8601String(),
+        },
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to update personal info");
+      }
+      final data = res.data as Map<String, dynamic>;
+      logger.i("Personal info updated $data");
+      return UserModel.fromJson(data['user']);
+    } catch (e) {
+      logger.e("Failed to update personal info", error: e);
+      throw ServerException("Failed to update personal info");
+    }
+  }
+
+  @override
+  Future<UserModel> updatePictures({
+    PlatformFile? profilePic,
+    PlatformFile? bannerImage,
+  }) async {
+    try {
+      String? profilePicUrl;
+      String? bannerUrl;
+
+      await Future.wait([
+        if (profilePic != null)
+          fileDataSource
+              .uploadFiles(
+                files: [profilePic],
+                postId: "profile_${const Uuid().v4()}",
+              )
+              .then((urls) => profilePicUrl = urls.first),
+        if (bannerImage != null)
+          fileDataSource
+              .uploadFiles(
+                files: [bannerImage],
+                postId: "banner_${const Uuid().v4()}",
+              )
+              .then((urls) => bannerUrl = urls.first),
+      ]);
+
+      final res = await dioClient.dio.put(
+        "/profile/pictures",
+        data: {
+          if (profilePicUrl != null) "profile_pic_url": profilePicUrl,
+          if (bannerUrl != null) "banner_url": bannerUrl,
+        },
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to update pictures");
+      }
+      final data = res.data as Map<String, dynamic>;
+      logger.i("Pictures updated $data");
+      return UserModel.fromJson(data['user']);
+    } catch (e) {
+      logger.e("Failed to update pictures", error: e);
+      throw ServerException("Failed to update pictures");
+    }
+  }
+
+  @override
+  Future<UserModel> updateSocialLinks(List<SocialLinks> socialLinks) async {
+    try {
+      final res = await dioClient.dio.put(
+        "/profile/social-links",
+        data: {"social_links": socialLinks.map((e) => e.toJson()).toList()},
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to update social links");
+      }
+      final data = res.data as Map<String, dynamic>;
+      logger.i("Social links updated $data");
+      return UserModel.fromJson(data['user']);
+    } catch (e) {
+      logger.e("Failed to update social links", error: e);
+      throw ServerException("Failed to update social links");
+    }
+  }
+}

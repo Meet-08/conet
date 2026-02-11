@@ -6,29 +6,61 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'user_profile_model.g.dart';
 
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(explicitToJson: true, fieldRename: FieldRename.snake)
 class UserProfileModel extends UserProfile {
   @override
+  @JsonKey(name: 'user_academics')
   @UserAcademicsListConverter()
   final List<UserAcademics> academics;
 
   @override
+  @JsonKey(defaultValue: [])
+  final List<String> interests;
+
+  @override
+  @JsonKey(defaultValue: [])
   final List<SocialLinks> socialLinks;
+
+  @override
+  @JsonKey(defaultValue: false)
+  final bool isVerified;
+
+  @override
+  final DateTime? dateOfBirth;
+
+  @override
+  @JsonKey(name: 'follower_count', defaultValue: 0)
+  final int followerCount;
+
+  @override
+  @JsonKey(name: 'following_count', defaultValue: 0)
+  final int followingCount;
 
   const UserProfileModel({
     required super.id,
     required super.email,
-    required super.firstName,
-    required super.lastName,
-    required super.username,
+    super.firstName,
+    super.lastName,
+    super.username,
     super.aboutMe,
     super.profilePicUrl,
     super.bannerImageUrl,
-    required super.interests,
-    required super.isVerified,
+    required this.interests,
+    required this.isVerified,
     required this.academics,
     required this.socialLinks,
-  }) : super(academics: academics, socialLinks: socialLinks);
+    this.dateOfBirth,
+    this.followerCount = 0,
+    this.followingCount = 0,
+  }) : super(
+         isVerified: isVerified,
+         academics: academics,
+         socialLinks: socialLinks,
+         interests: interests,
+         dateOfBirth: dateOfBirth,
+         followerCount: followerCount,
+         followingCount: followingCount,
+       );
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) =>
       _$UserProfileModelFromJson(json);
@@ -49,6 +81,9 @@ class UserProfileModel extends UserProfile {
       isVerified: entity.isVerified,
       academics: entity.academics,
       socialLinks: entity.socialLinks,
+      dateOfBirth: entity.dateOfBirth,
+      followerCount: entity.followerCount,
+      followingCount: entity.followingCount,
     );
   }
 }

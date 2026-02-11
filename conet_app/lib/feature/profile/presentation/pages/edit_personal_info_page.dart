@@ -1,0 +1,321 @@
+import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
+import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
+import 'package:conet_app/init_dependencies.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+
+class EditPersonalInfoPage extends StatefulWidget {
+  final UserProfile userProfile;
+
+  const EditPersonalInfoPage({super.key, required this.userProfile});
+
+  @override
+  State<EditPersonalInfoPage> createState() => _EditPersonalInfoPageState();
+}
+
+class _EditPersonalInfoPageState extends State<EditPersonalInfoPage> {
+  late final TextEditingController _firstNameController;
+  late final TextEditingController _lastNameController;
+  late final TextEditingController _usernameController;
+  late final TextEditingController _dobController;
+  DateTime? _selectedDate;
+
+  bool _hasUpdated = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // ... (rest of initState)
+    final user = widget.userProfile;
+
+    _firstNameController = TextEditingController(text: user.firstName ?? '');
+    _lastNameController = TextEditingController(text: user.lastName ?? '');
+    _usernameController = TextEditingController(text: user.username ?? '');
+
+    _selectedDate = user.dateOfBirth;
+    _dobController = TextEditingController(
+      text: _selectedDate != null
+          ? DateFormat('dd-MM-yyyy').format(_selectedDate!)
+          : '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _usernameController.dispose();
+    _dobController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime(2000, 1, 1),
+      firstDate: DateTime(1950),
+      lastDate: now,
+    );
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+        _dobController.text = DateFormat('dd-MM-yyyy').format(picked);
+      });
+    }
+  }
+
+  void _save(BuildContext context) {
+    context.read<ProfileBloc>().add(
+      ProfileUpdatePersonalInfoEvent(
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        dateOfBirth: _selectedDate,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => serviceLocator<ProfileBloc>(),
+      child: BlocConsumer<ProfileBloc, ProfileState>(
+        listener: (context, state) {
+          if (state is ProfileUpdateSuccess) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Personal info updated successfully'),
+                backgroundColor: Colors.green,
+              ),
+            );
+            setState(() {
+              _hasUpdated = true;
+            });
+          } else if (state is ProfileUpdateFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.error), backgroundColor: Colors.red),
+            );
+          }
+        },
+        builder: (context, state) {
+          final isLoading = state is ProfileLoading;
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, result) {
+              if (didPop) return;
+              context.pop(_hasUpdated);
+            },
+            child: Scaffold(
+              appBar: AppBar(
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => context.pop(_hasUpdated),
+                ),
+                title: const Text('Personal Info'),
+                centerTitle: false,
+                actions: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: FilledButton(
+                      onPressed: isLoading ? null : () => _save(context),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: isLoading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Save'),
+                    ),
+                  ),
+                ],
+              ),
+              body: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'First Name',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: _firstNameController,
+                                decoration: InputDecoration(
+                                  hintText: 'John',
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey.shade400,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Last Name',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextField(
+                                controller: _lastNameController,
+                                decoration: InputDecoration(
+                                  hintText: 'Doe',
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey.shade400,
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: BorderSide(
+                                      color: Colors.grey.shade300,
+                                    ),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                    borderSide: const BorderSide(
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Username',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _usernameController,
+                      readOnly: true,
+                      style: TextStyle(color: Colors.grey.shade600),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.grey.shade100,
+                        hintText: 'username',
+                        hintStyle: TextStyle(color: Colors.grey.shade400),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Date of Birth',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: _dobController,
+                      readOnly: true,
+                      onTap: _pickDate,
+                      decoration: InputDecoration(
+                        hintText: 'dd-mm-yyyy',
+                        hintStyle: TextStyle(color: Colors.grey.shade400),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.black),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        suffixIcon: Icon(
+                          Icons.calendar_today_outlined,
+                          color: Colors.grey.shade400,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}

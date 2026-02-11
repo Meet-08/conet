@@ -3,7 +3,7 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'user_academics_model.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(fieldRename: FieldRename.snake)
 class UserAcademicsModel extends UserAcademics {
   const UserAcademicsModel({
     required super.id,
@@ -35,7 +35,6 @@ class UserAcademicsModel extends UserAcademics {
   }
 }
 
-/// Converter for List<UserAcademics> serialization
 class UserAcademicsListConverter
     implements JsonConverter<List<UserAcademics>, List<dynamic>> {
   const UserAcademicsListConverter();

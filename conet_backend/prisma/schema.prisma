@@ -10,27 +10,31 @@ datasource db {
 }
 
 model users {
-  id                                          String          @id @db.Uuid
-  email                                       String?         @unique
-  first_name                                  String?
-  last_name                                   String?
-  username                                    String?         @unique
-  profile_pic_url                             String?
-  bio                                         String?
-  user_role                                   String?         @default("user")
-  interests                                   String[]
-  is_verified                                 Boolean?        @default(false)
-  banner_image_url                            String?
-  gender                                      String?
-  social_links                                Json?
-  created_at                                  DateTime        @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  updated_at                                  DateTime?       @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @db.Timestamptz(6)
-  conversations_conversations_user_oneTousers conversations[] @relation("conversations_user_oneTousers")
-  conversations_conversations_user_twoTousers conversations[] @relation("conversations_user_twoTousers")
-  messages                                    messages[]
-  post_comments                               post_comments[]
-  posts                                       posts[]
-  users                                       auth_users      @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                                            String           @id @db.Uuid
+  email                                         String?          @unique
+  first_name                                    String?
+  last_name                                     String?
+  username                                      String?          @unique
+  profile_pic_url                               String?
+  about_me                                      String?
+  user_role                                     String?          @default("user")
+  interests                                     String[]
+  is_verified                                   Boolean?         @default(false)
+  banner_image_url                              String?
+  gender                                        String?
+  social_links                                  Json?            @default("{}")
+  created_at                                    DateTime         @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  updated_at                                    DateTime?        @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @db.Timestamptz(6)
+  date_of_birth                                 DateTime?        @db.Date
+  conversations_conversations_user_oneTousers   conversations[]  @relation("conversations_user_oneTousers")
+  conversations_conversations_user_twoTousers   conversations[]  @relation("conversations_user_twoTousers")
+  messages                                      messages[]
+  post_comments                                 post_comments[]
+  posts                                         posts[]
+  user_academics                                user_academics[]
+  user_follows_user_follows_follower_idTousers  user_follows[]   @relation("user_follows_follower_idTousers")
+  user_follows_user_follows_following_idTousers user_follows[]   @relation("user_follows_following_idTousers")
+  users                                         auth_users       @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
 }
@@ -510,6 +514,37 @@ model messages {
   conversations   conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_conversation_fkey")
   users           users         @relation(fields: [sender_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messages_sender_fkey")
 
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_academics {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String    @db.Uuid
+  college_name String
+  course       String
+  major        String?
+  start_year   Int?
+  end_year     Int?
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  users        users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_academics_user_fkey")
+
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_follows {
+  follower_id                            String    @db.Uuid
+  following_id                           String    @db.Uuid
+  created_at                             DateTime? @default(now()) @db.Timestamptz(6)
+  users_user_follows_follower_idTousers  users     @relation("user_follows_follower_idTousers", fields: [follower_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_follows_follower_fkey")
+  users_user_follows_following_idTousers users     @relation("user_follows_following_idTousers", fields: [following_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_follows_following_fkey")
+
+  @@id([follower_id, following_id])
+  @@index([follower_id], map: "idx_user_follows_follower")
+  @@index([following_id], map: "idx_user_follows_following")
   @@schema("public")
 }
 

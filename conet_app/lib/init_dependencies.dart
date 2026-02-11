@@ -41,6 +41,18 @@ import 'package:conet_app/feature/post/domain/usecases/post_get_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_detail_bloc.dart';
+import 'package:conet_app/feature/profile/data/data_sources/profile_data_source.dart';
+import 'package:conet_app/feature/profile/data/data_sources/supabase_profile_data_source.dart';
+import 'package:conet_app/feature/profile/data/repositories/user_profile_repository_impl.dart';
+import 'package:conet_app/feature/profile/domain/repositories/user_profile_repository.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_get_user.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_update_about_me.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_update_academic_info.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_update_interests.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_update_personal_info.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_update_pictures.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_update_social_links.dart';
+import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -62,4 +74,5 @@ Future<void> initDependencies() async {
   _initAuth();
   _initPost();
   _initMessage();
+  _initProfile();
 }

@@ -179,3 +179,46 @@ void _initMessage() {
     ),
   );
 }
+
+void _initProfile() {
+  serviceLocator
+    ..registerFactory<ProfileDataSource>(
+      () => SupabaseProfileDataSource(
+        supabaseClient: serviceLocator(),
+        fileUploadDataSource: serviceLocator(),
+      ),
+    )
+    ..registerLazySingleton<UserProfileRepository>(
+      () => UserProfileRepositoryImpl(profileDataSource: serviceLocator()),
+    )
+    // Use Cases
+    ..registerFactory(
+      () => ProfileUpdatePersonalInfo(repository: serviceLocator()),
+    )
+    ..registerFactory(() => ProfileUpdateAboutMe(repository: serviceLocator()))
+    ..registerFactory(
+      () => ProfileUpdateInterests(repository: serviceLocator()),
+    )
+    ..registerFactory(
+      () => ProfileUpdateAcademicInfo(repository: serviceLocator()),
+    )
+    ..registerFactory(
+      () => ProfileUpdateSocialLinks(repository: serviceLocator()),
+    )
+    ..registerFactory(() => ProfileUpdatePictures(repository: serviceLocator()))
+    ..registerFactory(
+      () => ProfileGetUser(userProfileRepository: serviceLocator()),
+    )
+    // Bloc
+    ..registerFactory(
+      () => ProfileBloc(
+        updatePersonalInfo: serviceLocator(),
+        updateAboutMe: serviceLocator(),
+        updateInterests: serviceLocator(),
+        updateAcademicInfo: serviceLocator(),
+        updateSocialLinks: serviceLocator(),
+        updatePictures: serviceLocator(),
+        getUser: serviceLocator(),
+      ),
+    );
+}

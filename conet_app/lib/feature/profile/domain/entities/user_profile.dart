@@ -5,9 +5,9 @@ import 'package:equatable/equatable.dart';
 class UserProfile extends Equatable {
   final String id;
   final String email;
-  final String firstName;
-  final String lastName;
-  final String username;
+  final String? firstName;
+  final String? lastName;
+  final String? username;
   final String? aboutMe;
   final String? profilePicUrl;
   final String? bannerImageUrl;
@@ -15,13 +15,16 @@ class UserProfile extends Equatable {
   final bool isVerified;
   final List<SocialLinks> socialLinks;
   final List<UserAcademics> academics;
+  final DateTime? dateOfBirth;
+  final int followerCount;
+  final int followingCount;
 
   const UserProfile({
     required this.id,
     required this.email,
-    required this.firstName,
-    required this.lastName,
-    required this.username,
+    this.firstName,
+    this.lastName,
+    this.username,
     this.aboutMe,
     this.profilePicUrl,
     this.bannerImageUrl,
@@ -29,6 +32,9 @@ class UserProfile extends Equatable {
     required this.isVerified,
     required this.academics,
     required this.socialLinks,
+    this.dateOfBirth,
+    this.followerCount = 0,
+    this.followingCount = 0,
   });
 
   @override
@@ -44,5 +50,8 @@ class UserProfile extends Equatable {
     interests,
     isVerified,
     academics,
+    dateOfBirth,
+    followerCount,
+    followingCount,
   ];
 }

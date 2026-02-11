@@ -14,7 +14,15 @@ import 'package:conet_app/feature/message/presentation/pages/chat_detail_page.da
 import 'package:conet_app/feature/message/presentation/pages/messages_page.dart';
 import 'package:conet_app/feature/post/presentation/pages/create_post_page.dart';
 import 'package:conet_app/feature/post/presentation/pages/feed_page.dart';
-import 'package:conet_app/feature/profile/pages/profile_page.dart';
+import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
+import 'package:conet_app/feature/profile/presentation/pages/edit_about_me_page.dart';
+import 'package:conet_app/feature/profile/presentation/pages/edit_academic_info_page.dart';
+import 'package:conet_app/feature/profile/presentation/pages/edit_interests_page.dart';
+import 'package:conet_app/feature/profile/presentation/pages/edit_personal_info_page.dart';
+import 'package:conet_app/feature/profile/presentation/pages/edit_profile_page.dart';
+import 'package:conet_app/feature/profile/presentation/pages/edit_profile_pictures_page.dart';
+import 'package:conet_app/feature/profile/presentation/pages/edit_social_links_page.dart';
+import 'package:conet_app/feature/profile/presentation/pages/profile_page.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -46,6 +54,7 @@ class AppRouter {
         '/home',
         '/create-post',
         '/profile',
+        '/edit-profile',
         '/event',
         '/explore',
         '/messages',
@@ -127,6 +136,42 @@ class AppRouter {
           final conversation = state.extra as Conversation;
           return ChatDetailPage(conversation: conversation);
         },
+      ),
+
+      GoRoute(
+        path: '/edit-profile',
+        builder: (_, _) => const EditProfilePage(),
+        routes: [
+          GoRoute(
+            path: ':section',
+            builder: (_, state) {
+              final section = state.pathParameters['section'];
+              final userProfile = state.extra as UserProfile?;
+
+              if (userProfile == null) {
+                return const Scaffold(
+                  body: Center(
+                    child: Text("Error: No user profile data provided"),
+                  ),
+                );
+              }
+
+              return switch (section) {
+                'personal-info' => EditPersonalInfoPage(
+                  userProfile: userProfile,
+                ),
+                'academic-info' => EditAcademicInfoPage(
+                  userProfile: userProfile,
+                ),
+                'about-me' => EditAboutMePage(userProfile: userProfile),
+                'interests' => EditInterestsPage(userProfile: userProfile),
+                'social-links' => EditSocialLinksPage(userProfile: userProfile),
+                'pictures' => EditProfilePicturesPage(userProfile: userProfile),
+                _ => EditPersonalInfoPage(userProfile: userProfile),
+              };
+            },
+          ),
+        ],
       ),
 
       ShellRoute(
