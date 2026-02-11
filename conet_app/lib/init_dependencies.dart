@@ -42,7 +42,7 @@ import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_detail_bloc.dart';
 import 'package:conet_app/feature/profile/data/data_sources/profile_data_source.dart';
-import 'package:conet_app/feature/profile/data/data_sources/supabase_profile_data_source.dart';
+import 'package:conet_app/feature/profile/data/data_sources/profile_data_source_impl.dart';
 import 'package:conet_app/feature/profile/data/repositories/user_profile_repository_impl.dart';
 import 'package:conet_app/feature/profile/domain/repositories/user_profile_repository.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_get_user.dart';

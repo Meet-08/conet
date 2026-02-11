@@ -1,7 +1,17 @@
+import logger from "../config/logger.js";
 import { constants } from "../constants.js";
 
 const errorHandler = (err, req, res, next) => {
   const statusCode = res.statusCode ? res.statusCode : 500;
+
+  // Log the error details
+  logger.error({
+    message: err.message,
+    stack: err.stack,
+    statusCode,
+    method: req.method,
+    url: req.originalUrl,
+  });
 
   switch (statusCode) {
     case constants.VALIDATION_ERROR:

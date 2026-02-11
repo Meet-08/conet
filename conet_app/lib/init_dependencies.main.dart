@@ -182,10 +182,16 @@ void _initMessage() {
 
 void _initProfile() {
   serviceLocator
-    ..registerFactory<ProfileDataSource>(
-      () => SupabaseProfileDataSource(
-        supabaseClient: serviceLocator(),
-        fileUploadDataSource: serviceLocator(),
+    // ..registerFactory<ProfileDataSource>(
+    //   () => SupabaseProfileDataSource(
+    //     supabaseClient: serviceLocator(),
+    //     fileUploadDataSource: serviceLocator(),
+    //   ),
+    // )
+    ..registerLazySingleton<ProfileDataSource>(
+      () => ProfileDataSourceImpl(
+        fileDataSource: serviceLocator(),
+        dioClient: serviceLocator(),
       ),
     )
     ..registerLazySingleton<UserProfileRepository>(
