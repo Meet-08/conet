@@ -3,6 +3,8 @@ name: flutter-test
 on:
   push:
     branches: ["main"]
+    paths:
+      - "conet_app/**"
 
 jobs:
   test:

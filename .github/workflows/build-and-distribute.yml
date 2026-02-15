@@ -1,0 +1,63 @@
+name: build-and-distribute
+
+on:
+  workflow_run:
+    workflows: ["flutter-test"]
+    types: [completed]
+    branches: ["main"]
+
+jobs:
+  build-and-distribute:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    defaults:
+      run:
+        working-directory: conet_app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v4
+        with:
+          channel: stable
+          version: 3.38.3
+
+      - name: Create .env file
+        run: |
+          cat <<EOF > .env
+          BACKEND_URL=${{ secrets.BACKEND_URL }}
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+          IOS_CLIENT_ID=${{ secrets.IOS_CLIENT_ID }}
+          WEB_CLIENT_ID=${{ secrets.WEB_CLIENT_ID }}
+          EOF
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Decode Firebase service account key
+        run: echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}" | base64 --decode > $RUNNER_TEMP/firebase-service-account.json
+
+      - name: Upload to Firebase App Distribution
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFile: ${{ runner.temp }}/firebase-service-account.json
+          groups: dev-testers
+          releaseNotes: |
+            Build from commit ${{ github.event.workflow_run.head_sha }}
+            Branch: ${{ github.event.workflow_run.head_branch }}
+            Author: ${{ github.event.workflow_run.actor.login }}
+          file: conet_app/build/app/outputs/flutter-apk/app-release.apk
