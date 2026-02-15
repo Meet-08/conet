@@ -15,7 +15,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 var logger = Logger(level: kDebugMode ? .debug : .error);
 
 void main() async {
-  //CI
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load();

@@ -55,7 +55,7 @@ jobs:
         with:
           appId: ${{ secrets.FIREBASE_APP_ID }}
           serviceCredentialsFile: ${{ runner.temp }}/firebase-service-account.json
-          groups: dev-testers
+          groups: ${{ vars.TESTER_GROUP }}
           releaseNotes: |
             Build from commit ${{ github.event.workflow_run.head_sha }}
             Branch: ${{ github.event.workflow_run.head_branch }}
