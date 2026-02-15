@@ -37,16 +37,29 @@ class PostDetailBloc extends Bloc<PostDetailEvent, PostDetailState> {
     PostDetailAddCommentEvent event,
     Emitter<PostDetailState> emit,
   ) async {
-    // We don't necessarily need to emit loading for adding a comment if we want optimistic UI or just keeping the list
-    // But for simplicity, let's keep the current state or minor loading.
-    // Actually, usually we might want to re-fetch or append.
-    // Let's implement simple re-fetch strategy for now.
+    // Optimistic Update
+    if (state is PostDetailLoaded) {
+      final currentComments = (state as PostDetailLoaded).comments;
+      emit(PostDetailLoaded([...currentComments, event.optimisticComment]));
+    }
 
     final result = await _commentPost(event.postId, event.comment);
 
-    result.fold((failure) => emit(PostDetailFailure(failure.message)), (_) {
-      // Success, trigger reload
-      add(PostDetailGetCommentsEvent(postId: event.postId));
-    });
+    result.fold(
+      (failure) {
+        // Revert optimistic update on failure
+        // For simplicity, we can emit failure state or reload.
+        // Emitting failure might replace the list with error, which is harsh.
+        // Ideally we should keep the list but show error (e.g. snackbar via listener).
+        // Here we just emit failure as per existing pattern, which shows error UI.
+        emit(PostDetailFailure(failure.message));
+        // You might want to reload to restore valid state
+        add(PostDetailGetCommentsEvent(postId: event.postId));
+      },
+      (_) {
+        // Success - Do nothing (retain optimistic comment)
+        // No reload needed as per user request
+      },
+    );
   }
 }

@@ -11,5 +11,11 @@ class PostDetailGetCommentsEvent extends PostDetailEvent {
 class PostDetailAddCommentEvent extends PostDetailEvent {
   final String postId;
   final String comment;
-  PostDetailAddCommentEvent({required this.postId, required this.comment});
+  final Comment optimisticComment;
+
+  PostDetailAddCommentEvent({
+    required this.postId,
+    required this.comment,
+    required this.optimisticComment,
+  });
 }

@@ -1,3 +1,4 @@
+import 'package:conet_app/core/widgets/responsive_center_scrollable.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/create_post_fab.dart';
 import 'package:conet_app/feature/post/presentation/widgets/post_app_bar.dart';
@@ -54,19 +55,21 @@ class _FeedPageState extends State<FeedPage> {
 
           final posts = state.posts;
 
-          return RefreshIndicator(
-            onRefresh: () async {
-              context.read<PostBloc>().add(
-                const PostGetPostsEvent(page: 1, limit: 20),
-              );
-            },
-            child: ListView(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(12),
-              children: [
-                const SizedBox(height: 12),
-                ...posts.map((post) => PostCard(post: post)),
-              ],
+          return ResponsiveCenterScrollable(
+            child: RefreshIndicator(
+              onRefresh: () async {
+                context.read<PostBloc>().add(
+                  const PostGetPostsEvent(page: 1, limit: 20),
+                );
+              },
+              child: ListView(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(12),
+                children: [
+                  const SizedBox(height: 12),
+                  ...posts.map((post) => PostCard(post: post)),
+                ],
+              ),
             ),
           );
         },

@@ -160,50 +160,67 @@ void main() {
     const tCommentContent = 'This is a new comment';
 
     blocTest<PostDetailBloc, PostDetailState>(
-      'calls commentPost and reloads comments on success',
+      'emits optimistic PostDetailLoaded and nothing else on success',
       build: () {
         when(
           () => mockCommentPost(any(), any()),
         ).thenAnswer((_) async => const Right(unit));
+        // No reload needed
+        return postDetailBloc;
+      },
+      seed: () => PostDetailLoaded(tCommentList),
+      act: (bloc) => bloc.add(
+        PostDetailAddCommentEvent(
+          postId: tPostId,
+          comment: tCommentContent,
+          optimisticComment: tComment,
+        ),
+      ),
+      expect: () => [
+        isA<PostDetailLoaded>().having(
+          (s) => s.comments.length,
+          'comments length',
+          2, // tCommentList (1) + optimistic (1)
+        ),
+      ],
+      verify: (_) {
+        verify(() => mockCommentPost(tPostId, tCommentContent)).called(1);
+        verifyNever(() => mockGetPostComments(any())); // No reload on success
+      },
+    );
+
+    blocTest<PostDetailBloc, PostDetailState>(
+      'emits optimistic PostDetailLoaded then PostDetailFailure then reload when commentPost fails logic',
+      build: () {
+        when(
+          () => mockCommentPost(any(), any()),
+        ).thenAnswer((_) async => Left(AppFailure('Failed to add comment')));
         when(
           () => mockGetPostComments(any()),
         ).thenAnswer((_) async => Right(tCommentList));
         return postDetailBloc;
       },
+      seed: () => PostDetailLoaded(tCommentList),
       act: (bloc) => bloc.add(
-        PostDetailAddCommentEvent(postId: tPostId, comment: tCommentContent),
+        PostDetailAddCommentEvent(
+          postId: tPostId,
+          comment: tCommentContent,
+          optimisticComment: tComment,
+        ),
       ),
       expect: () => [
-        isA<PostDetailLoading>(), // from reload
-        isA<PostDetailLoaded>(),
-      ],
-      verify: (_) {
-        verify(() => mockCommentPost(tPostId, tCommentContent)).called(1);
-        verify(() => mockGetPostComments(tPostId)).called(1);
-      },
-    );
-
-    blocTest<PostDetailBloc, PostDetailState>(
-      'emits PostDetailFailure when commentPost fails',
-      build: () {
-        when(
-          () => mockCommentPost(any(), any()),
-        ).thenAnswer((_) async => Left(AppFailure('Failed to add comment')));
-        return postDetailBloc;
-      },
-      act: (bloc) => bloc.add(
-        PostDetailAddCommentEvent(postId: tPostId, comment: tCommentContent),
-      ),
-      expect: () => [
+        isA<PostDetailLoaded>(), // Optimistic update
         isA<PostDetailFailure>().having(
           (s) => s.message,
           'message',
           'Failed to add comment',
         ),
+        isA<PostDetailLoading>(), // Reload
+        isA<PostDetailLoaded>(), // Reload result
       ],
       verify: (_) {
         verify(() => mockCommentPost(tPostId, tCommentContent)).called(1);
-        verifyNever(() => mockGetPostComments(any())); // no reload on failure
+        verify(() => mockGetPostComments(tPostId)).called(1); // Reload happened
       },
     );
 
@@ -213,16 +230,28 @@ void main() {
         when(
           () => mockCommentPost(any(), any()),
         ).thenAnswer((_) async => Left(AppFailure('Comment cannot be empty')));
+        when(
+          () => mockGetPostComments(any()),
+        ).thenAnswer((_) async => Right(tCommentList));
         return postDetailBloc;
       },
-      act: (bloc) =>
-          bloc.add(PostDetailAddCommentEvent(postId: tPostId, comment: '')),
+      seed: () => PostDetailLoaded(tCommentList),
+      act: (bloc) => bloc.add(
+        PostDetailAddCommentEvent(
+          postId: tPostId,
+          comment: '',
+          optimisticComment: tComment,
+        ),
+      ),
       expect: () => [
+        isA<PostDetailLoaded>(),
         isA<PostDetailFailure>().having(
           (s) => s.message,
           'message',
           'Comment cannot be empty',
         ),
+        isA<PostDetailLoading>(),
+        isA<PostDetailLoaded>(),
       ],
     );
 
@@ -232,17 +261,28 @@ void main() {
         when(
           () => mockCommentPost(any(), any()),
         ).thenAnswer((_) async => Left(AppFailure('User not authenticated')));
+        when(
+          () => mockGetPostComments(any()),
+        ).thenAnswer((_) async => Right(tCommentList));
         return postDetailBloc;
       },
+      seed: () => PostDetailLoaded(tCommentList),
       act: (bloc) => bloc.add(
-        PostDetailAddCommentEvent(postId: tPostId, comment: tCommentContent),
+        PostDetailAddCommentEvent(
+          postId: tPostId,
+          comment: tCommentContent,
+          optimisticComment: tComment,
+        ),
       ),
       expect: () => [
+        isA<PostDetailLoaded>(),
         isA<PostDetailFailure>().having(
           (s) => s.message,
           'message',
           'User not authenticated',
         ),
+        isA<PostDetailLoading>(),
+        isA<PostDetailLoaded>(),
       ],
     );
 
@@ -252,20 +292,28 @@ void main() {
         when(
           () => mockCommentPost(any(), any()),
         ).thenAnswer((_) async => Left(AppFailure('Post not found')));
+        when(
+          () => mockGetPostComments(any()),
+        ).thenAnswer((_) async => Right(tCommentList));
         return postDetailBloc;
       },
+      seed: () => PostDetailLoaded(tCommentList),
       act: (bloc) => bloc.add(
         PostDetailAddCommentEvent(
           postId: 'nonexistent-post',
           comment: tCommentContent,
+          optimisticComment: tComment,
         ),
       ),
       expect: () => [
+        isA<PostDetailLoaded>(),
         isA<PostDetailFailure>().having(
           (s) => s.message,
           'message',
           'Post not found',
         ),
+        isA<PostDetailLoading>(),
+        isA<PostDetailLoaded>(),
       ],
     );
   });
@@ -306,36 +354,26 @@ void main() {
     );
 
     blocTest<PostDetailBloc, PostDetailState>(
-      'add comment and immediately reload shows updated comments',
+      'add comment and immediately shows updated comments because of optimistic update',
       build: () {
-        final updatedComments = [
-          ...tCommentList,
-          Comment(
-            id: 'comment-new',
-            postId: tPostId,
-            userId: 'user-123',
-            username: 'johndoe',
-            profilePicUrl: null,
-            content: 'New comment',
-          ),
-        ];
         when(
           () => mockCommentPost(any(), any()),
         ).thenAnswer((_) async => const Right(unit));
-        when(
-          () => mockGetPostComments(any()),
-        ).thenAnswer((_) async => Right(updatedComments));
         return postDetailBloc;
       },
+      seed: () => PostDetailLoaded(tCommentList),
       act: (bloc) => bloc.add(
-        PostDetailAddCommentEvent(postId: tPostId, comment: 'New comment'),
+        PostDetailAddCommentEvent(
+          postId: tPostId,
+          comment: 'New comment',
+          optimisticComment: tComment,
+        ),
       ),
       expect: () => [
-        isA<PostDetailLoading>(),
         isA<PostDetailLoaded>().having(
           (s) => s.comments.length,
-          'comments length after add',
-          2,
+          'comments length',
+          2, // 1 existing + 1 optimistic
         ),
       ],
     );

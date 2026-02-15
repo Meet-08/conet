@@ -12,8 +12,10 @@ import 'package:conet_app/feature/explore/pages/explore_page.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/presentation/pages/chat_detail_page.dart';
 import 'package:conet_app/feature/message/presentation/pages/messages_page.dart';
+import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/presentation/pages/create_post_page.dart';
 import 'package:conet_app/feature/post/presentation/pages/feed_page.dart';
+import 'package:conet_app/feature/post/presentation/pages/post_detail_page.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:conet_app/feature/profile/presentation/pages/edit_about_me_page.dart';
 import 'package:conet_app/feature/profile/presentation/pages/edit_academic_info_page.dart';
@@ -135,6 +137,14 @@ class AppRouter {
         builder: (context, state) {
           final conversation = state.extra as Conversation;
           return ChatDetailPage(conversation: conversation);
+        },
+      ),
+
+      GoRoute(
+        path: '/post-detail',
+        builder: (context, state) {
+          final post = state.extra as Post;
+          return PostDetailPage(post: post);
         },
       ),
 
