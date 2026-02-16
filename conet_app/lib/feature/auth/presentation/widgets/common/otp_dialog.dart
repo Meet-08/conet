@@ -1,3 +1,4 @@
+import 'package:conet_app/core/common/utils/app_toast.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -68,13 +69,7 @@ class _OtpDialogState extends State<OtpDialog> {
       AuthSendOtp(email: widget.email, firstName: '', lastName: null),
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('OTP resent to your email'),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
+    AppToast.showInfo(context, 'OTP resent to your email');
   }
 
   @override

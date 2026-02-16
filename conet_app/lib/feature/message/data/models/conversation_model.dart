@@ -6,7 +6,14 @@ part 'conversation_model.g.dart';
 
 @JsonSerializable()
 class ConversationModel extends Conversation {
-  const ConversationModel({required super.id, required super.otherUser});
+  const ConversationModel({
+    required super.id,
+    required super.otherUser,
+    super.lastMessage,
+    super.updatedAt,
+    super.unreadCount,
+    super.lastMessageMediaUrls,
+  });
 
   factory ConversationModel.fromJson(Map<String, dynamic> json) =>
       _$ConversationModelFromJson(json);

@@ -490,30 +490,38 @@ model auth_users {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model conversations {
-  id                                  String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_one                            String     @db.Uuid
-  user_two                            String     @db.Uuid
-  created_at                          DateTime?  @default(now()) @db.Timestamptz(6)
-  users_conversations_user_oneTousers users      @relation("conversations_user_oneTousers", fields: [user_one], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users_conversations_user_twoTousers users      @relation("conversations_user_twoTousers", fields: [user_two], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  messages                            messages[]
+  id                                               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_one                                         String     @db.Uuid
+  user_two                                         String     @db.Uuid
+  created_at                                       DateTime?  @default(now()) @db.Timestamptz(6)
+  updated_at                                       DateTime?  @default(now()) @db.Timestamptz(6)
+  last_message_id                                  String?    @db.Uuid
+  messages_conversations_last_message_idTomessages messages?  @relation("conversations_last_message_idTomessages", fields: [last_message_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "conversations_last_message_fkey")
+  users_conversations_user_oneTousers              users      @relation("conversations_user_oneTousers", fields: [user_one], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_conversations_user_twoTousers              users      @relation("conversations_user_twoTousers", fields: [user_two], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  messages                                         messages[]
 
   @@unique([user_one, user_two], map: "unique_pair")
+  @@index([user_one], map: "idx_conversations_user_one")
+  @@index([user_two], map: "idx_conversations_user_two")
   @@schema("public")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model messages {
-  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  conversation_id String        @db.Uuid
-  sender_id       String        @db.Uuid
-  content         String?
-  created_at      DateTime?     @default(now()) @db.Timestamptz(6)
-  is_read         Boolean?      @default(false)
-  media_urls      String[]      @default([])
-  conversations   conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_conversation_fkey")
-  users           users         @relation(fields: [sender_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messages_sender_fkey")
+  id                                                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversation_id                                       String          @db.Uuid
+  sender_id                                             String          @db.Uuid
+  content                                               String?
+  created_at                                            DateTime?       @default(now()) @db.Timestamptz(6)
+  is_read                                               Boolean?        @default(false)
+  media_urls                                            String[]        @default([])
+  conversations_conversations_last_message_idTomessages conversations[] @relation("conversations_last_message_idTomessages")
+  conversations                                         conversations   @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_conversation_fkey")
+  users                                                 users           @relation(fields: [sender_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messages_sender_fkey")
 
+  @@index([conversation_id, created_at(sort: Desc)], map: "idx_messages_conversation_created_at")
+  @@index([conversation_id, is_read], map: "idx_messages_unread")
   @@schema("public")
 }
 

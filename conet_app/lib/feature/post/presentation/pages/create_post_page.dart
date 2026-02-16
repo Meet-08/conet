@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:conet_app/core/common/utils/app_toast.dart';
 import 'package:conet_app/core/utils/pick_files.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/create_post_actions_row.dart';
@@ -34,9 +35,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
   void _onPost() {
     if (_contentController.text.trim().isEmpty && _selectedFiles.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter some content or add media')),
-      );
+      AppToast.showWarning(context, 'Please enter some content or add media');
       return;
     }
 
@@ -85,14 +84,10 @@ class _CreatePostPageState extends State<CreatePostPage> {
     return BlocConsumer<PostBloc, PostState>(
       listener: (context, state) {
         if (state is PostLoaded && state.recentlyCreated) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Post created successfully!')),
-          );
+          AppToast.showSuccess(context, 'Post created successfully!');
           context.pop();
         } else if (state is PostFailure) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
+          AppToast.showError(context, state.message);
         }
       },
       builder: (context, state) {

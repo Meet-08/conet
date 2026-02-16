@@ -1,15 +1,55 @@
-name: build-and-distribute
+name: ci
 
 on:
-  workflow_run:
-    workflows: ["flutter-test"]
-    types: [completed]
+  push:
     branches: ["main"]
+    paths:
+      - "conet_app/**"
 
 jobs:
-  build-and-distribute:
+  test:
+    name: Analyze & Test
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    defaults:
+      run:
+        working-directory: conet_app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter SDK
+        uses: flutter-actions/setup-flutter@v4
+        with:
+          channel: stable
+          version: 3.38.3
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            conet_app/.dart_tool
+          key: pub-${{ hashFiles('conet_app/pubspec.lock') }}
+          restore-keys: pub-
+
+      - name: Create .env file
+        run: echo "API_URL=http://10.0.2.2:3000" > .env
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze code
+        run: flutter analyze
+
+      - name: Run tests
+        run: flutter test
+
+  build:
+    name: Build & Distribute
+    needs: test
+    runs-on: ubuntu-latest
 
     defaults:
       run:
@@ -30,6 +70,15 @@ jobs:
         with:
           channel: stable
           version: 3.38.3
+
+      - name: Cache pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+            conet_app/.dart_tool
+          key: pub-${{ hashFiles('conet_app/pubspec.lock') }}
+          restore-keys: pub-
 
       - name: Create .env file
         run: |
@@ -57,7 +106,7 @@ jobs:
           serviceCredentialsFile: ${{ runner.temp }}/firebase-service-account.json
           groups: ${{ vars.TESTER_GROUP }}
           releaseNotes: |
-            Build from commit ${{ github.event.workflow_run.head_sha }}
-            Branch: ${{ github.event.workflow_run.head_branch }}
-            Author: ${{ github.event.workflow_run.actor.login }}
+            Build from commit ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+            Author: ${{ github.actor }}
           file: conet_app/build/app/outputs/flutter-apk/app-release.apk

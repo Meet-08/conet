@@ -1,3 +1,4 @@
+import 'package:conet_app/core/common/utils/app_toast.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/common/auth_password_field.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/common/auth_submit_button.dart';
@@ -56,12 +57,7 @@ class _LoginPageState extends State<LoginPage> {
           // Navigation is handled by AppRouter based on user state
         } else if (state is AuthFailure) {
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
+          AppToast.showError(context, state.message);
         }
       },
       child: Scaffold(

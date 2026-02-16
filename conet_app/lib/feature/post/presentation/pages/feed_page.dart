@@ -64,7 +64,7 @@ class _FeedPageState extends State<FeedPage> {
               },
               child: ListView(
                 controller: _scrollController,
-                padding: const EdgeInsets.all(12),
+                // padding: const EdgeInsets.all(12),
                 children: [
                   const SizedBox(height: 12),
                   ...posts.map((post) => PostCard(post: post)),

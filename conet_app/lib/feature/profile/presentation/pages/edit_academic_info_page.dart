@@ -1,3 +1,4 @@
+import 'package:conet_app/core/common/utils/app_toast.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
 import 'package:conet_app/init_dependencies.dart';
@@ -75,20 +76,13 @@ class _EditAcademicInfoPageState extends State<EditAcademicInfoPage> {
       child: BlocConsumer<ProfileBloc, ProfileState>(
         listener: (context, state) {
           if (state is ProfileUpdateSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Academic info updated successfully'),
-                backgroundColor: Colors.green,
-              ),
-            );
+            AppToast.showSuccess(context, 'Academic info updated successfully');
 
             setState(() {
               _hasUpdated = true;
             });
           } else if (state is ProfileUpdateFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.error), backgroundColor: Colors.red),
-            );
+            AppToast.showError(context, state.error);
           }
         },
         builder: (context, state) {

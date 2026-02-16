@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:conet_app/core/common/utils/app_toast.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
 import 'package:conet_app/init_dependencies.dart';
@@ -60,16 +61,12 @@ class _EditProfilePicturesPageState extends State<EditProfilePicturesPage> {
       child: BlocConsumer<ProfileBloc, ProfileState>(
         listener: (context, state) {
           if (state is ProfileUpdateSuccess) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Images updated successfully')),
-            );
+            AppToast.showSuccess(context, 'Images updated successfully');
             setState(() {
               _hasUpdated = true;
             });
           } else if (state is ProfileUpdateFailure) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.error)));
+            AppToast.showError(context, state.error);
           }
         },
         builder: (context, state) {

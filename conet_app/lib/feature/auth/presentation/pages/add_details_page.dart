@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:conet_app/core/common/utils/app_toast.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/add_details/add_details_header.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/common/auth_password_field.dart';
@@ -139,9 +140,7 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
     // For email sign-in, verify passwords match
     if (!widget.isGoogle) {
       if (_passwordController.text != _confirmPasswordController.text) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Passwords do not match')));
+        AppToast.showError(context, 'Passwords do not match');
         return;
       }
     }
@@ -165,9 +164,7 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: ${e.toString()}')),
-        );
+        AppToast.showError(context, 'Failed to save: ${e.toString()}');
         setState(() => _isLoading = false);
       }
     }
@@ -186,12 +183,7 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
           context.go('/home');
         } else if (state is AuthFailure) {
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
+          AppToast.showError(context, state.message);
         }
       },
       child: Scaffold(

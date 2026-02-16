@@ -9,8 +9,14 @@ class ConversationList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
+    return ListView.separated(
       itemCount: conversations.length,
+      separatorBuilder: (_, _) => Divider(
+        height: 1,
+        thickness: 0.5,
+        indent: 70,
+        color: Colors.grey.shade200,
+      ),
       itemBuilder: (context, index) {
         final conversation = conversations[index];
         return ConversationTile(conversation: conversation);

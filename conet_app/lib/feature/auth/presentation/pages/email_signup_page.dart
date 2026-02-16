@@ -1,3 +1,4 @@
+import 'package:conet_app/core/common/utils/app_toast.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/common/otp_dialog.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/email_signup/email_signup_footer.dart';
@@ -34,9 +35,7 @@ class _EmailSignupPageState extends State<EmailSignupPage> {
     if (!_formKey.currentState!.validate()) return;
 
     if (!_termsAccepted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please accept the terms and conditions')),
-      );
+      AppToast.showWarning(context, 'Please accept the terms and conditions');
       return;
     }
 
@@ -68,12 +67,7 @@ class _EmailSignupPageState extends State<EmailSignupPage> {
           _showOtpDialog();
         } else if (state is AuthFailure) {
           setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
+          AppToast.showError(context, state.message);
         } else {
           setState(() => _isLoading = false);
         }

@@ -1,3 +1,4 @@
+import 'package:conet_app/core/common/utils/app_toast.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/message/presentation/widgets/conversation_list.dart';
 import 'package:conet_app/feature/message/presentation/widgets/message_app_bar.dart';
@@ -161,9 +162,7 @@ class _MessagesPageState extends State<MessagesPage> {
       listener: (context, state) {
         if (state.status == MessageStatus.failure &&
             state.errorMessage != null) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+          AppToast.showError(context, state.errorMessage!);
         }
       },
       child: Scaffold(
@@ -180,23 +179,34 @@ class _MessagesPageState extends State<MessagesPage> {
                   }
 
                   if (state.conversations.isEmpty) {
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('No conversations yet'),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Status: ${state.status.name}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        if (state.errorMessage != null) ...[
-                          const SizedBox(height: 4),
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            size: 64,
+                            color: Colors.grey.shade300,
+                          ),
+                          const SizedBox(height: 16),
                           Text(
-                            state.errorMessage!,
-                            style: const TextStyle(color: Colors.redAccent),
+                            'No conversations yet',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade500,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Tap + to start a new conversation',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey.shade400,
+                            ),
                           ),
                         ],
-                      ],
+                      ),
                     );
                   }
 

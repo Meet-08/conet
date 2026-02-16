@@ -12,8 +12,8 @@ const normalizePair = (userA, userB) => {
 };
 
 /**
- * Map a raw Prisma conversation row + currentUserId into the API shape:
- * { id, other_user: { id, email, first_name, ... } }
+ * Map a raw Prisma conversation row + currentUserId into the API shape.
+ * Includes last_message, updated_at, and unread_count.
  */
 const mapConversation = (row, currentUserId) => {
   const isUserOne = row.user_one === currentUserId;
@@ -25,6 +25,13 @@ const mapConversation = (row, currentUserId) => {
   return {
     id: row.id,
     other_user: otherUser,
+    last_message:
+      row.messages_conversations_last_message_idTomessages?.content ?? null,
+    last_message_media_urls:
+      row.messages_conversations_last_message_idTomessages?.media_urls ?? [],
+    updated_at:
+      row.updated_at?.toISOString() ?? row.created_at?.toISOString() ?? null,
+    unread_count: row._count?.unreadMessages ?? 0,
   };
 };
 
@@ -89,6 +96,9 @@ export const createConversationService = async (currentUserId, otherUserId) => {
   return {
     id: conversation.id,
     other_user: otherUser,
+    last_message: null,
+    updated_at: conversation.updated_at?.toISOString() ?? null,
+    unread_count: 0,
   };
 };
 
@@ -102,11 +112,33 @@ export const getConversationsService = async (currentUserId) => {
     include: {
       users_conversations_user_oneTousers: { select: USER_SELECT_FIELDS },
       users_conversations_user_twoTousers: { select: USER_SELECT_FIELDS },
+      messages_conversations_last_message_idTomessages: {
+        select: { content: true, media_urls: true },
+      },
     },
-    orderBy: { created_at: "desc" },
+    orderBy: { updated_at: "desc" },
   });
 
-  return rows.map((row) => mapConversation(row, currentUserId));
+  // Batch-compute unread counts per conversation
+  const conversationIds = rows.map((r) => r.id);
+  const unreadCounts = await prisma.messages.groupBy({
+    by: ["conversation_id"],
+    where: {
+      conversation_id: { in: conversationIds },
+      sender_id: { not: currentUserId },
+      is_read: false,
+    },
+    _count: { id: true },
+  });
+
+  const unreadMap = Object.fromEntries(
+    unreadCounts.map((uc) => [uc.conversation_id, uc._count.id]),
+  );
+
+  return rows.map((row) => {
+    row._count = { unreadMessages: unreadMap[row.id] ?? 0 };
+    return mapConversation(row, currentUserId);
+  });
 };
 
 // ─── Get messages for a conversation ────────────────────────────────────────

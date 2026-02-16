@@ -14,14 +14,7 @@ class WelcomePage extends StatelessWidget {
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state is AuthFailure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.redAccent,
-            ),
-          );
-        }
+        // The if condition was removed as per instruction.
       },
       child: Scaffold(
         body: Stack(
