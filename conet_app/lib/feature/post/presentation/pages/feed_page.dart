@@ -62,13 +62,12 @@ class _FeedPageState extends State<FeedPage> {
                   const PostGetPostsEvent(page: 1, limit: 20),
                 );
               },
-              child: ListView(
+              child: ListView.builder(
                 controller: _scrollController,
-                // padding: const EdgeInsets.all(12),
-                children: [
-                  const SizedBox(height: 12),
-                  ...posts.map((post) => PostCard(post: post)),
-                ],
+                itemCount: posts.length,
+                itemBuilder: (context, index) {
+                  return PostCard(post: posts[index]);
+                },
               ),
             ),
           );

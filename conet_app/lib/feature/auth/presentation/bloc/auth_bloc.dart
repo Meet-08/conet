@@ -3,6 +3,7 @@ import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_add_details.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_current.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_login.dart';
+import 'package:conet_app/feature/auth/domain/usecases/user_logout.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_send_otp.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_signin_with_google.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_verify_otp.dart';
@@ -19,6 +20,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final UserVerifyOtp _userVerifyOtp;
   final UserCurrent _userCurrent;
   final UserAddDetails _userAddDetails;
+  final UserLogout _userLogout;
   final AppUserCubit _appUserCubit;
 
   AuthBloc({
@@ -28,6 +30,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required UserVerifyOtp userVerifyOtp,
     required UserCurrent userCurrent,
     required UserAddDetails userAddDetails,
+    required UserLogout userLogout,
     required AppUserCubit appUserCubit,
   }) : _userLogin = userLogin,
        _userSendOtp = userSendOtp,
@@ -35,6 +38,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
        _userVerifyOtp = userVerifyOtp,
        _userCurrent = userCurrent,
        _userAddDetails = userAddDetails,
+       _userLogout = userLogout,
        _appUserCubit = appUserCubit,
 
        super(AuthInitial()) {
@@ -43,7 +47,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthVerifyOtp>(_onAuthVerifyOtp);
     on<AuthSigninWithGoogle>(_onAuthSigninWithGoogle);
     on<AuthIsUserLoggedIn>(_isUserLoggedIn);
+
     on<AuthAddDetails>(_onAuthAddDetails);
+    on<AuthLogout>(_onAuthLogout);
+  }
+
+  void _onAuthLogout(AuthLogout event, Emitter<AuthState> emit) async {
+    emit(AuthLoading());
+    final res = await _userLogout();
+    res.fold((l) => emit(AuthFailure(l.message)), (r) {
+      _appUserCubit.logout();
+      emit(AuthInitial());
+    });
   }
 
   void _onAuthLogin(AuthLogin event, Emitter<AuthState> emit) async {

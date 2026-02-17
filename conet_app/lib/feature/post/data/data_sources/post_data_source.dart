@@ -26,4 +26,6 @@ abstract class PostDataSource {
   Future<Unit> commentPost(String postId, String comment);
 
   Future<List<Comment>> getPostComments(String postId);
+
+  Stream<List<Comment>> watchPostComments(String postId);
 }

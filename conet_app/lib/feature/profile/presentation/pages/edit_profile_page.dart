@@ -1,5 +1,6 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/common/utils/app_toast.dart';
+import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
 import 'package:flutter/material.dart';
@@ -125,6 +126,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   onTap: () =>
                       _navigateAndRefresh('/edit-profile/social-links', user),
                 ),
+                const SizedBox(height: 24),
+                _ProfileSectionTile(
+                  icon: Icons.logout,
+                  title: 'Logout',
+                  subtitle: 'Sign out of your account',
+                  isCompleted: false,
+                  onTap: () {
+                    context.read<AuthBloc>().add(AuthLogout());
+                  },
+                  textColor: Colors.red,
+                ),
               ],
             );
           }
@@ -196,6 +208,7 @@ class _ProfileSectionTile extends StatelessWidget {
   final String subtitle;
   final bool isCompleted;
   final VoidCallback onTap;
+  final Color? textColor;
 
   const _ProfileSectionTile({
     required this.icon,
@@ -203,6 +216,7 @@ class _ProfileSectionTile extends StatelessWidget {
     required this.subtitle,
     required this.isCompleted,
     required this.onTap,
+    this.textColor,
   });
 
   @override
@@ -225,7 +239,11 @@ class _ProfileSectionTile extends StatelessWidget {
                 color: Colors.grey.shade100,
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, size: 22, color: Colors.grey.shade700),
+              child: Icon(
+                icon,
+                size: 22,
+                color: textColor ?? Colors.grey.shade700,
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -234,9 +252,10 @@ class _ProfileSectionTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
+                      color: textColor,
                     ),
                   ),
                   const SizedBox(height: 2),

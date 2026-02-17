@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class EmailSignupHeader extends StatelessWidget {
   const EmailSignupHeader({super.key});
@@ -9,7 +10,7 @@ class EmailSignupHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
-          onTap: () => Navigator.pop(context),
+          onTap: () => context.pop(),
           child: const Row(
             children: [
               Icon(Icons.arrow_back, size: 20),

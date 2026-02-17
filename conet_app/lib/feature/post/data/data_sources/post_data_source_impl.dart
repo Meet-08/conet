@@ -9,13 +9,19 @@ import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/main.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:fpdart/fpdart.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class PostDataSourceImpl implements PostDataSource {
   final FileDataSource fileDataSource;
   final DioClient dioClient;
+  final SupabaseClient _supabaseClient;
 
-  PostDataSourceImpl({required this.fileDataSource, required this.dioClient});
+  PostDataSourceImpl({
+    required this.fileDataSource,
+    required this.dioClient,
+    required SupabaseClient supabaseClient,
+  }) : _supabaseClient = supabaseClient;
 
   @override
   Future<Post> createPost({
@@ -80,6 +86,17 @@ class PostDataSourceImpl implements PostDataSource {
       logger.e("Failed to get comments for post $postId", error: e);
       throw ServerException(e.toString());
     }
+  }
+
+  @override
+  Stream<List<Comment>> watchPostComments(String postId) async* {
+    yield await getPostComments(postId);
+
+    yield* _supabaseClient
+        .from('post_comments')
+        .stream(primaryKey: ['id'])
+        .eq('post_id', postId)
+        .asyncMap((_) => getPostComments(postId));
   }
 
   @override

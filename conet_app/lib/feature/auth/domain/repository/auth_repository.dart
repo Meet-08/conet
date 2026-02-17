@@ -32,4 +32,6 @@ abstract interface class AuthRepository {
 
   /// Checks if username is available (not taken)
   Future<Either<AppFailure, bool>> checkUsernameAvailable(String username);
+
+  Future<Either<AppFailure, Unit>> logout();
 }

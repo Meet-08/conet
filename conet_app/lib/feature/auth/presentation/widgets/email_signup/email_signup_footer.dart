@@ -20,7 +20,7 @@ class EmailSignupFooter extends StatelessWidget {
                 decoration: TextDecoration.underline,
               ),
               recognizer: TapGestureRecognizer()
-                ..onTap = () => context.go('/login'),
+                ..onTap = () => context.push('/login'),
             ),
           ],
         ),

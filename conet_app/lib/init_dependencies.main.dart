@@ -34,6 +34,9 @@ void _initAuth() {
     ..registerFactory<UserAddDetails>(
       () => UserAddDetails(authRepository: serviceLocator<AuthRepository>()),
     )
+    ..registerFactory<UserLogout>(
+      () => UserLogout(serviceLocator<AuthRepository>()),
+    )
     // Bloc
     ..registerLazySingleton<AuthBloc>(
       () => AuthBloc(
@@ -43,6 +46,7 @@ void _initAuth() {
         userVerifyOtp: serviceLocator<UserVerifyOtp>(),
         userCurrent: serviceLocator<UserCurrent>(),
         userAddDetails: serviceLocator<UserAddDetails>(),
+        userLogout: serviceLocator<UserLogout>(),
         appUserCubit: serviceLocator<AppUserCubit>(),
       ),
     );
@@ -72,6 +76,7 @@ void _initPost() {
     () => PostDataSourceImpl(
       dioClient: serviceLocator<DioClient>(),
       fileDataSource: serviceLocator<FileDataSource>(),
+      supabaseClient: serviceLocator<SupabaseClient>(),
     ),
   );
 
@@ -99,6 +104,9 @@ void _initPost() {
   serviceLocator.registerFactory(
     () => PostGetPostComments(postRepository: serviceLocator()),
   );
+  serviceLocator.registerFactory(
+    () => PostWatchPostComments(postRepository: serviceLocator()),
+  );
 
   // Bloc
   serviceLocator.registerFactory(
@@ -115,6 +123,7 @@ void _initPost() {
   serviceLocator.registerFactory(
     () => PostDetailBloc(
       getPostComments: serviceLocator(),
+      watchPostComments: serviceLocator(),
       commentPost: serviceLocator(),
     ),
   );

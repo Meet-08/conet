@@ -66,6 +66,11 @@ class PostRepositoryImpl implements PostRepository {
   }
 
   @override
+  Stream<List<Comment>> watchPostComments(String postId) {
+    return _postDataSource.watchPostComments(postId);
+  }
+
+  @override
   Future<Either<AppFailure, Unit>> toggleLikePost(String postId) {
     return _getResult<Unit>(() => _postDataSource.toggleLikePost(postId));
   }

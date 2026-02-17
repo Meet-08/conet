@@ -41,6 +41,7 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     on<PostToggleLikePostEvent>(_onToggleLike);
     on<PostCommentEvent>(_onComment);
     on<PostGetCommentsEvent>(_onGetComments);
+    on<PostSyncCommentCountEvent>(_onSyncCommentCount);
   }
 
   Future<void> _onGetPosts(
@@ -130,6 +131,26 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     result.fold(
       (failure) => emit(PostFailure(failure.message)),
       (comments) => emit(PostCommentsLoaded(comments)),
+    );
+  }
+
+  void _onSyncCommentCount(
+    PostSyncCommentCountEvent event,
+    Emitter<PostState> emit,
+  ) {
+    if (state is! PostLoaded) return;
+
+    final currentState = state as PostLoaded;
+    final updatedPosts = currentState.posts.map((post) {
+      if (post.id != event.postId || post.commentCount == event.commentCount) {
+        return post;
+      }
+
+      return post.copyWith(commentCount: event.commentCount);
+    }).toList();
+
+    emit(
+      PostLoaded(updatedPosts, recentlyCreated: currentState.recentlyCreated),
     );
   }
 }

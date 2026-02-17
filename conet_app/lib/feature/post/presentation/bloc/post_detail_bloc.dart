@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:conet_app/feature/post/domain/entities/comment.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_comment.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_post_comments.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_watch_post_comments.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -9,28 +12,55 @@ part 'post_detail_state.dart';
 
 class PostDetailBloc extends Bloc<PostDetailEvent, PostDetailState> {
   final PostGetPostComments _getPostComments;
+  final PostWatchPostComments _watchPostComments;
   final PostComment _commentPost;
+  StreamSubscription<List<Comment>>? _commentsSubscription;
 
   PostDetailBloc({
     required PostGetPostComments getPostComments,
+    required PostWatchPostComments watchPostComments,
     required PostComment commentPost,
   }) : _getPostComments = getPostComments,
+       _watchPostComments = watchPostComments,
        _commentPost = commentPost,
        super(PostDetailInitial()) {
-    on<PostDetailGetCommentsEvent>(_onGetComments);
+    on<PostDetailWatchCommentsEvent>(_onWatchComments);
+    on<PostDetailCommentsUpdatedEvent>(_onCommentsUpdated);
+    on<PostDetailCommentsFailedEvent>(_onCommentsFailed);
     on<PostDetailAddCommentEvent>(_onAddComment);
   }
 
-  Future<void> _onGetComments(
-    PostDetailGetCommentsEvent event,
+  @override
+  Future<void> close() {
+    _commentsSubscription?.cancel();
+    return super.close();
+  }
+
+  void _onWatchComments(
+    PostDetailWatchCommentsEvent event,
     Emitter<PostDetailState> emit,
-  ) async {
+  ) {
+    _commentsSubscription?.cancel();
     emit(PostDetailLoading());
-    final result = await _getPostComments(event.postId);
-    result.fold(
-      (failure) => emit(PostDetailFailure(failure.message)),
-      (comments) => emit(PostDetailLoaded(comments)),
+    _commentsSubscription = _watchPostComments(event.postId).listen(
+      (comments) => add(PostDetailCommentsUpdatedEvent(comments: comments)),
+      onError: (error) =>
+          add(PostDetailCommentsFailedEvent(message: error.toString())),
     );
+  }
+
+  void _onCommentsUpdated(
+    PostDetailCommentsUpdatedEvent event,
+    Emitter<PostDetailState> emit,
+  ) {
+    emit(PostDetailLoaded(event.comments));
+  }
+
+  void _onCommentsFailed(
+    PostDetailCommentsFailedEvent event,
+    Emitter<PostDetailState> emit,
+  ) {
+    emit(PostDetailFailure(event.message));
   }
 
   Future<void> _onAddComment(
@@ -45,21 +75,16 @@ class PostDetailBloc extends Bloc<PostDetailEvent, PostDetailState> {
 
     final result = await _commentPost(event.postId, event.comment);
 
-    result.fold(
-      (failure) {
-        // Revert optimistic update on failure
-        // For simplicity, we can emit failure state or reload.
-        // Emitting failure might replace the list with error, which is harsh.
-        // Ideally we should keep the list but show error (e.g. snackbar via listener).
-        // Here we just emit failure as per existing pattern, which shows error UI.
-        emit(PostDetailFailure(failure.message));
-        // You might want to reload to restore valid state
-        add(PostDetailGetCommentsEvent(postId: event.postId));
-      },
-      (_) {
-        // Success - Do nothing (retain optimistic comment)
-        // No reload needed as per user request
-      },
-    );
+    if (result.isLeft()) {
+      final failure = result.swap().getOrElse(
+        (_) => throw StateError('Unexpected right value while reading failure'),
+      );
+      emit(PostDetailFailure(failure.message));
+      add(PostDetailWatchCommentsEvent(postId: event.postId));
+      return;
+    }
+
+    final latestComments = await _getPostComments(event.postId);
+    latestComments.fold((_) {}, (comments) => emit(PostDetailLoaded(comments)));
   }
 }

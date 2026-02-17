@@ -42,3 +42,13 @@ class PostGetCommentsEvent extends PostEvent {
 
   const PostGetCommentsEvent({required this.postId});
 }
+
+class PostSyncCommentCountEvent extends PostEvent {
+  final String postId;
+  final int commentCount;
+
+  const PostSyncCommentCountEvent({
+    required this.postId,
+    required this.commentCount,
+  });
+}

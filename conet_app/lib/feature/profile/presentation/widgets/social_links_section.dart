@@ -1,4 +1,5 @@
 import 'package:conet_app/core/common/entities/social_links.dart';
+import 'package:conet_app/core/common/utils/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -31,10 +32,30 @@ class SocialLinksSection extends StatelessWidget {
     }
   }
 
-  Future<void> _launchUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+  Uri _buildUri(String rawUrl) {
+    final trimmedUrl = rawUrl.trim();
+    final parsed = Uri.tryParse(trimmedUrl);
+
+    if (parsed == null) {
+      return Uri.parse('https://$trimmedUrl');
+    }
+
+    if (parsed.hasScheme) {
+      return parsed;
+    }
+
+    return Uri.parse('https://$trimmedUrl');
+  }
+
+  Future<void> _launchSocialUrl(BuildContext context, String rawUrl) async {
+    final uri = _buildUri(rawUrl);
+    final didLaunch = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+
+    if (!didLaunch && context.mounted) {
+      AppToast.showError(context, 'Could not open this link.');
     }
   }
 
@@ -47,7 +68,7 @@ class SocialLinksSection extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(right: 16),
           child: GestureDetector(
-            onTap: () => _launchUrl(link.link),
+            onTap: () => _launchSocialUrl(context, link.link),
             child: Icon(
               _getIconForLink(link.name),
               size: 20,

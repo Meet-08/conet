@@ -208,6 +208,16 @@ class SupabaseDataSourceImpl implements AuthDataSource {
     }
   }
 
+  @override
+  Future<void> logout() async {
+    try {
+      await supabaseClient.auth.signOut();
+    } catch (e) {
+      logger.e('Logout error: ${e.toString()}');
+      throw ServerException(e.toString());
+    }
+  }
+
   Future<UserModel> _getUserModel(String id) async {
     logger.i("Fetching user model for id: $id");
     final user = await supabaseClient

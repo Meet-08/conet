@@ -107,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
                               decoration: TextDecoration.underline,
                             ),
                             recognizer: TapGestureRecognizer()
-                              ..onTap = () => context.go('/email-signup'),
+                              ..onTap = () => context.push('/email-signup'),
                           ),
                         ],
                       ),

@@ -30,4 +30,6 @@ abstract interface class AuthDataSource {
 
   /// Checks if a username is available (not already taken)
   Future<bool> checkUsernameAvailable(String username);
+
+  Future<void> logout();
 }

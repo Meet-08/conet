@@ -468,4 +468,48 @@ void main() {
       ],
     );
   });
+
+  group('PostSyncCommentCountEvent', () {
+    final tPost2 = Post(
+      id: 'post-456',
+      user: tUser,
+      content: 'Second post',
+      mediaUrls: [],
+      likeCount: 5,
+      commentCount: 2,
+      isLiked: true,
+      createdAt: DateTime(2024, 1, 2),
+    );
+
+    final multiplePosts = [tPost, tPost2];
+
+    blocTest<PostBloc, PostState>(
+      'updates only targeted post comment count',
+      build: () => postBloc,
+      seed: () => PostLoaded(multiplePosts),
+      act: (bloc) => bloc.add(
+        const PostSyncCommentCountEvent(postId: 'post-123', commentCount: 9),
+      ),
+      expect: () => [
+        isA<PostLoaded>().having(
+          (s) {
+            final first = s.posts.firstWhere((p) => p.id == 'post-123');
+            final second = s.posts.firstWhere((p) => p.id == 'post-456');
+            return first.commentCount == 9 && second.commentCount == 2;
+          },
+          'targeted post updated only',
+          true,
+        ),
+      ],
+    );
+
+    blocTest<PostBloc, PostState>(
+      'does nothing when not in PostLoaded state',
+      build: () => postBloc,
+      act: (bloc) => bloc.add(
+        const PostSyncCommentCountEvent(postId: 'post-123', commentCount: 9),
+      ),
+      expect: () => [],
+    );
+  });
 }

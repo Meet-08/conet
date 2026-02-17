@@ -5,6 +5,7 @@ import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_add_details.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_current.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_login.dart';
+import 'package:conet_app/feature/auth/domain/usecases/user_logout.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_send_otp.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_signin_with_google.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_verify_otp.dart';
@@ -25,6 +26,8 @@ class MockUserCurrent extends Mock implements UserCurrent {}
 
 class MockUserAddDetails extends Mock implements UserAddDetails {}
 
+class MockUserLogout extends Mock implements UserLogout {}
+
 class MockAppUserCubit extends Mock implements AppUserCubit {}
 
 void main() {
@@ -35,6 +38,7 @@ void main() {
   late MockUserVerifyOtp mockUserVerifyOtp;
   late MockUserCurrent mockUserCurrent;
   late MockUserAddDetails mockUserAddDetails;
+  late MockUserLogout mockUserLogout;
   late MockAppUserCubit mockAppUserCubit;
 
   const tUser = User(
@@ -66,6 +70,7 @@ void main() {
     mockUserVerifyOtp = MockUserVerifyOtp();
     mockUserCurrent = MockUserCurrent();
     mockUserAddDetails = MockUserAddDetails();
+    mockUserLogout = MockUserLogout();
     mockAppUserCubit = MockAppUserCubit();
 
     when(() => mockAppUserCubit.updateUser(any())).thenReturn(null);
@@ -77,6 +82,7 @@ void main() {
       userVerifyOtp: mockUserVerifyOtp,
       userCurrent: mockUserCurrent,
       userAddDetails: mockUserAddDetails,
+      userLogout: mockUserLogout,
       appUserCubit: mockAppUserCubit,
     );
   });
@@ -404,6 +410,37 @@ void main() {
           'message',
           'User not logged in!',
         ),
+      ],
+    );
+  });
+
+  group('AuthLogout', () {
+    blocTest<AuthBloc, AuthState>(
+      'emits [AuthLoading, call cubit logout] when logout succeeds',
+      build: () {
+        when(() => mockUserLogout()).thenAnswer((_) async => const Right(unit));
+        return authBloc;
+      },
+      act: (bloc) => bloc.add(AuthLogout()),
+      expect: () => [isA<AuthLoading>(), isA<AuthInitial>()],
+      verify: (_) {
+        verify(() => mockUserLogout()).called(1);
+        verify(() => mockAppUserCubit.logout()).called(1);
+      },
+    );
+
+    blocTest<AuthBloc, AuthState>(
+      'emits [AuthLoading, AuthFailure] when logout fails',
+      build: () {
+        when(
+          () => mockUserLogout(),
+        ).thenAnswer((_) async => Left(AppFailure('Logout failed')));
+        return authBloc;
+      },
+      act: (bloc) => bloc.add(AuthLogout()),
+      expect: () => [
+        isA<AuthLoading>(),
+        isA<AuthFailure>().having((s) => s.message, 'message', 'Logout failed'),
       ],
     );
   });

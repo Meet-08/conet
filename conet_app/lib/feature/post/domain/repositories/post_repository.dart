@@ -14,6 +14,7 @@ abstract interface class PostRepository {
   Future<Either<AppFailure, Unit>> toggleLikePost(String postId);
   Future<Either<AppFailure, Unit>> commentPost(String postId, String comment);
   Future<Either<AppFailure, List<Comment>>> getPostComments(String postId);
+  Stream<List<Comment>> watchPostComments(String postId);
 
   Future<Either<AppFailure, List<Post>>> getPosts({
     int page = 1,
