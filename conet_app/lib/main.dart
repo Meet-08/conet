@@ -17,6 +17,8 @@ var logger = Logger(level: kDebugMode ? .debug : .error);
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  //TRIGGER CI
+
   await dotenv.load();
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
