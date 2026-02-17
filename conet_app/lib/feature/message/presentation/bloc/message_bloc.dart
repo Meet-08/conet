@@ -14,6 +14,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide User;
+import 'package:uuid/uuid.dart';
 
 part 'message_event.dart';
 part 'message_state.dart';
@@ -26,6 +28,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   final MessageMarkAsRead _markAsRead;
   final MessageWatchMessages _watchMessages;
   final MessageSearchUsers _searchUsers;
+  final String? Function() _getCurrentUserId;
   StreamSubscription<List<Message>>? _messagesSubscription;
   int _searchToken = 0;
 
@@ -37,6 +40,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     required MessageMarkAsRead markAsRead,
     required MessageWatchMessages watchMessages,
     required MessageSearchUsers searchUsers,
+    String? Function()? getCurrentUserId,
   }) : _createConversation = createConversation,
        _getConversationsUsecase = getConversationsUsecase,
        _getMessages = getMessages,
@@ -44,6 +48,9 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
        _markAsRead = markAsRead,
        _watchMessages = watchMessages,
        _searchUsers = searchUsers,
+       _getCurrentUserId =
+           (getCurrentUserId ??
+           (() => Supabase.instance.client.auth.currentUser?.id)),
        super(MessageState()) {
     on<MessageWatchStarted>(_onWatchStarted);
     on<MessageListUpdated>(_onListUpdated);
@@ -121,15 +128,62 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     MessageSent event,
     Emitter<MessageState> emit,
   ) async {
+    final currentUserId = _getCurrentUserId();
+    if (currentUserId == null) return;
+
+    final tempId = const Uuid().v4();
+    final tempMessage = Message(
+      id: tempId,
+      conversationId: event.conversationId,
+      senderId: currentUserId,
+      content: event.content,
+      createdAt: DateTime.now(),
+      status: MessageDeliveryStatus.pending,
+      mediaUrls: event.mediaUrls ?? [],
+    );
+
+    // Optimistic update
+    final currentMessages = List<Message>.from(state.messages)
+      ..add(tempMessage);
+    emit(state.copyWith(messages: currentMessages));
+
     final result = await _sendMessage(
       conversationId: event.conversationId,
       content: event.content,
       mediaUrls: event.mediaUrls,
       files: event.files,
     );
+
     result.fold(
-      (l) => emit(state.copyWith(errorMessage: l.message)),
-      (r) => null,
+      (l) {
+        // Update status to error
+        final messages = List<Message>.from(state.messages);
+        final index = messages.indexWhere((m) => m.id == tempId);
+        if (index != -1) {
+          messages[index] = Message(
+            id: tempMessage.id,
+            conversationId: tempMessage.conversationId,
+            senderId: tempMessage.senderId,
+            content: tempMessage.content,
+            createdAt: tempMessage.createdAt,
+            status: MessageDeliveryStatus.error,
+            mediaUrls: tempMessage.mediaUrls,
+            isRead: tempMessage.isRead,
+          );
+          emit(state.copyWith(messages: messages, errorMessage: l.message));
+        } else {
+          emit(state.copyWith(errorMessage: l.message));
+        }
+      },
+      (r) {
+        // Replace with real message
+        final messages = List<Message>.from(state.messages);
+        final index = messages.indexWhere((m) => m.id == tempId);
+        if (index != -1) {
+          messages[index] = r;
+          emit(state.copyWith(messages: messages));
+        }
+      },
     );
   }
 

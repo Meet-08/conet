@@ -84,6 +84,7 @@ void main() {
       markAsRead: mockMarkAsRead,
       watchMessages: mockWatchMessages,
       searchUsers: mockSearchUsers,
+      getCurrentUserId: () => 'user-123',
     );
   });
 
@@ -255,12 +256,24 @@ void main() {
             conversationId: any(named: 'conversationId'),
             content: any(named: 'content'),
           ),
-        ).thenAnswer((_) async => const Right(unit));
+        ).thenAnswer((_) async => Right(tMessage));
         return messageBloc;
       },
       act: (bloc) => bloc.add(
         MessageSent(conversationId: tConversationId, content: tContent),
       ),
+      expect: () => [
+        isA<MessageState>()
+            .having((s) => s.messages.length, 'messages length', 1)
+            .having(
+              (s) => s.messages.first.status,
+              'status',
+              MessageDeliveryStatus.pending,
+            ),
+        isA<MessageState>()
+            .having((s) => s.messages.length, 'messages length', 1)
+            .having((s) => s.messages.first.id, 'id', tMessage.id),
+      ],
       verify: (_) {
         verify(
           () => mockSendMessage(
@@ -286,11 +299,24 @@ void main() {
         MessageSent(conversationId: tConversationId, content: tContent),
       ),
       expect: () => [
-        isA<MessageState>().having(
-          (s) => s.errorMessage,
-          'errorMessage',
-          'Failed to send message',
-        ),
+        isA<MessageState>()
+            .having((s) => s.messages.length, 'messages length', 1)
+            .having(
+              (s) => s.messages.first.status,
+              'status',
+              MessageDeliveryStatus.pending,
+            ),
+        isA<MessageState>()
+            .having(
+              (s) => s.errorMessage,
+              'errorMessage',
+              'Failed to send message',
+            )
+            .having(
+              (s) => s.messages.first.status,
+              'status',
+              MessageDeliveryStatus.error,
+            ),
       ],
     );
 
@@ -303,7 +329,7 @@ void main() {
             content: any(named: 'content'),
             mediaUrls: any(named: 'mediaUrls'),
           ),
-        ).thenAnswer((_) async => const Right(unit));
+        ).thenAnswer((_) async => Right(tMessage));
         return messageBloc;
       },
       act: (bloc) => bloc.add(
@@ -313,6 +339,18 @@ void main() {
           mediaUrls: const ['https://example.com/file.pdf'],
         ),
       ),
+      expect: () => [
+        isA<MessageState>()
+            .having((s) => s.messages.length, 'messages length', 1)
+            .having(
+              (s) => s.messages.first.status,
+              'status',
+              MessageDeliveryStatus.pending,
+            ),
+        isA<MessageState>()
+            .having((s) => s.messages.length, 'messages length', 1)
+            .having((s) => s.messages.first.id, 'id', tMessage.id),
+      ],
       verify: (_) {
         verify(
           () => mockSendMessage(

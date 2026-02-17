@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
+enum MessageDeliveryStatus { pending, sent, error }
+
 class Message extends Equatable {
   final String id;
 
@@ -21,6 +23,8 @@ class Message extends Equatable {
   @JsonKey(name: 'media_urls')
   final List<String> mediaUrls;
 
+  final MessageDeliveryStatus status;
+
   const Message({
     required this.id,
     required this.conversationId,
@@ -29,6 +33,7 @@ class Message extends Equatable {
     required this.createdAt,
     this.isRead = false,
     this.mediaUrls = const [],
+    this.status = MessageDeliveryStatus.sent,
   });
 
   @override
@@ -40,5 +45,6 @@ class Message extends Equatable {
     createdAt,
     isRead,
     mediaUrls,
+    status,
   ];
 }

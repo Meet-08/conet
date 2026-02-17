@@ -76,7 +76,7 @@ class MessageDataSourceImpl implements MessageDataSource {
   }
 
   @override
-  Future<Unit> sendMessage({
+  Future<MessageModel> sendMessage({
     required String conversationId,
     required String content,
     List<String>? mediaUrls,
@@ -93,7 +93,7 @@ class MessageDataSourceImpl implements MessageDataSource {
       if (res.statusCode != 201) {
         throw ServerException("Failed to send message");
       }
-      return unit;
+      return MessageModel.fromJson(res.data['message']);
     } catch (e) {
       logger.e("Failed to send message: ${e.toString()}");
       throw ServerException(e.toString());

@@ -13,6 +13,7 @@ class MessageModel extends Message {
     required super.createdAt,
     super.isRead,
     super.mediaUrls = const [],
+    super.status,
   });
 
   factory MessageModel.fromJson(Map<String, dynamic> json) =>

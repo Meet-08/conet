@@ -35,6 +35,7 @@ class ChatMessageList extends StatelessWidget {
           time: time,
           isMe: isMe,
           mediaUrls: message.mediaUrls,
+          status: message.status,
         );
       },
     );

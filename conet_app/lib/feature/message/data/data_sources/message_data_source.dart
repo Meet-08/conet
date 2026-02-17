@@ -1,4 +1,5 @@
 import 'package:conet_app/core/common/entities/user.dart';
+import 'package:conet_app/feature/message/data/models/message_model.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:fpdart/fpdart.dart';
@@ -6,7 +7,7 @@ import 'package:fpdart/fpdart.dart';
 abstract interface class MessageDataSource {
   Future<Conversation> createConversation({required String userId});
 
-  Future<Unit> sendMessage({
+  Future<MessageModel> sendMessage({
     required String conversationId,
     required String content,
     List<String>? mediaUrls,

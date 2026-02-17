@@ -1,3 +1,4 @@
+import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/presentation/pages/image_viewer_page.dart';
 import 'package:flutter/material.dart';
 
@@ -6,6 +7,7 @@ class ChatMessageBubble extends StatelessWidget {
   final String time;
   final bool isMe;
   final List<String> mediaUrls;
+  final MessageDeliveryStatus status;
 
   const ChatMessageBubble({
     super.key,
@@ -13,6 +15,7 @@ class ChatMessageBubble extends StatelessWidget {
     required this.time,
     required this.isMe,
     this.mediaUrls = const [],
+    this.status = MessageDeliveryStatus.sent,
   });
 
   @override
@@ -29,39 +32,81 @@ class ChatMessageBubble extends StatelessWidget {
               ? CrossAxisAlignment.end
               : CrossAxisAlignment.start,
           children: [
-            Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.75,
-              ),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isMe ? Colors.black : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Display text if present
-                  if (hasText)
-                    Text(
-                      text,
-                      style: TextStyle(
-                        color: isMe ? Colors.white : Colors.black,
+            Opacity(
+              opacity: status == MessageDeliveryStatus.pending ? 0.5 : 1.0,
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.75,
+                ),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: status == MessageDeliveryStatus.error
+                      ? Colors.red.shade100
+                      : (isMe ? Colors.black : Colors.grey.shade200),
+                  borderRadius: BorderRadius.circular(16),
+                  border: status == MessageDeliveryStatus.error
+                      ? Border.all(color: Colors.red)
+                      : null,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Display text if present
+                    if (hasText)
+                      Text(
+                        text,
+                        style: TextStyle(
+                          color: status == MessageDeliveryStatus.error
+                              ? Colors.red
+                              : (isMe ? Colors.white : Colors.black),
+                        ),
                       ),
-                    ),
 
-                  // Add spacing between text and images
-                  if (hasText && hasMedia) const SizedBox(height: 8),
+                    // Add spacing between text and images
+                    if (hasText && hasMedia) const SizedBox(height: 8),
 
-                  // Display images if present
-                  if (hasMedia) _buildImageGrid(context),
-                ],
+                    // Display images if present
+                    if (hasMedia) _buildImageGrid(context),
+
+                    if (status == MessageDeliveryStatus.error) ...[
+                      const SizedBox(height: 4),
+                      const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 14,
+                            color: Colors.red,
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            "Failed to send",
+                            style: TextStyle(fontSize: 10, color: Colors.red),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              time,
-              style: const TextStyle(fontSize: 10, color: Colors.grey),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  time,
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                ),
+                if (status == MessageDeliveryStatus.pending) ...[
+                  const SizedBox(width: 4),
+                  const SizedBox(
+                    width: 8,
+                    height: 8,
+                    child: CircularProgressIndicator(strokeWidth: 1),
+                  ),
+                ],
+              ],
             ),
           ],
         ),

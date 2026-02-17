@@ -1,4 +1,5 @@
 import 'package:conet_app/core/error/app_failure.dart';
+import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/domain/repositories/message_repository.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,37 +19,60 @@ void main() {
 
   const tConversationId = 'conversation-123';
   const tContent = 'Hello, this is a test message';
+  final tMessage = Message(
+    id: 'message-123',
+    conversationId: tConversationId,
+    senderId: 'user-123',
+    content: tContent,
+    createdAt: DateTime.now(),
+  );
 
   group('MessageSendMessage', () {
     test('should call sendMessage with correct params', () async {
       when(
-        () => mockMessageRepository.sendMessage(any(), any()),
-      ).thenAnswer((_) async => const Right(unit));
+        () => mockMessageRepository.sendMessage(
+          any(),
+          any(),
+          mediaUrls: any(named: 'mediaUrls'),
+        ),
+      ).thenAnswer((_) async => Right(tMessage));
 
       await usecase(conversationId: tConversationId, content: tContent);
 
       verify(
-        () => mockMessageRepository.sendMessage(tConversationId, tContent),
+        () => mockMessageRepository.sendMessage(
+          tConversationId,
+          tContent,
+          mediaUrls: null,
+        ),
       ).called(1);
     });
 
-    test('should return Right<Unit> on success', () async {
+    test('should return Right<Message> on success', () async {
       when(
-        () => mockMessageRepository.sendMessage(any(), any()),
-      ).thenAnswer((_) async => const Right(unit));
+        () => mockMessageRepository.sendMessage(
+          any(),
+          any(),
+          mediaUrls: any(named: 'mediaUrls'),
+        ),
+      ).thenAnswer((_) async => Right(tMessage));
 
       final result = await usecase(
         conversationId: tConversationId,
         content: tContent,
       );
 
-      expect(result, const Right(unit));
+      expect(result, Right(tMessage));
     });
 
     test('should return Left<AppFailure> on failure', () async {
       final tFailure = AppFailure('Failed to send message');
       when(
-        () => mockMessageRepository.sendMessage(any(), any()),
+        () => mockMessageRepository.sendMessage(
+          any(),
+          any(),
+          mediaUrls: any(named: 'mediaUrls'),
+        ),
       ).thenAnswer((_) async => Left(tFailure));
 
       final result = await usecase(
@@ -75,7 +99,7 @@ void main() {
           any(),
           mediaUrls: any(named: 'mediaUrls'),
         ),
-      ).thenAnswer((_) async => const Right(unit));
+      ).thenAnswer((_) async => Right(tMessage));
 
       // act
       final result = await usecase(
@@ -85,7 +109,7 @@ void main() {
       );
 
       // assert
-      expect(result, const Right(unit));
+      expect(result, Right(tMessage));
       verify(
         () => mockMessageRepository.sendMessage(
           tConversationId,
@@ -104,7 +128,7 @@ void main() {
           any(),
           mediaUrls: any(named: 'mediaUrls'),
         ),
-      ).thenAnswer((_) async => const Right(unit));
+      ).thenAnswer((_) async => Right(tMessage));
 
       // act
       final result = await usecase(
@@ -114,7 +138,7 @@ void main() {
       );
 
       // assert
-      expect(result, const Right(unit));
+      expect(result, Right(tMessage));
       verify(
         () => mockMessageRepository.sendMessage(
           tConversationId,

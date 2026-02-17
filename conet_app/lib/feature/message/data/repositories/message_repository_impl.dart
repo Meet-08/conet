@@ -51,7 +51,7 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<Either<AppFailure, Unit>> sendMessage(
+  Future<Either<AppFailure, Message>> sendMessage(
     String conversationId,
     String message, {
     List<String>? mediaUrls,

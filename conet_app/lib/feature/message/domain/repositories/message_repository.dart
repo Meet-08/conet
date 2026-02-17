@@ -8,7 +8,7 @@ import 'package:fpdart/fpdart.dart';
 abstract interface class MessageRepository {
   Future<Either<AppFailure, Conversation>> createConversation(String userId);
 
-  Future<Either<AppFailure, Unit>> sendMessage(
+  Future<Either<AppFailure, Message>> sendMessage(
     String conversationId,
     String message, {
     List<String>? mediaUrls,

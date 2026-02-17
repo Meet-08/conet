@@ -123,21 +123,27 @@ void main() {
     const tConversationId = 'conversation-123';
     const tContent = 'Test message';
 
-    test('should return Right<Unit> on success', () async {
+    test('should return Right<Message> on success', () async {
       when(
         () => mockMessageDataSource.sendMessage(
           conversationId: any(named: 'conversationId'),
           content: any(named: 'content'),
+          mediaUrls: any(named: 'mediaUrls'),
         ),
-      ).thenAnswer((_) async => unit);
+      ).thenAnswer((_) async => tMessageModel);
 
       final result = await repository.sendMessage(tConversationId, tContent);
 
       expect(result.isRight(), true);
+      result.fold(
+        (_) => fail('Expected Right'),
+        (message) => expect(message.id, tMessageModel.id),
+      );
       verify(
         () => mockMessageDataSource.sendMessage(
           conversationId: tConversationId,
           content: tContent,
+          mediaUrls: null,
         ),
       ).called(1);
     });
@@ -147,6 +153,7 @@ void main() {
         () => mockMessageDataSource.sendMessage(
           conversationId: any(named: 'conversationId'),
           content: any(named: 'content'),
+          mediaUrls: any(named: 'mediaUrls'),
         ),
       ).thenThrow(ServerException('Failed to send message'));
 
@@ -171,7 +178,7 @@ void main() {
           content: any(named: 'content'),
           mediaUrls: any(named: 'mediaUrls'),
         ),
-      ).thenAnswer((_) async => unit);
+      ).thenAnswer((_) async => tMessageModel);
 
       // act
       final result = await repository.sendMessage(
@@ -199,7 +206,7 @@ void main() {
           content: any(named: 'content'),
           mediaUrls: any(named: 'mediaUrls'),
         ),
-      ).thenAnswer((_) async => unit);
+      ).thenAnswer((_) async => tMessageModel);
 
       // act
       final result = await repository.sendMessage(tConversationId, tContent);
