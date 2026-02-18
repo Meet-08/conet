@@ -31,6 +31,7 @@ export const createPost = asyncHandler(async (req, res) => {
 
 // GET ALL POSTS
 export const getAllPosts = asyncHandler(async (req, res) => {
+  const userId = req.user?.id;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
   const skip = (page - 1) * limit;
@@ -41,19 +42,37 @@ export const getAllPosts = asyncHandler(async (req, res) => {
     orderBy: { created_at: "desc" },
     include: {
       user: true,
-      post_likes: true,
+      _count: {
+        select: {
+          post_likes: true,
+          post_comments: true,
+        },
+      },
+      post_likes:
+        userId ?
+          {
+            where: { user_id: userId },
+            select: { user_id: true },
+          }
+        : false,
     },
   });
 
-  const total = await prisma.posts.count();
+  const formatted = posts.map((post) => ({
+    id: post.id,
+    user: post.user,
+    content: post.content,
+    media_urls: post.media_urls,
+    like_count: post._count.post_likes,
+    comment_count: post._count.post_comments,
+    is_liked: post.post_likes?.length > 0,
+    created_at: post.created_at,
+  }));
 
   res.status(200).json({
     success: true,
-    count: posts.length,
-    total,
-    page,
-    totalPages: Math.ceil(total / limit),
-    posts,
+    count: formatted.length,
+    posts: formatted,
   });
 });
 
@@ -87,6 +106,7 @@ export const getPost = asyncHandler(async (req, res) => {
 // GET USER POSTS
 export const getUserPosts = asyncHandler(async (req, res) => {
   const { userId } = req.params;
+  const currentUserId = req.user?.id;
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
   const skip = (page - 1) * limit;
@@ -98,7 +118,19 @@ export const getUserPosts = asyncHandler(async (req, res) => {
     orderBy: { created_at: "desc" },
     include: {
       user: true,
-      post_likes: true,
+      _count: {
+        select: {
+          post_likes: true,
+          post_comments: true,
+        },
+      },
+      post_likes:
+        currentUserId ?
+          {
+            where: { user_id: currentUserId },
+            select: { user_id: true },
+          }
+        : false,
     },
   });
 
@@ -106,13 +138,24 @@ export const getUserPosts = asyncHandler(async (req, res) => {
     where: { user_id: userId },
   });
 
+  const formatted = posts.map((post) => ({
+    id: post.id,
+    user: post.user,
+    content: post.content || "",
+    media_urls: post.media_urls,
+    like_count: post._count.post_likes,
+    comment_count: post._count.post_comments,
+    is_liked: post.post_likes?.length > 0,
+    created_at: post.created_at,
+  }));
+
   res.status(200).json({
     success: true,
-    count: posts.length,
+    count: formatted.length,
     total,
     page,
     totalPages: Math.ceil(total / limit),
-    posts,
+    posts: formatted,
   });
 });
 
