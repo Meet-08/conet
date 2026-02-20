@@ -48,7 +48,9 @@ import 'package:conet_app/feature/profile/data/data_sources/profile_data_source.
 import 'package:conet_app/feature/profile/data/data_sources/profile_data_source_impl.dart';
 import 'package:conet_app/feature/profile/data/repositories/user_profile_repository_impl.dart';
 import 'package:conet_app/feature/profile/domain/repositories/user_profile_repository.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_follow_user.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_get_user.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_unfollow_user.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_about_me.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_academic_info.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_interests.dart';

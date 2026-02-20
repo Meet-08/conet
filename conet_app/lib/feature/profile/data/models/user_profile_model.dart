@@ -36,6 +36,10 @@ class UserProfileModel extends UserProfile {
   @JsonKey(name: 'following_count', defaultValue: 0)
   final int followingCount;
 
+  @override
+  @JsonKey(name: 'is_following', defaultValue: false)
+  final bool isFollowing;
+
   const UserProfileModel({
     required super.id,
     required super.email,
@@ -52,6 +56,7 @@ class UserProfileModel extends UserProfile {
     this.dateOfBirth,
     this.followerCount = 0,
     this.followingCount = 0,
+    this.isFollowing = false,
   }) : super(
          isVerified: isVerified,
          academics: academics,
@@ -60,6 +65,7 @@ class UserProfileModel extends UserProfile {
          dateOfBirth: dateOfBirth,
          followerCount: followerCount,
          followingCount: followingCount,
+         isFollowing: isFollowing,
        );
 
   factory UserProfileModel.fromJson(Map<String, dynamic> json) =>
@@ -84,6 +90,7 @@ class UserProfileModel extends UserProfile {
       dateOfBirth: entity.dateOfBirth,
       followerCount: entity.followerCount,
       followingCount: entity.followingCount,
+      isFollowing: entity.isFollowing,
     );
   }
 }

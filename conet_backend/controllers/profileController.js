@@ -1,6 +1,8 @@
 import asyncHandler from "express-async-handler";
 import {
+  followUserService,
   getUserProfileService,
+  unfollowUserService,
   updateAboutMeService,
   updateAcademicInfoService,
   updateInterestsService,
@@ -12,12 +14,39 @@ import {
 // GET USER PROFILE
 export const getUserProfile = asyncHandler(async (req, res) => {
   const { uid } = req.params;
+  const viewerId = req.user?.id ?? null;
 
-  const profile = await getUserProfileService(uid);
+  const profile = await getUserProfileService(uid, viewerId);
 
   res.status(200).json({
     success: true,
     profile,
+  });
+});
+
+// FOLLOW USER
+export const followUser = asyncHandler(async (req, res) => {
+  const followerId = req.user.id;
+  const { uid: followingId } = req.params;
+
+  await followUserService(followerId, followingId);
+
+  res.status(200).json({
+    success: true,
+    message: "User followed successfully",
+  });
+});
+
+// UNFOLLOW USER
+export const unfollowUser = asyncHandler(async (req, res) => {
+  const followerId = req.user.id;
+  const { uid: followingId } = req.params;
+
+  await unfollowUserService(followerId, followingId);
+
+  res.status(200).json({
+    success: true,
+    message: "User unfollowed successfully",
   });
 });
 

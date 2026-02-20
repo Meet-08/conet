@@ -61,3 +61,15 @@ class ProfileGetEvent extends ProfileEvent {
 
   ProfileGetEvent({required this.uid});
 }
+
+class ProfileFollowUserEvent extends ProfileEvent {
+  final String targetUid;
+
+  ProfileFollowUserEvent({required this.targetUid});
+}
+
+class ProfileUnfollowUserEvent extends ProfileEvent {
+  final String targetUid;
+
+  ProfileUnfollowUserEvent({required this.targetUid});
+}

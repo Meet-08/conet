@@ -24,3 +24,10 @@ final class ProfileUpdateFailure extends ProfileState {
 
   ProfileUpdateFailure({required this.error});
 }
+
+final class ProfileFollowFailure extends ProfileState {
+  final String error;
+  final UserProfile profile;
+
+  ProfileFollowFailure({required this.error, required this.profile});
+}

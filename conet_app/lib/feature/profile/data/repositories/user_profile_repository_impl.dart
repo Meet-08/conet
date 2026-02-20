@@ -93,6 +93,30 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
     }
   }
 
+  @override
+  Future<Either<AppFailure, Unit>> followUser(String targetUid) async {
+    try {
+      await profileDataSource.followUser(targetUid);
+      return right(unit);
+    } on ServerException catch (e) {
+      return left(AppFailure(e.message));
+    } catch (e) {
+      return left(AppFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<AppFailure, Unit>> unfollowUser(String targetUid) async {
+    try {
+      await profileDataSource.unfollowUser(targetUid);
+      return right(unit);
+    } on ServerException catch (e) {
+      return left(AppFailure(e.message));
+    } catch (e) {
+      return left(AppFailure(e.toString()));
+    }
+  }
+
   Future<Either<AppFailure, Unit>> _performUpdate(
     Future<User> Function() updateAction,
   ) async {

@@ -195,4 +195,30 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       throw ServerException("Failed to update social links");
     }
   }
+
+  @override
+  Future<void> followUser(String targetUid) async {
+    try {
+      final res = await dioClient.dio.post("/profile/$targetUid/follow");
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to follow user");
+      }
+    } catch (e) {
+      logger.e("Failed to follow user", error: e);
+      throw ServerException("Failed to follow user");
+    }
+  }
+
+  @override
+  Future<void> unfollowUser(String targetUid) async {
+    try {
+      final res = await dioClient.dio.delete("/profile/$targetUid/follow");
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to unfollow user");
+      }
+    } catch (e) {
+      logger.e("Failed to unfollow user", error: e);
+      throw ServerException("Failed to unfollow user");
+    }
+  }
 }

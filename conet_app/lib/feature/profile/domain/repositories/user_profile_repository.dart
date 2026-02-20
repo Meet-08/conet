@@ -33,4 +33,8 @@ abstract interface class UserProfileRepository {
   );
 
   Future<Either<AppFailure, UserProfile>> getUserProfile(String uid);
+
+  Future<Either<AppFailure, Unit>> followUser(String targetUid);
+
+  Future<Either<AppFailure, Unit>> unfollowUser(String targetUid);
 }

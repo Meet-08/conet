@@ -6,9 +6,15 @@
   "scripts": {
     "dev": "bun --watch server.js",
     "start": "bun server.js",
+    "test": "bun test",
+    "test:unit": "bun test ./test/unit",
+    "test:integration": "bun test ./test/integration",
+    "test:coverage": "bun test --coverage",
+    "test:watch": "bun test --watch",
     "db:generate": "prisma generate",
     "db:pull": "prisma db pull",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:migrate:test": "DATABASE_URL=$TEST_DATABASE_URL prisma migrate deploy"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +30,8 @@
     "winston": "^3.19.0"
   },
   "devDependencies": {
-    "prisma": "^6.0.0"
+    "@types/supertest": "^6.0.3",
+    "prisma": "^6.0.0",
+    "supertest": "^7.2.2"
   }
 }

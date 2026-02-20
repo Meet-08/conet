@@ -18,6 +18,7 @@ class UserProfile extends Equatable {
   final DateTime? dateOfBirth;
   final int followerCount;
   final int followingCount;
+  final bool isFollowing;
 
   const UserProfile({
     required this.id,
@@ -35,7 +36,29 @@ class UserProfile extends Equatable {
     this.dateOfBirth,
     this.followerCount = 0,
     this.followingCount = 0,
+    this.isFollowing = false,
   });
+
+  UserProfile copyWith({bool? isFollowing, int? followerCount}) {
+    return UserProfile(
+      id: id,
+      email: email,
+      firstName: firstName,
+      lastName: lastName,
+      username: username,
+      aboutMe: aboutMe,
+      profilePicUrl: profilePicUrl,
+      bannerImageUrl: bannerImageUrl,
+      interests: interests,
+      isVerified: isVerified,
+      academics: academics,
+      socialLinks: socialLinks,
+      dateOfBirth: dateOfBirth,
+      followerCount: followerCount ?? this.followerCount,
+      followingCount: followingCount,
+      isFollowing: isFollowing ?? this.isFollowing,
+    );
+  }
 
   @override
   List<Object?> get props => [
@@ -53,5 +76,6 @@ class UserProfile extends Equatable {
     dateOfBirth,
     followerCount,
     followingCount,
+    isFollowing,
   ];
 }

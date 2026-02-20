@@ -1,6 +1,8 @@
 import 'package:conet_app/core/common/entities/social_links.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_follow_user.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_get_user.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_unfollow_user.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_about_me.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_academic_info.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_interests.dart';
@@ -22,6 +24,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   final ProfileUpdateSocialLinks _updateSocialLinks;
   final ProfileUpdatePictures _updatePictures;
   final ProfileGetUser _getUser;
+  final ProfileFollowUser _followUser;
+  final ProfileUnfollowUser _unfollowUser;
 
   ProfileBloc({
     required ProfileUpdatePersonalInfo updatePersonalInfo,
@@ -31,6 +35,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     required ProfileUpdateSocialLinks updateSocialLinks,
     required ProfileUpdatePictures updatePictures,
     required ProfileGetUser getUser,
+    required ProfileFollowUser followUser,
+    required ProfileUnfollowUser unfollowUser,
   }) : _updatePersonalInfo = updatePersonalInfo,
        _updateAboutMe = updateAboutMe,
        _updateInterests = updateInterests,
@@ -38,6 +44,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
        _updateSocialLinks = updateSocialLinks,
        _updatePictures = updatePictures,
        _getUser = getUser,
+       _followUser = followUser,
+       _unfollowUser = unfollowUser,
        super(ProfileInitial()) {
     on<ProfileGetEvent>(_onGetProfile);
     on<ProfileUpdatePersonalInfoEvent>(_onUpdatePersonalInfo);
@@ -46,6 +54,8 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     on<ProfileUpdateAcademicInfoEvent>(_onUpdateAcademicInfo);
     on<ProfileUpdateSocialLinksEvent>(_onUpdateSocialLinks);
     on<ProfileUpdatePicturesEvent>(_onUpdatePictures);
+    on<ProfileFollowUserEvent>(_onFollowUser);
+    on<ProfileUnfollowUserEvent>(_onUnfollowUser);
   }
 
   Future<void> _onGetProfile(
@@ -143,5 +153,62 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       (failure) => emit(ProfileUpdateFailure(error: failure.message)),
       (_) => emit(ProfileUpdateSuccess()),
     );
+  }
+
+  Future<void> _onFollowUser(
+    ProfileFollowUserEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! ProfileLoaded) return;
+
+    // Optimistic update
+    final optimistic = currentState.userProfile.copyWith(
+      isFollowing: true,
+      followerCount: currentState.userProfile.followerCount + 1,
+    );
+    emit(ProfileLoaded(optimistic));
+
+    final result = await _followUser(event.targetUid);
+    result.fold((failure) {
+      // Revert on failure
+      emit(ProfileLoaded(currentState.userProfile));
+      emit(
+        ProfileFollowFailure(
+          error: failure.message,
+          profile: currentState.userProfile,
+        ),
+      );
+    }, (_) {});
+  }
+
+  Future<void> _onUnfollowUser(
+    ProfileUnfollowUserEvent event,
+    Emitter<ProfileState> emit,
+  ) async {
+    final currentState = state;
+    if (currentState is! ProfileLoaded) return;
+
+    // Optimistic update
+    final optimistic = currentState.userProfile.copyWith(
+      isFollowing: false,
+      followerCount: (currentState.userProfile.followerCount - 1).clamp(
+        0,
+        999999999,
+      ),
+    );
+    emit(ProfileLoaded(optimistic));
+
+    final result = await _unfollowUser(event.targetUid);
+    result.fold((failure) {
+      // Revert on failure
+      emit(ProfileLoaded(currentState.userProfile));
+      emit(
+        ProfileFollowFailure(
+          error: failure.message,
+          profile: currentState.userProfile,
+        ),
+      );
+    }, (_) {});
   }
 }

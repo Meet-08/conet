@@ -340,4 +340,86 @@ void main() {
       );
     });
   });
+
+  group('followUser', () {
+    const tTargetUid = 'target-user-456';
+
+    test('should return Right<Unit> on success', () async {
+      when(() => mockDataSource.followUser(any())).thenAnswer((_) async {});
+
+      final result = await repository.followUser(tTargetUid);
+
+      expect(result.isRight(), true);
+      verify(() => mockDataSource.followUser(tTargetUid)).called(1);
+    });
+
+    test('should return Left when ServerException is thrown', () async {
+      when(
+        () => mockDataSource.followUser(any()),
+      ).thenThrow(ServerException('Failed to follow user'));
+
+      final result = await repository.followUser(tTargetUid);
+
+      expect(result.isLeft(), true);
+      result.fold(
+        (failure) => expect(failure.message, 'Failed to follow user'),
+        (_) => fail('Expected Left'),
+      );
+    });
+
+    test('should return Left when generic exception is thrown', () async {
+      when(
+        () => mockDataSource.followUser(any()),
+      ).thenThrow(Exception('Network error'));
+
+      final result = await repository.followUser(tTargetUid);
+
+      expect(result.isLeft(), true);
+      result.fold(
+        (failure) => expect(failure.message.contains('Exception'), true),
+        (_) => fail('Expected Left'),
+      );
+    });
+  });
+
+  group('unfollowUser', () {
+    const tTargetUid = 'target-user-456';
+
+    test('should return Right<Unit> on success', () async {
+      when(() => mockDataSource.unfollowUser(any())).thenAnswer((_) async {});
+
+      final result = await repository.unfollowUser(tTargetUid);
+
+      expect(result.isRight(), true);
+      verify(() => mockDataSource.unfollowUser(tTargetUid)).called(1);
+    });
+
+    test('should return Left when ServerException is thrown', () async {
+      when(
+        () => mockDataSource.unfollowUser(any()),
+      ).thenThrow(ServerException('Failed to unfollow user'));
+
+      final result = await repository.unfollowUser(tTargetUid);
+
+      expect(result.isLeft(), true);
+      result.fold(
+        (failure) => expect(failure.message, 'Failed to unfollow user'),
+        (_) => fail('Expected Left'),
+      );
+    });
+
+    test('should return Left when generic exception is thrown', () async {
+      when(
+        () => mockDataSource.unfollowUser(any()),
+      ).thenThrow(Exception('Network error'));
+
+      final result = await repository.unfollowUser(tTargetUid);
+
+      expect(result.isLeft(), true);
+      result.fold(
+        (failure) => expect(failure.message.contains('Exception'), true),
+        (_) => fail('Expected Left'),
+      );
+    });
+  });
 }

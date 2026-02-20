@@ -1,0 +1,363 @@
+/**
+ * Unit tests – conversationService.js
+ *
+ * Coverage targets:
+ *  ✓ createConversationService – UUID target, username target, self-message, not found
+ *  ✓ getConversationsService   – empty list, populated list, unread count aggregation
+ *  ✓ getMessagesService        – returns mapped messages, respects limit
+ *  ✓ sendMessageService        – success, not a participant, conversation not found
+ *  ✓ markAsReadService         – updates unread messages belonging to other user
+ *  ✓ searchUsersService        – returns filtered results, excludes self
+ */
+
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { TEST_USER, TEST_USER_B } from "../../mocks/authMock.js";
+import { prismaMock, resetPrismaMocks } from "../../mocks/prismaMock.js";
+
+mock.module("../../../config/prisma.js", () => ({ default: prismaMock }));
+mock.module("../../../config/constants.js", () => ({
+  USER_SELECT_FIELDS: {
+    id: true,
+    email: true,
+    first_name: true,
+    last_name: true,
+    username: true,
+    profile_pic_url: true,
+    user_role: true,
+    is_verified: true,
+  },
+  UUID_REGEX:
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+}));
+
+import {
+  createConversationService,
+  getConversationsService,
+  getMessagesService,
+  markAsReadService,
+  searchUsersService,
+  sendMessageService,
+} from "../../../services/conversationService.js";
+
+// ─── Fixtures ──────────────────────────────────────────────────────────────
+
+const CONV_ID = "cccccccc-cccc-cccc-cccc-cccccccccccc";
+
+const mockOtherUser = {
+  id: TEST_USER_B.id,
+  email: TEST_USER_B.email,
+  username: "bob",
+  first_name: "Bob",
+  last_name: "Jones",
+  profile_pic_url: null,
+  user_role: "user",
+  is_verified: false,
+};
+
+const mockConversationRow = {
+  id: CONV_ID,
+  user_one: TEST_USER.id,
+  user_two: TEST_USER_B.id,
+  created_at: new Date("2025-01-01"),
+  updated_at: new Date("2025-01-02"),
+  messages_conversations_last_message_idTomessages: {
+    content: "Hello!",
+    media_urls: [],
+  },
+  users_conversations_user_oneTousers: {
+    id: TEST_USER.id,
+    username: "alice",
+  },
+  users_conversations_user_twoTousers: mockOtherUser,
+  _count: { unreadMessages: 0 },
+};
+
+beforeEach(() => {
+  resetPrismaMocks();
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("createConversationService", () => {
+  it("creates a new conversation between two different users", async () => {
+    prismaMock.users.findUnique.mockResolvedValue(mockOtherUser);
+    prismaMock.conversations.upsert.mockResolvedValue({
+      id: CONV_ID,
+      user_one: TEST_USER.id,
+      user_two: TEST_USER_B.id,
+      updated_at: new Date(),
+    });
+
+    const result = await createConversationService(
+      TEST_USER.id,
+      TEST_USER_B.id,
+    );
+
+    expect(result.id).toBe(CONV_ID);
+    expect(result.other_user).toEqual(mockOtherUser);
+    expect(result.unread_count).toBe(0);
+  });
+
+  it("throws 400 when trying to create conversation with yourself", async () => {
+    await expect(
+      createConversationService(TEST_USER.id, TEST_USER.id),
+    ).rejects.toMatchObject({
+      message: "Cannot create conversation with yourself",
+      statusCode: 400,
+    });
+  });
+
+  it("resolves user by username when a non-UUID identifier is provided", async () => {
+    // First findFirst resolves username → UUID
+    prismaMock.users.findFirst.mockResolvedValue({ id: TEST_USER_B.id });
+    prismaMock.users.findUnique.mockResolvedValue(mockOtherUser);
+    prismaMock.conversations.upsert.mockResolvedValue({
+      id: CONV_ID,
+      user_one: TEST_USER.id,
+      user_two: TEST_USER_B.id,
+      updated_at: new Date(),
+    });
+
+    const result = await createConversationService(TEST_USER.id, "bob");
+
+    expect(prismaMock.users.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { OR: [{ username: "bob" }, { email: "bob" }] },
+      }),
+    );
+    expect(result.id).toBe(CONV_ID);
+  });
+
+  it("throws 404 when username lookup finds no user", async () => {
+    prismaMock.users.findFirst.mockResolvedValue(null);
+
+    await expect(
+      createConversationService(TEST_USER.id, "ghost"),
+    ).rejects.toMatchObject({
+      message: "User not found",
+      statusCode: 404,
+    });
+  });
+
+  it("throws 404 when target UUID user does not exist", async () => {
+    prismaMock.users.findUnique.mockResolvedValue(null);
+
+    await expect(
+      createConversationService(TEST_USER.id, TEST_USER_B.id),
+    ).rejects.toMatchObject({
+      message: "User not found",
+      statusCode: 404,
+    });
+  });
+
+  it("normalises user pair so user_one < user_two (alphabetical)", async () => {
+    // user A > user B alphabetically → pair should be flipped
+    const userA = "ffffffff-ffff-ffff-ffff-ffffffffffff";
+    const userB = "00000000-0000-0000-0000-000000000001";
+
+    prismaMock.users.findUnique.mockResolvedValue({ id: userA });
+    prismaMock.conversations.upsert.mockResolvedValue({
+      id: CONV_ID,
+      user_one: userB,
+      user_two: userA,
+      updated_at: new Date(),
+    });
+
+    await createConversationService(userA, userB);
+
+    const upsertCall = prismaMock.conversations.upsert.mock.calls[0][0];
+    expect(upsertCall.where.user_one_user_two.user_one).toBe(userB);
+    expect(upsertCall.where.user_one_user_two.user_two).toBe(userA);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("getConversationsService", () => {
+  it("returns an empty array when user has no conversations", async () => {
+    prismaMock.conversations.findMany.mockResolvedValue([]);
+    prismaMock.messages.groupBy.mockResolvedValue([]);
+
+    const result = await getConversationsService(TEST_USER.id);
+
+    expect(result).toEqual([]);
+  });
+
+  it("maps conversation rows and injects unread count", async () => {
+    prismaMock.conversations.findMany.mockResolvedValue([mockConversationRow]);
+    prismaMock.messages.groupBy.mockResolvedValue([
+      { conversation_id: CONV_ID, _count: { id: 3 } },
+    ]);
+
+    const result = await getConversationsService(TEST_USER.id);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].unread_count).toBe(3);
+    expect(result[0].last_message).toBe("Hello!");
+  });
+
+  it("sets unread_count to 0 for conversations with no unread messages", async () => {
+    prismaMock.conversations.findMany.mockResolvedValue([mockConversationRow]);
+    prismaMock.messages.groupBy.mockResolvedValue([]); // no unread entries
+
+    const result = await getConversationsService(TEST_USER.id);
+
+    expect(result[0].unread_count).toBe(0);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("getMessagesService", () => {
+  it("returns mapped messages ordered newest first", async () => {
+    const now = new Date();
+    prismaMock.messages.findMany.mockResolvedValue([
+      {
+        id: "msg-1",
+        conversation_id: CONV_ID,
+        sender_id: TEST_USER.id,
+        content: "Hi",
+        created_at: now,
+        is_read: true,
+        media_urls: [],
+      },
+    ]);
+
+    const result = await getMessagesService(CONV_ID, 20);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].content).toBe("Hi");
+    expect(result[0].is_read).toBe(true);
+    expect(typeof result[0].created_at).toBe("string"); // ISO string
+  });
+
+  it("passes the limit to Prisma findMany", async () => {
+    prismaMock.messages.findMany.mockResolvedValue([]);
+
+    await getMessagesService(CONV_ID, 5);
+
+    expect(prismaMock.messages.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ take: 5 }),
+    );
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("sendMessageService", () => {
+  it("creates and returns a new message", async () => {
+    const now = new Date();
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      user_one: TEST_USER.id,
+      user_two: TEST_USER_B.id,
+    });
+    prismaMock.messages.create.mockResolvedValue({
+      id: "msg-new",
+      conversation_id: CONV_ID,
+      sender_id: TEST_USER.id,
+      content: "Hello!",
+      created_at: now,
+      is_read: false,
+      media_urls: [],
+    });
+
+    const result = await sendMessageService(CONV_ID, TEST_USER.id, "Hello!");
+
+    expect(result.content).toBe("Hello!");
+    expect(result.sender_id).toBe(TEST_USER.id);
+  });
+
+  it("throws 404 when conversation does not exist", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue(null);
+
+    await expect(
+      sendMessageService(CONV_ID, TEST_USER.id, "hi"),
+    ).rejects.toMatchObject({
+      message: "Conversation not found",
+      statusCode: 404,
+    });
+  });
+
+  it("throws 403 when sender is not a participant", async () => {
+    const outsiderId = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      user_one: TEST_USER.id,
+      user_two: TEST_USER_B.id,
+    });
+
+    await expect(
+      sendMessageService(CONV_ID, outsiderId, "hack"),
+    ).rejects.toMatchObject({
+      message: "Not a participant of this conversation",
+      statusCode: 403,
+    });
+  });
+
+  it("accepts an empty content string when media_urls are provided", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      user_one: TEST_USER.id,
+      user_two: TEST_USER_B.id,
+    });
+    prismaMock.messages.create.mockResolvedValue({
+      id: "msg-media",
+      conversation_id: CONV_ID,
+      sender_id: TEST_USER.id,
+      content: "",
+      created_at: new Date(),
+      is_read: false,
+      media_urls: ["https://cdn.example.com/image.jpg"],
+    });
+
+    const result = await sendMessageService(CONV_ID, TEST_USER.id, "", [
+      "https://cdn.example.com/image.jpg",
+    ]);
+
+    expect(result.media_urls).toHaveLength(1);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("markAsReadService", () => {
+  it("marks messages from the other user as read", async () => {
+    prismaMock.messages.updateMany.mockResolvedValue({ count: 2 });
+
+    await markAsReadService(CONV_ID, TEST_USER.id);
+
+    expect(prismaMock.messages.updateMany).toHaveBeenCalledWith({
+      where: {
+        conversation_id: CONV_ID,
+        sender_id: { not: TEST_USER.id },
+        is_read: false,
+      },
+      data: { is_read: true },
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("searchUsersService", () => {
+  it("returns users matching the query", async () => {
+    prismaMock.users.findMany.mockResolvedValue([mockOtherUser]);
+
+    const result = await searchUsersService("bo", 3, TEST_USER.id);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].username).toBe("bob");
+  });
+
+  it("excludes the current user from results", async () => {
+    prismaMock.users.findMany.mockResolvedValue([]);
+
+    await searchUsersService("alice", 3, TEST_USER.id);
+
+    const call = prismaMock.users.findMany.mock.calls[0][0];
+    expect(call.where.AND[0]).toEqual({ id: { not: TEST_USER.id } });
+  });
+
+  it("returns empty array when no users match", async () => {
+    prismaMock.users.findMany.mockResolvedValue([]);
+
+    const result = await searchUsersService("zzz", 3, TEST_USER.id);
+
+    expect(result).toEqual([]);
+  });
+});

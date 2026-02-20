@@ -35,6 +35,7 @@ UserProfileModel _$UserProfileModelFromJson(Map<String, dynamic> json) =>
           : DateTime.parse(json['date_of_birth'] as String),
       followerCount: (json['follower_count'] as num?)?.toInt() ?? 0,
       followingCount: (json['following_count'] as num?)?.toInt() ?? 0,
+      isFollowing: json['is_following'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$UserProfileModelToJson(UserProfileModel instance) =>
@@ -56,4 +57,5 @@ Map<String, dynamic> _$UserProfileModelToJson(UserProfileModel instance) =>
       'date_of_birth': instance.dateOfBirth?.toIso8601String(),
       'follower_count': instance.followerCount,
       'following_count': instance.followingCount,
+      'is_following': instance.isFollowing,
     };

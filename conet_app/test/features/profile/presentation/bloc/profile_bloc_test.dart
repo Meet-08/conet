@@ -3,7 +3,9 @@ import 'package:conet_app/core/common/entities/social_links.dart';
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_academics.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_follow_user.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_get_user.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_unfollow_user.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_about_me.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_academic_info.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_interests.dart';
@@ -34,6 +36,10 @@ class MockProfileUpdateSocialLinks extends Mock
 
 class MockProfileUpdatePictures extends Mock implements ProfileUpdatePictures {}
 
+class MockProfileFollowUser extends Mock implements ProfileFollowUser {}
+
+class MockProfileUnfollowUser extends Mock implements ProfileUnfollowUser {}
+
 class MockPlatformFile extends Mock implements PlatformFile {}
 
 void main() {
@@ -45,6 +51,8 @@ void main() {
   late MockProfileUpdateAcademicInfo mockUpdateAcademicInfo;
   late MockProfileUpdateSocialLinks mockUpdateSocialLinks;
   late MockProfileUpdatePictures mockUpdatePictures;
+  late MockProfileFollowUser mockFollowUser;
+  late MockProfileUnfollowUser mockUnfollowUser;
 
   final tUserProfile = UserProfile(
     id: 'user-123',
@@ -79,6 +87,8 @@ void main() {
     mockUpdateAcademicInfo = MockProfileUpdateAcademicInfo();
     mockUpdateSocialLinks = MockProfileUpdateSocialLinks();
     mockUpdatePictures = MockProfileUpdatePictures();
+    mockFollowUser = MockProfileFollowUser();
+    mockUnfollowUser = MockProfileUnfollowUser();
 
     profileBloc = ProfileBloc(
       getUser: mockGetUser,
@@ -88,6 +98,8 @@ void main() {
       updateAcademicInfo: mockUpdateAcademicInfo,
       updateSocialLinks: mockUpdateSocialLinks,
       updatePictures: mockUpdatePictures,
+      followUser: mockFollowUser,
+      unfollowUser: mockUnfollowUser,
     );
   });
 
@@ -444,6 +456,259 @@ void main() {
         );
       },
       expect: () => [isA<ProfileLoading>(), isA<ProfileUpdateSuccess>()],
+    );
+  });
+
+  group('ProfileFollowUserEvent', () {
+    const tTargetUid = 'target-user-456';
+
+    blocTest<ProfileBloc, ProfileState>(
+      'does nothing when state is not ProfileLoaded',
+      build: () => profileBloc,
+      act: (bloc) => bloc.add(ProfileFollowUserEvent(targetUid: tTargetUid)),
+      expect: () => [],
+    );
+
+    blocTest<ProfileBloc, ProfileState>(
+      'optimistically increments followerCount and sets isFollowing=true',
+      build: () {
+        when(
+          () => mockGetUser(any()),
+        ).thenAnswer((_) async => Right(tUserProfile));
+        when(
+          () => mockFollowUser(any()),
+        ).thenAnswer((_) async => const Right(unit));
+        return profileBloc;
+      },
+      act: (bloc) async {
+        bloc.add(ProfileGetEvent(uid: 'user-123'));
+        await Future.delayed(Duration.zero);
+        bloc.add(ProfileFollowUserEvent(targetUid: tTargetUid));
+      },
+      expect: () => [
+        isA<ProfileLoading>(),
+        isA<ProfileLoaded>().having(
+          (s) => s.userProfile.isFollowing,
+          'isFollowing before follow',
+          false,
+        ),
+        isA<ProfileLoaded>()
+            .having(
+              (s) => s.userProfile.isFollowing,
+              'isFollowing after follow',
+              true,
+            )
+            .having(
+              (s) => s.userProfile.followerCount,
+              'followerCount incremented',
+              tUserProfile.followerCount + 1,
+            ),
+      ],
+      verify: (_) {
+        verify(() => mockFollowUser(tTargetUid)).called(1);
+      },
+    );
+
+    blocTest<ProfileBloc, ProfileState>(
+      'reverts optimistic update and emits ProfileFollowFailure on API error',
+      build: () {
+        when(
+          () => mockGetUser(any()),
+        ).thenAnswer((_) async => Right(tUserProfile));
+        when(
+          () => mockFollowUser(any()),
+        ).thenAnswer((_) async => Left(AppFailure('Server error')));
+        return profileBloc;
+      },
+      act: (bloc) async {
+        bloc.add(ProfileGetEvent(uid: 'user-123'));
+        await Future.delayed(Duration.zero);
+        bloc.add(ProfileFollowUserEvent(targetUid: tTargetUid));
+      },
+      expect: () => [
+        isA<ProfileLoading>(),
+        // original loaded
+        isA<ProfileLoaded>().having(
+          (s) => s.userProfile.isFollowing,
+          'before follow',
+          false,
+        ),
+        // optimistic
+        isA<ProfileLoaded>().having(
+          (s) => s.userProfile.isFollowing,
+          'optimistic',
+          true,
+        ),
+        // reverted
+        isA<ProfileLoaded>().having(
+          (s) => s.userProfile.isFollowing,
+          'reverted',
+          false,
+        ),
+        isA<ProfileFollowFailure>().having(
+          (s) => s.error,
+          'error message',
+          'Server error',
+        ),
+      ],
+    );
+  });
+
+  group('ProfileUnfollowUserEvent', () {
+    const tTargetUid = 'target-user-456';
+
+    final tFollowedProfile = UserProfile(
+      id: 'user-123',
+      email: 'test@example.com',
+      firstName: 'John',
+      lastName: 'Doe',
+      username: 'johndoe',
+      aboutMe: 'Test about me',
+      profilePicUrl: 'https://example.com/pic.jpg',
+      bannerImageUrl: null,
+      interests: const ['Flutter', 'Dart'],
+      isVerified: true,
+      socialLinks: const [],
+      academics: [
+        UserAcademics(
+          id: 'acad-1',
+          userId: 'user-123',
+          collegeName: 'Test University',
+          course: 'Computer Science',
+          createdAt: DateTime(2024, 1, 1),
+        ),
+      ],
+      followerCount: 101,
+      followingCount: 50,
+      isFollowing: true,
+    );
+
+    blocTest<ProfileBloc, ProfileState>(
+      'does nothing when state is not ProfileLoaded',
+      build: () => profileBloc,
+      act: (bloc) => bloc.add(ProfileUnfollowUserEvent(targetUid: tTargetUid)),
+      expect: () => [],
+    );
+
+    blocTest<ProfileBloc, ProfileState>(
+      'optimistically decrements followerCount and sets isFollowing=false',
+      build: () {
+        when(
+          () => mockGetUser(any()),
+        ).thenAnswer((_) async => Right(tFollowedProfile));
+        when(
+          () => mockUnfollowUser(any()),
+        ).thenAnswer((_) async => const Right(unit));
+        return profileBloc;
+      },
+      act: (bloc) async {
+        bloc.add(ProfileGetEvent(uid: 'user-123'));
+        await Future.delayed(Duration.zero);
+        bloc.add(ProfileUnfollowUserEvent(targetUid: tTargetUid));
+      },
+      expect: () => [
+        isA<ProfileLoading>(),
+        isA<ProfileLoaded>().having(
+          (s) => s.userProfile.isFollowing,
+          'isFollowing before unfollow',
+          true,
+        ),
+        isA<ProfileLoaded>()
+            .having(
+              (s) => s.userProfile.isFollowing,
+              'isFollowing after unfollow',
+              false,
+            )
+            .having(
+              (s) => s.userProfile.followerCount,
+              'followerCount decremented',
+              tFollowedProfile.followerCount - 1,
+            ),
+      ],
+      verify: (_) {
+        verify(() => mockUnfollowUser(tTargetUid)).called(1);
+      },
+    );
+
+    blocTest<ProfileBloc, ProfileState>(
+      'followerCount does not go below 0 on unfollow',
+      build: () {
+        final zeroFollowerProfile = const UserProfile(
+          id: 'user-123',
+          email: 'test@example.com',
+          interests: [],
+          isVerified: false,
+          academics: [],
+          socialLinks: [],
+          followerCount: 0,
+          followingCount: 0,
+          isFollowing: true,
+        );
+        when(
+          () => mockGetUser(any()),
+        ).thenAnswer((_) async => Right(zeroFollowerProfile));
+        when(
+          () => mockUnfollowUser(any()),
+        ).thenAnswer((_) async => const Right(unit));
+        return profileBloc;
+      },
+      act: (bloc) async {
+        bloc.add(ProfileGetEvent(uid: 'user-123'));
+        await Future.delayed(Duration.zero);
+        bloc.add(ProfileUnfollowUserEvent(targetUid: tTargetUid));
+      },
+      expect: () => [
+        isA<ProfileLoading>(),
+        isA<ProfileLoaded>(),
+        isA<ProfileLoaded>().having(
+          (s) => s.userProfile.followerCount,
+          'followerCount clamped at 0',
+          0,
+        ),
+      ],
+    );
+
+    blocTest<ProfileBloc, ProfileState>(
+      'reverts optimistic update and emits ProfileFollowFailure on API error',
+      build: () {
+        when(
+          () => mockGetUser(any()),
+        ).thenAnswer((_) async => Right(tFollowedProfile));
+        when(
+          () => mockUnfollowUser(any()),
+        ).thenAnswer((_) async => Left(AppFailure('Unfollow error')));
+        return profileBloc;
+      },
+      act: (bloc) async {
+        bloc.add(ProfileGetEvent(uid: 'user-123'));
+        await Future.delayed(Duration.zero);
+        bloc.add(ProfileUnfollowUserEvent(targetUid: tTargetUid));
+      },
+      expect: () => [
+        isA<ProfileLoading>(),
+        isA<ProfileLoaded>().having(
+          (s) => s.userProfile.isFollowing,
+          'before unfollow',
+          true,
+        ),
+        // optimistic
+        isA<ProfileLoaded>().having(
+          (s) => s.userProfile.isFollowing,
+          'optimistic',
+          false,
+        ),
+        // reverted
+        isA<ProfileLoaded>().having(
+          (s) => s.userProfile.isFollowing,
+          'reverted',
+          true,
+        ),
+        isA<ProfileFollowFailure>().having(
+          (s) => s.error,
+          'error message',
+          'Unfollow error',
+        ),
+      ],
     );
   });
 }

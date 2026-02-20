@@ -16,7 +16,7 @@ const PROFILE_SELECT_FIELDS = {
 
 // ─── Get user profile by ID ────────────────────────────────────────────────
 
-export const getUserProfileService = async (uid) => {
+export const getUserProfileService = async (uid, viewerId = null) => {
   const user = await prisma.users.findUnique({
     where: { id: uid },
     select: {
@@ -45,6 +45,20 @@ export const getUserProfileService = async (uid) => {
       : [];
   }
 
+  // Check if the viewer follows this profile
+  let isFollowing = false;
+  if (viewerId && viewerId !== uid) {
+    const followRecord = await prisma.user_follows.findUnique({
+      where: {
+        follower_id_following_id: {
+          follower_id: viewerId,
+          following_id: uid,
+        },
+      },
+    });
+    isFollowing = !!followRecord;
+  }
+
   return {
     id: user.id,
     email: user.email,
@@ -64,7 +78,62 @@ export const getUserProfileService = async (uid) => {
       user._count.user_follows_user_follows_following_idTousers ?? 0,
     following_count:
       user._count.user_follows_user_follows_follower_idTousers ?? 0,
+    is_following: isFollowing,
   };
+};
+
+// ─── Follow a user ─────────────────────────────────────────────────────────
+
+export const followUserService = async (followerId, followingId) => {
+  if (followerId === followingId) {
+    const err = new Error("You cannot follow yourself");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  // Verify target user exists
+  const target = await prisma.users.findUnique({
+    where: { id: followingId },
+    select: { id: true },
+  });
+
+  if (!target) {
+    const err = new Error("User not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  // Upsert to avoid duplicate key error
+  await prisma.user_follows.upsert({
+    where: {
+      follower_id_following_id: {
+        follower_id: followerId,
+        following_id: followingId,
+      },
+    },
+    create: {
+      follower_id: followerId,
+      following_id: followingId,
+    },
+    update: {},
+  });
+};
+
+// ─── Unfollow a user ───────────────────────────────────────────────────────
+
+export const unfollowUserService = async (followerId, followingId) => {
+  if (followerId === followingId) {
+    const err = new Error("You cannot unfollow yourself");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  await prisma.user_follows.deleteMany({
+    where: {
+      follower_id: followerId,
+      following_id: followingId,
+    },
+  });
 };
 
 // ─── Update about me ───────────────────────────────────────────────────────

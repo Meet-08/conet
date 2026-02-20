@@ -30,4 +30,8 @@ abstract interface class ProfileDataSource {
   });
 
   Future<UserModel> updateSocialLinks(List<SocialLinks> socialLinks);
+
+  Future<void> followUser(String targetUid);
+
+  Future<void> unfollowUser(String targetUid);
 }

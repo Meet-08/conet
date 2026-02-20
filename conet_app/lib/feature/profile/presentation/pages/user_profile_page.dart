@@ -85,7 +85,18 @@ class _OtherUserProfileView extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: BlocBuilder<ProfileBloc, ProfileState>(
+      body: BlocConsumer<ProfileBloc, ProfileState>(
+        listenWhen: (_, current) => current is ProfileFollowFailure,
+        listener: (context, state) {
+          if (state is ProfileFollowFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.error),
+                backgroundColor: Colors.red.shade600,
+              ),
+            );
+          }
+        },
         builder: (context, state) {
           if (state is ProfileLoading || state is ProfileInitial) {
             return const Center(child: CircularProgressIndicator());
@@ -252,10 +263,32 @@ class _OtherUserProfileView extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             ElevatedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                final bloc = context.read<ProfileBloc>();
+                                if (profile.isFollowing) {
+                                  bloc.add(
+                                    ProfileUnfollowUserEvent(
+                                      targetUid: profile.id,
+                                    ),
+                                  );
+                                } else {
+                                  bloc.add(
+                                    ProfileFollowUserEvent(
+                                      targetUid: profile.id,
+                                    ),
+                                  );
+                                }
+                              },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
-                                foregroundColor: Colors.white,
+                                backgroundColor: profile.isFollowing
+                                    ? Colors.white
+                                    : Colors.black,
+                                foregroundColor: profile.isFollowing
+                                    ? Colors.black
+                                    : Colors.white,
+                                side: profile.isFollowing
+                                    ? BorderSide(color: Colors.grey.shade400)
+                                    : null,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -268,7 +301,9 @@ class _OtherUserProfileView extends StatelessWidget {
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              child: const Text('Follow'),
+                              child: Text(
+                                profile.isFollowing ? 'Following' : 'Follow',
+                              ),
                             ),
                           ],
                         ),

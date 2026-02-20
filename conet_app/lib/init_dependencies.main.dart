@@ -228,6 +228,8 @@ void _initProfile() {
     ..registerFactory(
       () => ProfileGetUser(userProfileRepository: serviceLocator()),
     )
+    ..registerFactory(() => ProfileFollowUser(repository: serviceLocator()))
+    ..registerFactory(() => ProfileUnfollowUser(repository: serviceLocator()))
     // Bloc
     ..registerFactory(
       () => ProfileBloc(
@@ -238,6 +240,8 @@ void _initProfile() {
         updateSocialLinks: serviceLocator(),
         updatePictures: serviceLocator(),
         getUser: serviceLocator(),
+        followUser: serviceLocator(),
+        unfollowUser: serviceLocator(),
       ),
     );
 }

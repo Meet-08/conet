@@ -1,0 +1,19 @@
+[test]
+# Root directory for test files
+root = "./test"
+
+# Coverage reporting
+coverage = false          # set to true via CLI flag: bun test --coverage
+coverageDir = "./coverage"
+coverageReporter = ["text", "lcov"]
+
+# Coverage thresholds – build fails below these
+coverageThreshold = { line = 70, function = 80, statement = 70 }
+
+# Timeout per test (ms)
+timeout = 10000
+
+# Automatically mock modules listed here
+
+[test.env]
+NODE_ENV = "test"
