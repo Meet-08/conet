@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class MessageAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onSearchPressed;
@@ -14,8 +15,8 @@ class MessageAppBar extends StatelessWidget implements PreferredSizeWidget {
         style: TextStyle(fontWeight: FontWeight.w600),
       ),
       actions: [
-        IconButton(icon: const Icon(Icons.search), onPressed: onSearchPressed),
-        IconButton(icon: const Icon(Icons.add), onPressed: onAddPressed),
+        IconButton(icon: const FaIcon(FontAwesomeIcons.magnifyingGlass), onPressed: onSearchPressed),
+        IconButton(icon: const FaIcon(FontAwesomeIcons.plus), onPressed: onAddPressed),
       ],
     );
   }

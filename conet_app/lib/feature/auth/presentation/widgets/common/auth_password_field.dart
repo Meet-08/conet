@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 /// A reusable password input field for authentication forms.
 ///
@@ -153,10 +154,10 @@ class _AuthPasswordFieldState extends State<AuthPasswordField> {
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             hintText: widget.hintText,
-            prefixIcon: const Icon(Icons.lock_outline),
+            prefixIcon: const FaIcon(FontAwesomeIcons.lock),
             suffixIcon: IconButton(
-              icon: Icon(
-                _obscureText ? Icons.visibility_off : Icons.visibility,
+              icon: FaIcon(
+                _obscureText ? FontAwesomeIcons.eyeSlash : FontAwesomeIcons.eye,
               ),
               onPressed: _toggleVisibility,
             ),

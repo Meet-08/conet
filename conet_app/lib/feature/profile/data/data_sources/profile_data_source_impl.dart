@@ -116,7 +116,8 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         data: {
           if (firstName != null) "first_name": firstName,
           if (lastName != null) "last_name": lastName,
-          if (dateOfBirth != null) "date_of_birth": dateOfBirth.toIso8601String(),
+          if (dateOfBirth != null)
+            "date_of_birth": dateOfBirth.toIso8601String(),
         },
       );
       if (res.statusCode != 200) {

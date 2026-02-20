@@ -1,7 +1,8 @@
-import 'package:conet_app/core/common/utils/app_toast.dart';
+import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pinput/pinput.dart';
 
@@ -107,8 +108,8 @@ class _OtpDialogState extends State<OtpDialog> {
                   color: Colors.black.withValues(alpha: 0.05),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.lock_outline,
+                child: const FaIcon(
+                  FontAwesomeIcons.lock,
                   size: 32,
                   color: Colors.black87,
                 ),
@@ -218,8 +219,8 @@ class _OtpDialogState extends State<OtpDialog> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.error_outline,
+                      FaIcon(
+                        FontAwesomeIcons.circleExclamation,
                         size: 18,
                         color: Colors.red.shade700,
                       ),

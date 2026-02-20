@@ -52,3 +52,15 @@ class PostSyncCommentCountEvent extends PostEvent {
     required this.commentCount,
   });
 }
+
+class PostGetUserPostsEvent extends PostEvent {
+  final String userId;
+  final int page;
+  final int limit;
+
+  const PostGetUserPostsEvent({
+    required this.userId,
+    this.page = 1,
+    this.limit = 20,
+  });
+}

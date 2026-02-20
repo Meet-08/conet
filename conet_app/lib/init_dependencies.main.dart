@@ -90,6 +90,9 @@ void _initPost() {
     () => PostGetPosts(postRepository: serviceLocator()),
   );
   serviceLocator.registerFactory(
+    () => PostGetUserPosts(postRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
     () => PostCreate(postRepository: serviceLocator()),
   );
   serviceLocator.registerFactory(
@@ -112,6 +115,7 @@ void _initPost() {
   serviceLocator.registerFactory(
     () => PostBloc(
       getPosts: serviceLocator(),
+      getUserPosts: serviceLocator(),
       createPost: serviceLocator(),
       deletePost: serviceLocator(),
       toggleLike: serviceLocator(),

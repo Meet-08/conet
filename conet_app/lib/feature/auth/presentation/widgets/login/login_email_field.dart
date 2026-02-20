@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class LoginEmailField extends StatelessWidget {
   const LoginEmailField({super.key});
@@ -14,7 +15,7 @@ class LoginEmailField extends StatelessWidget {
           keyboardType: TextInputType.emailAddress,
           decoration: InputDecoration(
             hintText: 'Enter your email',
-            prefixIcon: const Icon(Icons.email_outlined),
+            prefixIcon: const FaIcon(FontAwesomeIcons.envelope),
             filled: true,
             fillColor: Colors.grey.shade100,
             border: OutlineInputBorder(

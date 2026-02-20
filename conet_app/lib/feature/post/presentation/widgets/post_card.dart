@@ -23,9 +23,7 @@ class _PostCardState extends State<PostCard> {
   late bool _isLiked;
   late int _likeCount;
 
-  static const _avatarColors = [
-    Color(0xFFE0E0E0), // Light Grey
-  ];
+  static const _avatarColors = [Color(0xFFE0E0E0)];
 
   @override
   void initState() {
@@ -80,26 +78,31 @@ class _PostCardState extends State<PostCard> {
             // Header
             Row(
               children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: _getAvatarColor(widget.post.user.username),
-                  backgroundImage:
-                      widget.post.user.profilePicUrl != null &&
-                          widget.post.user.profilePicUrl!.isNotEmpty
-                      ? NetworkImage(widget.post.user.profilePicUrl!)
-                      : null,
-                  child:
-                      widget.post.user.profilePicUrl == null ||
-                          widget.post.user.profilePicUrl!.isEmpty
-                      ? Text(
-                          _getInitials(widget.post.user.username),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                            color: Colors.grey.shade700,
-                          ),
-                        )
-                      : null,
+                GestureDetector(
+                  onTap: () {
+                    context.push('/user-profile', extra: widget.post.user.id);
+                  },
+                  child: CircleAvatar(
+                    radius: 22,
+                    backgroundColor: _getAvatarColor(widget.post.user.username),
+                    backgroundImage:
+                        widget.post.user.profilePicUrl != null &&
+                            widget.post.user.profilePicUrl!.isNotEmpty
+                        ? NetworkImage(widget.post.user.profilePicUrl!)
+                        : null,
+                    child:
+                        widget.post.user.profilePicUrl == null ||
+                            widget.post.user.profilePicUrl!.isEmpty
+                        ? Text(
+                            _getInitials(widget.post.user.username),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color: Colors.grey.shade700,
+                            ),
+                          )
+                        : null,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

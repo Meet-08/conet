@@ -1,10 +1,11 @@
-import 'package:conet_app/core/common/utils/app_toast.dart';
+import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/message/presentation/widgets/conversation_list.dart';
 import 'package:conet_app/feature/message/presentation/widgets/message_app_bar.dart';
 import 'package:conet_app/feature/message/presentation/widgets/message_filters.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class MessagesPage extends StatefulWidget {
   const MessagesPage({super.key});
@@ -183,8 +184,8 @@ class _MessagesPageState extends State<MessagesPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.chat_bubble_outline_rounded,
+                          FaIcon(
+                            FontAwesomeIcons.commentDots,
                             size: 64,
                             color: Colors.grey.shade300,
                           ),

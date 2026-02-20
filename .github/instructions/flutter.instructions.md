@@ -141,6 +141,7 @@ UI rules:
 - Widgets are dumb
 - No async calls inside widgets
 - No repository or use case access directly
+- Use FontAwesome icons for all icons, no custom SVGs
 
 ---
 

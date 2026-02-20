@@ -25,6 +25,7 @@ import 'package:conet_app/feature/profile/presentation/pages/edit_profile_page.d
 import 'package:conet_app/feature/profile/presentation/pages/edit_profile_pictures_page.dart';
 import 'package:conet_app/feature/profile/presentation/pages/edit_social_links_page.dart';
 import 'package:conet_app/feature/profile/presentation/pages/profile_page.dart';
+import 'package:conet_app/feature/profile/presentation/pages/user_profile_page.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -145,6 +146,14 @@ class AppRouter {
         builder: (context, state) {
           final post = state.extra as Post;
           return PostDetailPage(post: post);
+        },
+      ),
+
+      GoRoute(
+        path: '/user-profile',
+        builder: (context, state) {
+          final userId = state.extra as String;
+          return UserProfilePage(userId: userId);
         },
       ),
 

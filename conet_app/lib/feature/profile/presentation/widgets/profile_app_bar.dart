@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ProfileAppBar extends StatelessWidget implements PreferredSizeWidget {
   const ProfileAppBar({super.key});
@@ -11,7 +12,9 @@ class ProfileAppBar extends StatelessWidget implements PreferredSizeWidget {
         style: TextStyle(fontWeight: FontWeight.w600),
       ),
       centerTitle: false,
-      actions: [IconButton(icon: const Icon(Icons.menu), onPressed: () {})],
+      actions: [
+        IconButton(icon: const FaIcon(FontAwesomeIcons.bars), onPressed: () {}),
+      ],
     );
   }
 

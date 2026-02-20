@@ -1,5 +1,6 @@
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final User otherUser;
@@ -18,7 +19,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     return AppBar(
       leadingWidth: 40,
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back),
+        icon: const FaIcon(FontAwesomeIcons.arrowLeft),
         onPressed: () => Navigator.pop(context),
       ),
       title: Row(
@@ -46,9 +47,9 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        IconButton(icon: const Icon(Icons.call_outlined), onPressed: () {}),
-        IconButton(icon: const Icon(Icons.videocam_outlined), onPressed: () {}),
-        IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
+        IconButton(icon: const FaIcon(FontAwesomeIcons.phone), onPressed: () {}),
+        IconButton(icon: const FaIcon(FontAwesomeIcons.video), onPressed: () {}),
+        IconButton(icon: const FaIcon(FontAwesomeIcons.ellipsisVertical), onPressed: () {}),
       ],
     );
   }

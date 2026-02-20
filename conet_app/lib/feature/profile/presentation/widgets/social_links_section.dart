@@ -1,5 +1,5 @@
 import 'package:conet_app/core/common/entities/social_links.dart';
-import 'package:conet_app/core/common/utils/app_toast.dart';
+import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';

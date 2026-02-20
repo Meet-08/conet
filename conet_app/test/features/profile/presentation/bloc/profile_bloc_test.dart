@@ -160,14 +160,10 @@ void main() {
         ).thenAnswer((_) async => const Right(unit));
         return profileBloc;
       },
-      act: (bloc) => bloc.add(ProfileUpdatePersonalInfoEvent(
-        firstName: 'John',
-        lastName: 'Doe',
-      )),
-      expect: () => [
-        isA<ProfileLoading>(),
-        isA<ProfileUpdateSuccess>(),
-      ],
+      act: (bloc) => bloc.add(
+        ProfileUpdatePersonalInfoEvent(firstName: 'John', lastName: 'Doe'),
+      ),
+      expect: () => [isA<ProfileLoading>(), isA<ProfileUpdateSuccess>()],
       verify: (_) {
         verify(
           () => mockUpdatePersonalInfo(
@@ -191,9 +187,8 @@ void main() {
         ).thenAnswer((_) async => Left(AppFailure('Update failed')));
         return profileBloc;
       },
-      act: (bloc) => bloc.add(ProfileUpdatePersonalInfoEvent(
-        firstName: 'John',
-      )),
+      act: (bloc) =>
+          bloc.add(ProfileUpdatePersonalInfoEvent(firstName: 'John')),
       expect: () => [
         isA<ProfileLoading>(),
         isA<ProfileUpdateFailure>().having(
@@ -216,10 +211,7 @@ void main() {
       },
       act: (bloc) =>
           bloc.add(ProfileUpdateAboutMeEvent(aboutMe: 'New about me')),
-      expect: () => [
-        isA<ProfileLoading>(),
-        isA<ProfileUpdateSuccess>(),
-      ],
+      expect: () => [isA<ProfileLoading>(), isA<ProfileUpdateSuccess>()],
       verify: (_) {
         verify(() => mockUpdateAboutMe('New about me')).called(1);
       },
@@ -255,13 +247,9 @@ void main() {
         ).thenAnswer((_) async => const Right(unit));
         return profileBloc;
       },
-      act: (bloc) => bloc.add(ProfileUpdateInterestsEvent(
-        interests: ['Flutter', 'AI'],
-      )),
-      expect: () => [
-        isA<ProfileLoading>(),
-        isA<ProfileUpdateSuccess>(),
-      ],
+      act: (bloc) =>
+          bloc.add(ProfileUpdateInterestsEvent(interests: ['Flutter', 'AI'])),
+      expect: () => [isA<ProfileLoading>(), isA<ProfileUpdateSuccess>()],
       verify: (_) {
         verify(() => mockUpdateInterests(['Flutter', 'AI'])).called(1);
       },
@@ -275,9 +263,8 @@ void main() {
         ).thenAnswer((_) async => Left(AppFailure('Update failed')));
         return profileBloc;
       },
-      act: (bloc) => bloc.add(ProfileUpdateInterestsEvent(
-        interests: ['Flutter'],
-      )),
+      act: (bloc) =>
+          bloc.add(ProfileUpdateInterestsEvent(interests: ['Flutter'])),
       expect: () => [
         isA<ProfileLoading>(),
         isA<ProfileUpdateFailure>().having(
@@ -304,17 +291,16 @@ void main() {
         ).thenAnswer((_) async => const Right(unit));
         return profileBloc;
       },
-      act: (bloc) => bloc.add(ProfileUpdateAcademicInfoEvent(
-        collegeName: 'Test University',
-        course: 'CS',
-        major: 'AI',
-        startYear: 2022,
-        endYear: 2026,
-      )),
-      expect: () => [
-        isA<ProfileLoading>(),
-        isA<ProfileUpdateSuccess>(),
-      ],
+      act: (bloc) => bloc.add(
+        ProfileUpdateAcademicInfoEvent(
+          collegeName: 'Test University',
+          course: 'CS',
+          major: 'AI',
+          startYear: 2022,
+          endYear: 2026,
+        ),
+      ),
+      expect: () => [isA<ProfileLoading>(), isA<ProfileUpdateSuccess>()],
       verify: (_) {
         verify(
           () => mockUpdateAcademicInfo(
@@ -342,10 +328,9 @@ void main() {
         ).thenAnswer((_) async => Left(AppFailure('Update failed')));
         return profileBloc;
       },
-      act: (bloc) => bloc.add(ProfileUpdateAcademicInfoEvent(
-        collegeName: 'Test',
-        course: 'CS',
-      )),
+      act: (bloc) => bloc.add(
+        ProfileUpdateAcademicInfoEvent(collegeName: 'Test', course: 'CS'),
+      ),
       expect: () => [
         isA<ProfileLoading>(),
         isA<ProfileUpdateFailure>().having(
@@ -370,13 +355,9 @@ void main() {
         ).thenAnswer((_) async => const Right(unit));
         return profileBloc;
       },
-      act: (bloc) => bloc.add(ProfileUpdateSocialLinksEvent(
-        socialLinks: tSocialLinks,
-      )),
-      expect: () => [
-        isA<ProfileLoading>(),
-        isA<ProfileUpdateSuccess>(),
-      ],
+      act: (bloc) =>
+          bloc.add(ProfileUpdateSocialLinksEvent(socialLinks: tSocialLinks)),
+      expect: () => [isA<ProfileLoading>(), isA<ProfileUpdateSuccess>()],
       verify: (_) {
         verify(() => mockUpdateSocialLinks(tSocialLinks)).called(1);
       },
@@ -390,9 +371,8 @@ void main() {
         ).thenAnswer((_) async => Left(AppFailure('Update failed')));
         return profileBloc;
       },
-      act: (bloc) => bloc.add(ProfileUpdateSocialLinksEvent(
-        socialLinks: tSocialLinks,
-      )),
+      act: (bloc) =>
+          bloc.add(ProfileUpdateSocialLinksEvent(socialLinks: tSocialLinks)),
       expect: () => [
         isA<ProfileLoading>(),
         isA<ProfileUpdateFailure>().having(
@@ -417,10 +397,7 @@ void main() {
         return profileBloc;
       },
       act: (bloc) => bloc.add(ProfileUpdatePicturesEvent()),
-      expect: () => [
-        isA<ProfileLoading>(),
-        isA<ProfileUpdateSuccess>(),
-      ],
+      expect: () => [isA<ProfileLoading>(), isA<ProfileUpdateSuccess>()],
     );
 
     blocTest<ProfileBloc, ProfileState>(
@@ -459,15 +436,14 @@ void main() {
       act: (bloc) {
         final mockPic = MockPlatformFile();
         final mockBanner = MockPlatformFile();
-        bloc.add(ProfileUpdatePicturesEvent(
-          profilePic: mockPic,
-          bannerImage: mockBanner,
-        ));
+        bloc.add(
+          ProfileUpdatePicturesEvent(
+            profilePic: mockPic,
+            bannerImage: mockBanner,
+          ),
+        );
       },
-      expect: () => [
-        isA<ProfileLoading>(),
-        isA<ProfileUpdateSuccess>(),
-      ],
+      expect: () => [isA<ProfileLoading>(), isA<ProfileUpdateSuccess>()],
     );
   });
 }

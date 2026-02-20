@@ -1,10 +1,10 @@
 import 'package:conet_app/core/common/entities/social_links.dart';
-import 'package:conet_app/core/common/utils/app_toast.dart';
+import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
-import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class EditSocialLinksPage extends StatefulWidget {
@@ -96,81 +96,78 @@ class _EditSocialLinksPageState extends State<EditSocialLinksPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => serviceLocator<ProfileBloc>(),
-      child: BlocConsumer<ProfileBloc, ProfileState>(
-        listener: (context, state) {
-          if (state is ProfileUpdateSuccess) {
-            AppToast.showSuccess(context, 'Social links updated successfully');
+    return BlocConsumer<ProfileBloc, ProfileState>(
+      listener: (context, state) {
+        if (state is ProfileUpdateSuccess) {
+          AppToast.showSuccess(context, 'Social links updated successfully');
 
-            setState(() {
-              _hasUpdated = true;
-            });
-          } else if (state is ProfileUpdateFailure) {
-            AppToast.showError(context, state.error);
-          }
-        },
-        builder: (context, state) {
-          final isLoading = state is ProfileLoading;
-          return PopScope(
-            canPop: false,
-            onPopInvokedWithResult: (didPop, result) {
-              if (didPop) return;
-              context.pop(_hasUpdated);
-            },
-            child: Scaffold(
-              appBar: AppBar(
-                leading: IconButton(
-                  icon: const Icon(Icons.arrow_back),
-                  onPressed: () => context.pop(_hasUpdated),
-                ),
-                title: const Text('Social Links'),
-                actions: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 16),
-                    child: TextButton(
-                      onPressed: isLoading ? null : () => _saveLinks(context),
-                      child: isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Save'),
-                    ),
+          setState(() {
+            _hasUpdated = true;
+          });
+        } else if (state is ProfileUpdateFailure) {
+          AppToast.showError(context, state.error);
+        }
+      },
+      builder: (context, state) {
+        final isLoading = state is ProfileLoading;
+        return PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (didPop) return;
+            context.pop(_hasUpdated);
+          },
+          child: Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                icon: const FaIcon(FontAwesomeIcons.arrowLeft),
+                onPressed: () => context.pop(_hasUpdated),
+              ),
+              title: const Text('Social Links'),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: TextButton(
+                    onPressed: isLoading ? null : () => _saveLinks(context),
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Save'),
                   ),
+                ),
+              ],
+            ),
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildLinkField(
+                    controller: _linkedinController,
+                    label: 'LinkedIn URL',
+                    icon: FontAwesomeIcons.linkedin,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildLinkField(
+                    controller: _githubController,
+                    label: 'GitHub URL',
+                    icon: FontAwesomeIcons.github,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildLinkField(
+                    controller: _websiteController,
+                    label: 'Website / Portfolio',
+                    icon: FontAwesomeIcons.globe,
+                  ),
+                  const SizedBox(height: 24),
+                  // Custom links section could go here
                 ],
               ),
-              body: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    _buildLinkField(
-                      controller: _linkedinController,
-                      label: 'LinkedIn URL',
-                      icon: Icons.business,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildLinkField(
-                      controller: _githubController,
-                      label: 'GitHub URL',
-                      icon: Icons.code,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildLinkField(
-                      controller: _websiteController,
-                      label: 'Website / Portfolio',
-                      icon: Icons.language,
-                    ),
-                    const SizedBox(height: 24),
-                    // Custom links section could go here
-                  ],
-                ),
-              ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -183,7 +180,7 @@ class _EditSocialLinksPageState extends State<EditSocialLinksPage> {
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon),
+        prefixIcon: FaIcon(icon),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
       keyboardType: TextInputType.url,

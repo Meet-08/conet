@@ -1,10 +1,11 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
-import 'package:conet_app/core/common/utils/app_toast.dart';
+import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:getwidget/components/loader/gf_loader.dart';
 import 'package:go_router/go_router.dart';
 
@@ -30,7 +31,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const FaIcon(FontAwesomeIcons.arrowLeft),
           onPressed: () => context.pop(),
         ),
         title: const Text('Complete Your Profile'),
@@ -59,7 +60,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         },
         builder: (context, state) {
           if (state is ProfileLoading) {
-            return const Loader();
+            return const GFLoader();
           }
           if (state is ProfileLoaded) {
             final user = state.userProfile;
@@ -74,7 +75,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   ),
                 ),
                 _ProfileSectionTile(
-                  icon: Icons.camera_alt_outlined,
+                  icon: FontAwesomeIcons.camera,
                   title: 'Profile Pictures',
                   subtitle: _getPicturesSubtitle(user),
                   isCompleted: user.profilePicUrl != null,
@@ -83,7 +84,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 12),
                 _ProfileSectionTile(
-                  icon: Icons.person_outline,
+                  icon: FontAwesomeIcons.user,
                   title: 'Personal Info',
                   subtitle: _getPersonalInfoSubtitle(user),
                   isCompleted: _isPersonalInfoComplete(user),
@@ -92,7 +93,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 12),
                 _ProfileSectionTile(
-                  icon: Icons.school_outlined,
+                  icon: FontAwesomeIcons.graduationCap,
                   title: 'Academic Info',
                   subtitle: 'Add your education details',
                   isCompleted: user.academics.isNotEmpty,
@@ -101,7 +102,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 12),
                 _ProfileSectionTile(
-                  icon: Icons.person_outline,
+                  icon: FontAwesomeIcons.solidUser,
                   title: 'About Me',
                   subtitle: 'Tell others about yourself',
                   isCompleted: user.aboutMe != null && user.aboutMe!.isNotEmpty,
@@ -110,7 +111,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 12),
                 _ProfileSectionTile(
-                  icon: Icons.favorite_outline,
+                  icon: FontAwesomeIcons.solidHeart,
                   title: 'Interests',
                   subtitle: 'Select your interests',
                   isCompleted: user.interests.isNotEmpty,
@@ -119,7 +120,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 12),
                 _ProfileSectionTile(
-                  icon: Icons.link,
+                  icon: FontAwesomeIcons.link,
                   title: 'Social Links',
                   subtitle: 'Add your social profiles',
                   isCompleted: user.socialLinks.isNotEmpty,
@@ -128,7 +129,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 ),
                 const SizedBox(height: 24),
                 _ProfileSectionTile(
-                  icon: Icons.logout,
+                  icon: FontAwesomeIcons.arrowRightFromBracket,
                   title: 'Logout',
                   subtitle: 'Sign out of your account',
                   isCompleted: false,
@@ -239,7 +240,7 @@ class _ProfileSectionTile extends StatelessWidget {
                 color: Colors.grey.shade100,
                 shape: BoxShape.circle,
               ),
-              child: Icon(
+              child: FaIcon(
                 icon,
                 size: 22,
                 color: textColor ?? Colors.grey.shade700,
@@ -269,13 +270,13 @@ class _ProfileSectionTile extends StatelessWidget {
             if (isCompleted)
               Padding(
                 padding: const EdgeInsets.only(right: 8),
-                child: Icon(
-                  Icons.check_circle,
+                child: FaIcon(
+                  FontAwesomeIcons.solidCircleCheck,
                   color: Colors.green.shade400,
                   size: 22,
                 ),
               ),
-            Icon(Icons.chevron_right, color: Colors.grey.shade400),
+            FaIcon(FontAwesomeIcons.chevronRight, color: Colors.grey.shade400),
           ],
         ),
       ),

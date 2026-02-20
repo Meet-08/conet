@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 /// A reusable text input field for authentication forms.
 ///
@@ -47,7 +48,7 @@ class AuthTextField extends StatelessWidget {
       key: key,
       label: isRequired ? 'Email *' : 'Email',
       hintText: 'your.email@example.com',
-      prefixIcon: Icons.email_outlined,
+      prefixIcon: FontAwesomeIcons.envelope,
       controller: controller,
       keyboardType: TextInputType.emailAddress,
       isRequired: isRequired,
@@ -72,7 +73,7 @@ class AuthTextField extends StatelessWidget {
       key: key,
       label: isRequired ? 'First Name *' : 'First Name',
       hintText: 'Enter your first name',
-      prefixIcon: Icons.person_outline,
+      prefixIcon: FontAwesomeIcons.user,
       controller: controller,
       isRequired: isRequired,
       validator: validator ?? (isRequired ? _defaultFirstNameValidator : null),
@@ -96,7 +97,7 @@ class AuthTextField extends StatelessWidget {
       key: key,
       label: isRequired ? 'Last Name *' : 'Last Name',
       hintText: 'Enter your last name (optional)',
-      prefixIcon: Icons.person_outline,
+      prefixIcon: FontAwesomeIcons.user,
       controller: controller,
       isRequired: isRequired,
       validator: validator ?? (isRequired ? _defaultLastNameValidator : null),
@@ -121,9 +122,9 @@ class AuthTextField extends StatelessWidget {
       key: key,
       label: isRequired ? 'Username *' : 'Username',
       hintText: 'johndoe4171',
-      prefixIcon: Icons.alternate_email,
+      prefixIcon: FontAwesomeIcons.at,
       suffixIcon: onRefresh != null
-          ? IconButton(icon: const Icon(Icons.refresh), onPressed: onRefresh)
+          ? IconButton(icon: const FaIcon(FontAwesomeIcons.arrowsRotate), onPressed: onRefresh)
           : null,
       controller: controller,
       isRequired: isRequired,
@@ -203,7 +204,7 @@ class AuthTextField extends StatelessWidget {
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             hintText: hintText,
-            prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
+            prefixIcon: prefixIcon != null ? FaIcon(prefixIcon) : null,
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: Colors.grey.shade100,

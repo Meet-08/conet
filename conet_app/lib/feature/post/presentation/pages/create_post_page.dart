@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:conet_app/core/common/utils/app_toast.dart';
+import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/utils/pick_files.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/create_post_actions_row.dart';
@@ -11,6 +11,7 @@ import 'package:conet_app/feature/post/presentation/widgets/create_post_text_fie
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class CreatePostPage extends StatefulWidget {
@@ -143,8 +144,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
                                     color: Colors.black54,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Icon(
-                                    Icons.close,
+                                  child: const FaIcon(
+                                    FontAwesomeIcons.xmark,
                                     size: 16,
                                     color: Colors.white,
                                   ),

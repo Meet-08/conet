@@ -8,6 +8,7 @@ import 'package:conet_app/feature/post/presentation/widgets/post_card.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class PostDetailPage extends StatelessWidget {
   final Post post;
@@ -110,7 +111,7 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
           backgroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
+            icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.black),
             onPressed: () => Navigator.pop(context),
           ),
           title: const Text(
@@ -161,8 +162,8 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
                                 child: Center(
                                   child: Column(
                                     children: [
-                                      Icon(
-                                        Icons.chat_bubble_outline,
+                                      FaIcon(
+                                        FontAwesomeIcons.commentDots,
                                         size: 48,
                                         color: Colors.grey.shade300,
                                       ),
@@ -210,8 +211,8 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
                               child: Center(
                                 child: Column(
                                   children: [
-                                    Icon(
-                                      Icons.error_outline,
+                                    FaIcon(
+                                      FontAwesomeIcons.circleExclamation,
                                       size: 48,
                                       color: Colors.red.shade300,
                                     ),
@@ -305,8 +306,8 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
                             shape: BoxShape.circle,
                           ),
                           child: IconButton(
-                            icon: const Icon(
-                              Icons.send,
+                            icon: const FaIcon(
+                              FontAwesomeIcons.paperPlane,
                               color: Colors.white,
                               size: 20,
                             ),

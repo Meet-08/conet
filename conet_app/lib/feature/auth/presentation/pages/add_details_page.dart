@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:conet_app/core/common/utils/app_toast.dart';
+import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/add_details/add_details_header.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/common/auth_password_field.dart';

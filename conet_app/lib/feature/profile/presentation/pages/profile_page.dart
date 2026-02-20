@@ -1,4 +1,6 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
+import 'package:conet_app/feature/post/presentation/widgets/post_card.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
 import 'package:conet_app/feature/profile/presentation/widgets/interests_section.dart';
 import 'package:conet_app/feature/profile/presentation/widgets/profile_app_bar.dart';
@@ -20,6 +22,7 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     _loadProfile();
+    _loadPosts();
   }
 
   void _loadProfile() {
@@ -27,6 +30,15 @@ class _ProfilePageState extends State<ProfilePage> {
     if (appUserState is AppUserAuthenticated) {
       context.read<ProfileBloc>().add(
         ProfileGetEvent(uid: appUserState.user.id),
+      );
+    }
+  }
+
+  void _loadPosts() {
+    final appUserState = context.read<AppUserCubit>().state;
+    if (appUserState is AppUserAuthenticated) {
+      context.read<PostBloc>().add(
+        PostGetUserPostsEvent(userId: appUserState.user.id),
       );
     }
   }
@@ -78,14 +90,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(height: 16),
                   if (profile.socialLinks.isNotEmpty)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: const .symmetric(horizontal: 16),
                       child: SocialLinksSection(
                         socialLinks: profile.socialLinks,
                       ),
                     ),
                   const SizedBox(height: 16),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const .symmetric(horizontal: 16),
                     child: ProfileStatsCard(
                       followingCount: profile.followingCount,
                       followerCount: profile.followerCount,
@@ -103,6 +115,49 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 16),
+                  BlocBuilder<PostBloc, PostState>(
+                    builder: (context, postState) {
+                      if (postState is PostLoading) {
+                        return const Padding(
+                          padding: EdgeInsets.all(32),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      }
+                      if (postState is PostFailure) {
+                        return Padding(
+                          padding: const EdgeInsets.all(32),
+                          child: Center(
+                            child: Text(
+                              postState.message,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        );
+                      }
+                      if (postState is PostLoaded) {
+                        if (postState.posts.isEmpty) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40),
+                            child: Center(
+                              child: Text(
+                                'No posts yet',
+                                style: TextStyle(color: Colors.grey),
+                              ),
+                            ),
+                          );
+                        }
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: postState.posts.length,
+                          itemBuilder: (ctx, i) =>
+                              PostCard(post: postState.posts[i]),
+                        );
+                      }
+                      return const SizedBox.shrink();
+                    },
+                  ),
+                  const SizedBox(height: 24),
                 ],
               ),
             );

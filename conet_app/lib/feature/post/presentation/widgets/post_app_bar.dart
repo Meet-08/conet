@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class PostAppBar extends StatelessWidget implements PreferredSizeWidget {
   const PostAppBar({super.key});
@@ -38,7 +39,7 @@ class PostAppBar extends StatelessWidget implements PreferredSizeWidget {
         Stack(
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications_none, color: Colors.black),
+              icon: const FaIcon(FontAwesomeIcons.bell, color: Colors.black),
               onPressed: () {},
             ),
             Positioned(

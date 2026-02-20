@@ -18,6 +18,9 @@ MessageModel _$MessageModelFromJson(Map<String, dynamic> json) => MessageModel(
           ?.map((e) => e as String)
           .toList() ??
       const [],
+  status:
+      $enumDecodeNullable(_$MessageDeliveryStatusEnumMap, json['status']) ??
+      MessageDeliveryStatus.sent,
 );
 
 Map<String, dynamic> _$MessageModelToJson(MessageModel instance) =>
@@ -29,4 +32,11 @@ Map<String, dynamic> _$MessageModelToJson(MessageModel instance) =>
       'created_at': instance.createdAt.toIso8601String(),
       'is_read': instance.isRead,
       'media_urls': instance.mediaUrls,
+      'status': _$MessageDeliveryStatusEnumMap[instance.status]!,
     };
+
+const _$MessageDeliveryStatusEnumMap = {
+  MessageDeliveryStatus.pending: 'pending',
+  MessageDeliveryStatus.sent: 'sent',
+  MessageDeliveryStatus.error: 'error',
+};

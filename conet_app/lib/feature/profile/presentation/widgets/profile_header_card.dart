@@ -1,6 +1,7 @@
 import 'package:conet_app/feature/profile/domain/entities/user_academics.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class ProfileHeaderCard extends StatelessWidget {
@@ -97,7 +98,7 @@ class ProfileHeaderCard extends StatelessWidget {
             children: [
               OutlinedButton.icon(
                 onPressed: () => context.push('/edit-profile'),
-                icon: const Icon(Icons.edit_outlined, size: 16),
+                icon: const FaIcon(FontAwesomeIcons.penToSquare, size: 14),
                 label: const Text('Edit profile'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.black87,
@@ -167,9 +168,9 @@ class ProfileHeaderCard extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        Icons.school_outlined,
-                        size: 16,
+                      FaIcon(
+                        FontAwesomeIcons.buildingColumns,
+                        size: 14,
                         color: Colors.grey.shade700,
                       ),
                       const SizedBox(width: 8),
@@ -187,9 +188,9 @@ class ProfileHeaderCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(
-                        Icons.menu_book_outlined,
-                        size: 16,
+                      FaIcon(
+                        FontAwesomeIcons.graduationCap,
+                        size: 14,
                         color: Colors.grey.shade700,
                       ),
                       const SizedBox(width: 8),
@@ -214,32 +215,13 @@ class ProfileHeaderCard extends StatelessWidget {
   }
 
   String _buildCourseText(dynamic academic) {
-    final parts = <String>[academic.course];
-    if (academic.major != null && academic.major!.isNotEmpty) {
-      parts.add(academic.major!);
+    final buffer = StringBuffer(academic.course);
+    if (academic.startYear != null || academic.endYear != null) {
+      buffer.write(' • ');
+      if (academic.startYear != null) buffer.write('${academic.startYear}');
+      if (academic.startYear != null && academic.endYear != null) buffer.write('-');
+      if (academic.endYear != null) buffer.write('${academic.endYear}');
     }
-    if (academic.startYear != null && academic.endYear != null) {
-      final currentYear = DateTime.now().year;
-      final int yearInCourse = (currentYear - academic.startYear! + 1).toInt();
-      if (yearInCourse > 0 &&
-          yearInCourse <= (academic.endYear! - academic.startYear! + 1)) {
-        parts.add('${_ordinal(yearInCourse)} year');
-      }
-    }
-    return parts.join(' · ');
-  }
-
-  String _ordinal(int number) {
-    if (number >= 11 && number <= 13) return '${number}th';
-    switch (number % 10) {
-      case 1:
-        return '${number}st';
-      case 2:
-        return '${number}nd';
-      case 3:
-        return '${number}rd';
-      default:
-        return '${number}th';
-    }
+    return buffer.toString();
   }
 }

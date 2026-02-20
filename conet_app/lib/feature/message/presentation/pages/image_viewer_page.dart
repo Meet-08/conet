@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ImageViewerPage extends StatefulWidget {
   final List<String> imageUrls;
@@ -71,8 +72,8 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.broken_image,
+                            FaIcon(
+                              FontAwesomeIcons.image,
                               size: 80,
                               color: Colors.white54,
                             ),
@@ -99,7 +100,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white),
+                    icon: const FaIcon(FontAwesomeIcons.xmark, color: Colors.white),
                     onPressed: () => Navigator.pop(context),
                   ),
                   // Image counter

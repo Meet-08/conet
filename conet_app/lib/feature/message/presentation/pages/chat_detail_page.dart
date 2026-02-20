@@ -7,6 +7,7 @@ import 'package:conet_app/feature/message/presentation/widgets/chat_message_list
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatDetailPage extends StatefulWidget {
@@ -120,7 +121,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                                     width: 80,
                                     height: 80,
                                     color: Colors.grey.shade300,
-                                    child: const Icon(Icons.image),
+                                    child: const FaIcon(FontAwesomeIcons.image),
                                   ),
                           ),
                           Positioned(
@@ -134,8 +135,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                                   shape: BoxShape.circle,
                                 ),
                                 padding: const EdgeInsets.all(4),
-                                child: const Icon(
-                                  Icons.close,
+                                child: const FaIcon(
+                                  FontAwesomeIcons.xmark,
                                   color: Colors.white,
                                   size: 16,
                                 ),

@@ -39,6 +39,7 @@ import 'package:conet_app/feature/post/domain/usecases/post_create.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_delete.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_post_comments.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_posts.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_get_user_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_watch_post_comments.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';

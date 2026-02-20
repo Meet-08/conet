@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class CreatePostActionsRow extends StatelessWidget {
   final VoidCallback onMediaTap;
@@ -11,14 +12,14 @@ class CreatePostActionsRow extends StatelessWidget {
       children: [
         IconButton(
           onPressed: onMediaTap,
-          icon: const Icon(Icons.image_outlined),
+          icon: const FaIcon(FontAwesomeIcons.image),
         ),
         const SizedBox(width: 16),
-        const Icon(Icons.format_bold),
+        const FaIcon(FontAwesomeIcons.bold),
         const SizedBox(width: 16),
-        const Icon(Icons.format_italic),
+        const FaIcon(FontAwesomeIcons.italic),
         const SizedBox(width: 16),
-        const Icon(Icons.bar_chart),
+        const FaIcon(FontAwesomeIcons.chartBar),
       ],
     );
   }

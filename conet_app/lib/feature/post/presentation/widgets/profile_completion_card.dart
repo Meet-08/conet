@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ProfileCompletionCard extends StatelessWidget {
   const ProfileCompletionCard({super.key});
@@ -22,7 +23,7 @@ class ProfileCompletionCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.person_outline),
+                  const FaIcon(FontAwesomeIcons.user),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
@@ -30,7 +31,7 @@ class ProfileCompletionCard extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.w600),
                     ),
                   ),
-                  IconButton(icon: const Icon(Icons.close), onPressed: () {}),
+                  IconButton(icon: const FaIcon(FontAwesomeIcons.xmark), onPressed: () {}),
                 ],
               ),
               const SizedBox(height: 6),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class PasswordField extends StatefulWidget {
   const PasswordField({super.key});
@@ -21,9 +22,9 @@ class _PasswordFieldState extends State<PasswordField> {
           obscureText: obscure,
           decoration: InputDecoration(
             hintText: 'Enter your password',
-            prefixIcon: const Icon(Icons.lock_outline),
+            prefixIcon: const FaIcon(FontAwesomeIcons.lock),
             suffixIcon: IconButton(
-              icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
+              icon: FaIcon(obscure ? FontAwesomeIcons.eyeSlash : FontAwesomeIcons.eye),
               onPressed: () {
                 setState(() => obscure = !obscure);
               },

@@ -15,6 +15,11 @@ ConversationModel _$ConversationModelFromJson(Map<String, dynamic> json) =>
           ? null
           : DateTime.parse(json['updated_at'] as String),
       unreadCount: (json['unread_count'] as num?)?.toInt() ?? 0,
+      lastMessageMediaUrls:
+          (json['last_message_media_urls'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
     );
 
 Map<String, dynamic> _$ConversationModelToJson(ConversationModel instance) =>
@@ -24,4 +29,5 @@ Map<String, dynamic> _$ConversationModelToJson(ConversationModel instance) =>
       'last_message': instance.lastMessage,
       'updated_at': instance.updatedAt?.toIso8601String(),
       'unread_count': instance.unreadCount,
+      'last_message_media_urls': instance.lastMessageMediaUrls,
     };

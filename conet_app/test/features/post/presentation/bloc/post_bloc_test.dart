@@ -7,6 +7,7 @@ import 'package:conet_app/feature/post/domain/usecases/post_create.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_delete.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_post_comments.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_posts.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_get_user_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:file_picker/file_picker.dart';
@@ -26,11 +27,14 @@ class MockPostComment extends Mock implements PostComment {}
 
 class MockPostGetPostComments extends Mock implements PostGetPostComments {}
 
+class MockPostGetUserPosts extends Mock implements PostGetUserPosts {}
+
 class MockPlatformFile extends Mock implements PlatformFile {}
 
 void main() {
   late PostBloc postBloc;
   late MockPostGetPosts mockGetPosts;
+  late MockPostGetUserPosts mockGetUserPosts;
   late MockPostCreate mockCreatePost;
   late MockPostDelete mockDeletePost;
   late MockPostToggleLike mockToggleLike;
@@ -63,6 +67,7 @@ void main() {
 
   setUp(() {
     mockGetPosts = MockPostGetPosts();
+    mockGetUserPosts = MockPostGetUserPosts();
     mockCreatePost = MockPostCreate();
     mockDeletePost = MockPostDelete();
     mockToggleLike = MockPostToggleLike();
@@ -71,6 +76,7 @@ void main() {
 
     postBloc = PostBloc(
       getPosts: mockGetPosts,
+      getUserPosts: mockGetUserPosts,
       createPost: mockCreatePost,
       deletePost: mockDeletePost,
       toggleLike: mockToggleLike,

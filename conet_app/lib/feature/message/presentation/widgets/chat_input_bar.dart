@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ChatInputBar extends StatelessWidget {
   final TextEditingController controller;
@@ -24,7 +25,7 @@ class ChatInputBar extends StatelessWidget {
             Stack(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.attach_file),
+                  icon: const FaIcon(FontAwesomeIcons.paperclip),
                   onPressed: onFilesSelected,
                 ),
                 if (selectedFilesCount > 0)
@@ -74,7 +75,7 @@ class ChatInputBar extends StatelessWidget {
             CircleAvatar(
               backgroundColor: Colors.black,
               child: IconButton(
-                icon: const Icon(Icons.send, color: Colors.white),
+                icon: const FaIcon(FontAwesomeIcons.paperPlane, color: Colors.white),
                 onPressed: onSend,
               ),
             ),

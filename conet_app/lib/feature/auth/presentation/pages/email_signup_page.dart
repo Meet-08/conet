@@ -1,4 +1,4 @@
-import 'package:conet_app/core/common/utils/app_toast.dart';
+import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/common/otp_dialog.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/email_signup/email_signup_footer.dart';

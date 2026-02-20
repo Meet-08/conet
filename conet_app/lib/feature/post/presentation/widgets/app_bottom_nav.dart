@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AppBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -18,18 +19,18 @@ class AppBottomNav extends StatelessWidget {
       selectedItemColor: Colors.black,
       unselectedItemColor: Colors.grey,
       items: const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-        BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Explore'),
+        BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.house), label: 'Home'),
+        BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.magnifyingGlass), label: 'Explore'),
         BottomNavigationBarItem(
-          icon: Icon(Icons.event_outlined),
+          icon: FaIcon(FontAwesomeIcons.calendar),
           label: 'Events',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.chat_bubble_outline),
+          icon: FaIcon(FontAwesomeIcons.comment),
           label: 'Messages',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
+          icon: FaIcon(FontAwesomeIcons.user),
           label: 'Profile',
         ),
       ],

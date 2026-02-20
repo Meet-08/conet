@@ -5,6 +5,7 @@ import 'package:conet_app/feature/post/domain/usecases/post_create.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_delete.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_post_comments.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_posts.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_get_user_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -15,6 +16,7 @@ part 'post_state.dart';
 
 class PostBloc extends Bloc<PostEvent, PostState> {
   final PostGetPosts _getPosts;
+  final PostGetUserPosts _getUserPosts;
   final PostCreate _createPost;
   final PostDelete _deletePost;
   final PostToggleLike _toggleLike;
@@ -23,12 +25,14 @@ class PostBloc extends Bloc<PostEvent, PostState> {
 
   PostBloc({
     required PostGetPosts getPosts,
+    required PostGetUserPosts getUserPosts,
     required PostCreate createPost,
     required PostDelete deletePost,
     required PostToggleLike toggleLike,
     required PostComment commentPost,
     required PostGetPostComments getPostComments,
   }) : _getPosts = getPosts,
+       _getUserPosts = getUserPosts,
        _createPost = createPost,
        _deletePost = deletePost,
        _toggleLike = toggleLike,
@@ -36,6 +40,7 @@ class PostBloc extends Bloc<PostEvent, PostState> {
        _getPostComments = getPostComments,
        super(PostInitial()) {
     on<PostGetPostsEvent>(_onGetPosts);
+    on<PostGetUserPostsEvent>(_onGetUserPosts);
     on<PostCreatePostEvent>(_onCreatePost);
     on<PostDeletePostEvent>(_onDeletePost);
     on<PostToggleLikePostEvent>(_onToggleLike);
@@ -51,6 +56,23 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     emit(PostLoading());
 
     final result = await _getPosts(page: event.page, limit: event.limit);
+    result.fold(
+      (failure) => emit(PostFailure(failure.message)),
+      (posts) => emit(PostLoaded(posts)),
+    );
+  }
+
+  Future<void> _onGetUserPosts(
+    PostGetUserPostsEvent event,
+    Emitter<PostState> emit,
+  ) async {
+    emit(PostLoading());
+
+    final result = await _getUserPosts(
+      userId: event.userId,
+      page: event.page,
+      limit: event.limit,
+    );
     result.fold(
       (failure) => emit(PostFailure(failure.message)),
       (posts) => emit(PostLoaded(posts)),

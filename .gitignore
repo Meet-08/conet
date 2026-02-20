@@ -1,6 +1,7 @@
 .vscode/
 .idea/
 .gemini/
+.junie/
 **/node_modules
 .env
 
@@ -13,3 +14,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+conet_backend/logs/combined.log
+
+temp/
