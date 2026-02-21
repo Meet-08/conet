@@ -11,6 +11,10 @@ on:
     paths:
       - "conet_backend/**"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 defaults:
   run:
     working-directory: conet_backend

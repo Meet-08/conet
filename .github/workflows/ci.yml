@@ -6,6 +6,10 @@ on:
     paths:
       - "conet_app/**"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Analyze & Test
@@ -33,7 +37,7 @@ jobs:
           key: pub-${{ hashFiles('conet_app/pubspec.lock') }}
           restore-keys: pub-
 
-      - name: Create .env file         
+      - name: Create .env file
         run: echo "API_URL=http://10.0.2.2:3000" > .env
 
       - name: Install dependencies
@@ -111,10 +115,6 @@ jobs:
       # 🏗 Build Release APK
       - name: Build APK
         run: flutter build apk --release
-
-      # 🔎 Optional: Print SHA to verify signing
-      - name: Print signing report
-        run: cd android && ./gradlew signingReport
 
       # 🔥 Decode Firebase credentials
       - name: Decode Firebase service account
