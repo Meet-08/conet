@@ -154,12 +154,34 @@ class _AuthPasswordFieldState extends State<AuthPasswordField> {
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             hintText: widget.hintText,
-            prefixIcon: const FaIcon(FontAwesomeIcons.lock),
-            suffixIcon: IconButton(
-              icon: FaIcon(
-                _obscureText ? FontAwesomeIcons.eyeSlash : FontAwesomeIcons.eye,
+            prefixIcon: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: FaIcon(
+                FontAwesomeIcons.lock,
+                size: 20,
+                color: Colors.grey.shade700,
               ),
-              onPressed: _toggleVisibility,
+            ),
+            prefixIconConstraints: const BoxConstraints(
+              minWidth: 0,
+              minHeight: 0,
+            ),
+            suffixIcon: Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                icon: FaIcon(
+                  _obscureText
+                      ? FontAwesomeIcons.eyeSlash
+                      : FontAwesomeIcons.eye,
+                  size: 20,
+                  color: Colors.grey.shade700,
+                ),
+                onPressed: _toggleVisibility,
+              ),
+            ),
+            suffixIconConstraints: const BoxConstraints(
+              minWidth: 0,
+              minHeight: 0,
             ),
             filled: true,
             fillColor: Colors.grey.shade100,

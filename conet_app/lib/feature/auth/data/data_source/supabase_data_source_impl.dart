@@ -157,8 +157,8 @@ class SupabaseDataSourceImpl implements AuthDataSource {
 
       final data = <String, dynamic>{
         'username': username,
-        if (firstName != null) 'first_name': firstName,
-        if (lastName != null) 'last_name': lastName,
+        'first_name': ?firstName,
+        'last_name': ?lastName,
       };
 
       await supabaseClient.from('users').update(data).eq('id', session.user.id);
@@ -179,10 +179,7 @@ class SupabaseDataSourceImpl implements AuthDataSource {
     try {
       await supabaseClient.auth.signInWithOtp(
         email: email,
-        data: {
-          'first_name': firstName,
-          if (lastName != null) 'last_name': lastName,
-        },
+        data: {'first_name': firstName, 'last_name': ?lastName},
       );
       return true;
     } catch (e) {

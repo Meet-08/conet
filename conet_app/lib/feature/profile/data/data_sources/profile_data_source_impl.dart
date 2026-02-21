@@ -114,8 +114,8 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       final res = await dioClient.dio.put(
         "/profile/personal-info",
         data: {
-          if (firstName != null) "first_name": firstName,
-          if (lastName != null) "last_name": lastName,
+          "first_name": ?firstName,
+          "last_name": ?lastName,
           if (dateOfBirth != null)
             "date_of_birth": dateOfBirth.toIso8601String(),
         },
@@ -160,10 +160,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
 
       final res = await dioClient.dio.put(
         "/profile/pictures",
-        data: {
-          if (profilePicUrl != null) "profile_pic_url": profilePicUrl,
-          if (bannerUrl != null) "banner_url": bannerUrl,
-        },
+        data: {"profile_pic_url": ?profilePicUrl, "banner_url": ?bannerUrl},
       );
       if (res.statusCode != 200) {
         throw ServerException("Failed to update pictures");

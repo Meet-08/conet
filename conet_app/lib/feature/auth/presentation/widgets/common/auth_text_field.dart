@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-/// A reusable text input field for authentication forms.
-///
-/// Supports email, text, and other input types with consistent styling.
 class AuthTextField extends StatelessWidget {
   final String label;
   final String hintText;
@@ -124,7 +121,10 @@ class AuthTextField extends StatelessWidget {
       hintText: 'johndoe4171',
       prefixIcon: FontAwesomeIcons.at,
       suffixIcon: onRefresh != null
-          ? IconButton(icon: const FaIcon(FontAwesomeIcons.arrowsRotate), onPressed: onRefresh)
+          ? IconButton(
+              icon: const FaIcon(FontAwesomeIcons.arrowsRotate),
+              onPressed: onRefresh,
+            )
           : null,
       controller: controller,
       isRequired: isRequired,
@@ -204,7 +204,20 @@ class AuthTextField extends StatelessWidget {
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             hintText: hintText,
-            prefixIcon: prefixIcon != null ? FaIcon(prefixIcon) : null,
+            prefixIcon: prefixIcon != null
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: FaIcon(
+                      prefixIcon,
+                      size: 20,
+                      color: Colors.grey.shade700,
+                    ),
+                  )
+                : null,
+            prefixIconConstraints: const BoxConstraints(
+              minWidth: 0,
+              minHeight: 0,
+            ),
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: Colors.grey.shade100,
