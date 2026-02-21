@@ -75,7 +75,11 @@ class ChatInputBar extends StatelessWidget {
             CircleAvatar(
               backgroundColor: Colors.black,
               child: IconButton(
-                icon: const FaIcon(FontAwesomeIcons.paperPlane, color: Colors.white),
+                icon: const FaIcon(
+                  FontAwesomeIcons.paperPlane,
+                  color: Colors.white,
+                  size: 20,
+                ),
                 onPressed: onSend,
               ),
             ),

@@ -1,3 +1,4 @@
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/presentation/pages/image_viewer_page.dart';
 import 'package:flutter/material.dart';
@@ -100,11 +101,7 @@ class ChatMessageBubble extends StatelessWidget {
                 ),
                 if (status == MessageDeliveryStatus.pending) ...[
                   const SizedBox(width: 4),
-                  const SizedBox(
-                    width: 8,
-                    height: 8,
-                    child: CircularProgressIndicator(strokeWidth: 1),
-                  ),
+                  const Loader(size: 8, strokeWidth: 1),
                 ],
               ],
             ),
@@ -143,7 +140,7 @@ class ChatMessageBubble extends StatelessWidget {
             return Container(
               height: 200,
               alignment: Alignment.center,
-              child: CircularProgressIndicator(
+              child: Loader(
                 value: loadingProgress.expectedTotalBytes != null
                     ? loadingProgress.cumulativeBytesLoaded /
                           loadingProgress.expectedTotalBytes!
@@ -185,7 +182,7 @@ class ChatMessageBubble extends StatelessWidget {
               if (loadingProgress == null) return child;
               return Container(
                 alignment: Alignment.center,
-                child: CircularProgressIndicator(
+                child: Loader(
                   value: loadingProgress.expectedTotalBytes != null
                       ? loadingProgress.cumulativeBytesLoaded /
                             loadingProgress.expectedTotalBytes!

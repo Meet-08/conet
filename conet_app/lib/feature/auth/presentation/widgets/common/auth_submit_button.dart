@@ -1,3 +1,4 @@
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 
 /// A reusable submit button for authentication forms.
@@ -73,14 +74,7 @@ class AuthSubmitButton extends StatelessWidget {
         ),
         onPressed: isLoading ? null : onPressed,
         child: isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                ),
-              )
+            ? const Loader(size: 20, strokeWidth: 2, color: Colors.white)
             : Text(text, style: const TextStyle(fontSize: 15)),
       ),
     );

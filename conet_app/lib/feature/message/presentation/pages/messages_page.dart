@@ -1,4 +1,5 @@
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/message/presentation/widgets/conversation_list.dart';
 import 'package:conet_app/feature/message/presentation/widgets/message_app_bar.dart';
@@ -176,7 +177,7 @@ class _MessagesPageState extends State<MessagesPage> {
                 builder: (context, state) {
                   if (state.status == MessageStatus.loading &&
                       state.conversations.isEmpty) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(child: Loader());
                   }
 
                   if (state.conversations.isEmpty) {

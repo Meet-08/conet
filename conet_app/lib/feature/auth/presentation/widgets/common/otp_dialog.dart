@@ -1,4 +1,5 @@
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -256,13 +257,10 @@ class _OtpDialogState extends State<OtpDialog> {
                     elevation: 0,
                   ),
                   child: _isLoading
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: Colors.white,
-                          ),
+                      ? const Loader(
+                          size: 22,
+                          strokeWidth: 2.5,
+                          color: Colors.white,
                         )
                       : const Text(
                           'Verify',

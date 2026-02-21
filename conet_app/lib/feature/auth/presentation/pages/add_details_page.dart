@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/add_details/add_details_header.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/common/auth_password_field.dart';
@@ -244,11 +245,7 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
                       if (_isGeneratingUsername)
                         const Positioned(
                           right: 48,
-                          child: SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
+                          child: Loader(size: 16, strokeWidth: 2),
                         ),
                     ],
                   ),

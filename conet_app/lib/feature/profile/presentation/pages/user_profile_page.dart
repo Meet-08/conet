@@ -1,4 +1,6 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/post_card.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_academics.dart';
@@ -89,17 +91,12 @@ class _OtherUserProfileView extends StatelessWidget {
         listenWhen: (_, current) => current is ProfileFollowFailure,
         listener: (context, state) {
           if (state is ProfileFollowFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.error),
-                backgroundColor: Colors.red.shade600,
-              ),
-            );
+            AppToast.showError(context, state.error);
           }
         },
         builder: (context, state) {
           if (state is ProfileLoading || state is ProfileInitial) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: Loader());
           }
 
           if (state is ProfileUpdateFailure) {
@@ -505,7 +502,7 @@ class _OtherUserProfileView extends StatelessWidget {
                       return const SliverToBoxAdapter(
                         child: Padding(
                           padding: EdgeInsets.all(32),
-                          child: Center(child: CircularProgressIndicator()),
+                          child: Center(child: Loader()),
                         ),
                       );
                     }

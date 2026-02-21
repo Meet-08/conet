@@ -1,3 +1,4 @@
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/core/widgets/responsive_center_scrollable.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/create_post_fab.dart';
@@ -46,7 +47,7 @@ class _FeedPageState extends State<FeedPage> {
         },
         builder: (context, state) {
           if (state is PostLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: Loader());
           }
 
           if (state is! PostLoaded) {

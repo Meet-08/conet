@@ -1,3 +1,4 @@
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -36,11 +37,7 @@ class CreatePostAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
             onPressed: isLoading ? null : onPost,
             child: isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
+                ? const Loader(size: 20, strokeWidth: 2)
                 : const Text('Post'),
           ),
         ),

@@ -1,4 +1,4 @@
-import 'package:conet_app/core/widgets/app_loader.dart';
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 
 class SplashPage extends StatelessWidget {
@@ -56,7 +56,7 @@ class SplashPage extends StatelessWidget {
             ),
             const SizedBox(height: 48),
             // Loading indicator
-            const AppLoader(),
+            const Loader(),
           ],
         ),
       ),

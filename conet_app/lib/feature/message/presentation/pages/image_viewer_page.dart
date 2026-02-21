@@ -1,3 +1,4 @@
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -58,7 +59,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
                       return Center(
-                        child: CircularProgressIndicator(
+                        child: Loader(
                           color: Colors.white,
                           value: loadingProgress.expectedTotalBytes != null
                               ? loadingProgress.cumulativeBytesLoaded /
@@ -100,7 +101,10 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const FaIcon(FontAwesomeIcons.xmark, color: Colors.white),
+                    icon: const FaIcon(
+                      FontAwesomeIcons.xmark,
+                      color: Colors.white,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                   // Image counter

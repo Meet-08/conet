@@ -11,7 +11,7 @@ class DioClient {
   DioClient({required Dio dio, required SupabaseClient supabaseClient})
     : _dio = dio {
     _dio.options.baseUrl = dotenv.env["BACKEND_URL"]!;
-    _dio.options.connectTimeout = const Duration(seconds: 15);
+    _dio.options.connectTimeout = const Duration(seconds: 30);
     _dio.interceptors.add(TokenInterceptor(supabaseClient: supabaseClient));
   }
 }

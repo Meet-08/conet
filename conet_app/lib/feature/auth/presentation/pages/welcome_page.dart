@@ -1,3 +1,4 @@
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/welcome/welcome_actions.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/welcome/welcome_logo.dart';
@@ -39,7 +40,7 @@ class WelcomePage extends StatelessWidget {
             BlocBuilder<AuthBloc, AuthState>(
               builder: (context, state) {
                 if (state is AuthLoading) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: Loader());
                 }
                 return const SizedBox.shrink();
               },

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
 import 'package:file_picker/file_picker.dart';
@@ -92,11 +93,7 @@ class _EditProfilePicturesPageState extends State<EditProfilePicturesPage> {
                         ? null
                         : () => _saveImages(context),
                     child: isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const Loader(size: 20, strokeWidth: 2)
                         : const Text('Save'),
                   ),
                 ),

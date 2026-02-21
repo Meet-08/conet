@@ -1,4 +1,5 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/post_card.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
@@ -55,7 +56,7 @@ class _ProfilePageState extends State<ProfilePage> {
         },
         builder: (context, state) {
           if (state is ProfileLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: Loader());
           }
 
           if (state is ProfileUpdateFailure) {
@@ -120,7 +121,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       if (postState is PostLoading) {
                         return const Padding(
                           padding: EdgeInsets.all(32),
-                          child: Center(child: CircularProgressIndicator()),
+                          child: Center(child: Loader()),
                         );
                       }
                       if (postState is PostFailure) {

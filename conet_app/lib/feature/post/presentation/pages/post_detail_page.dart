@@ -1,4 +1,5 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/core/widgets/responsive_center_scrollable.dart';
 import 'package:conet_app/feature/post/domain/entities/comment.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
@@ -151,7 +152,7 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
                           if (state is PostDetailLoading) {
                             return const Padding(
                               padding: EdgeInsets.all(32),
-                              child: Center(child: CircularProgressIndicator()),
+                              child: Center(child: Loader()),
                             );
                           }
 

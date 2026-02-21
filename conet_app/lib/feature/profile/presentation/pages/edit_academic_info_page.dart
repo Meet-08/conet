@@ -1,4 +1,5 @@
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
 import 'package:flutter/material.dart';
@@ -110,13 +111,10 @@ class _EditAcademicInfoPageState extends State<EditAcademicInfoPage> {
                       ),
                     ),
                     child: isLoading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
+                        ? const Loader(
+                            size: 18,
+                            strokeWidth: 2,
+                            color: Colors.white,
                           )
                         : const Text('Save'),
                   ),
