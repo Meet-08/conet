@@ -64,3 +64,35 @@ class PostGetUserPostsEvent extends PostEvent {
     this.limit = 20,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Bookmark events (local only)
+// ---------------------------------------------------------------------------
+
+/// Bookmark a post locally. [post] must be the full entity so it can be
+/// persisted to the Hive store without a network round-trip.
+class PostBookmarkEvent extends PostEvent {
+  final Post post;
+
+  const PostBookmarkEvent({required this.post});
+}
+
+/// Remove a locally bookmarked post by its [postId].
+class PostRemoveBookmarkEvent extends PostEvent {
+  final String postId;
+
+  const PostRemoveBookmarkEvent({required this.postId});
+}
+
+/// Load all locally bookmarked posts (used by SavedPostsPage).
+class PostLoadBookmarkedPostsEvent extends PostEvent {
+  const PostLoadBookmarkedPostsEvent();
+}
+
+/// Triggered by PostCard on build to refresh the bookmark status set in state.
+/// The handler re-loads all bookmarked IDs and merges them into [PostLoaded].
+class PostCheckBookmarkStatusEvent extends PostEvent {
+  final String postId;
+
+  const PostCheckBookmarkStatusEvent({required this.postId});
+}

@@ -1,5 +1,6 @@
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/error/server_exception.dart';
+import 'package:conet_app/feature/post/data/data_sources/post_bookmark_local_data_source.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_data_source.dart';
 import 'package:conet_app/feature/post/data/models/comment_model.dart';
 import 'package:conet_app/feature/post/data/models/post_model.dart';
@@ -13,15 +14,23 @@ import 'package:mocktail/mocktail.dart';
 
 class MockPostDataSource extends Mock implements PostDataSource {}
 
+class MockPostBookmarkLocalDataSource extends Mock
+    implements PostBookmarkLocalDataSource {}
+
 class MockPlatformFile extends Mock implements PlatformFile {}
 
 void main() {
   late PostRepositoryImpl repository;
   late MockPostDataSource mockDataSource;
+  late MockPostBookmarkLocalDataSource mockBookmarkDataSource;
 
   setUp(() {
     mockDataSource = MockPostDataSource();
-    repository = PostRepositoryImpl(postDataSource: mockDataSource);
+    mockBookmarkDataSource = MockPostBookmarkLocalDataSource();
+    repository = PostRepositoryImpl(
+      postDataSource: mockDataSource,
+      bookmarkLocalDataSource: mockBookmarkDataSource,
+    );
   });
 
   const tUser = User(

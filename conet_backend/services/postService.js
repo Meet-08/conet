@@ -72,16 +72,18 @@ export const getAllPostsService = async (
 
 // ─── Get single post ──────────────────────────────────────────────────────
 
-export const getPostService = async (postId) => {
+export const getPostService = async (postId, viewerId = null) => {
   const post = await prisma.posts.findUnique({
     where: { id: postId },
     include: {
       user: true,
-      post_likes: true,
-      post_comments: {
-        include: { user: true },
-        orderBy: { created_at: "desc" },
+      _count: {
+        select: { post_likes: true, post_comments: true },
       },
+      post_likes:
+        viewerId ?
+          { where: { user_id: viewerId }, select: { user_id: true } }
+        : false,
     },
   });
 
@@ -91,7 +93,7 @@ export const getPostService = async (postId) => {
     throw err;
   }
 
-  return post;
+  return mapPost(post, viewerId);
 };
 
 // ─── Get posts by user (paginated) ────────────────────────────────────────
@@ -126,6 +128,48 @@ export const getUserPostsService = async (
 
   return {
     posts: posts.map((p) => mapPost(p, viewerId)),
+    total,
+    page,
+    totalPages: Math.ceil(total / limit),
+  };
+};
+
+// ─── Get posts liked by user (paginated) ──────────────────────────────────
+
+export const getLikedPostsService = async (
+  userId,
+  page = 1,
+  limit = 20,
+  viewerId = null,
+) => {
+  const skip = (page - 1) * limit;
+
+  const [likes, total] = await prisma.$transaction([
+    prisma.post_likes.findMany({
+      where: { user_id: userId },
+      skip,
+      take: limit,
+      orderBy: { created_at: "desc" },
+      include: {
+        post: {
+          include: {
+            user: true,
+            _count: {
+              select: { post_likes: true, post_comments: true },
+            },
+            post_likes:
+              viewerId ?
+                { where: { user_id: viewerId }, select: { user_id: true } }
+              : false,
+          },
+        },
+      },
+    }),
+    prisma.post_likes.count({ where: { user_id: userId } }),
+  ]);
+
+  return {
+    posts: likes.map((like) => mapPost(like.post, viewerId)),
     total,
     page,
     totalPages: Math.ceil(total / limit),

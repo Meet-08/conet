@@ -6,6 +6,7 @@ import {
   deletePost,
   editComment,
   getAllPosts,
+  getLikedPosts,
   getPost,
   getPostComments,
   getUserPosts,
@@ -16,23 +17,21 @@ import validateSupabaseToken from "../middleware/validateSupabaseToken.js";
 
 const router = express.Router();
 
-// Public routes (no auth required)
+// All post routes require a valid Supabase token
+router.use(validateSupabaseToken);
+
 router.get("/", getAllPosts);
+router.get("/liked", getLikedPosts);
 router.get("/:id", getPost);
 router.get("/user/:userId", getUserPosts);
 router.get("/:id/comments", getPostComments);
 
-// Protected routes (auth required)
-router.post("/", validateSupabaseToken, createPost);
-router.put("/:id", validateSupabaseToken, updatePost);
-router.delete("/:id", validateSupabaseToken, deletePost);
-router.put("/like/:id", validateSupabaseToken, toggleLike);
-router.post("/comment/:id", validateSupabaseToken, addComment);
-router.put("/:postId/comment/:commentId", validateSupabaseToken, editComment);
-router.delete(
-  "/:postId/comment/:commentId",
-  validateSupabaseToken,
-  deleteComment
-);
+router.post("/", createPost);
+router.put("/:id", updatePost);
+router.delete("/:id", deletePost);
+router.put("/like/:id", toggleLike);
+router.post("/comment/:id", addComment);
+router.put("/:postId/comment/:commentId", editComment);
+router.delete("/:postId/comment/:commentId", deleteComment);
 
 export default router;

@@ -61,6 +61,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     on<MessageConversationsRequested>(_onConversationsRequested);
     on<MessageUserSearchRequested>(_onUserSearchRequested);
     on<MessageUserSearchCleared>(_onUserSearchCleared);
+    on<MessageCreatedConversationHandled>(_onCreatedConversationHandled);
   }
 
   @override
@@ -98,6 +99,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
         emit(
           state.copyWith(
             status: MessageStatus.success,
+            createdConversation: r,
             userSuggestions: const [],
             userSearchError: null,
             isSearchingUsers: false,
@@ -106,6 +108,13 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
         add(MessageConversationsRequested());
       },
     );
+  }
+
+  void _onCreatedConversationHandled(
+    MessageCreatedConversationHandled event,
+    Emitter<MessageState> emit,
+  ) {
+    emit(state.copyWith(clearCreatedConversation: true));
   }
 
   void _onWatchStarted(MessageWatchStarted event, Emitter<MessageState> emit) {

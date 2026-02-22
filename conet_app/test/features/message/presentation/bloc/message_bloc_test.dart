@@ -171,6 +171,11 @@ void main() {
         ),
         isA<MessageState>()
             .having((s) => s.status, 'status', MessageStatus.success)
+            .having(
+              (s) => s.createdConversation,
+              'createdConversation',
+              tConversation,
+            )
             .having((s) => s.userSuggestions, 'userSuggestions', const [])
             .having((s) => s.isSearchingUsers, 'isSearchingUsers', false),
         isA<MessageState>().having(
@@ -212,6 +217,22 @@ void main() {
               'errorMessage',
               'Failed to create conversation',
             ),
+      ],
+    );
+  });
+
+  group('MessageCreatedConversationHandled', () {
+    blocTest<MessageBloc, MessageState>(
+      'clears createdConversation from state',
+      build: () => messageBloc,
+      seed: () => MessageState(createdConversation: tConversation),
+      act: (bloc) => bloc.add(MessageCreatedConversationHandled()),
+      expect: () => [
+        isA<MessageState>().having(
+          (s) => s.createdConversation,
+          'createdConversation',
+          isNull,
+        ),
       ],
     );
   });

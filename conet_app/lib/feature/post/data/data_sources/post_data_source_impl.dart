@@ -164,4 +164,23 @@ class PostDataSourceImpl implements PostDataSource {
       throw ServerException(e.toString());
     }
   }
+
+  @override
+  Future<List<Post>> getLikedPosts({int page = 1, int limit = 20}) async {
+    try {
+      final res = await dioClient.dio.get(
+        "/posts/liked",
+        queryParameters: {"page": page, "limit": limit},
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to get liked posts");
+      }
+      final data = res.data as Map<String, dynamic>;
+      final posts = data['posts'] as List;
+      return posts.map((e) => PostModel.fromJson(e)).toList();
+    } catch (e) {
+      logger.e("Failed to get liked posts", error: e);
+      throw ServerException(e.toString());
+    }
+  }
 }

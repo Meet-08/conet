@@ -41,7 +41,6 @@ export const createConversationService = async (currentUserId, otherUserId) => {
   let targetUserId = otherUserId;
 
   if (!UUID_REGEX.test(otherUserId)) {
-    // Try to find user by username or email
     const user = await prisma.users.findFirst({
       where: {
         OR: [{ username: otherUserId }, { email: otherUserId }],
@@ -66,7 +65,6 @@ export const createConversationService = async (currentUserId, otherUserId) => {
 
   const pair = normalizePair(currentUserId, targetUserId);
 
-  // Verify the other user exists
   const otherUser = await prisma.users.findUnique({
     where: { id: targetUserId },
     select: USER_SELECT_FIELDS,
@@ -108,6 +106,9 @@ export const getConversationsService = async (currentUserId) => {
   const rows = await prisma.conversations.findMany({
     where: {
       OR: [{ user_one: currentUserId }, { user_two: currentUserId }],
+      last_message_id: {
+        not: null,
+      },
     },
     include: {
       users_conversations_user_oneTousers: { select: USER_SELECT_FIELDS },

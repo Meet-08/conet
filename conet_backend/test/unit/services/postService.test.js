@@ -28,6 +28,7 @@ import {
   deletePostService,
   editCommentService,
   getAllPostsService,
+  getLikedPostsService,
   getPostCommentsService,
   getPostService,
   getUserPostsService,
@@ -457,5 +458,58 @@ describe("deleteCommentService", () => {
     });
 
     expect(prismaMock.post_comments.delete).not.toHaveBeenCalled();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("getLikedPostsService", () => {
+  const mockLikeEntry = {
+    post_id: POST_ID,
+    user_id: TEST_USER.id,
+    created_at: new Date(),
+    post: mockPost,
+  };
+
+  it("returns paginated liked posts with correct mapping", async () => {
+    prismaMock.$transaction.mockResolvedValue([[mockLikeEntry], 1]);
+
+    const result = await getLikedPostsService(
+      TEST_USER.id,
+      1,
+      10,
+      TEST_USER.id,
+    );
+
+    expect(result.total).toBe(1);
+    expect(result.totalPages).toBe(1);
+    expect(result.page).toBe(1);
+    expect(result.posts).toHaveLength(1);
+    expect(result.posts[0].id).toBe(POST_ID);
+  });
+
+  it("returns empty array when user has no likes", async () => {
+    prismaMock.$transaction.mockResolvedValue([[], 0]);
+
+    const result = await getLikedPostsService(TEST_USER.id, 1, 20);
+
+    expect(result.posts).toEqual([]);
+    expect(result.total).toBe(0);
+    expect(result.totalPages).toBe(0);
+  });
+
+  it("calculates totalPages correctly", async () => {
+    prismaMock.$transaction.mockResolvedValue([[], 45]);
+
+    const result = await getLikedPostsService(TEST_USER.id, 1, 20);
+
+    expect(result.totalPages).toBe(3); // ceil(45/20) = 3
+  });
+
+  it("uses $transaction for atomic count + list", async () => {
+    prismaMock.$transaction.mockResolvedValue([[], 0]);
+
+    await getLikedPostsService(TEST_USER.id, 1, 20);
+
+    expect(prismaMock.$transaction).toHaveBeenCalled();
   });
 });

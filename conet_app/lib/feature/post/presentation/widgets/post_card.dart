@@ -30,6 +30,11 @@ class _PostCardState extends State<PostCard> {
     super.initState();
     _isLiked = widget.post.isLiked;
     _likeCount = widget.post.likeCount;
+    // Refresh the bookmarked-IDs set in the Bloc for this post's card.
+    // The Bloc handler is efficient: it only re-emits if the set changed.
+    context.read<PostBloc>().add(
+      PostCheckBookmarkStatusEvent(postId: widget.post.id),
+    );
   }
 
   @override
@@ -293,17 +298,58 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ),
                 ),
-                InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: () {},
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: FaIcon(
-                      FontAwesomeIcons.bookmark,
-                      size: 20,
-                      color: Colors.grey.shade700,
-                    ),
-                  ),
+                // Bookmark button — state derived from PostBloc.bookmarkedPostIds
+                BlocBuilder<PostBloc, PostState>(
+                  buildWhen: (prev, curr) {
+                    // Feed view: only rebuild when this post's bookmark status changes
+                    if (prev is PostLoaded && curr is PostLoaded) {
+                      return prev.bookmarkedPostIds.contains(widget.post.id) !=
+                          curr.bookmarkedPostIds.contains(widget.post.id);
+                    }
+                    // SavedPostsPage (PostBookmarksLoaded): rebuild on any list change
+                    // so the button reacts when a bookmark is removed
+                    if (prev is PostBookmarksLoaded ||
+                        curr is PostBookmarksLoaded) {
+                      return true;
+                    }
+                    return false;
+                  },
+                  builder: (context, state) {
+                    // All posts shown in SavedPostsPage are bookmarked by definition
+                    final isBookmarked = switch (state) {
+                      PostLoaded s => s.bookmarkedPostIds.contains(
+                        widget.post.id,
+                      ),
+                      PostBookmarksLoaded _ => true,
+                      _ => false,
+                    };
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(8),
+                      onTap: () {
+                        if (isBookmarked) {
+                          context.read<PostBloc>().add(
+                            PostRemoveBookmarkEvent(postId: widget.post.id),
+                          );
+                        } else {
+                          context.read<PostBloc>().add(
+                            PostBookmarkEvent(post: widget.post),
+                          );
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: FaIcon(
+                          isBookmarked
+                              ? FontAwesomeIcons.solidBookmark
+                              : FontAwesomeIcons.bookmark,
+                          size: 20,
+                          color: isBookmarked
+                              ? Theme.of(context).colorScheme.primary
+                              : Colors.grey.shade700,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

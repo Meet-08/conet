@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileAppBar extends StatelessWidget implements PreferredSizeWidget {
   const ProfileAppBar({super.key});
@@ -13,7 +14,10 @@ class ProfileAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       centerTitle: false,
       actions: [
-        IconButton(icon: const FaIcon(FontAwesomeIcons.bars), onPressed: () {}),
+        IconButton(
+          icon: const FaIcon(FontAwesomeIcons.bars),
+          onPressed: () => context.push("/settings"),
+        ),
       ],
     );
   }

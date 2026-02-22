@@ -28,4 +28,6 @@ abstract class PostDataSource {
   Future<List<Comment>> getPostComments(String postId);
 
   Stream<List<Comment>> watchPostComments(String postId);
+
+  Future<List<Post>> getLikedPosts({int page = 1, int limit = 20});
 }

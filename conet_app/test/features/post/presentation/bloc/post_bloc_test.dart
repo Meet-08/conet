@@ -2,12 +2,15 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_bookmark.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_comment.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_create.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_delete.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_get_bookmarks.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_post_comments.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_user_posts.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_remove_bookmark.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:file_picker/file_picker.dart';
@@ -29,6 +32,12 @@ class MockPostGetPostComments extends Mock implements PostGetPostComments {}
 
 class MockPostGetUserPosts extends Mock implements PostGetUserPosts {}
 
+class MockPostBookmark extends Mock implements PostBookmark {}
+
+class MockPostRemoveBookmark extends Mock implements PostRemoveBookmark {}
+
+class MockPostGetBookmarks extends Mock implements PostGetBookmarks {}
+
 class MockPlatformFile extends Mock implements PlatformFile {}
 
 void main() {
@@ -40,6 +49,9 @@ void main() {
   late MockPostToggleLike mockToggleLike;
   late MockPostComment mockCommentPost;
   late MockPostGetPostComments mockGetPostComments;
+  late MockPostBookmark mockBookmarkPost;
+  late MockPostRemoveBookmark mockRemoveBookmark;
+  late MockPostGetBookmarks mockGetBookmarks;
 
   const tUser = User(
     id: 'user-123',
@@ -73,6 +85,14 @@ void main() {
     mockToggleLike = MockPostToggleLike();
     mockCommentPost = MockPostComment();
     mockGetPostComments = MockPostGetPostComments();
+    mockBookmarkPost = MockPostBookmark();
+    mockRemoveBookmark = MockPostRemoveBookmark();
+    mockGetBookmarks = MockPostGetBookmarks();
+
+    // Default stub: no bookmarks (prevents unhandled mock calls)
+    when(
+      () => mockGetBookmarks(),
+    ).thenAnswer((_) async => const Right(<Post>[]));
 
     postBloc = PostBloc(
       getPosts: mockGetPosts,
@@ -82,6 +102,9 @@ void main() {
       toggleLike: mockToggleLike,
       commentPost: mockCommentPost,
       getPostComments: mockGetPostComments,
+      bookmarkPost: mockBookmarkPost,
+      removeBookmark: mockRemoveBookmark,
+      getBookmarks: mockGetBookmarks,
     );
   });
 

@@ -7,6 +7,7 @@ import 'package:conet_app/feature/message/presentation/widgets/message_filters.d
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class MessagesPage extends StatefulWidget {
   const MessagesPage({super.key});
@@ -24,7 +25,7 @@ class _MessagesPageState extends State<MessagesPage> {
 
   Future<void> _showCreateConversationDialog() async {
     final controller = TextEditingController();
-    final userId = await showDialog<String>(
+    await showDialog<void>(
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
@@ -116,10 +117,10 @@ class _MessagesPageState extends State<MessagesPage> {
                           ),
                           subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
                           onTap: () {
-                            dialogContext.read<MessageBloc>().add(
-                              MessageUserSearchCleared(),
+                            Navigator.pop(dialogContext);
+                            context.read<MessageBloc>().add(
+                              MessageConversationCreated(user.id),
                             );
-                            Navigator.pop(dialogContext, user.id);
                           },
                         );
                       },
@@ -139,34 +140,37 @@ class _MessagesPageState extends State<MessagesPage> {
               },
               child: const Text('Cancel'),
             ),
-            FilledButton(
-              onPressed: () {
-                dialogContext.read<MessageBloc>().add(
-                  MessageUserSearchCleared(),
-                );
-                Navigator.pop(dialogContext, controller.text.trim());
-              },
-              child: const Text('Create'),
-            ),
           ],
         );
       },
     );
-
-    if (userId != null && userId.isNotEmpty && context.mounted) {
-      context.read<MessageBloc>().add(MessageConversationCreated(userId));
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<MessageBloc, MessageState>(
-      listener: (context, state) {
-        if (state.status == MessageStatus.failure &&
-            state.errorMessage != null) {
-          AppToast.showError(context, state.errorMessage!);
-        }
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<MessageBloc, MessageState>(
+          listenWhen: (previous, current) =>
+              current.status == MessageStatus.failure &&
+              current.errorMessage != null,
+          listener: (context, state) {
+            AppToast.showError(context, state.errorMessage!);
+          },
+        ),
+        BlocListener<MessageBloc, MessageState>(
+          listenWhen: (previous, current) =>
+              previous.createdConversation == null &&
+              current.createdConversation != null,
+          listener: (context, state) {
+            final conversation = state.createdConversation!;
+            context.read<MessageBloc>().add(
+              MessageCreatedConversationHandled(),
+            );
+            context.push('/chat-detail', extra: conversation);
+          },
+        ),
+      ],
       child: Scaffold(
         appBar: MessageAppBar(onAddPressed: _showCreateConversationDialog),
         body: Column(

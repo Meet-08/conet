@@ -29,19 +29,26 @@ import 'package:conet_app/feature/message/domain/usecases/message_send_message.d
 import 'package:conet_app/feature/message/domain/usecases/message_watch_messages.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/post/data/data_sources/file_data_source.dart';
+import 'package:conet_app/feature/post/data/data_sources/post_bookmark_local_data_source.dart';
+import 'package:conet_app/feature/post/data/data_sources/post_bookmark_local_data_source_impl.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_data_source.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_data_source_impl.dart';
 import 'package:conet_app/feature/post/data/data_sources/supabase_file_data_source.dart';
 import 'package:conet_app/feature/post/data/repositories/post_repository_impl.dart';
 import 'package:conet_app/feature/post/domain/repositories/post_repository.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_bookmark.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_comment.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_create.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_delete.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_get_bookmarks.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_get_liked_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_post_comments.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_user_posts.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_remove_bookmark.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_watch_post_comments.dart';
+import 'package:conet_app/feature/post/presentation/bloc/liked_posts_bloc.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_detail_bloc.dart';
 import 'package:conet_app/feature/profile/data/data_sources/profile_data_source.dart';
@@ -60,6 +67,7 @@ import 'package:conet_app/feature/profile/domain/usecases/profile_update_social_
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'init_dependencies.main.dart';
@@ -67,6 +75,10 @@ part 'init_dependencies.main.dart';
 final serviceLocator = GetIt.instance;
 
 Future<void> initDependencies() async {
+  // Initialize Hive for local persistence (bookmarks, etc.)
+  await Hive.initFlutter();
+  await Hive.openBox(PostBookmarkLocalDataSourceImpl.boxName);
+
   // Register Supabase client first (required by other dependencies)
   serviceLocator.registerLazySingleton<SupabaseClient>(
     () => Supabase.instance.client,

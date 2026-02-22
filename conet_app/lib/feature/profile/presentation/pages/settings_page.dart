@@ -1,4 +1,7 @@
+import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class SettingsPage extends StatelessWidget {
@@ -12,7 +15,11 @@ class SettingsPage extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close, color: Colors.black87),
+          icon: const Icon(
+            FontAwesomeIcons.xmark,
+            color: Colors.black87,
+            size: 20,
+          ),
           onPressed: () => context.pop(),
         ),
         title: const Text(
@@ -37,61 +44,61 @@ class SettingsPage extends StatelessWidget {
               children: [
                 _buildSectionHeader('Your Activity'),
                 _buildListTile(
-                  icon: Icons.bookmark_border,
+                  icon: FontAwesomeIcons.bookmark,
                   title: 'Saved Posts',
-                  onTap: () {},
+                  onTap: () => context.push("/saved-posts"),
                 ),
                 _buildListTile(
-                  icon: Icons.favorite_border,
+                  icon: FontAwesomeIcons.heart,
                   title: 'Liked Posts',
-                  onTap: () {},
+                  onTap: () => context.push("/liked-posts"),
                 ),
                 _buildListTile(
-                  icon: Icons.chat_bubble_outline,
+                  icon: FontAwesomeIcons.comment,
                   title: 'Your Comments',
                   onTap: () {},
                 ),
                 const SizedBox(height: 24),
                 _buildSectionHeader('Preferences'),
                 _buildListTile(
-                  icon: Icons.person_outline,
+                  icon: FontAwesomeIcons.user,
                   title: 'Edit Profile',
                   onTap: () {},
                 ),
                 _buildListTile(
-                  icon: Icons.lock_outline,
+                  icon: FontAwesomeIcons.lock,
                   title: 'Privacy & Security',
                   onTap: () {},
                 ),
                 _buildListTile(
-                  icon: Icons.notifications_none,
+                  icon: FontAwesomeIcons.bell,
                   title: 'Notifications',
                   onTap: () {},
                 ),
                 const SizedBox(height: 24),
                 _buildSectionHeader('Support & Info'),
                 _buildListTile(
-                  icon: Icons.help_outline,
+                  icon: FontAwesomeIcons.circleQuestion,
                   title: 'Help Center',
                   onTap: () {},
                 ),
                 _buildListTile(
-                  icon: Icons.description_outlined,
+                  icon: FontAwesomeIcons.fileLines,
                   title: 'Terms of Service',
                   onTap: () {},
                 ),
                 _buildListTile(
-                  icon: Icons.shield_outlined,
+                  icon: FontAwesomeIcons.shieldHalved,
                   title: 'Privacy Policy',
                   onTap: () {},
                 ),
                 const SizedBox(height: 24),
                 _buildSectionHeader('Session'),
                 _buildListTile(
-                  icon: Icons.logout,
+                  icon: FontAwesomeIcons.rightFromBracket,
                   title: 'Log Out',
                   isDestructive: true,
-                  onTap: () {},
+                  onTap: () => context.read<AuthBloc>().add(AuthLogout()),
                 ),
                 const SizedBox(height: 32),
               ],
@@ -153,7 +160,11 @@ class SettingsPage extends StatelessWidget {
       ),
       trailing: isDestructive
           ? null
-          : const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1), size: 20),
+          : const Icon(
+              FontAwesomeIcons.chevronRight,
+              color: Color(0xFFCBD5E1),
+              size: 16,
+            ),
       onTap: onTap,
     );
   }

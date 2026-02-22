@@ -16,6 +16,14 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final displayName = _displayName();
+    final initials = displayName
+        .split(RegExp(r'\s+'))
+        .map((part) => part.isNotEmpty ? part[0] : '')
+        .take(2)
+        .join()
+        .toUpperCase();
+
     return AppBar(
       leadingWidth: 40,
       leading: IconButton(
@@ -25,14 +33,37 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       title: Row(
         children: [
           CircleAvatar(
-            child: Text(_displayName().substring(0, 1).toUpperCase()),
+            radius: 24,
+            backgroundColor: Colors
+                .primaries[displayName.hashCode % Colors.primaries.length]
+                .shade100,
+            backgroundImage:
+                (otherUser.profilePicUrl != null &&
+                    otherUser.profilePicUrl!.isNotEmpty)
+                ? NetworkImage(otherUser.profilePicUrl!)
+                : null,
+            child:
+                (otherUser.profilePicUrl == null ||
+                    otherUser.profilePicUrl!.isEmpty)
+                ? Text(
+                    initials,
+                    style: TextStyle(
+                      color: Colors
+                          .primaries[displayName.hashCode %
+                              Colors.primaries.length]
+                          .shade800,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  )
+                : null,
           ),
           const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _displayName(),
+                displayName,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -47,9 +78,10 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        IconButton(icon: const FaIcon(FontAwesomeIcons.phone), onPressed: () {}),
-        IconButton(icon: const FaIcon(FontAwesomeIcons.video), onPressed: () {}),
-        IconButton(icon: const FaIcon(FontAwesomeIcons.ellipsisVertical), onPressed: () {}),
+        IconButton(
+          icon: const FaIcon(FontAwesomeIcons.ellipsisVertical),
+          onPressed: () {},
+        ),
       ],
     );
   }

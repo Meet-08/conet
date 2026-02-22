@@ -71,7 +71,12 @@ void _initPost() {
     ),
   );
 
-  // Data sources
+  // Local data source — Bookmark (Hive). Box is opened in initDependencies().
+  serviceLocator.registerLazySingleton<PostBookmarkLocalDataSource>(
+    () => PostBookmarkLocalDataSourceImpl(),
+  );
+
+  // Remote data source
   serviceLocator.registerFactory<PostDataSource>(
     () => PostDataSourceImpl(
       dioClient: serviceLocator<DioClient>(),
@@ -80,9 +85,12 @@ void _initPost() {
     ),
   );
 
-  // Repository (singleton!)
+  // Repository (singleton!) — combines remote + local data sources
   serviceLocator.registerLazySingleton<PostRepository>(
-    () => PostRepositoryImpl(postDataSource: serviceLocator()),
+    () => PostRepositoryImpl(
+      postDataSource: serviceLocator(),
+      bookmarkLocalDataSource: serviceLocator(),
+    ),
   );
 
   // Use cases
@@ -110,6 +118,16 @@ void _initPost() {
   serviceLocator.registerFactory(
     () => PostWatchPostComments(postRepository: serviceLocator()),
   );
+  // Bookmark use cases
+  serviceLocator.registerFactory(
+    () => PostBookmark(postRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
+    () => PostRemoveBookmark(postRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
+    () => PostGetBookmarks(postRepository: serviceLocator()),
+  );
 
   // Bloc
   serviceLocator.registerFactory(
@@ -121,7 +139,14 @@ void _initPost() {
       toggleLike: serviceLocator(),
       commentPost: serviceLocator(),
       getPostComments: serviceLocator(),
+      bookmarkPost: serviceLocator(),
+      removeBookmark: serviceLocator(),
+      getBookmarks: serviceLocator(),
     ),
+  );
+
+  serviceLocator.registerFactory(
+    () => PostGetLikedPosts(postRepository: serviceLocator()),
   );
 
   serviceLocator.registerFactory(
@@ -130,6 +155,10 @@ void _initPost() {
       watchPostComments: serviceLocator(),
       commentPost: serviceLocator(),
     ),
+  );
+
+  serviceLocator.registerFactory(
+    () => LikedPostsBloc(getLikedPosts: serviceLocator()),
   );
 }
 

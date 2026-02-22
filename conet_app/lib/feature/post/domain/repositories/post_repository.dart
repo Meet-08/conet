@@ -26,4 +26,15 @@ abstract interface class PostRepository {
     int page = 1,
     int limit = 20,
   });
+
+  // Bookmark operations (local only)
+  Future<Either<AppFailure, Unit>> bookmarkPost(Post post);
+  Future<Either<AppFailure, Unit>> removeBookmark(String postId);
+  Future<Either<AppFailure, List<Post>>> getBookmarkedPosts();
+  Future<Either<AppFailure, bool>> isPostBookmarked(String postId);
+
+  Future<Either<AppFailure, List<Post>>> getLikedPosts({
+    int page = 1,
+    int limit = 20,
+  });
 }

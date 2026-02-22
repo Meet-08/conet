@@ -41,7 +41,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     final hasText = _controller.text.trim().isNotEmpty;
     final hasFiles = _selectedFiles.isNotEmpty;
 
-    // Allow sending if there's text OR files
     if (!hasText && !hasFiles) return;
 
     context.read<MessageBloc>().add(

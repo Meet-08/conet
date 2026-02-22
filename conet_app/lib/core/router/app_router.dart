@@ -13,6 +13,8 @@ import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/presentation/pages/chat_detail_page.dart';
 import 'package:conet_app/feature/message/presentation/pages/messages_page.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
+import 'package:conet_app/feature/post/presentation/bloc/liked_posts_bloc.dart';
+import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/pages/create_post_page.dart';
 import 'package:conet_app/feature/post/presentation/pages/feed_page.dart';
 import 'package:conet_app/feature/post/presentation/pages/post_detail_page.dart';
@@ -25,9 +27,13 @@ import 'package:conet_app/feature/profile/presentation/pages/edit_profile_page.d
 import 'package:conet_app/feature/profile/presentation/pages/edit_profile_pictures_page.dart';
 import 'package:conet_app/feature/profile/presentation/pages/edit_social_links_page.dart';
 import 'package:conet_app/feature/profile/presentation/pages/profile_page.dart';
+import 'package:conet_app/feature/profile/presentation/pages/saved/liked_post.dart';
+import 'package:conet_app/feature/profile/presentation/pages/saved/saved_post.dart';
+import 'package:conet_app/feature/profile/presentation/pages/settings_page.dart';
 import 'package:conet_app/feature/profile/presentation/pages/user_profile_page.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
@@ -155,6 +161,31 @@ class AppRouter {
           final userId = state.extra as String;
           return UserProfilePage(userId: userId);
         },
+      ),
+
+      GoRoute(
+        path: '/settings',
+        builder: (context, state) => const SettingsPage(),
+      ),
+
+      GoRoute(
+        path: '/saved-posts',
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              serviceLocator<PostBloc>()
+                ..add(const PostLoadBookmarkedPostsEvent()),
+          child: const SavedPostsPage(),
+        ),
+      ),
+
+      GoRoute(
+        path: '/liked-posts',
+        builder: (context, state) => BlocProvider(
+          create: (_) =>
+              serviceLocator<LikedPostsBloc>()
+                ..add(const LikedPostsFetchEvent()),
+          child: const LikedPostsPage(),
+        ),
       ),
 
       GoRoute(

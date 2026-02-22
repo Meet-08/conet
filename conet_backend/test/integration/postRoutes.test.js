@@ -77,10 +77,12 @@ beforeEach(() => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 describe("GET /api/posts", () => {
-  it("200 – returns posts array (public route, no auth needed)", async () => {
+  it("200 – returns posts array", async () => {
     prismaMock.posts.findMany.mockResolvedValue([mockPost]);
 
-    const res = await request(app).get("/api/posts");
+    const res = await request(app)
+      .get("/api/posts")
+      .set("Authorization", makeAuthHeader());
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -90,7 +92,9 @@ describe("GET /api/posts", () => {
   it("200 – returns empty posts array when DB is empty", async () => {
     prismaMock.posts.findMany.mockResolvedValue([]);
 
-    const res = await request(app).get("/api/posts");
+    const res = await request(app)
+      .get("/api/posts")
+      .set("Authorization", makeAuthHeader());
 
     expect(res.status).toBe(200);
     expect(res.body.count).toBe(0);
@@ -99,7 +103,9 @@ describe("GET /api/posts", () => {
   it("200 – respects page and limit query params", async () => {
     prismaMock.posts.findMany.mockResolvedValue([]);
 
-    const res = await request(app).get("/api/posts?page=2&limit=5");
+    const res = await request(app)
+      .get("/api/posts?page=2&limit=5")
+      .set("Authorization", makeAuthHeader());
 
     expect(res.status).toBe(200);
     // Verify skip was calculated correctly: (2-1)*5 = 5
@@ -114,7 +120,9 @@ describe("GET /api/posts/:id", () => {
   it("200 – returns a single post", async () => {
     prismaMock.posts.findUnique.mockResolvedValue(mockPost);
 
-    const res = await request(app).get(`/api/posts/${POST_ID}`);
+    const res = await request(app)
+      .get(`/api/posts/${POST_ID}`)
+      .set("Authorization", makeAuthHeader());
 
     expect(res.status).toBe(200);
     expect(res.body.post.id).toBe(POST_ID);
@@ -123,7 +131,9 @@ describe("GET /api/posts/:id", () => {
   it("404 – returns not found for non-existent post", async () => {
     prismaMock.posts.findUnique.mockResolvedValue(null);
 
-    const res = await request(app).get(`/api/posts/does-not-exist`);
+    const res = await request(app)
+      .get(`/api/posts/does-not-exist`)
+      .set("Authorization", makeAuthHeader());
 
     expect(res.status).toBe(404);
   });
@@ -272,6 +282,58 @@ describe("POST /api/posts/comment/:id", () => {
     const res = await request(app)
       .post(`/api/posts/comment/${POST_ID}`)
       .send({ content: "Unauthenticated comment" });
+
+    expect(res.status).toBe(401);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("GET /api/posts/liked", () => {
+  const mockLikeEntry = {
+    post_id: POST_ID,
+    user_id: TEST_USER.id,
+    created_at: new Date().toISOString(),
+    post: mockPost,
+  };
+
+  it("200 – returns liked posts for authenticated user", async () => {
+    prismaMock.$transaction.mockResolvedValue([[mockLikeEntry], 1]);
+
+    const res = await request(app)
+      .get("/api/posts/liked")
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.posts)).toBe(true);
+    expect(res.body.total).toBe(1);
+  });
+
+  it("200 – returns empty array when user has no likes", async () => {
+    prismaMock.$transaction.mockResolvedValue([[], 0]);
+
+    const res = await request(app)
+      .get("/api/posts/liked")
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body.posts).toEqual([]);
+    expect(res.body.total).toBe(0);
+  });
+
+  it("200 – respects page and limit query params", async () => {
+    prismaMock.$transaction.mockResolvedValue([[], 0]);
+
+    const res = await request(app)
+      .get("/api/posts/liked?page=2&limit=5")
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.$transaction).toHaveBeenCalled();
+  });
+
+  it("401 – rejects unauthenticated request", async () => {
+    const res = await request(app).get("/api/posts/liked");
 
     expect(res.status).toBe(401);
   });

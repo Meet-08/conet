@@ -13,7 +13,23 @@ class PostLoaded extends PostState {
   final List<Post> posts;
   final bool recentlyCreated;
 
-  const PostLoaded(this.posts, {this.recentlyCreated = false});
+  /// IDs of posts the current user has bookmarked locally (Hive).
+  /// Updated whenever bookmark events are handled or posts are refreshed.
+  final Set<String> bookmarkedPostIds;
+
+  const PostLoaded(
+    this.posts, {
+    this.recentlyCreated = false,
+    this.bookmarkedPostIds = const {},
+  });
+}
+
+/// Emitted when [PostLoadBookmarkedPostsEvent] completes.
+/// Used exclusively by SavedPostsPage.
+class PostBookmarksLoaded extends PostState {
+  final List<Post> posts;
+
+  const PostBookmarksLoaded(this.posts);
 }
 
 class PostCommentsLoading extends PostState {}

@@ -6,6 +6,7 @@ import {
   deletePostService,
   editCommentService,
   getAllPostsService,
+  getLikedPostsService,
   getPostCommentsService,
   getPostService,
   getUserPostsService,
@@ -41,7 +42,7 @@ export const getAllPosts = asyncHandler(async (req, res) => {
 
 // GET SINGLE POST
 export const getPost = asyncHandler(async (req, res) => {
-  const post = await getPostService(req.params.id);
+  const post = await getPostService(req.params.id, req.user.id);
 
   res.status(200).json({ success: true, post });
 });
@@ -56,6 +57,21 @@ export const getUserPosts = asyncHandler(async (req, res) => {
     page,
     limit,
     req.user?.id ?? null,
+  );
+
+  res.status(200).json({ success: true, ...result });
+});
+
+// GET LIKED POSTS
+export const getLikedPosts = asyncHandler(async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+
+  const result = await getLikedPostsService(
+    req.user.id,
+    page,
+    limit,
+    req.user.id,
   );
 
   res.status(200).json({ success: true, ...result });

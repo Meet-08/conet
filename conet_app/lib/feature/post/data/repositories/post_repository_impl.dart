@@ -1,5 +1,6 @@
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/core/error/server_exception.dart';
+import 'package:conet_app/feature/post/data/data_sources/post_bookmark_local_data_source.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_data_source.dart';
 import 'package:conet_app/feature/post/domain/entities/comment.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
@@ -9,9 +10,13 @@ import 'package:fpdart/fpdart.dart';
 
 class PostRepositoryImpl implements PostRepository {
   final PostDataSource _postDataSource;
+  final PostBookmarkLocalDataSource _bookmarkLocalDataSource;
 
-  PostRepositoryImpl({required PostDataSource postDataSource})
-    : _postDataSource = postDataSource;
+  PostRepositoryImpl({
+    required PostDataSource postDataSource,
+    required PostBookmarkLocalDataSource bookmarkLocalDataSource,
+  }) : _postDataSource = postDataSource,
+       _bookmarkLocalDataSource = bookmarkLocalDataSource;
 
   @override
   Future<Either<AppFailure, Unit>> commentPost(String postId, String comment) {
@@ -73,6 +78,60 @@ class PostRepositoryImpl implements PostRepository {
   @override
   Future<Either<AppFailure, Unit>> toggleLikePost(String postId) {
     return _getResult<Unit>(() => _postDataSource.toggleLikePost(postId));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Bookmark operations (local only — no network involved)
+  // ---------------------------------------------------------------------------
+
+  @override
+  Future<Either<AppFailure, Unit>> bookmarkPost(Post post) async {
+    try {
+      await _bookmarkLocalDataSource.bookmarkPost(post);
+      return const Right(unit);
+    } catch (e) {
+      return Left(AppFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<AppFailure, Unit>> removeBookmark(String postId) async {
+    try {
+      await _bookmarkLocalDataSource.removeBookmark(postId);
+      return const Right(unit);
+    } catch (e) {
+      return Left(AppFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<AppFailure, List<Post>>> getBookmarkedPosts() async {
+    try {
+      final posts = await _bookmarkLocalDataSource.getBookmarkedPosts();
+      return Right(posts);
+    } catch (e) {
+      return Left(AppFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<AppFailure, bool>> isPostBookmarked(String postId) async {
+    try {
+      final result = await _bookmarkLocalDataSource.isPostBookmarked(postId);
+      return Right(result);
+    } catch (e) {
+      return Left(AppFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<AppFailure, List<Post>>> getLikedPosts({
+    int page = 1,
+    int limit = 20,
+  }) {
+    return _getResult<List<Post>>(
+      () => _postDataSource.getLikedPosts(page: page, limit: limit),
+    );
   }
 
   Future<Either<AppFailure, T>> _getResult<T>(Future<T> Function() fn) async {

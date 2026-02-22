@@ -51,3 +51,5 @@ class MessageUserSearchRequested extends MessageEvent {
 }
 
 class MessageUserSearchCleared extends MessageEvent {}
+
+class MessageCreatedConversationHandled extends MessageEvent {}
