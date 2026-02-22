@@ -497,7 +497,7 @@ model conversations {
   created_at                                       DateTime?  @default(now()) @db.Timestamptz(6)
   updated_at                                       DateTime?  @default(now()) @db.Timestamptz(6)
   last_message_id                                  String?    @db.Uuid
-  messages_conversations_last_message_idTomessages messages?  @relation("conversations_last_message_idTomessages", fields: [last_message_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "conversations_last_message_fkey")
+  messages_conversations_last_message_idTomessages messages?  @relation("conversations_last_message_idTomessages", fields: [last_message_id], references: [id], onUpdate: NoAction, map: "conversations_last_message_fkey")
   users_conversations_user_oneTousers              users      @relation("conversations_user_oneTousers", fields: [user_one], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users_conversations_user_twoTousers              users      @relation("conversations_user_twoTousers", fields: [user_two], references: [id], onDelete: NoAction, onUpdate: NoAction)
   messages                                         messages[]

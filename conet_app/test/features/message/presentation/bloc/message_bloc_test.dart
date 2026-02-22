@@ -9,6 +9,7 @@ import 'package:conet_app/feature/message/domain/usecases/message_get_messages.d
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_watch_conversation_updates.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_watch_messages.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,6 +30,9 @@ class MockMessageMarkAsRead extends Mock implements MessageMarkAsRead {}
 
 class MockMessageWatchMessages extends Mock implements MessageWatchMessages {}
 
+class MockMessageWatchConversationUpdates extends Mock
+    implements MessageWatchConversationUpdates {}
+
 class MockMessageSearchUsers extends Mock implements MessageSearchUsers {}
 
 void main() {
@@ -39,6 +43,7 @@ void main() {
   late MockMessageSendMessage mockSendMessage;
   late MockMessageMarkAsRead mockMarkAsRead;
   late MockMessageWatchMessages mockWatchMessages;
+  late MockMessageWatchConversationUpdates mockWatchConversationUpdates;
   late MockMessageSearchUsers mockSearchUsers;
 
   const tUser = User(
@@ -74,7 +79,13 @@ void main() {
     mockSendMessage = MockMessageSendMessage();
     mockMarkAsRead = MockMessageMarkAsRead();
     mockWatchMessages = MockMessageWatchMessages();
+    mockWatchConversationUpdates = MockMessageWatchConversationUpdates();
     mockSearchUsers = MockMessageSearchUsers();
+
+    // Stub global subscription
+    when(
+      () => mockWatchConversationUpdates(),
+    ).thenAnswer((_) => const Stream.empty());
 
     messageBloc = MessageBloc(
       createConversation: mockCreateConversation,
@@ -83,6 +94,7 @@ void main() {
       sendMessage: mockSendMessage,
       markAsRead: mockMarkAsRead,
       watchMessages: mockWatchMessages,
+      watchConversationUpdates: mockWatchConversationUpdates,
       searchUsers: mockSearchUsers,
       getCurrentUserId: () => 'user-123',
     );
@@ -95,6 +107,7 @@ void main() {
   test('initial state is MessageState with default values', () {
     expect(messageBloc.state, isA<MessageState>());
     expect(messageBloc.state.status, MessageStatus.initial);
+    expect(messageBloc.state.currentUserId, 'user-123');
   });
 
   group('MessageConversationsRequested', () {
@@ -246,6 +259,9 @@ void main() {
         when(
           () => mockWatchMessages(any()),
         ).thenAnswer((_) => Stream.value(tMessageList));
+        when(
+          () => mockGetConversations(),
+        ).thenAnswer((_) async => Right(tConversationList));
         return messageBloc;
       },
       act: (bloc) => bloc.add(MessageWatchStarted(tConversationId)),
@@ -261,6 +277,42 @@ void main() {
       ],
       verify: (_) {
         verify(() => mockWatchMessages(tConversationId)).called(1);
+        // Should NOT mark as read because tMessageList messages are sent by current user ('user-123')
+        verifyNever(
+          () => mockMarkAsRead(conversationId: any(named: 'conversationId')),
+        );
+      },
+    );
+
+    blocTest<MessageBloc, MessageState>(
+      'marks as read when MessageListUpdated contains unread messages from others',
+      build: () {
+        when(
+          () => mockMarkAsRead(conversationId: any(named: 'conversationId')),
+        ).thenAnswer((_) async => const Right(unit));
+        return messageBloc;
+      },
+      act: (bloc) => bloc.add(
+        MessageListUpdated([
+          Message(
+            id: 'msg-rec',
+            conversationId: tConversationId,
+            senderId: 'other-user',
+            content: 'Hi',
+            createdAt: DateTime.now(),
+            isRead: false,
+          ),
+        ], tConversationId),
+      ),
+      expect: () => [
+        isA<MessageState>().having(
+          (s) => s.messages.length,
+          'messages length',
+          1,
+        ),
+      ],
+      verify: (_) {
+        verify(() => mockMarkAsRead(conversationId: tConversationId)).called(1);
       },
     );
   });
@@ -278,6 +330,9 @@ void main() {
             content: any(named: 'content'),
           ),
         ).thenAnswer((_) async => Right(tMessage));
+        when(
+          () => mockGetConversations(),
+        ).thenAnswer((_) async => Right(tConversationList));
         return messageBloc;
       },
       act: (bloc) => bloc.add(
@@ -294,6 +349,14 @@ void main() {
         isA<MessageState>()
             .having((s) => s.messages.length, 'messages length', 1)
             .having((s) => s.messages.first.id, 'id', tMessage.id),
+        isA<MessageState>().having(
+          (s) => s.status,
+          'status',
+          MessageStatus.loading,
+        ),
+        isA<MessageState>()
+            .having((s) => s.status, 'status', MessageStatus.success)
+            .having((s) => s.conversations, 'conversations', tConversationList),
       ],
       verify: (_) {
         verify(
@@ -302,6 +365,7 @@ void main() {
             content: tContent,
           ),
         ).called(1);
+        verify(() => mockGetConversations()).called(1);
       },
     );
 
@@ -351,6 +415,9 @@ void main() {
             mediaUrls: any(named: 'mediaUrls'),
           ),
         ).thenAnswer((_) async => Right(tMessage));
+        when(
+          () => mockGetConversations(),
+        ).thenAnswer((_) async => Right(tConversationList));
         return messageBloc;
       },
       act: (bloc) => bloc.add(
@@ -371,6 +438,14 @@ void main() {
         isA<MessageState>()
             .having((s) => s.messages.length, 'messages length', 1)
             .having((s) => s.messages.first.id, 'id', tMessage.id),
+        isA<MessageState>().having(
+          (s) => s.status,
+          'status',
+          MessageStatus.loading,
+        ),
+        isA<MessageState>()
+            .having((s) => s.status, 'status', MessageStatus.success)
+            .having((s) => s.conversations, 'conversations', tConversationList),
       ],
       verify: (_) {
         verify(
@@ -380,6 +455,7 @@ void main() {
             mediaUrls: const ['https://example.com/file.pdf'],
           ),
         ).called(1);
+        verify(() => mockGetConversations()).called(1);
       },
     );
   });

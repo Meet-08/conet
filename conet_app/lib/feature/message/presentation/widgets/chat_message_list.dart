@@ -5,11 +5,13 @@ import 'package:flutter/material.dart';
 class ChatMessageList extends StatelessWidget {
   final List<Message> messages;
   final String? currentUserId;
+  final ScrollController? scrollController;
 
   const ChatMessageList({
     super.key,
     required this.messages,
     required this.currentUserId,
+    this.scrollController,
   });
 
   @override
@@ -19,9 +21,11 @@ class ChatMessageList extends StatelessWidget {
     }
 
     final sorted = [...messages]
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     return ListView.builder(
+      controller: scrollController,
+      reverse: true,
       padding: const EdgeInsets.all(12),
       itemCount: sorted.length,
       itemBuilder: (context, index) {

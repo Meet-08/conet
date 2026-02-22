@@ -26,6 +26,7 @@ import 'package:conet_app/feature/message/domain/usecases/message_get_messages.d
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_watch_conversation_updates.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_watch_messages.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/post/data/data_sources/file_data_source.dart';

@@ -229,10 +229,13 @@ class _PostCardState extends State<PostCard> {
             // Tags Section
             if (tags.isNotEmpty) ...[
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                runSpacing: 6,
-                children: tags.map((tag) => _TagChip(text: tag)).toList(),
+              SingleChildScrollView(
+                scrollDirection: .horizontal,
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 6,
+                  children: tags.map((tag) => _TagChip(text: tag)).toList(),
+                ),
               ),
             ],
 

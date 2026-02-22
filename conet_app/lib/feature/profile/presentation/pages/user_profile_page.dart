@@ -117,6 +117,13 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
           if (conv != null) {
             setState(() => _isCreatingConversation = false);
             context.push('/chat-detail', extra: conv);
+          } else if (state.createdConversation != null &&
+              state.createdConversation!.otherUser.id == widget.userId) {
+            setState(() => _isCreatingConversation = false);
+            context.push('/chat-detail', extra: state.createdConversation);
+            context.read<MessageBloc>().add(
+              MessageCreatedConversationHandled(),
+            );
           } else if (state.status == MessageStatus.failure) {
             setState(() => _isCreatingConversation = false);
             AppToast.showError(

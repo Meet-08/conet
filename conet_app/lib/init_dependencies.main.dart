@@ -207,6 +207,9 @@ void _initMessage() {
   serviceLocator.registerFactory(
     () => MessageWatchMessages(messageRepository: serviceLocator()),
   );
+  serviceLocator.registerFactory(
+    () => MessageWatchConversationUpdates(messageRepository: serviceLocator()),
+  );
 
   // Bloc
   serviceLocator.registerLazySingleton(
@@ -217,6 +220,7 @@ void _initMessage() {
       sendMessage: serviceLocator(),
       markAsRead: serviceLocator(),
       watchMessages: serviceLocator(),
+      watchConversationUpdates: serviceLocator(),
       searchUsers: serviceLocator(),
     ),
   );

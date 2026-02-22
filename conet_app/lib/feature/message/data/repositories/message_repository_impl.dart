@@ -87,6 +87,11 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
+  Stream<void> watchConversationUpdates() {
+    return _messageRealTimeDatasource.watchConversationUpdates();
+  }
+
+  @override
   Future<Either<AppFailure, List<Conversation>>> getConversations() {
     return _getResult(() => _messageDataSource.getConversations());
   }

@@ -23,6 +23,7 @@ abstract interface class MessageRepository {
   Future<Either<AppFailure, Unit>> markAsRead(String conversationId);
 
   Stream<List<Message>> watchMessages(String conversationId);
+  Stream<void> watchConversationUpdates();
 
   Future<Either<AppFailure, List<Conversation>>> getConversations();
 

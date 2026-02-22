@@ -8,7 +8,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatDetailPage extends StatefulWidget {
   final Conversation conversation;
@@ -21,6 +20,7 @@ class ChatDetailPage extends StatefulWidget {
 
 class _ChatDetailPageState extends State<ChatDetailPage> {
   final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   List<PlatformFile> _selectedFiles = [];
 
   @override
@@ -34,6 +34,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   @override
   void dispose() {
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -71,21 +72,39 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     });
   }
 
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0, // Reversed list, so 0 is bottom
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final currentUserId = Supabase.instance.client.auth.currentUser?.id;
     return Scaffold(
       appBar: ChatAppBar(otherUser: widget.conversation.otherUser),
       body: Column(
         children: [
           Expanded(
-            child: BlocBuilder<MessageBloc, MessageState>(
-              builder: (context, state) {
-                return ChatMessageList(
-                  messages: state.messages,
-                  currentUserId: currentUserId,
-                );
+            child: BlocListener<MessageBloc, MessageState>(
+              listenWhen: (previous, current) {
+                return previous.messages.length != current.messages.length;
               },
+              listener: (context, state) {
+                _scrollToBottom();
+              },
+              child: BlocBuilder<MessageBloc, MessageState>(
+                builder: (context, state) {
+                  return ChatMessageList(
+                    messages: state.messages,
+                    currentUserId: state.currentUserId,
+                    scrollController: _scrollController,
+                  );
+                },
+              ),
             ),
           ),
 

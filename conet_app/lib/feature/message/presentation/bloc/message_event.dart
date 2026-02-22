@@ -11,7 +11,8 @@ class MessageWatchStarted extends MessageEvent {
 
 class MessageListUpdated extends MessageEvent {
   final List<Message> messages;
-  MessageListUpdated(this.messages);
+  final String conversationId;
+  MessageListUpdated(this.messages, this.conversationId);
 }
 
 class MessageSent extends MessageEvent {

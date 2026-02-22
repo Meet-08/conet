@@ -11,6 +11,7 @@ class MessageState {
   final String? userSearchError;
   final String? errorMessage;
   final Conversation? createdConversation;
+  final String? currentUserId;
 
   MessageState({
     this.messages = const [],
@@ -21,6 +22,7 @@ class MessageState {
     this.userSearchError,
     this.errorMessage,
     this.createdConversation,
+    this.currentUserId,
   });
 
   MessageState copyWith({
@@ -33,6 +35,7 @@ class MessageState {
     String? errorMessage,
     Conversation? createdConversation,
     bool clearCreatedConversation = false,
+    String? currentUserId,
   }) {
     return MessageState(
       messages: messages ?? this.messages,
@@ -45,6 +48,7 @@ class MessageState {
       createdConversation: clearCreatedConversation
           ? null
           : (createdConversation ?? this.createdConversation),
+      currentUserId: currentUserId ?? this.currentUserId,
     );
   }
 }

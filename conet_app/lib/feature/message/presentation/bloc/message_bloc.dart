@@ -9,6 +9,7 @@ import 'package:conet_app/feature/message/domain/usecases/message_get_messages.d
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_watch_conversation_updates.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_watch_messages.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -27,10 +28,13 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   final MessageSendMessage _sendMessage;
   final MessageMarkAsRead _markAsRead;
   final MessageWatchMessages _watchMessages;
+  final MessageWatchConversationUpdates _watchConversationUpdates;
   final MessageSearchUsers _searchUsers;
   final String? Function() _getCurrentUserId;
   StreamSubscription<List<Message>>? _messagesSubscription;
+  StreamSubscription<void>? _globalSubscription;
   int _searchToken = 0;
+  Timer? _refreshTimer;
 
   MessageBloc({
     required MessageCreateConversation createConversation,
@@ -39,6 +43,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     required MessageSendMessage sendMessage,
     required MessageMarkAsRead markAsRead,
     required MessageWatchMessages watchMessages,
+    required MessageWatchConversationUpdates watchConversationUpdates,
     required MessageSearchUsers searchUsers,
     String? Function()? getCurrentUserId,
   }) : _createConversation = createConversation,
@@ -47,11 +52,18 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
        _sendMessage = sendMessage,
        _markAsRead = markAsRead,
        _watchMessages = watchMessages,
+       _watchConversationUpdates = watchConversationUpdates,
        _searchUsers = searchUsers,
        _getCurrentUserId =
            (getCurrentUserId ??
            (() => Supabase.instance.client.auth.currentUser?.id)),
-       super(MessageState()) {
+       super(
+         MessageState(
+           currentUserId:
+               (getCurrentUserId ??
+               (() => Supabase.instance.client.auth.currentUser?.id))(),
+         ),
+       ) {
     on<MessageWatchStarted>(_onWatchStarted);
     on<MessageListUpdated>(_onListUpdated);
     on<MessageSent>(_onMessageSent);
@@ -62,11 +74,30 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     on<MessageUserSearchRequested>(_onUserSearchRequested);
     on<MessageUserSearchCleared>(_onUserSearchCleared);
     on<MessageCreatedConversationHandled>(_onCreatedConversationHandled);
+
+    // Initial load and global subscription setup
+    _initGlobalSubscription();
+  }
+
+  void _initGlobalSubscription() {
+    _globalSubscription?.cancel();
+    _globalSubscription = _watchConversationUpdates().listen((_) {
+      _debounceRefresh();
+    });
+  }
+
+  void _debounceRefresh() {
+    _refreshTimer?.cancel();
+    _refreshTimer = Timer(const Duration(milliseconds: 500), () {
+      add(MessageConversationsRequested());
+    });
   }
 
   @override
   Future<void> close() {
     _messagesSubscription?.cancel();
+    _globalSubscription?.cancel();
+    _refreshTimer?.cancel();
     return super.close();
   }
 
@@ -123,7 +154,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     _messagesSubscription = _watchMessages(event.conversationId).listen((
       messages,
     ) {
-      add(MessageListUpdated(messages));
+      add(MessageListUpdated(messages, event.conversationId));
     });
   }
 
@@ -131,6 +162,19 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     emit(
       state.copyWith(status: MessageStatus.success, messages: event.messages),
     );
+
+    // Auto-read logic: if there are unread messages from other users, mark as read
+    final currentUserId = _getCurrentUserId();
+    if (currentUserId != null) {
+      final hasUnreadFromOthers = event.messages.any(
+        (m) => !m.isRead && m.senderId != currentUserId,
+      );
+      if (hasUnreadFromOthers) {
+        add(MessageMarkAsReadRequested(event.conversationId));
+      }
+    }
+
+    // Refresh conversations list is now handled globally by postgres inserts
   }
 
   Future<void> _onMessageSent(
@@ -192,6 +236,8 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
           messages[index] = r;
           emit(state.copyWith(messages: messages));
         }
+        // Refresh conversations list after sending a message
+        add(MessageConversationsRequested());
       },
     );
   }
