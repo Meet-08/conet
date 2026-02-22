@@ -315,6 +315,7 @@ void main() {
       },
       seed: () => PostLoaded(tPostList),
       act: (bloc) => bloc.add(const PostToggleLikePostEvent(postId: tPostId)),
+      wait: const Duration(milliseconds: 400),
       expect: () => [
         isA<PostLoaded>().having(
           (s) => s.posts.first.isLiked,
@@ -337,6 +338,7 @@ void main() {
       },
       seed: () => PostLoaded(tPostList),
       act: (bloc) => bloc.add(const PostToggleLikePostEvent(postId: tPostId)),
+      wait: const Duration(milliseconds: 400),
       expect: () => [
         isA<PostLoaded>().having(
           (s) => s.posts.first.likeCount,
@@ -356,6 +358,7 @@ void main() {
       },
       seed: () => PostLoaded([tPost.copyWith(isLiked: true, likeCount: 10)]),
       act: (bloc) => bloc.add(const PostToggleLikePostEvent(postId: tPostId)),
+      wait: const Duration(milliseconds: 400),
       expect: () => [
         isA<PostLoaded>().having(
           (s) => s.posts.first.likeCount,
@@ -375,6 +378,7 @@ void main() {
       },
       seed: () => PostLoaded(tPostList),
       act: (bloc) => bloc.add(const PostToggleLikePostEvent(postId: tPostId)),
+      wait: const Duration(milliseconds: 400),
       expect: () => [
         isA<PostLoaded>().having(
           (s) => s.posts.first.isLiked,
@@ -399,6 +403,7 @@ void main() {
       },
       // Initial state is PostInitial, not PostLoaded
       act: (bloc) => bloc.add(const PostToggleLikePostEvent(postId: tPostId)),
+      wait: const Duration(milliseconds: 400),
       expect: () => [],
       verify: (_) {
         verifyNever(() => mockToggleLike(any()));
@@ -483,6 +488,7 @@ void main() {
       seed: () => PostLoaded(multiplePosts),
       act: (bloc) =>
           bloc.add(const PostToggleLikePostEvent(postId: 'post-123')),
+      wait: const Duration(milliseconds: 400),
       expect: () => [
         isA<PostLoaded>().having(
           (s) {

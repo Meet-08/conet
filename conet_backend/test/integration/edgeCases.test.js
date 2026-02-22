@@ -209,7 +209,9 @@ describe("Edge case: Post pagination boundaries", () => {
   it("page=0 falls back to page 1 (skip=0)", async () => {
     prismaMock.posts.findMany.mockResolvedValue([]);
 
-    await request(app).get("/api/posts?page=0&limit=10");
+    await request(app)
+      .get("/api/posts?page=0&limit=10")
+      .set("Authorization", makeAuthHeader());
 
     // parseInt("0") || 1 → 1 → skip = 0
     expect(prismaMock.posts.findMany).toHaveBeenCalledWith(
@@ -220,7 +222,9 @@ describe("Edge case: Post pagination boundaries", () => {
   it("negative limit falls back to 20", async () => {
     prismaMock.posts.findMany.mockResolvedValue([]);
 
-    await request(app).get("/api/posts?limit=-5");
+    await request(app)
+      .get("/api/posts?limit=-5")
+      .set("Authorization", makeAuthHeader());
 
     // parseInt("-5") is truthy in JS (non-zero), controller passes it through
     // This test documents current behavior; input validation middleware is needed
