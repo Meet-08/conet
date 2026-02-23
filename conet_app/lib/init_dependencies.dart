@@ -5,6 +5,7 @@ import 'package:conet_app/core/common/data_sources/file_upload_data_source.dart'
 import 'package:conet_app/core/common/data_sources/presence_data_source.dart';
 import 'package:conet_app/core/common/data_sources/supabase_file_upload_data_source.dart';
 import 'package:conet_app/core/common/data_sources/supabase_presence_data_source.dart';
+import 'package:conet_app/core/services/device_service.dart';
 import 'package:conet_app/core/services/presence_service.dart';
 import 'package:conet_app/feature/auth/data/data_source/auth_data_source.dart';
 import 'package:conet_app/feature/auth/data/data_source/supabase_data_source_impl.dart';
@@ -18,6 +19,11 @@ import 'package:conet_app/feature/auth/domain/usecases/user_send_otp.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_signin_with_google.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_verify_otp.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
+import 'package:conet_app/feature/device/data/data_source/device_remote_data_source.dart';
+import 'package:conet_app/feature/device/data/repository/device_repository_impl.dart';
+import 'package:conet_app/feature/device/domain/repository/device_repository.dart';
+import 'package:conet_app/feature/device/domain/usecases/register_device_usecase.dart';
+import 'package:conet_app/feature/device/domain/usecases/remove_device_usecase.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source_impl.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_real_time_datasource.dart';
@@ -112,4 +118,5 @@ Future<void> initDependencies() async {
   _initPost();
   _initMessage();
   _initProfile();
+  _initDevice();
 }

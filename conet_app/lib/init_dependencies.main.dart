@@ -49,6 +49,7 @@ void _initAuth() {
         userLogout: serviceLocator<UserLogout>(),
         appUserCubit: serviceLocator<AppUserCubit>(),
         presenceService: serviceLocator<PresenceService>(),
+        deviceService: serviceLocator<DeviceService>(),
       ),
     );
 }
@@ -276,6 +277,29 @@ void _initProfile() {
         getUser: serviceLocator(),
         followUser: serviceLocator(),
         unfollowUser: serviceLocator(),
+      ),
+    );
+}
+
+void _initDevice() {
+  serviceLocator
+    ..registerFactory<DeviceRemoteDataSource>(
+      () => DeviceRemoteDataSourceImpl(serviceLocator<DioClient>()),
+    )
+    ..registerFactory<DeviceRepository>(
+      () => DeviceRepositoryImpl(serviceLocator<DeviceRemoteDataSource>()),
+    )
+    ..registerFactory<RegisterDeviceUseCase>(
+      () => RegisterDeviceUseCase(serviceLocator<DeviceRepository>()),
+    )
+    ..registerFactory<RemoveDeviceUseCase>(
+      () => RemoveDeviceUseCase(serviceLocator<DeviceRepository>()),
+    )
+    ..registerLazySingleton<DeviceService>(
+      () => DeviceService(
+        serviceLocator<RegisterDeviceUseCase>(),
+        serviceLocator<RemoveDeviceUseCase>(),
+        serviceLocator<AppUserCubit>(),
       ),
     );
 }

@@ -42,6 +42,7 @@ export const prismaMock = {
   post_comments: makeMethods(),
   conversations: makeMethods(),
   messages: makeMethods(),
+  notifications: makeMethods(),
   $transaction: mock((fn) =>
     typeof fn === "function" ? fn(prismaMock) : Promise.all(fn),
   ),

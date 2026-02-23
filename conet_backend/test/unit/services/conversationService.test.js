@@ -39,6 +39,12 @@ import {
   sendMessageService,
 } from "../../../services/conversationService.js";
 
+mock.module("../../../services/notificationService.js", () => ({
+  default: {
+    createNotification: mock(() => Promise.resolve()),
+  },
+}));
+
 // ─── Fixtures ──────────────────────────────────────────────────────────────
 
 const CONV_ID = "cccccccc-cccc-cccc-cccc-cccccccccccc";

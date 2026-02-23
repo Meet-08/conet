@@ -40,9 +40,11 @@ export const getUserProfileService = async (uid, viewerId = null) => {
   let socialLinks = [];
   if (user.social_links) {
     socialLinks =
-      typeof user.social_links === "string" ? JSON.parse(user.social_links)
-      : Array.isArray(user.social_links) ? user.social_links
-      : [];
+      typeof user.social_links === "string"
+        ? JSON.parse(user.social_links)
+        : Array.isArray(user.social_links)
+          ? user.social_links
+          : [];
   }
 
   // Check if the viewer follows this profile

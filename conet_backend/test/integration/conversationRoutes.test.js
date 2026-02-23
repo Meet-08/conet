@@ -23,6 +23,16 @@ import {
 } from "../mocks/authMock.js";
 import { prismaMock, resetPrismaMocks } from "../mocks/prismaMock.js";
 
+mock.module("../../services/notificationService.js", () => ({
+  createNotification: mock(() => Promise.resolve()),
+}));
+
+mock.module("../../config/queue.js", () => ({
+  notificationQueue: {
+    add: mock(() => Promise.resolve()),
+  },
+}));
+
 mock.module("../../config/prisma.js", () => ({ default: prismaMock }));
 
 process.env.SUPABASE_JWT_SECRET = TEST_JWT_SECRET;

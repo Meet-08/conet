@@ -1,5 +1,6 @@
 import { USER_SELECT_FIELDS, UUID_REGEX } from "../config/constants.js";
 import prisma from "../config/prisma.js";
+import notificationService from "./notificationService.js";
 
 /**
  * Normalize conversation pair so user_one < user_two (alphabetical UUID sort).
@@ -197,6 +198,20 @@ export const sendMessageService = async (
       content,
       media_urls: mediaUrls,
     },
+  });
+
+  const receiverId =
+    conversation.user_one === senderId ?
+      conversation.user_two
+    : conversation.user_one;
+
+  // Send notification
+  await notificationService.createNotification({
+    receiverId,
+    actorId: senderId,
+    type: "NEW_MESSAGE",
+    referenceId: conversationId,
+    content: content.substring(0, 100), // Send a snippet of the message
   });
 
   return {

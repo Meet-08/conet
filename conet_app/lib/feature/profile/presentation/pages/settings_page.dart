@@ -63,7 +63,7 @@ class SettingsPage extends StatelessWidget {
                 _buildListTile(
                   icon: FontAwesomeIcons.user,
                   title: 'Edit Profile',
-                  onTap: () => context.push('/settings'),
+                  onTap: () => context.push('/edit-profile'),
                 ),
                 _buildListTile(
                   icon: FontAwesomeIcons.lock,

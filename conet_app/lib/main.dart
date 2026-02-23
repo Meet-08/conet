@@ -6,7 +6,9 @@ import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
+import 'package:conet_app/firebase_options.dart';
 import 'package:conet_app/init_dependencies.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -18,6 +20,8 @@ var logger = Logger(level: kDebugMode ? .debug : .error);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   await dotenv.load();
   await Supabase.initialize(

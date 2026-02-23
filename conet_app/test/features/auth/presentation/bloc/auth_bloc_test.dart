@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/error/app_failure.dart';
+import 'package:conet_app/core/services/device_service.dart';
 import 'package:conet_app/core/services/presence_service.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_add_details.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_current.dart';
@@ -33,6 +34,8 @@ class MockAppUserCubit extends Mock implements AppUserCubit {}
 
 class MockPresenceService extends Mock implements PresenceService {}
 
+class MockDeviceService extends Mock implements DeviceService {}
+
 void main() {
   late AuthBloc authBloc;
   late MockUserLogin mockUserLogin;
@@ -44,6 +47,7 @@ void main() {
   late MockUserLogout mockUserLogout;
   late MockAppUserCubit mockAppUserCubit;
   late MockPresenceService mockPresenceService;
+  late MockDeviceService mockDeviceService;
 
   const tUser = User(
     id: 'bloc-test-user-123',
@@ -77,9 +81,14 @@ void main() {
     mockUserLogout = MockUserLogout();
     mockAppUserCubit = MockAppUserCubit();
     mockPresenceService = MockPresenceService();
+    mockDeviceService = MockDeviceService();
 
     when(() => mockAppUserCubit.updateUser(any())).thenReturn(null);
     when(() => mockPresenceService.dispose()).thenAnswer((_) async {});
+    when(() => mockDeviceService.init()).thenAnswer((_) async {});
+    when(
+      () => mockDeviceService.removeCurrentDevice(),
+    ).thenAnswer((_) async {});
 
     authBloc = AuthBloc(
       userLogin: mockUserLogin,
@@ -91,6 +100,7 @@ void main() {
       userLogout: mockUserLogout,
       appUserCubit: mockAppUserCubit,
       presenceService: mockPresenceService,
+      deviceService: mockDeviceService,
     );
   });
 
