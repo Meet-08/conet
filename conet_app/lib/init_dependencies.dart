@@ -6,6 +6,7 @@ import 'package:conet_app/core/common/data_sources/presence_data_source.dart';
 import 'package:conet_app/core/common/data_sources/supabase_file_upload_data_source.dart';
 import 'package:conet_app/core/common/data_sources/supabase_presence_data_source.dart';
 import 'package:conet_app/core/services/device_service.dart';
+import 'package:conet_app/core/services/notification_config_service.dart';
 import 'package:conet_app/core/services/presence_service.dart';
 import 'package:conet_app/feature/auth/data/data_source/auth_data_source.dart';
 import 'package:conet_app/feature/auth/data/data_source/supabase_data_source_impl.dart';
@@ -119,4 +120,6 @@ Future<void> initDependencies() async {
   _initMessage();
   _initProfile();
   _initDevice();
+
+  await serviceLocator<NotificationConfigService>().init();
 }

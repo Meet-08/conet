@@ -25,26 +25,15 @@ class NotificationService {
         return null;
       }
 
-      // Use transaction to ensure atomic creation and counter increment
-      const [notification, updatedUser] = await prisma.$transaction([
-        prisma.notifications.create({
-          data: {
-            receiver_id: receiverId,
-            actor_id: actorId,
-            type,
-            reference_id: referenceId,
-            content,
-          },
-        }),
-        prisma.users.update({
-          where: { id: receiverId },
-          data: {
-            unseen_notification_count: {
-              increment: 1,
-            },
-          },
-        }),
-      ]);
+      const notification = await prisma.notifications.create({
+        data: {
+          receiver_id: receiverId,
+          actor_id: actorId,
+          type,
+          reference_id: referenceId,
+          content,
+        },
+      });
 
       // Push job to BullMQ queue
       await notificationQueue.add("sendPushNotification", {
@@ -90,23 +79,15 @@ class NotificationService {
 
   async markAsSeen(userId) {
     try {
-      await prisma.$transaction([
-        prisma.notifications.updateMany({
-          where: {
-            receiver_id: userId,
-            is_seen: false,
-          },
-          data: {
-            is_seen: true,
-          },
-        }),
-        prisma.users.update({
-          where: { id: userId },
-          data: {
-            unseen_notification_count: 0,
-          },
-        }),
-      ]);
+      await prisma.notifications.updateMany({
+        where: {
+          receiver_id: userId,
+          is_seen: false,
+        },
+        data: {
+          is_seen: true,
+        },
+      });
     } catch (error) {
       logger.error("Error marking notifications as seen:", error);
       throw error;

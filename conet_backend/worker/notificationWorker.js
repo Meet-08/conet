@@ -1,4 +1,5 @@
 import { Worker } from "bullmq";
+import "dotenv/config";
 import admin from "firebase-admin";
 import logger from "../config/logger.js";
 import prisma from "../config/prisma.js";
@@ -23,7 +24,6 @@ const processNotificationJob = async (job) => {
   const { receiverId, title, body, type, referenceId } = job.data;
 
   try {
-    // 1. Fetch active devices for the receiver
     const activeDevices = await prisma.user_devices.findMany({
       where: {
         user_id: receiverId,

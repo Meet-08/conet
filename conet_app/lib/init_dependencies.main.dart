@@ -283,6 +283,9 @@ void _initProfile() {
 
 void _initDevice() {
   serviceLocator
+    ..registerLazySingleton<NotificationConfigService>(
+      () => NotificationConfigService(),
+    )
     ..registerFactory<DeviceRemoteDataSource>(
       () => DeviceRemoteDataSourceImpl(serviceLocator<DioClient>()),
     )
@@ -300,6 +303,7 @@ void _initDevice() {
         serviceLocator<RegisterDeviceUseCase>(),
         serviceLocator<RemoveDeviceUseCase>(),
         serviceLocator<AppUserCubit>(),
+        serviceLocator<NotificationConfigService>(),
       ),
     );
 }

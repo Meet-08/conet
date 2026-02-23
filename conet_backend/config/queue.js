@@ -2,10 +2,16 @@ import { Queue } from "bullmq";
 import Redis from "ioredis";
 import logger from "./logger.js";
 
+// Parse Upstash Redis URL
+const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+const url = new URL(redisUrl);
+
 const redisOptions = {
-  host: process.env.REDIS_HOST || "127.0.0.1",
-  port: process.env.REDIS_PORT || 6379,
-  password: process.env.REDIS_PASSWORD || undefined,
+  host: url.hostname,
+  port: parseInt(url.port) || 6379,
+  password: url.password || undefined,
+  username: url.username || "default",
+  tls: redisUrl.startsWith("rediss://") ? {} : undefined,
   maxRetriesPerRequest: null,
 };
 

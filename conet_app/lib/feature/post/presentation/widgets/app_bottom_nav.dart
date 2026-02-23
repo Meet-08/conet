@@ -1,5 +1,4 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
-import 'package:conet_app/core/widgets/notification_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -42,19 +41,8 @@ class AppBottomNav extends StatelessWidget {
               icon: FaIcon(FontAwesomeIcons.calendar),
               label: 'Events',
             ),
-            BottomNavigationBarItem(
-              icon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const FaIcon(FontAwesomeIcons.comment),
-                  if (unseenCount > 0)
-                    Positioned(
-                      right: -6,
-                      top: -4,
-                      child: NotificationBadge(count: unseenCount, size: 16),
-                    ),
-                ],
-              ),
+            const BottomNavigationBarItem(
+              icon: FaIcon(FontAwesomeIcons.comment),
               label: 'Messages',
             ),
             const BottomNavigationBarItem(
