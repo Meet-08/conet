@@ -1,4 +1,7 @@
+import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/widgets/notification_badge.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AppBottomNav extends StatelessWidget {
@@ -13,28 +16,55 @@ class AppBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: Colors.black,
-      unselectedItemColor: Colors.grey,
-      items: const [
-        BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.house), label: 'Home'),
-        BottomNavigationBarItem(icon: FaIcon(FontAwesomeIcons.magnifyingGlass), label: 'Explore'),
-        BottomNavigationBarItem(
-          icon: FaIcon(FontAwesomeIcons.calendar),
-          label: 'Events',
-        ),
-        BottomNavigationBarItem(
-          icon: FaIcon(FontAwesomeIcons.comment),
-          label: 'Messages',
-        ),
-        BottomNavigationBarItem(
-          icon: FaIcon(FontAwesomeIcons.user),
-          label: 'Profile',
-        ),
-      ],
-      onTap: onTap,
+    return BlocSelector<AppUserCubit, AppUserState, int>(
+      selector: (state) {
+        if (state is AppUserAuthenticated) {
+          return state.user.unseenNotificationCount;
+        }
+        return 0;
+      },
+      builder: (context, unseenCount) {
+        return BottomNavigationBar(
+          currentIndex: currentIndex,
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: Colors.black,
+          unselectedItemColor: Colors.grey,
+          items: [
+            const BottomNavigationBarItem(
+              icon: FaIcon(FontAwesomeIcons.house),
+              label: 'Home',
+            ),
+            const BottomNavigationBarItem(
+              icon: FaIcon(FontAwesomeIcons.magnifyingGlass),
+              label: 'Explore',
+            ),
+            const BottomNavigationBarItem(
+              icon: FaIcon(FontAwesomeIcons.calendar),
+              label: 'Events',
+            ),
+            BottomNavigationBarItem(
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const FaIcon(FontAwesomeIcons.comment),
+                  if (unseenCount > 0)
+                    Positioned(
+                      right: -6,
+                      top: -4,
+                      child: NotificationBadge(count: unseenCount, size: 16),
+                    ),
+                ],
+              ),
+              label: 'Messages',
+            ),
+            const BottomNavigationBarItem(
+              icon: FaIcon(FontAwesomeIcons.user),
+              label: 'Profile',
+            ),
+          ],
+          onTap: onTap,
+        );
+      },
     );
   }
 }

@@ -15,8 +15,14 @@ class MessageAppBar extends StatelessWidget implements PreferredSizeWidget {
         style: TextStyle(fontWeight: FontWeight.w600),
       ),
       actions: [
-        IconButton(icon: const FaIcon(FontAwesomeIcons.magnifyingGlass), onPressed: onSearchPressed),
-        IconButton(icon: const FaIcon(FontAwesomeIcons.plus), onPressed: onAddPressed),
+        IconButton(
+          icon: const FaIcon(FontAwesomeIcons.magnifyingGlass),
+          onPressed: onSearchPressed,
+        ),
+        IconButton(
+          icon: const FaIcon(FontAwesomeIcons.plus),
+          onPressed: onAddPressed,
+        ),
       ],
     );
   }

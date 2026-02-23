@@ -14,6 +14,8 @@ class UserModel extends User {
     required super.profilePicUrl,
     required super.userRole,
     required super.isVerified,
+    super.unseenNotificationCount = 0,
+    super.isOnline = false,
   });
 
   @override
@@ -31,6 +33,8 @@ class UserModel extends User {
     String? profilePicUrl,
     UserRole? userRole,
     bool? isVerified,
+    int? unseenNotificationCount,
+    bool? isOnline,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -41,6 +45,9 @@ class UserModel extends User {
       profilePicUrl: profilePicUrl ?? this.profilePicUrl,
       userRole: userRole ?? this.userRole,
       isVerified: isVerified ?? this.isVerified,
+      unseenNotificationCount:
+          unseenNotificationCount ?? this.unseenNotificationCount,
+      isOnline: isOnline ?? this.isOnline,
     );
   }
 }

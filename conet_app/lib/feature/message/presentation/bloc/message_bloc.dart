@@ -150,7 +150,8 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
 
   void _onWatchStarted(MessageWatchStarted event, Emitter<MessageState> emit) {
     _messagesSubscription?.cancel();
-    emit(state.copyWith(status: MessageStatus.loading));
+    // Clear previous messages immediately to prevent old data from flashing
+    emit(state.copyWith(status: MessageStatus.loading, messages: const []));
     _messagesSubscription = _watchMessages(event.conversationId).listen((
       messages,
     ) {

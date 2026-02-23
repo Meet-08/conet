@@ -48,6 +48,7 @@ void _initAuth() {
         userAddDetails: serviceLocator<UserAddDetails>(),
         userLogout: serviceLocator<UserLogout>(),
         appUserCubit: serviceLocator<AppUserCubit>(),
+        presenceService: serviceLocator<PresenceService>(),
       ),
     );
 }

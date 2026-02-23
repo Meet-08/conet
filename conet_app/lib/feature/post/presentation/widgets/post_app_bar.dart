@@ -1,4 +1,7 @@
+import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/widgets/notification_badge.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class PostAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -36,31 +39,35 @@ class PostAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        Stack(
-          children: [
-            IconButton(
-              icon: const FaIcon(FontAwesomeIcons.bell, color: Colors.black),
-              onPressed: () {},
-            ),
-            Positioned(
-              right: 8,
-              top: 8,
-              child: Container(
-                height: 16,
-                width: 16,
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
-                ),
-                child: const Center(
-                  child: Text(
-                    '3',
-                    style: TextStyle(color: Colors.white, fontSize: 10),
+        BlocSelector<AppUserCubit, AppUserState, int>(
+          selector: (state) {
+            if (state is AppUserAuthenticated) {
+              return state.user.unseenNotificationCount;
+            }
+            return 0;
+          },
+          builder: (context, count) {
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  icon: const FaIcon(
+                    FontAwesomeIcons.bell,
+                    color: Colors.black,
                   ),
+                  onPressed: () {
+                    // TODO: navigate to notifications page
+                  },
                 ),
-              ),
-            ),
-          ],
+                if (count > 0)
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: NotificationBadge(count: count),
+                  ),
+              ],
+            );
+          },
         ),
       ],
     );

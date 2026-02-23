@@ -45,6 +45,12 @@ class User extends Equatable {
   @JsonKey(name: 'is_verified', defaultValue: false)
   final bool isVerified;
 
+  @JsonKey(name: 'unseen_notification_count', defaultValue: 0)
+  final int unseenNotificationCount;
+
+  @JsonKey(name: 'is_online', defaultValue: false)
+  final bool isOnline;
+
   const User({
     required this.id,
     required this.email,
@@ -54,6 +60,8 @@ class User extends Equatable {
     this.profilePicUrl,
     required this.userRole,
     this.isVerified = false,
+    this.unseenNotificationCount = 0,
+    this.isOnline = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
@@ -70,5 +78,7 @@ class User extends Equatable {
     profilePicUrl,
     userRole,
     isVerified,
+    unseenNotificationCount,
+    isOnline,
   ];
 }

@@ -1,7 +1,11 @@
 import 'package:conet_app/core/api/dio_client.dart';
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/common/cubit/presence_cubit.dart';
 import 'package:conet_app/core/common/data_sources/file_upload_data_source.dart';
+import 'package:conet_app/core/common/data_sources/presence_data_source.dart';
 import 'package:conet_app/core/common/data_sources/supabase_file_upload_data_source.dart';
+import 'package:conet_app/core/common/data_sources/supabase_presence_data_source.dart';
+import 'package:conet_app/core/services/presence_service.dart';
 import 'package:conet_app/feature/auth/data/data_source/auth_data_source.dart';
 import 'package:conet_app/feature/auth/data/data_source/supabase_data_source_impl.dart';
 import 'package:conet_app/feature/auth/data/repository/auth_repository_impl.dart';
@@ -87,6 +91,21 @@ Future<void> initDependencies() async {
 
   // Core
   serviceLocator.registerLazySingleton<AppUserCubit>(() => AppUserCubit());
+  serviceLocator.registerLazySingleton<PresenceCubit>(() => PresenceCubit());
+
+  // Presence tracking
+  serviceLocator.registerLazySingleton<PresenceDataSource>(
+    () => SupabasePresenceDataSource(
+      supabaseClient: serviceLocator<SupabaseClient>(),
+    ),
+  );
+  serviceLocator.registerLazySingleton<PresenceService>(
+    () => PresenceService(
+      presenceDataSource: serviceLocator<PresenceDataSource>(),
+      presenceCubit: serviceLocator<PresenceCubit>(),
+      appUserCubit: serviceLocator<AppUserCubit>(),
+    ),
+  );
 
   // Initialize features after core dependencies are registered
   _initAuth();

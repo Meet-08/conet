@@ -1,5 +1,7 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/common/cubit/presence_cubit.dart';
 import 'package:conet_app/core/router/app_router.dart';
+import 'package:conet_app/core/services/presence_service.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
@@ -30,6 +32,7 @@ void main() async {
     MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => serviceLocator<AppUserCubit>()),
+        BlocProvider(create: (_) => serviceLocator<PresenceCubit>()),
         BlocProvider(create: (_) => serviceLocator<AuthBloc>()),
         BlocProvider(create: (_) => serviceLocator<PostBloc>()),
         BlocProvider(create: (_) => serviceLocator<MessageBloc>()),
@@ -47,13 +50,43 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthBloc>().add(AuthIsUserLoggedIn());
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final presenceService = serviceLocator<PresenceService>();
+    final appUserCubit = serviceLocator<AppUserCubit>();
+
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.detached:
+        // User is leaving the app — untrack presence immediately
+        presenceService.dispose();
+        break;
+      case AppLifecycleState.resumed:
+        // User returned — re-track if still logged in
+        final userState = appUserCubit.state;
+        if (userState is AppUserAuthenticated) {
+          presenceService.start(userState.user.id);
+        }
+        break;
+      default:
+        break;
+    }
   }
 
   @override
