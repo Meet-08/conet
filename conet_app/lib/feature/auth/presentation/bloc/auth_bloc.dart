@@ -1,5 +1,6 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/common/entities/user.dart';
+import 'package:conet_app/core/services/device_service.dart';
 import 'package:conet_app/core/services/presence_service.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_add_details.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_current.dart';
@@ -24,6 +25,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final UserLogout _userLogout;
   final AppUserCubit _appUserCubit;
   final PresenceService _presenceService;
+  final DeviceService _deviceService;
 
   AuthBloc({
     required UserLogin userLogin,
@@ -35,6 +37,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required UserLogout userLogout,
     required AppUserCubit appUserCubit,
     required PresenceService presenceService,
+    required DeviceService deviceService,
   }) : _userLogin = userLogin,
        _userSendOtp = userSendOtp,
        _userSigninWithGoogle = userSigninWithGoogle,
@@ -44,6 +47,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
        _userLogout = userLogout,
        _appUserCubit = appUserCubit,
        _presenceService = presenceService,
+       _deviceService = deviceService,
 
        super(AuthInitial()) {
     on<AuthLogin>(_onAuthLogin);
@@ -59,6 +63,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   void _onAuthLogout(AuthLogout event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     _presenceService.dispose();
+    await _deviceService.removeCurrentDevice();
     final res = await _userLogout();
     res.fold((l) => emit(AuthFailure(l.message)), (r) {
       _appUserCubit.logout();
@@ -149,6 +154,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   void _emitAuthSuccess(User user, Emitter<AuthState> emit) {
     _appUserCubit.updateUser(user);
     _presenceService.start(user.id);
+    _deviceService.init();
     emit(AuthSuccess(user, isNewUser: user.username.isEmpty));
   }
 }

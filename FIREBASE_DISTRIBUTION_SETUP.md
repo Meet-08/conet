@@ -76,6 +76,31 @@ Copy the entire output — this is your `FIREBASE_SERVICE_ACCOUNT_KEY` secret.
 
 ---
 
+## Step 4b: Download and Encode google-services.json
+
+The `google-services.json` file is required for Android builds. Firebase uses it to configure app-specific settings.
+
+1. In Firebase Console → **Project settings** → **Your Android app** → **Download google-services.json**
+2. Save it securely (do NOT commit to Git)
+
+### Encode for GitHub:
+
+**On Linux/Mac:**
+
+```bash
+base64 -w 0 path/to/google-services.json
+```
+
+**On Windows (PowerShell):**
+
+```powershell
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("path\to\google-services.json"))
+```
+
+Copy the entire output — this is your `GOOGLE_SERVICES_JSON` secret for CI/CD.
+
+---
+
 ## Step 5: Configure GitHub Secrets
 
 Go to your GitHub repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
@@ -86,9 +111,15 @@ Add these secrets:
 | ------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | `FIREBASE_APP_ID`              | From Firebase Console → Project settings → Your Android app → App ID (e.g., `1:123456789:android:abcdef`) |
 | `FIREBASE_SERVICE_ACCOUNT_KEY` | Base64-encoded service account JSON from Step 4                                                           |
-| `API_URL`                      | Your production backend URL                                                                               |
+| `GOOGLE_SERVICES_JSON`         | Base64-encoded `google-services.json` file from Firebase Console                                          |
+| `BACKEND_URL`                  | Your production backend URL                                                                               |
 | `SUPABASE_URL`                 | Your Supabase project URL                                                                                 |
 | `SUPABASE_ANON_KEY`            | Your Supabase anon key                                                                                    |
+| `IOS_CLIENT_ID`                | Google Client ID for iOS (from Firebase Console or Google Cloud Console)                                  |
+| `WEB_CLIENT_ID`                | Google Client ID for Web (from Firebase Console or Google Cloud Console)                                  |
+| `ANDROID_KEYSTORE_BASE64`      | Base64-encoded Android keystore file (see Android Signing section)                                        |
+| `KEYSTORE_PASSWORD`            | Password for your Android keystore                                                                        |
+| `KEY_PASSWORD`                 | Password for your Android key alias                                                                       |
 
 ---
 

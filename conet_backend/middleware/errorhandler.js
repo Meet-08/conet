@@ -6,9 +6,9 @@ const errorHandler = (err, req, res, next) => {
   // (i.e. controller called res.status(N) before throwing).
   // Fall back to err.statusCode set by the service layer, then 500.
   const statusCode =
-    res.statusCode && res.statusCode !== 200 ?
-      res.statusCode
-    : (err.statusCode ?? 500);
+    res.statusCode && res.statusCode !== 200
+      ? res.statusCode
+      : (err.statusCode ?? 500);
 
   // Log the error details
   logger.error({

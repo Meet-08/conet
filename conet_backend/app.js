@@ -3,6 +3,8 @@ import express from "express";
 import errorHandler from "./middleware/errorhandler.js";
 import requestLogger from "./middleware/requestLogger.js";
 import conversationRoutes from "./routes/conversationRoutes.js";
+import deviceRoutes from "./routes/deviceRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 
@@ -20,6 +22,8 @@ export function createApp() {
   app.use("/api/posts", postRoutes);
   app.use("/api/conversations", conversationRoutes);
   app.use("/api/profile", profileRoutes);
+  app.use("/api/devices", deviceRoutes);
+  app.use("/api/notifications", notificationRoutes);
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });

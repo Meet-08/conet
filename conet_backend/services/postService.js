@@ -1,4 +1,5 @@
 import prisma from "../config/prisma.js";
+import notificationService from "./notificationService.js";
 
 // ─── Shared response mappings ─────────────────────────────────────────────
 
@@ -259,6 +260,14 @@ export const toggleLikeService = async (postId, userId) => {
       data: { post_id: postId, user_id: userId },
     });
     liked = true;
+
+    // Send notification
+    await notificationService.createNotification({
+      receiverId: post.user_id,
+      actorId: userId,
+      type: "POST_LIKE",
+      referenceId: postId,
+    });
   }
 
   const updated = await prisma.posts.findUnique({ where: { id: postId } });
@@ -280,6 +289,15 @@ export const addCommentService = async (postId, userId, content) => {
   const comment = await prisma.post_comments.create({
     data: { post_id: postId, user_id: userId, content },
     include: { user: true },
+  });
+
+  // Send notification
+  await notificationService.createNotification({
+    receiverId: post.user_id,
+    actorId: userId,
+    type: "POST_COMMENT",
+    referenceId: postId,
+    content: content.substring(0, 100), // Send a snippet of the comment
   });
 
   return mapComment(comment);

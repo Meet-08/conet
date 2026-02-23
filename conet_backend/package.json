@@ -4,8 +4,10 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
+    "build": "echo 'No build step required'",
     "dev": "bun --watch server.js",
     "start": "bun server.js",
+    "worker": "bun worker/notificationWorker.js",
     "test": "bun test",
     "test:unit": "bun test ./test/unit",
     "test:integration": "bun test ./test/integration",
@@ -22,10 +24,13 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "^6.0.0",
+    "bullmq": "^5.70.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "express-async-handler": "^1.2.0",
+    "firebase-admin": "^13.6.1",
+    "ioredis": "^5.9.3",
     "jsonwebtoken": "^9.0.3",
     "winston": "^3.19.0"
   },

@@ -36,6 +36,12 @@ import {
   updatePostService,
 } from "../../../services/postService.js";
 
+mock.module("../../../services/notificationService.js", () => ({
+  default: {
+    createNotification: mock(() => Promise.resolve()),
+  },
+}));
+
 // ─── Fixtures ──────────────────────────────────────────────────────────────
 
 const POST_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";

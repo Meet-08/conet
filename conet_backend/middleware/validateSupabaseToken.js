@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const validateSupabaseToken = async (req, res, next) => {
+export const validateSupabaseToken = async (req, res, next) => {
   const authHeader = req.headers.authorization || req.headers.Authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
