@@ -40,4 +40,9 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Firebase configuration (sensitive)
+**/google-services.json
+**/GoogleService-Info.plist
+
+# Environment variables
 .env
