@@ -145,14 +145,25 @@ export const getConversationsService = async (currentUserId) => {
 
 // ─── Get messages for a conversation ────────────────────────────────────────
 
-export const getMessagesService = async (conversationId, limit = 20) => {
-  const messages = await prisma.messages.findMany({
-    where: { conversation_id: conversationId },
+export const getMessagesService = async (
+  conversationId,
+  { limit = 20, before } = {},
+) => {
+  const where = {
+    conversation_id: conversationId,
+    ...(before ? { created_at: { lt: before } } : {}),
+  };
+
+  const rows = await prisma.messages.findMany({
+    where,
     orderBy: { created_at: "desc" },
-    take: limit,
+    take: limit + 1,
   });
 
-  return messages.map((m) => ({
+  const hasMore = rows.length > limit;
+  const messages = hasMore ? rows.slice(0, limit) : rows;
+
+  const mappedMessages = messages.map((m) => ({
     id: m.id,
     conversation_id: m.conversation_id,
     sender_id: m.sender_id,
@@ -161,6 +172,17 @@ export const getMessagesService = async (conversationId, limit = 20) => {
     is_read: m.is_read ?? false,
     media_urls: m.media_urls ?? [],
   }));
+
+  const nextBefore =
+    hasMore && mappedMessages.length > 0 ?
+      mappedMessages[mappedMessages.length - 1].created_at
+    : null;
+
+  return {
+    messages: mappedMessages,
+    hasMore,
+    nextBefore,
+  };
 };
 
 // ─── Send a message ─────────────────────────────────────────────────────────
@@ -228,7 +250,27 @@ export const sendMessageService = async (
 // ─── Mark messages as read ──────────────────────────────────────────────────
 
 export const markAsReadService = async (conversationId, currentUserId) => {
-  await prisma.messages.updateMany({
+  const conversation = await prisma.conversations.findUnique({
+    where: { id: conversationId },
+    select: { user_one: true, user_two: true },
+  });
+
+  if (!conversation) {
+    const err = new Error("Conversation not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (
+    conversation.user_one !== currentUserId &&
+    conversation.user_two !== currentUserId
+  ) {
+    const err = new Error("Not a participant of this conversation");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const result = await prisma.messages.updateMany({
     where: {
       conversation_id: conversationId,
       sender_id: { not: currentUserId },
@@ -236,6 +278,8 @@ export const markAsReadService = async (conversationId, currentUserId) => {
     },
     data: { is_read: true },
   });
+
+  return result.count;
 };
 
 // ─── Search users by username or email ──────────────────────────────────────

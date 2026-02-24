@@ -1,7 +1,7 @@
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/feature/message/data/models/message_model.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
-import 'package:conet_app/feature/message/domain/entities/message.dart';
+import 'package:conet_app/feature/message/domain/entities/message_page.dart';
 import 'package:fpdart/fpdart.dart';
 
 abstract interface class MessageDataSource {
@@ -13,9 +13,10 @@ abstract interface class MessageDataSource {
     List<String>? mediaUrls,
   });
 
-  Future<List<Message>> getMessages({
+  Future<MessagePage> getMessages({
     required String conversationId,
     int limit = 20,
+    DateTime? before,
   });
 
   Future<Unit> markAsRead({required String conversationId});

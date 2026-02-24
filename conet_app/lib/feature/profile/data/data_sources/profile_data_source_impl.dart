@@ -1,5 +1,6 @@
 import 'package:conet_app/core/api/dio_client.dart';
 import 'package:conet_app/core/common/entities/social_links.dart';
+import 'package:conet_app/core/error/error_handler.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/auth/data/model/user_model.dart';
 import 'package:conet_app/feature/post/data/data_sources/file_data_source.dart';
@@ -31,7 +32,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       return UserProfileModel.fromJson(data['profile']);
     } catch (e) {
       logger.e("Failed to fetch user profile", error: e);
-      throw ServerException("Failed to fetch user profile");
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -50,7 +51,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       return UserModel.fromJson(data['user']);
     } catch (e) {
       logger.e("Failed to update about me", error: e);
-      throw ServerException("Failed to update about me");
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -81,7 +82,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       return UserModel.fromJson(data['user']);
     } catch (e) {
       logger.e("Failed to update academic info", error: e);
-      throw ServerException("Failed to update academic info");
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -100,7 +101,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       return UserModel.fromJson(data['user']);
     } catch (e) {
       logger.e("Failed to update interests", error: e);
-      throw ServerException("Failed to update interests");
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -128,7 +129,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       return UserModel.fromJson(data['user']);
     } catch (e) {
       logger.e("Failed to update personal info", error: e);
-      throw ServerException("Failed to update personal info");
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -170,7 +171,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       return UserModel.fromJson(data['user']);
     } catch (e) {
       logger.e("Failed to update pictures", error: e);
-      throw ServerException("Failed to update pictures");
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -189,7 +190,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       return UserModel.fromJson(data['user']);
     } catch (e) {
       logger.e("Failed to update social links", error: e);
-      throw ServerException("Failed to update social links");
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -202,7 +203,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       }
     } catch (e) {
       logger.e("Failed to follow user", error: e);
-      throw ServerException("Failed to follow user");
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -215,7 +216,7 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       }
     } catch (e) {
       logger.e("Failed to unfollow user", error: e);
-      throw ServerException("Failed to unfollow user");
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 }

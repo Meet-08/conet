@@ -1,3 +1,4 @@
+import 'package:conet_app/core/error/error_handler.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/auth/data/data_source/auth_data_source.dart';
 import 'package:conet_app/feature/auth/data/model/user_model.dart';
@@ -29,7 +30,7 @@ class SupabaseDataSourceImpl implements AuthDataSource {
       return UserModel.fromJson(userData).copyWith(email: session.user.email);
     } catch (e) {
       logger.e('Error getting current user: ${e.toString()}');
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -77,12 +78,9 @@ class SupabaseDataSourceImpl implements AuthDataSource {
       }
 
       return UserModel.fromJson(userData).copyWith(email: user.email);
-    } on AuthException catch (e) {
-      logger.e('Auth error: ${e.message}');
-      throw ServerException(e.message);
     } catch (e) {
       logger.e('Google sign-in error: ${e.toString()}');
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -102,11 +100,9 @@ class SupabaseDataSourceImpl implements AuthDataSource {
       if (res.user == null) throw ServerException('Login failed');
 
       return _getUserModel(res.user!.id);
-    } on AuthException catch (e) {
-      throw ServerException(e.message);
     } catch (e) {
       logger.e("login failed: ${e.toString()}");
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -132,7 +128,7 @@ class SupabaseDataSourceImpl implements AuthDataSource {
       return _getUserModel(user.id);
     } catch (e) {
       logger.e('OTP verification error: ${e.toString()}');
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -166,7 +162,7 @@ class SupabaseDataSourceImpl implements AuthDataSource {
       return _getUserModel(session.user.id);
     } catch (e) {
       logger.e("Error in updating user: ${e.toString()}");
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -184,7 +180,7 @@ class SupabaseDataSourceImpl implements AuthDataSource {
       return true;
     } catch (e) {
       logger.e('OTP sending error: ${e.toString()}');
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -201,7 +197,7 @@ class SupabaseDataSourceImpl implements AuthDataSource {
       return result == null;
     } catch (e) {
       logger.e('Username check error: ${e.toString()}');
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -211,7 +207,7 @@ class SupabaseDataSourceImpl implements AuthDataSource {
       await supabaseClient.auth.signOut();
     } catch (e) {
       logger.e('Logout error: ${e.toString()}');
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 

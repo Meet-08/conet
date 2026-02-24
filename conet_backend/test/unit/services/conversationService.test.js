@@ -4,7 +4,7 @@
  * Coverage targets:
  *  ✓ createConversationService – UUID target, username target, self-message, not found
  *  ✓ getConversationsService   – empty list, populated list, unread count aggregation
- *  ✓ getMessagesService        – returns mapped messages, respects limit
+ *  ✓ getMessagesService        – returns paged messages, supports cursor pagination
  *  ✓ sendMessageService        – success, not a participant, conversation not found
  *  ✓ markAsReadService         – updates unread messages belonging to other user
  *  ✓ searchUsersService        – returns filtered results, excludes self
@@ -226,22 +226,101 @@ describe("getMessagesService", () => {
       },
     ]);
 
-    const result = await getMessagesService(CONV_ID, 20);
+    const result = await getMessagesService(CONV_ID, { limit: 20 });
 
-    expect(result).toHaveLength(1);
-    expect(result[0].content).toBe("Hi");
-    expect(result[0].is_read).toBe(true);
-    expect(typeof result[0].created_at).toBe("string"); // ISO string
+    expect(result.messages).toHaveLength(1);
+    expect(result.messages[0].content).toBe("Hi");
+    expect(result.messages[0].is_read).toBe(true);
+    expect(typeof result.messages[0].created_at).toBe("string"); // ISO string
+    expect(result.hasMore).toBe(false);
+    expect(result.nextBefore).toBeNull();
   });
 
-  it("passes the limit to Prisma findMany", async () => {
+  it("passes limit + 1 to Prisma findMany", async () => {
     prismaMock.messages.findMany.mockResolvedValue([]);
 
-    await getMessagesService(CONV_ID, 5);
+    await getMessagesService(CONV_ID, { limit: 5 });
 
     expect(prismaMock.messages.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 5 }),
+      expect.objectContaining({ take: 6 }),
     );
+  });
+
+  it("applies created_at cursor when before is provided", async () => {
+    const before = new Date("2026-02-23T10:00:00.000Z");
+    prismaMock.messages.findMany.mockResolvedValue([]);
+
+    await getMessagesService(CONV_ID, { limit: 5, before });
+
+    expect(prismaMock.messages.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          conversation_id: CONV_ID,
+          created_at: { lt: before },
+        }),
+      }),
+    );
+  });
+
+  it("returns hasMore true and nextBefore from oldest returned item", async () => {
+    prismaMock.messages.findMany.mockResolvedValue([
+      {
+        id: "msg-3",
+        conversation_id: CONV_ID,
+        sender_id: TEST_USER.id,
+        content: "Newest",
+        created_at: new Date("2026-02-23T12:00:00.000Z"),
+        is_read: true,
+        media_urls: [],
+      },
+      {
+        id: "msg-2",
+        conversation_id: CONV_ID,
+        sender_id: TEST_USER.id,
+        content: "Older",
+        created_at: new Date("2026-02-23T11:00:00.000Z"),
+        is_read: true,
+        media_urls: [],
+      },
+      {
+        id: "msg-1",
+        conversation_id: CONV_ID,
+        sender_id: TEST_USER.id,
+        content: "Overflow",
+        created_at: new Date("2026-02-23T10:00:00.000Z"),
+        is_read: true,
+        media_urls: [],
+      },
+    ]);
+
+    const result = await getMessagesService(CONV_ID, { limit: 2 });
+
+    expect(result.messages).toHaveLength(2);
+    expect(result.messages[0].content).toBe("Newest");
+    expect(result.messages[1].content).toBe("Older");
+    expect(result.hasMore).toBe(true);
+    expect(result.nextBefore).toBe("2026-02-23T11:00:00.000Z");
+  });
+
+  it("returns hasMore false and null nextBefore when no extra rows", async () => {
+    prismaMock.messages.findMany.mockResolvedValue([
+      {
+        id: "msg-1",
+        conversation_id: CONV_ID,
+        sender_id: TEST_USER.id,
+        content: "Only one",
+        created_at: new Date("2026-02-23T09:00:00.000Z"),
+        is_read: false,
+        media_urls: [],
+      },
+    ]);
+
+    const result = await getMessagesService(CONV_ID, { limit: 2 });
+
+    expect(result.messages).toHaveLength(1);
+    expect(result.hasMore).toBe(false);
+    expect(result.nextBefore).toBeNull();
+    expect(result.messages[0].created_at).toBe("2026-02-23T09:00:00.000Z");
   });
 });
 
@@ -324,9 +403,20 @@ describe("sendMessageService", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe("markAsReadService", () => {
   it("marks messages from the other user as read", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      user_one: TEST_USER.id,
+      user_two: TEST_USER_B.id,
+    });
     prismaMock.messages.updateMany.mockResolvedValue({ count: 2 });
 
-    await markAsReadService(CONV_ID, TEST_USER.id);
+    const updatedCount = await markAsReadService(CONV_ID, TEST_USER.id);
+
+    expect(updatedCount).toBe(2);
+    expect(prismaMock.conversations.findUnique).toHaveBeenCalledWith({
+      where: { id: CONV_ID },
+      select: { user_one: true, user_two: true },
+    });
 
     expect(prismaMock.messages.updateMany).toHaveBeenCalledWith({
       where: {
@@ -335,6 +425,32 @@ describe("markAsReadService", () => {
         is_read: false,
       },
       data: { is_read: true },
+    });
+  });
+
+  it("throws 404 when conversation does not exist", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue(null);
+
+    await expect(
+      markAsReadService(CONV_ID, TEST_USER.id),
+    ).rejects.toMatchObject({
+      message: "Conversation not found",
+      statusCode: 404,
+    });
+  });
+
+  it("throws 403 when current user is not a conversation participant", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      user_one: TEST_USER.id,
+      user_two: TEST_USER_B.id,
+    });
+
+    await expect(
+      markAsReadService(CONV_ID, "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+    ).rejects.toMatchObject({
+      message: "Not a participant of this conversation",
+      statusCode: 403,
     });
   });
 });

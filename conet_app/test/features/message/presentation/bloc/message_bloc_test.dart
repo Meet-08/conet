@@ -3,6 +3,8 @@ import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
+import 'package:conet_app/feature/message/domain/entities/message_page.dart';
+import 'package:conet_app/feature/message/domain/entities/message_realtime_event.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_conversation.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_conversations.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
@@ -70,6 +72,11 @@ void main() {
 
   final tConversationList = [tConversation];
   final tMessageList = [tMessage];
+  final tMessagePage = MessagePage(
+    messages: tMessageList,
+    hasMore: true,
+    nextBefore: DateTime(2024, 1, 1),
+  );
   final tUserList = [tUser];
 
   setUp(() {
@@ -250,15 +257,32 @@ void main() {
     );
   });
 
-  group('MessageWatchStarted and MessageListUpdated', () {
+  group('MessageWatchStarted and MessageRealtimeReceived', () {
     const tConversationId = 'conversation-123';
 
     blocTest<MessageBloc, MessageState>(
       'starts watching messages and emits updates',
       build: () {
         when(
-          () => mockWatchMessages(any()),
-        ).thenAnswer((_) => Stream.value(tMessageList));
+          () => mockGetMessages(
+            conversationId: any(named: 'conversationId'),
+            limit: any(named: 'limit'),
+            before: any(named: 'before'),
+          ),
+        ).thenAnswer((_) async => Right(tMessagePage));
+        when(
+          () => mockMarkAsRead(conversationId: any(named: 'conversationId')),
+        ).thenAnswer((_) async => const Right(unit));
+        when(() => mockWatchMessages(any())).thenAnswer(
+          (_) => Stream.value(
+            MessageRealtimeEvent(
+              type: MessageRealtimeEventType.inserted,
+              conversationId: tConversationId,
+              messageId: tMessage.id,
+              message: tMessage,
+            ),
+          ),
+        );
         when(
           () => mockGetConversations(),
         ).thenAnswer((_) async => Right(tConversationList));
@@ -274,13 +298,23 @@ void main() {
         isA<MessageState>()
             .having((s) => s.status, 'status', MessageStatus.success)
             .having((s) => s.messages, 'messages', tMessageList),
+        isA<MessageState>()
+            .having((s) => s.status, 'status', MessageStatus.success)
+            .having((s) => s.messages, 'messages', tMessageList),
+        isA<MessageState>()
+            .having((s) => s.status, 'status', MessageStatus.success)
+            .having((s) => s.messages, 'messages', tMessageList),
       ],
       verify: (_) {
+        verify(
+          () => mockGetMessages(
+            conversationId: tConversationId,
+            limit: any(named: 'limit'),
+            before: any(named: 'before'),
+          ),
+        ).called(1);
         verify(() => mockWatchMessages(tConversationId)).called(1);
-        // Should NOT mark as read because tMessageList messages are sent by current user ('user-123')
-        verifyNever(
-          () => mockMarkAsRead(conversationId: any(named: 'conversationId')),
-        );
+        verify(() => mockMarkAsRead(conversationId: tConversationId)).called(1);
       },
     );
 
@@ -288,23 +322,44 @@ void main() {
       'marks as read when MessageListUpdated contains unread messages from others',
       build: () {
         when(
+          () => mockGetMessages(
+            conversationId: any(named: 'conversationId'),
+            limit: any(named: 'limit'),
+            before: any(named: 'before'),
+          ),
+        ).thenAnswer(
+          (_) async => const Right(MessagePage(messages: [], hasMore: true)),
+        );
+        when(
           () => mockMarkAsRead(conversationId: any(named: 'conversationId')),
         ).thenAnswer((_) async => const Right(unit));
         return messageBloc;
       },
       act: (bloc) => bloc.add(
-        MessageListUpdated([
-          Message(
-            id: 'msg-rec',
+        MessageRealtimeReceived(
+          MessageRealtimeEvent(
+            type: MessageRealtimeEventType.inserted,
             conversationId: tConversationId,
-            senderId: 'other-user',
-            content: 'Hi',
-            createdAt: DateTime.now(),
-            isRead: false,
+            messageId: 'msg-rec',
+            message: Message(
+              id: 'msg-rec',
+              conversationId: tConversationId,
+              senderId: 'other-user',
+              content: 'Hi',
+              createdAt: DateTime.now(),
+              isRead: false,
+            ),
           ),
-        ], tConversationId),
+          tConversationId,
+        ),
       ),
+      seed: () => MessageState(activeConversationId: tConversationId),
       expect: () => [
+        isA<MessageState>().having(
+          (s) => s.messages.length,
+          'messages length',
+          1,
+        ),
         isA<MessageState>().having(
           (s) => s.messages.length,
           'messages length',
@@ -470,17 +525,30 @@ void main() {
           () => mockGetMessages(
             conversationId: any(named: 'conversationId'),
             limit: any(named: 'limit'),
+            before: any(named: 'before'),
           ),
-        ).thenAnswer((_) async => Right(tMessageList));
+        ).thenAnswer((_) async => Right(tMessagePage));
         return messageBloc;
       },
+      seed: () => MessageState(activeConversationId: tConversationId),
       act: (bloc) => bloc.add(MessageFetchHistoryRequested(tConversationId)),
       expect: () => [
-        isA<MessageState>().having((s) => s.messages, 'messages', tMessageList),
+        isA<MessageState>().having(
+          (s) => s.isFetchingHistory,
+          'isFetchingHistory',
+          true,
+        ),
+        isA<MessageState>()
+            .having((s) => s.isFetchingHistory, 'isFetchingHistory', false)
+            .having((s) => s.messages, 'messages', tMessageList),
       ],
       verify: (_) {
         verify(
-          () => mockGetMessages(conversationId: tConversationId),
+          () => mockGetMessages(
+            conversationId: tConversationId,
+            limit: any(named: 'limit'),
+            before: any(named: 'before'),
+          ),
         ).called(1);
       },
     );
@@ -492,12 +560,19 @@ void main() {
           () => mockGetMessages(
             conversationId: any(named: 'conversationId'),
             limit: any(named: 'limit'),
+            before: any(named: 'before'),
           ),
         ).thenAnswer((_) async => Left(AppFailure('Failed to fetch history')));
         return messageBloc;
       },
+      seed: () => MessageState(activeConversationId: tConversationId),
       act: (bloc) => bloc.add(MessageFetchHistoryRequested(tConversationId)),
       expect: () => [
+        isA<MessageState>().having(
+          (s) => s.isFetchingHistory,
+          'isFetchingHistory',
+          true,
+        ),
         isA<MessageState>().having(
           (s) => s.errorMessage,
           'errorMessage',
@@ -534,6 +609,7 @@ void main() {
       },
       act: (bloc) => bloc.add(MessageMarkAsReadRequested(tConversationId)),
       expect: () => [
+        isA<MessageState>(),
         isA<MessageState>().having(
           (s) => s.errorMessage,
           'errorMessage',

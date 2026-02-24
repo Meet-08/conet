@@ -22,20 +22,32 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<PlatformFile> _selectedFiles = [];
+  late MessageBloc _messageBloc;
 
   @override
   void initState() {
     super.initState();
-    final bloc = context.read<MessageBloc>();
-    bloc.add(MessageWatchStarted(widget.conversation.id));
-    bloc.add(MessageMarkAsReadRequested(widget.conversation.id));
+    _scrollController.addListener(_onScroll);
+    _messageBloc = context.read<MessageBloc>();
+    _messageBloc.add(MessageWatchStarted(widget.conversation.id));
   }
 
   @override
   void dispose() {
+    _messageBloc.add(MessageWatchStopped(widget.conversation.id));
+    _scrollController.removeListener(_onScroll);
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    final isNearTop = position.pixels >= (position.maxScrollExtent - 120);
+    if (isNearTop) {
+      _messageBloc.add(MessageFetchHistoryRequested(widget.conversation.id));
+    }
   }
 
   void _sendMessage() {
@@ -44,7 +56,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
     if (!hasText && !hasFiles) return;
 
-    context.read<MessageBloc>().add(
+    _messageBloc.add(
       MessageSent(
         conversationId: widget.conversation.id,
         content: _controller.text.trim(),
@@ -102,6 +114,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                     messages: state.messages,
                     currentUserId: state.currentUserId,
                     scrollController: _scrollController,
+                    isFetchingHistory: state.isFetchingHistory,
+                    status: state.status,
                   );
                 },
               ),

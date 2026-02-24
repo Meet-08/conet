@@ -6,6 +6,8 @@ import 'package:conet_app/feature/message/data/data_sources/message_data_source.
 import 'package:conet_app/feature/message/data/data_sources/message_real_time_datasource.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
+import 'package:conet_app/feature/message/domain/entities/message_page.dart';
+import 'package:conet_app/feature/message/domain/entities/message_realtime_event.dart';
 import 'package:conet_app/feature/message/domain/repositories/message_repository.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:fpdart/fpdart.dart';
@@ -31,14 +33,16 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<Either<AppFailure, List<Message>>> getMessages(
+  Future<Either<AppFailure, MessagePage>> getMessages(
     String conversationId, {
     int limit = 20,
+    DateTime? before,
   }) {
     return _getResult(
       () => _messageDataSource.getMessages(
         conversationId: conversationId,
         limit: limit,
+        before: before,
       ),
     );
   }
@@ -82,7 +86,7 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Stream<List<Message>> watchMessages(String conversationId) {
+  Stream<MessageRealtimeEvent> watchMessages(String conversationId) {
     return _messageRealTimeDatasource.watchMessages(conversationId);
   }
 

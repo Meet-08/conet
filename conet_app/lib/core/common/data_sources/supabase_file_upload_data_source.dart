@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:conet_app/core/common/data_sources/file_upload_data_source.dart';
+import 'package:conet_app/core/error/error_handler.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/main.dart';
 import 'package:file_picker/file_picker.dart';
@@ -45,12 +46,9 @@ class SupabaseFileUploadDataSource implements FileUploadDataSource {
       }
 
       return urls;
-    } on StorageException catch (e) {
-      logger.e(e.toString());
-      throw ServerException(e.message);
     } catch (e) {
       logger.e(e.toString());
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 }

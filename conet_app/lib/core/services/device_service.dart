@@ -6,6 +6,7 @@ import 'package:conet_app/feature/device/domain/usecases/register_device_usecase
 import 'package:conet_app/feature/device/domain/usecases/remove_device_usecase.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 class DeviceService {
   final RegisterDeviceUseCase _registerDeviceUseCase;
@@ -41,7 +42,12 @@ class DeviceService {
 
       // Listen to foreground messages
       FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        _notificationConfigService.showNotification(message);
+        // Suppress local notification display when app is fully resumed (foreground)
+        // This allows in-app state updates without triggering system notifications
+        if (WidgetsBinding.instance.lifecycleState !=
+            AppLifecycleState.resumed) {
+          _notificationConfigService.showNotification(message);
+        }
       });
 
       // Register current token if user is logged in

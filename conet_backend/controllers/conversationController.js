@@ -37,14 +37,29 @@ export const getConversations = asyncHandler(async (req, res) => {
   res.status(200).json(conversations);
 });
 
-// GET /api/conversations/:conversationId/messages?limit=20
+// GET /api/conversations/:conversationId/messages?limit=20&before=ISO_DATETIME
 export const getMessages = asyncHandler(async (req, res) => {
   const { conversationId } = req.params;
-  const limit = parseInt(req.query.limit) || 20;
+  const parsedLimit = parseInt(req.query.limit, 10);
+  const limit =
+    Number.isNaN(parsedLimit) ? 20 : Math.min(Math.max(parsedLimit, 1), 50);
 
-  const messages = await getMessagesService(conversationId, limit);
+  let before;
+  if (req.query.before) {
+    before = new Date(req.query.before);
+    if (Number.isNaN(before.getTime())) {
+      res.status(400);
+      throw new Error("before must be a valid ISO datetime");
+    }
+  }
 
-  res.status(200).json(messages);
+  const result = await getMessagesService(conversationId, { limit, before });
+
+  res.status(200).json({
+    messages: result.messages,
+    next_before: result.nextBefore,
+    has_more: result.hasMore,
+  });
 });
 
 // POST /api/conversations/:conversationId/messages  { content, mediaUrls }

@@ -9,10 +9,15 @@ class MessageWatchStarted extends MessageEvent {
   MessageWatchStarted(this.conversationId);
 }
 
-class MessageListUpdated extends MessageEvent {
-  final List<Message> messages;
+class MessageWatchStopped extends MessageEvent {
   final String conversationId;
-  MessageListUpdated(this.messages, this.conversationId);
+  MessageWatchStopped(this.conversationId);
+}
+
+class MessageRealtimeReceived extends MessageEvent {
+  final MessageRealtimeEvent realtimeEvent;
+  final String conversationId;
+  MessageRealtimeReceived(this.realtimeEvent, this.conversationId);
 }
 
 class MessageSent extends MessageEvent {

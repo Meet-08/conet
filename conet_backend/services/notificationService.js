@@ -35,14 +35,17 @@ class NotificationService {
         },
       });
 
-      // Push job to BullMQ queue
-      await notificationQueue.add("sendPushNotification", {
-        receiverId,
-        title: this.getNotificationTitle(type),
-        body: content || this.getNotificationBody(type),
-        type,
-        referenceId,
-      });
+      // Push job to BullMQ queue only if it's not a NEW_MESSAGE
+      // Messages rely on realtime updates (Supabase stream)
+      if (type !== "NEW_MESSAGE") {
+        await notificationQueue.add("sendPushNotification", {
+          receiverId,
+          title: this.getNotificationTitle(type),
+          body: content || this.getNotificationBody(type),
+          type,
+          referenceId,
+        });
+      }
 
       return notification;
     } catch (error) {

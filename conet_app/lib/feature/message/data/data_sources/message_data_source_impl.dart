@@ -1,12 +1,13 @@
 import 'package:conet_app/core/api/dio_client.dart';
 import 'package:conet_app/core/common/entities/user.dart';
+import 'package:conet_app/core/error/error_handler.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_real_time_datasource.dart';
 import 'package:conet_app/feature/message/data/models/conversation_model.dart';
 import 'package:conet_app/feature/message/data/models/message_model.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
-import 'package:conet_app/feature/message/domain/entities/message.dart';
+import 'package:conet_app/feature/message/domain/entities/message_page.dart';
 import 'package:conet_app/main.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -32,30 +33,45 @@ class MessageDataSourceImpl implements MessageDataSource {
       final conversation = data['conversation'] as Map<String, dynamic>;
       return ConversationModel.fromJson(conversation);
     } catch (e) {
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
   @override
-  Future<List<Message>> getMessages({
+  Future<MessagePage> getMessages({
     required String conversationId,
     int limit = 20,
+    DateTime? before,
   }) async {
     try {
       final res = await _dioClient.dio.get(
         "/conversations/$conversationId/messages",
-        queryParameters: {"limit": limit},
+        queryParameters: {
+          "limit": limit,
+          if (before != null) "before": before.toIso8601String(),
+        },
       );
       if (res.statusCode != 200) {
         throw ServerException("Failed to get messages");
       }
-      final messages = (res.data as List<dynamic>)
+
+      final data = res.data as Map<String, dynamic>;
+      final messages = (data['messages'] as List<dynamic>)
           .map((e) => e as Map<String, dynamic>)
           .toList();
-      return messages.map((e) => MessageModel.fromJson(e)).toList();
+
+      final nextBeforeRaw = data['next_before'];
+
+      return MessagePage(
+        messages: messages.map((e) => MessageModel.fromJson(e)).toList(),
+        hasMore: data['has_more'] as bool? ?? false,
+        nextBefore: nextBeforeRaw is String
+            ? DateTime.parse(nextBeforeRaw)
+            : null,
+      );
     } catch (e) {
       logger.e("Failed to get messages: ${e.toString()}");
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -71,7 +87,7 @@ class MessageDataSourceImpl implements MessageDataSource {
       return unit;
     } catch (e) {
       logger.e("Failed to mark as read: ${e.toString()}");
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -96,7 +112,7 @@ class MessageDataSourceImpl implements MessageDataSource {
       return MessageModel.fromJson(res.data['message']);
     } catch (e) {
       logger.e("Failed to send message: ${e.toString()}");
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -113,7 +129,7 @@ class MessageDataSourceImpl implements MessageDataSource {
       return conversations;
     } catch (e) {
       logger.e("Failed to get conversations: ${e.toString()}");
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -133,7 +149,7 @@ class MessageDataSourceImpl implements MessageDataSource {
       return users;
     } catch (e) {
       logger.e("Failed to search users: ${e.toString()}");
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 }

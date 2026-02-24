@@ -1,5 +1,6 @@
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
+import 'package:conet_app/feature/message/domain/entities/message_page.dart';
 import 'package:conet_app/feature/message/domain/repositories/message_repository.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,6 +30,14 @@ void main() {
 
   final tMessageList = [tMessage];
 
+  final tMessagePage = MessagePage(
+    messages: tMessageList,
+    hasMore: true,
+    nextBefore: DateTime(2024, 1, 2),
+  );
+
+  final tEmptyMessagePage = const MessagePage(messages: [], hasMore: false);
+
   group('MessageGetMessages', () {
     test('should call getMessages with correct params', () async {
       when(
@@ -36,7 +45,7 @@ void main() {
           any(),
           limit: any(named: 'limit'),
         ),
-      ).thenAnswer((_) async => Right(tMessageList));
+      ).thenAnswer((_) async => Right(tMessagePage));
 
       await usecase(conversationId: tConversationId);
 
@@ -51,7 +60,7 @@ void main() {
           any(),
           limit: any(named: 'limit'),
         ),
-      ).thenAnswer((_) async => Right(tMessageList));
+      ).thenAnswer((_) async => Right(tMessagePage));
 
       await usecase(conversationId: tConversationId, limit: 50);
 
@@ -60,39 +69,42 @@ void main() {
       ).called(1);
     });
 
-    test('should return Right<List<Message>> on success', () async {
+    test('should return Right<MessagePage> on success', () async {
       when(
         () => mockMessageRepository.getMessages(
           any(),
           limit: any(named: 'limit'),
         ),
-      ).thenAnswer((_) async => Right(tMessageList));
+      ).thenAnswer((_) async => Right(tMessagePage));
 
       final result = await usecase(conversationId: tConversationId);
 
       expect(result.isRight(), true);
       result.fold(
         (_) => fail('Expected Right'),
-        (messages) => expect(messages.length, 1),
+        (page) => expect(page.messages.length, 1),
       );
     });
 
-    test('should return Right with empty list when no messages', () async {
-      when(
-        () => mockMessageRepository.getMessages(
-          any(),
-          limit: any(named: 'limit'),
-        ),
-      ).thenAnswer((_) async => const Right(<Message>[]));
+    test(
+      'should return Right with empty MessagePage when no messages',
+      () async {
+        when(
+          () => mockMessageRepository.getMessages(
+            any(),
+            limit: any(named: 'limit'),
+          ),
+        ).thenAnswer((_) async => Right(tEmptyMessagePage));
 
-      final result = await usecase(conversationId: tConversationId);
+        final result = await usecase(conversationId: tConversationId);
 
-      expect(result.isRight(), true);
-      result.fold(
-        (_) => fail('Expected Right'),
-        (messages) => expect(messages.isEmpty, true),
-      );
-    });
+        expect(result.isRight(), true);
+        result.fold(
+          (_) => fail('Expected Right'),
+          (page) => expect(page.messages.isEmpty, true),
+        );
+      },
+    );
 
     test('should return Left<AppFailure> on failure', () async {
       final tFailure = AppFailure('Failed to fetch messages');
@@ -126,27 +138,31 @@ void main() {
           'https://example.com/image2.jpg',
         ],
       );
+      final tPageWithMedia = MessagePage(
+        messages: [tMessageWithMedia],
+        hasMore: false,
+      );
       when(
         () => mockMessageRepository.getMessages(
           any(),
           limit: any(named: 'limit'),
         ),
-      ).thenAnswer((_) async => Right([tMessageWithMedia]));
+      ).thenAnswer((_) async => Right(tPageWithMedia));
 
       // act
       final result = await usecase(conversationId: tConversationId);
 
       // assert
       expect(result.isRight(), true);
-      result.fold((_) => fail('Expected Right'), (messages) {
-        expect(messages.length, 1);
-        expect(messages.first.mediaUrls.length, 2);
+      result.fold((_) => fail('Expected Right'), (page) {
+        expect(page.messages.length, 1);
+        expect(page.messages.first.mediaUrls.length, 2);
         expect(
-          messages.first.mediaUrls,
+          page.messages.first.mediaUrls,
           contains('https://example.com/image1.jpg'),
         );
         expect(
-          messages.first.mediaUrls,
+          page.messages.first.mediaUrls,
           contains('https://example.com/image2.jpg'),
         );
       });

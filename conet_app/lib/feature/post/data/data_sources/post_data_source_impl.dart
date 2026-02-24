@@ -1,4 +1,5 @@
 import 'package:conet_app/core/api/dio_client.dart';
+import 'package:conet_app/core/error/error_handler.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/post/data/data_sources/file_data_source.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_data_source.dart';
@@ -46,7 +47,7 @@ class PostDataSourceImpl implements PostDataSource {
       return PostModel.fromJson(data['post']);
     } catch (e) {
       logger.e("Failed to create post", error: e);
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -65,7 +66,7 @@ class PostDataSourceImpl implements PostDataSource {
       return unit;
     } catch (e) {
       logger.e("Failed to comment on post $postId", error: e);
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -84,7 +85,7 @@ class PostDataSourceImpl implements PostDataSource {
       return comments.map((e) => CommentModel.fromJson(e)).toList();
     } catch (e) {
       logger.e("Failed to get comments for post $postId", error: e);
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -109,7 +110,7 @@ class PostDataSourceImpl implements PostDataSource {
       return unit;
     } catch (e) {
       logger.e("Failed to delete post $postId", error: e);
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -126,7 +127,7 @@ class PostDataSourceImpl implements PostDataSource {
       return posts.map((e) => PostModel.fromJson(e)).toList();
     } catch (e) {
       logger.e("Failed to get posts", error: e);
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -147,7 +148,7 @@ class PostDataSourceImpl implements PostDataSource {
       return posts.map((e) => PostModel.fromJson(e)).toList();
     } catch (e) {
       logger.e("Failed to get posts for user $userId", error: e);
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -161,7 +162,7 @@ class PostDataSourceImpl implements PostDataSource {
       return unit;
     } catch (e) {
       logger.e("Failed to toggle like on post $postId", error: e);
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 
@@ -180,7 +181,7 @@ class PostDataSourceImpl implements PostDataSource {
       return posts.map((e) => PostModel.fromJson(e)).toList();
     } catch (e) {
       logger.e("Failed to get liked posts", error: e);
-      throw ServerException(e.toString());
+      throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
 }

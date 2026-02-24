@@ -12,6 +12,10 @@ class MessageState {
   final String? errorMessage;
   final Conversation? createdConversation;
   final String? currentUserId;
+  final bool isFetchingHistory;
+  final bool hasMoreHistory;
+  final DateTime? nextBeforeCursor;
+  final String? activeConversationId;
 
   MessageState({
     this.messages = const [],
@@ -23,6 +27,10 @@ class MessageState {
     this.errorMessage,
     this.createdConversation,
     this.currentUserId,
+    this.isFetchingHistory = false,
+    this.hasMoreHistory = true,
+    this.nextBeforeCursor,
+    this.activeConversationId,
   });
 
   MessageState copyWith({
@@ -36,6 +44,11 @@ class MessageState {
     Conversation? createdConversation,
     bool clearCreatedConversation = false,
     String? currentUserId,
+    bool? isFetchingHistory,
+    bool? hasMoreHistory,
+    DateTime? nextBeforeCursor,
+    String? activeConversationId,
+    bool clearNextBeforeCursor = false,
   }) {
     return MessageState(
       messages: messages ?? this.messages,
@@ -49,6 +62,12 @@ class MessageState {
           ? null
           : (createdConversation ?? this.createdConversation),
       currentUserId: currentUserId ?? this.currentUserId,
+      isFetchingHistory: isFetchingHistory ?? this.isFetchingHistory,
+      hasMoreHistory: hasMoreHistory ?? this.hasMoreHistory,
+      nextBeforeCursor: clearNextBeforeCursor
+          ? null
+          : (nextBeforeCursor ?? this.nextBeforeCursor),
+      activeConversationId: activeConversationId ?? this.activeConversationId,
     );
   }
 }

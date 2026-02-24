@@ -1,3 +1,4 @@
+import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/core/widgets/responsive_center_scrollable.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
@@ -40,9 +41,7 @@ class _FeedPageState extends State<FeedPage> {
       body: BlocConsumer<PostBloc, PostState>(
         listener: (context, state) {
           if (state is PostFailure) {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text(state.message)));
+            AppToast.showError(context, state.message);
           }
         },
         builder: (context, state) {

@@ -1,6 +1,6 @@
-import 'package:conet_app/feature/message/domain/entities/message.dart';
+import 'package:conet_app/feature/message/domain/entities/message_realtime_event.dart';
 
 abstract interface class MessageRealTimeDatasource {
-  Stream<List<Message>> watchMessages(String conversationId);
+  Stream<MessageRealtimeEvent> watchMessages(String conversationId);
   Stream<void> watchConversationUpdates();
 }

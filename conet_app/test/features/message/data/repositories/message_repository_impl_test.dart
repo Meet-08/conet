@@ -7,7 +7,8 @@ import 'package:conet_app/feature/message/data/models/conversation_model.dart';
 import 'package:conet_app/feature/message/data/models/message_model.dart';
 import 'package:conet_app/feature/message/data/repositories/message_repository_impl.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
-import 'package:conet_app/feature/message/domain/entities/message.dart';
+import 'package:conet_app/feature/message/domain/entities/message_page.dart';
+import 'package:conet_app/feature/message/domain/entities/message_realtime_event.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
@@ -61,8 +62,22 @@ void main() {
   );
 
   final tConversationList = [tConversationModel];
-  final tMessageList = [tMessageModel];
   final tUserList = [tUser];
+
+  final tMessagePage = MessagePage(
+    messages: [tMessageModel],
+    hasMore: true,
+    nextBefore: DateTime(2024, 1, 2),
+  );
+
+  final tEmptyMessagePage = const MessagePage(messages: [], hasMore: false);
+
+  final tMessageRealtimeEvent = MessageRealtimeEvent(
+    type: MessageRealtimeEventType.inserted,
+    conversationId: 'conversation-123',
+    messageId: 'message-123',
+    message: tMessageModel,
+  );
 
   group('createConversation', () {
     const tUserId = 'user-123';
@@ -226,20 +241,20 @@ void main() {
   group('getMessages', () {
     const tConversationId = 'conversation-123';
 
-    test('should return Right<List<Message>> on success', () async {
+    test('should return Right<MessagePage> on success', () async {
       when(
         () => mockMessageDataSource.getMessages(
           conversationId: any(named: 'conversationId'),
           limit: any(named: 'limit'),
         ),
-      ).thenAnswer((_) async => tMessageList);
+      ).thenAnswer((_) async => tMessagePage);
 
       final result = await repository.getMessages(tConversationId);
 
       expect(result.isRight(), true);
       result.fold(
         (_) => fail('Expected Right'),
-        (messages) => expect(messages.length, 1),
+        (page) => expect(page.messages.length, 1),
       );
       verify(
         () => mockMessageDataSource.getMessages(
@@ -249,13 +264,13 @@ void main() {
       ).called(1);
     });
 
-    test('should return Right<List<Message>> with custom limit', () async {
+    test('should return Right<MessagePage> with custom limit', () async {
       when(
         () => mockMessageDataSource.getMessages(
           conversationId: any(named: 'conversationId'),
           limit: any(named: 'limit'),
         ),
-      ).thenAnswer((_) async => tMessageList);
+      ).thenAnswer((_) async => tMessagePage);
 
       final result = await repository.getMessages(tConversationId, limit: 50);
 
@@ -268,22 +283,25 @@ void main() {
       ).called(1);
     });
 
-    test('should return Right with empty list when no messages', () async {
-      when(
-        () => mockMessageDataSource.getMessages(
-          conversationId: any(named: 'conversationId'),
-          limit: any(named: 'limit'),
-        ),
-      ).thenAnswer((_) async => <Message>[]);
+    test(
+      'should return Right with empty MessagePage when no messages',
+      () async {
+        when(
+          () => mockMessageDataSource.getMessages(
+            conversationId: any(named: 'conversationId'),
+            limit: any(named: 'limit'),
+          ),
+        ).thenAnswer((_) async => tEmptyMessagePage);
 
-      final result = await repository.getMessages(tConversationId);
+        final result = await repository.getMessages(tConversationId);
 
-      expect(result.isRight(), true);
-      result.fold(
-        (_) => fail('Expected Right'),
-        (messages) => expect(messages.isEmpty, true),
-      );
-    });
+        expect(result.isRight(), true);
+        result.fold(
+          (_) => fail('Expected Right'),
+          (page) => expect(page.messages.isEmpty, true),
+        );
+      },
+    );
 
     test('should return Left when ServerException is thrown', () async {
       when(
@@ -460,18 +478,21 @@ void main() {
   group('watchMessages', () {
     const tConversationId = 'conversation-123';
 
-    test('should return stream of messages from realtime source', () {
-      when(
-        () => mockMessageRealTimeDatasource.watchMessages(any()),
-      ).thenAnswer((_) => Stream.value(tMessageList));
+    test(
+      'should return stream of MessageRealtimeEvent from realtime source',
+      () {
+        when(
+          () => mockMessageRealTimeDatasource.watchMessages(any()),
+        ).thenAnswer((_) => Stream.value(tMessageRealtimeEvent));
 
-      final stream = repository.watchMessages(tConversationId);
+        final stream = repository.watchMessages(tConversationId);
 
-      expect(stream, isA<Stream<List<Message>>>());
-      verify(
-        () => mockMessageRealTimeDatasource.watchMessages(tConversationId),
-      ).called(1);
-    });
+        expect(stream, isA<Stream<MessageRealtimeEvent>>());
+        verify(
+          () => mockMessageRealTimeDatasource.watchMessages(tConversationId),
+        ).called(1);
+      },
+    );
 
     test('should emit message updates', () async {
       final tNewMessage = MessageModel(
@@ -481,30 +502,40 @@ void main() {
         content: 'New message',
         createdAt: DateTime(2024, 1, 2),
       );
-      final updatedMessageList = [...tMessageList, tNewMessage];
+      final tUpdateEvent = MessageRealtimeEvent(
+        type: MessageRealtimeEventType.inserted,
+        conversationId: tConversationId,
+        messageId: 'message-456',
+        message: tNewMessage,
+      );
 
       when(() => mockMessageRealTimeDatasource.watchMessages(any())).thenAnswer(
-        (_) => Stream.fromIterable([tMessageList, updatedMessageList]),
+        (_) => Stream.fromIterable([tMessageRealtimeEvent, tUpdateEvent]),
       );
 
       final stream = repository.watchMessages(tConversationId);
       final emissions = await stream.toList();
 
       expect(emissions.length, 2);
-      expect(emissions[0].length, 1);
-      expect(emissions[1].length, 2);
+      expect(emissions[0].messageId, 'message-123');
+      expect(emissions[1].messageId, 'message-456');
     });
 
-    test('should emit empty list when no messages', () async {
+    test('should emit MessageRealtimeEvent with deleted type', () async {
+      final tDeleteEvent = const MessageRealtimeEvent(
+        type: MessageRealtimeEventType.deleted,
+        conversationId: tConversationId,
+        messageId: 'message-123',
+      );
       when(
         () => mockMessageRealTimeDatasource.watchMessages(any()),
-      ).thenAnswer((_) => Stream.value(<Message>[]));
+      ).thenAnswer((_) => Stream.value(tDeleteEvent));
 
       final stream = repository.watchMessages(tConversationId);
       final emissions = await stream.toList();
 
       expect(emissions.length, 1);
-      expect(emissions[0].isEmpty, true);
+      expect(emissions[0].type, MessageRealtimeEventType.deleted);
     });
   });
 }

@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  log: ["warn", "error"],
+});
 
 export const warmUpDatabase = async (retries = 3, delay = 1000) => {
   for (let i = 0; i < retries; i++) {
