@@ -113,7 +113,8 @@ void main() {
 
   test('initial state is MessageState with default values', () {
     expect(messageBloc.state, isA<MessageState>());
-    expect(messageBloc.state.status, MessageStatus.initial);
+    expect(messageBloc.state.conversationStatus, MessageStatus.initial);
+    expect(messageBloc.state.messageStatus, MessageStatus.initial);
     expect(messageBloc.state.currentUserId, 'user-123');
   });
 
@@ -129,12 +130,16 @@ void main() {
       act: (bloc) => bloc.add(MessageConversationsRequested()),
       expect: () => [
         isA<MessageState>().having(
-          (s) => s.status,
-          'status',
+          (s) => s.conversationStatus,
+          'conversationStatus',
           MessageStatus.loading,
         ),
         isA<MessageState>()
-            .having((s) => s.status, 'status', MessageStatus.success)
+            .having(
+              (s) => s.conversationStatus,
+              'conversationStatus',
+              MessageStatus.success,
+            )
             .having((s) => s.conversations, 'conversations', tConversationList),
       ],
       verify: (_) {
@@ -153,12 +158,16 @@ void main() {
       act: (bloc) => bloc.add(MessageConversationsRequested()),
       expect: () => [
         isA<MessageState>().having(
-          (s) => s.status,
-          'status',
+          (s) => s.conversationStatus,
+          'conversationStatus',
           MessageStatus.loading,
         ),
         isA<MessageState>()
-            .having((s) => s.status, 'status', MessageStatus.failure)
+            .having(
+              (s) => s.conversationStatus,
+              'conversationStatus',
+              MessageStatus.failure,
+            )
             .having(
               (s) => s.errorMessage,
               'errorMessage',
@@ -185,12 +194,16 @@ void main() {
       act: (bloc) => bloc.add(MessageConversationCreated(tUserId)),
       expect: () => [
         isA<MessageState>().having(
-          (s) => s.status,
-          'status',
+          (s) => s.conversationStatus,
+          'conversationStatus',
           MessageStatus.loading,
         ),
         isA<MessageState>()
-            .having((s) => s.status, 'status', MessageStatus.success)
+            .having(
+              (s) => s.conversationStatus,
+              'conversationStatus',
+              MessageStatus.success,
+            )
             .having(
               (s) => s.createdConversation,
               'createdConversation',
@@ -198,13 +211,12 @@ void main() {
             )
             .having((s) => s.userSuggestions, 'userSuggestions', const [])
             .having((s) => s.isSearchingUsers, 'isSearchingUsers', false),
-        isA<MessageState>().having(
-          (s) => s.status,
-          'status',
-          MessageStatus.loading,
-        ),
         isA<MessageState>()
-            .having((s) => s.status, 'status', MessageStatus.success)
+            .having(
+              (s) => s.conversationStatus,
+              'conversationStatus',
+              MessageStatus.success,
+            )
             .having((s) => s.conversations, 'conversations', tConversationList),
       ],
       verify: (_) {
@@ -226,12 +238,16 @@ void main() {
       act: (bloc) => bloc.add(MessageConversationCreated(tUserId)),
       expect: () => [
         isA<MessageState>().having(
-          (s) => s.status,
-          'status',
+          (s) => s.conversationStatus,
+          'conversationStatus',
           MessageStatus.loading,
         ),
         isA<MessageState>()
-            .having((s) => s.status, 'status', MessageStatus.failure)
+            .having(
+              (s) => s.conversationStatus,
+              'conversationStatus',
+              MessageStatus.failure,
+            )
             .having(
               (s) => s.errorMessage,
               'errorMessage',
@@ -291,18 +307,30 @@ void main() {
       act: (bloc) => bloc.add(MessageWatchStarted(tConversationId)),
       expect: () => [
         isA<MessageState>().having(
-          (s) => s.status,
-          'status',
+          (s) => s.messageStatus,
+          'messageStatus',
           MessageStatus.loading,
         ),
         isA<MessageState>()
-            .having((s) => s.status, 'status', MessageStatus.success)
+            .having(
+              (s) => s.messageStatus,
+              'messageStatus',
+              MessageStatus.success,
+            )
             .having((s) => s.messages, 'messages', tMessageList),
         isA<MessageState>()
-            .having((s) => s.status, 'status', MessageStatus.success)
+            .having(
+              (s) => s.messageStatus,
+              'messageStatus',
+              MessageStatus.success,
+            )
             .having((s) => s.messages, 'messages', tMessageList),
         isA<MessageState>()
-            .having((s) => s.status, 'status', MessageStatus.success)
+            .having(
+              (s) => s.messageStatus,
+              'messageStatus',
+              MessageStatus.success,
+            )
             .having((s) => s.messages, 'messages', tMessageList),
       ],
       verify: (_) {
@@ -405,12 +433,16 @@ void main() {
             .having((s) => s.messages.length, 'messages length', 1)
             .having((s) => s.messages.first.id, 'id', tMessage.id),
         isA<MessageState>().having(
-          (s) => s.status,
-          'status',
+          (s) => s.conversationStatus,
+          'conversationStatus',
           MessageStatus.loading,
         ),
         isA<MessageState>()
-            .having((s) => s.status, 'status', MessageStatus.success)
+            .having(
+              (s) => s.conversationStatus,
+              'conversationStatus',
+              MessageStatus.success,
+            )
             .having((s) => s.conversations, 'conversations', tConversationList),
       ],
       verify: (_) {
@@ -494,12 +526,16 @@ void main() {
             .having((s) => s.messages.length, 'messages length', 1)
             .having((s) => s.messages.first.id, 'id', tMessage.id),
         isA<MessageState>().having(
-          (s) => s.status,
-          'status',
+          (s) => s.conversationStatus,
+          'conversationStatus',
           MessageStatus.loading,
         ),
         isA<MessageState>()
-            .having((s) => s.status, 'status', MessageStatus.success)
+            .having(
+              (s) => s.conversationStatus,
+              'conversationStatus',
+              MessageStatus.success,
+            )
             .having((s) => s.conversations, 'conversations', tConversationList),
       ],
       verify: (_) {

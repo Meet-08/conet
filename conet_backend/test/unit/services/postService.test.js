@@ -20,6 +20,11 @@ import { TEST_USER, TEST_USER_B } from "../../mocks/authMock.js";
 import { prismaMock, resetPrismaMocks } from "../../mocks/prismaMock.js";
 
 mock.module("../../../config/prisma.js", () => ({ default: prismaMock }));
+mock.module("../../../config/queue.js", () => ({
+  notificationQueue: {
+    add: mock(() => Promise.resolve({ id: "job-1" })),
+  },
+}));
 
 import {
   addCommentService,
@@ -35,12 +40,6 @@ import {
   toggleLikeService,
   updatePostService,
 } from "../../../services/postService.js";
-
-mock.module("../../../services/notificationService.js", () => ({
-  default: {
-    createNotification: mock(() => Promise.resolve()),
-  },
-}));
 
 // ─── Fixtures ──────────────────────────────────────────────────────────────
 

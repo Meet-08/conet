@@ -307,3 +307,49 @@ void _initDevice() {
       ),
     );
 }
+
+void _initNotification() {
+  // Data Sources
+  serviceLocator.registerFactory<NotificationDataSource>(
+    () => NotificationDataSourceImpl(dioClient: serviceLocator<DioClient>()),
+  );
+  serviceLocator.registerFactory<NotificationRealtimeDataSource>(
+    () => SupabaseNotificationRealtimeDataSourceImpl(
+      supabaseClient: serviceLocator<SupabaseClient>(),
+    ),
+  );
+
+  // Repository
+  serviceLocator.registerFactory<NotificationRepository>(
+    () => NotificationRepositoryImpl(
+      dataSource: serviceLocator<NotificationDataSource>(),
+      realtimeDataSource: serviceLocator<NotificationRealtimeDataSource>(),
+    ),
+  );
+
+  // Use Cases
+  serviceLocator.registerFactory(
+    () => GetNotificationsUseCase(
+      repository: serviceLocator<NotificationRepository>(),
+    ),
+  );
+  serviceLocator.registerFactory(
+    () => MarkAllAsSeenUseCase(
+      repository: serviceLocator<NotificationRepository>(),
+    ),
+  );
+  serviceLocator.registerFactory(
+    () => WatchNotificationsUseCase(
+      repository: serviceLocator<NotificationRepository>(),
+    ),
+  );
+
+  // Bloc
+  serviceLocator.registerLazySingleton(
+    () => NotificationBloc(
+      getNotifications: serviceLocator<GetNotificationsUseCase>(),
+      markAllAsSeen: serviceLocator<MarkAllAsSeenUseCase>(),
+      watchNotifications: serviceLocator<WatchNotificationsUseCase>(),
+    ),
+  );
+}

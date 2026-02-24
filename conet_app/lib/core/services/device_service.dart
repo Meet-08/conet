@@ -35,6 +35,14 @@ class DeviceService {
 
     // Only proceed if permission was granted
     if (settings.authorizationStatus != AuthorizationStatus.denied) {
+      // Suppress OS-level notification banners while the app is in the foreground (iOS)
+      await FirebaseMessaging.instance
+          .setForegroundNotificationPresentationOptions(
+            alert: false,
+            badge: false,
+            sound: false,
+          );
+
       // Listen to token refresh
       FirebaseMessaging.instance.onTokenRefresh.listen((fcmToken) {
         _registerToken(fcmToken);

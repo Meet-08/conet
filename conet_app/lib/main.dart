@@ -4,6 +4,7 @@ import 'package:conet_app/core/router/app_router.dart';
 import 'package:conet_app/core/services/presence_service.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
+import 'package:conet_app/feature/notification/presentation/bloc/notification_bloc.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
 import 'package:conet_app/firebase_options.dart';
@@ -40,6 +41,7 @@ void main() async {
         BlocProvider(create: (_) => serviceLocator<AuthBloc>()),
         BlocProvider(create: (_) => serviceLocator<PostBloc>()),
         BlocProvider(create: (_) => serviceLocator<MessageBloc>()),
+        BlocProvider(create: (_) => serviceLocator<NotificationBloc>()),
         BlocProvider(create: (_) => serviceLocator<ProfileBloc>()),
       ],
       child: const MyApp(),
@@ -95,14 +97,21 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Conet App',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: .fromSeed(seedColor: Colors.deepPurpleAccent),
-        useMaterial3: true,
+    return BlocListener<AppUserCubit, AppUserState>(
+      listener: (context, state) {
+        if (state is AppUserAuthenticated) {
+          context.read<NotificationBloc>().add(const NotificationLoadEvent());
+        }
+      },
+      child: MaterialApp.router(
+        title: 'Conet App',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: .fromSeed(seedColor: Colors.deepPurpleAccent),
+          useMaterial3: true,
+        ),
+        routerConfig: AppRouter.router,
       ),
-      routerConfig: AppRouter.router,
     );
   }
 }

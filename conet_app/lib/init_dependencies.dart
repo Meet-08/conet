@@ -40,6 +40,16 @@ import 'package:conet_app/feature/message/domain/usecases/message_send_message.d
 import 'package:conet_app/feature/message/domain/usecases/message_watch_conversation_updates.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_watch_messages.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
+import 'package:conet_app/feature/notification/data/data_sources/notification_data_source.dart';
+import 'package:conet_app/feature/notification/data/data_sources/notification_data_source_impl.dart';
+import 'package:conet_app/feature/notification/data/data_sources/notification_realtime_data_source.dart';
+import 'package:conet_app/feature/notification/data/data_sources/supabase_notification_realtime_data_source_impl.dart';
+import 'package:conet_app/feature/notification/data/repositories/notification_repository_impl.dart';
+import 'package:conet_app/feature/notification/domain/repositories/notification_repository.dart';
+import 'package:conet_app/feature/notification/domain/usecases/get_notifications_usecase.dart';
+import 'package:conet_app/feature/notification/domain/usecases/mark_all_as_seen_usecase.dart';
+import 'package:conet_app/feature/notification/domain/usecases/watch_notifications_usecase.dart';
+import 'package:conet_app/feature/notification/presentation/bloc/notification_bloc.dart';
 import 'package:conet_app/feature/post/data/data_sources/file_data_source.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_bookmark_local_data_source.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_bookmark_local_data_source_impl.dart';
@@ -120,6 +130,7 @@ Future<void> initDependencies() async {
   _initMessage();
   _initProfile();
   _initDevice();
+  _initNotification();
 
   await serviceLocator<NotificationConfigService>().init();
 }

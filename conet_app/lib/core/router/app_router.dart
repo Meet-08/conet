@@ -12,6 +12,9 @@ import 'package:conet_app/feature/explore/pages/explore_page.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/presentation/pages/chat_detail_page.dart';
 import 'package:conet_app/feature/message/presentation/pages/messages_page.dart';
+import 'package:conet_app/feature/notification/presentation/bloc/notification_bloc.dart';
+import 'package:conet_app/feature/notification/presentation/pages/notification_page.dart'
+    as notification_ui;
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/presentation/bloc/liked_posts_bloc.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
@@ -166,6 +169,14 @@ class AppRouter {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsPage(),
+      ),
+
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => BlocProvider.value(
+          value: serviceLocator<NotificationBloc>(),
+          child: const notification_ui.NotificationPage(),
+        ),
       ),
 
       GoRoute(

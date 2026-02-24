@@ -9,24 +9,24 @@ class ChatMessageList extends StatelessWidget {
   final String? currentUserId;
   final ScrollController? scrollController;
   final bool isFetchingHistory;
-  final MessageStatus status;
+  final MessageStatus messageStatus;
 
   const ChatMessageList({
     super.key,
     required this.messages,
     required this.currentUserId,
     this.scrollController,
-    required this.status,
+    required this.messageStatus,
     this.isFetchingHistory = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (status == MessageStatus.loading) {
+    if (messageStatus == MessageStatus.loading) {
       return const Center(child: Loader());
     }
 
-    if (status == MessageStatus.success && messages.isEmpty) {
+    if (messageStatus == MessageStatus.success && messages.isEmpty) {
       return const Center(child: Text('No messages yet'));
     }
 

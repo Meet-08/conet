@@ -114,14 +114,33 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     MessageConversationsRequested event,
     Emitter<MessageState> emit,
   ) async {
-    emit(state.copyWith(status: MessageStatus.loading));
+    final shouldShowLoading =
+        state.conversations.isEmpty &&
+        state.conversationStatus != MessageStatus.success;
+    if (shouldShowLoading) {
+      emit(state.copyWith(conversationStatus: MessageStatus.loading));
+    }
+
     final result = await _getConversationsUsecase();
     result.fold(
-      (l) => emit(
-        state.copyWith(status: MessageStatus.failure, errorMessage: l.message),
+      (l) {
+        if (state.conversations.isNotEmpty) {
+          emit(state.copyWith(errorMessage: l.message));
+          return;
+        }
+        emit(
+          state.copyWith(
+            conversationStatus: MessageStatus.failure,
+            errorMessage: l.message,
+          ),
+        );
+      },
+      (r) => emit(
+        state.copyWith(
+          conversationStatus: MessageStatus.success,
+          conversations: r,
+        ),
       ),
-      (r) =>
-          emit(state.copyWith(status: MessageStatus.success, conversations: r)),
     );
   }
 
@@ -129,16 +148,19 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     MessageConversationCreated event,
     Emitter<MessageState> emit,
   ) async {
-    emit(state.copyWith(status: MessageStatus.loading));
+    emit(state.copyWith(conversationStatus: MessageStatus.loading));
     final result = await _createConversation(userId: event.userId);
     result.fold(
       (l) => emit(
-        state.copyWith(status: MessageStatus.failure, errorMessage: l.message),
+        state.copyWith(
+          conversationStatus: MessageStatus.failure,
+          errorMessage: l.message,
+        ),
       ),
       (r) {
         emit(
           state.copyWith(
-            status: MessageStatus.success,
+            conversationStatus: MessageStatus.success,
             createdConversation: r,
             userSuggestions: const [],
             userSearchError: null,
@@ -164,7 +186,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     _messagesSubscription?.cancel();
     emit(
       state.copyWith(
-        status: MessageStatus.loading,
+        messageStatus: MessageStatus.loading,
         messages: const [],
         activeConversationId: event.conversationId,
         isFetchingHistory: false,
@@ -180,12 +202,15 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
 
     initialResult.fold(
       (l) => emit(
-        state.copyWith(status: MessageStatus.failure, errorMessage: l.message),
+        state.copyWith(
+          messageStatus: MessageStatus.failure,
+          errorMessage: l.message,
+        ),
       ),
       (page) {
         emit(
           state.copyWith(
-            status: MessageStatus.success,
+            messageStatus: MessageStatus.success,
             messages: page.messages,
             hasMoreHistory: page.hasMore,
             nextBeforeCursor: page.nextBefore,
@@ -213,6 +238,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     emit(
       state.copyWith(
         messages: const [],
+        messageStatus: MessageStatus.initial,
         activeConversationId: null,
         isFetchingHistory: false,
         hasMoreHistory: true,
@@ -257,7 +283,9 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     }
 
     final merged = _dedupeById(currentMessages);
-    emit(state.copyWith(status: MessageStatus.success, messages: merged));
+    emit(
+      state.copyWith(messageStatus: MessageStatus.success, messages: merged),
+    );
 
     _markUnreadFromOthers(merged, event.conversationId);
   }

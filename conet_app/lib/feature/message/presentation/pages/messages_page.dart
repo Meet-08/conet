@@ -152,7 +152,7 @@ class _MessagesPageState extends State<MessagesPage> {
       listeners: [
         BlocListener<MessageBloc, MessageState>(
           listenWhen: (previous, current) =>
-              current.status == MessageStatus.failure &&
+              previous.errorMessage != current.errorMessage &&
               current.errorMessage != null,
           listener: (context, state) {
             AppToast.showError(context, state.errorMessage!);
@@ -179,7 +179,7 @@ class _MessagesPageState extends State<MessagesPage> {
             Expanded(
               child: BlocBuilder<MessageBloc, MessageState>(
                 builder: (context, state) {
-                  if (state.status == MessageStatus.loading &&
+                  if (state.conversationStatus == MessageStatus.loading &&
                       state.conversations.isEmpty) {
                     return const Center(child: Loader());
                   }

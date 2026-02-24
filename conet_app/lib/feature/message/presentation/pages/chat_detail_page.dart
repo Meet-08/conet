@@ -115,7 +115,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                     currentUserId: state.currentUserId,
                     scrollController: _scrollController,
                     isFetchingHistory: state.isFetchingHistory,
-                    status: state.status,
+                    messageStatus: state.messageStatus,
                   );
                 },
               ),

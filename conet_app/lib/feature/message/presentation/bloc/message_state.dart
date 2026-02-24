@@ -6,7 +6,8 @@ class MessageState {
   final List<Message> messages;
   final List<Conversation> conversations;
   final List<User> userSuggestions;
-  final MessageStatus status;
+  final MessageStatus conversationStatus;
+  final MessageStatus messageStatus;
   final bool isSearchingUsers;
   final String? userSearchError;
   final String? errorMessage;
@@ -21,7 +22,8 @@ class MessageState {
     this.messages = const [],
     this.conversations = const [],
     this.userSuggestions = const [],
-    this.status = MessageStatus.initial,
+    this.conversationStatus = MessageStatus.initial,
+    this.messageStatus = MessageStatus.initial,
     this.isSearchingUsers = false,
     this.userSearchError,
     this.errorMessage,
@@ -37,7 +39,8 @@ class MessageState {
     List<Message>? messages,
     List<Conversation>? conversations,
     List<User>? userSuggestions,
-    MessageStatus? status,
+    MessageStatus? conversationStatus,
+    MessageStatus? messageStatus,
     bool? isSearchingUsers,
     String? userSearchError,
     String? errorMessage,
@@ -54,7 +57,8 @@ class MessageState {
       messages: messages ?? this.messages,
       conversations: conversations ?? this.conversations,
       userSuggestions: userSuggestions ?? this.userSuggestions,
-      status: status ?? this.status,
+      conversationStatus: conversationStatus ?? this.conversationStatus,
+      messageStatus: messageStatus ?? this.messageStatus,
       isSearchingUsers: isSearchingUsers ?? this.isSearchingUsers,
       userSearchError: userSearchError ?? this.userSearchError,
       errorMessage: errorMessage ?? this.errorMessage,

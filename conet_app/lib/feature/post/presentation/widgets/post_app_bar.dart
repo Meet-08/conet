@@ -1,8 +1,9 @@
-import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/widgets/notification_badge.dart';
+import 'package:conet_app/feature/notification/presentation/bloc/notification_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class PostAppBar extends StatelessWidget implements PreferredSizeWidget {
   const PostAppBar({super.key});
@@ -39,13 +40,8 @@ class PostAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
-        BlocSelector<AppUserCubit, AppUserState, int>(
-          selector: (state) {
-            if (state is AppUserAuthenticated) {
-              return state.user.unseenNotificationCount;
-            }
-            return 0;
-          },
+        BlocSelector<NotificationBloc, NotificationState, int>(
+          selector: (state) => state.unseenCount,
           builder: (context, count) {
             return Stack(
               clipBehavior: Clip.none,
@@ -55,9 +51,7 @@ class PostAppBar extends StatelessWidget implements PreferredSizeWidget {
                     FontAwesomeIcons.bell,
                     color: Colors.black,
                   ),
-                  onPressed: () {
-                    // TODO: navigate to notifications page
-                  },
+                  onPressed: () => context.push('/notifications'),
                 ),
                 if (count > 0)
                   Positioned(

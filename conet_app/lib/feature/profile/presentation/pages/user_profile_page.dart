@@ -124,7 +124,7 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
             context.read<MessageBloc>().add(
               MessageCreatedConversationHandled(),
             );
-          } else if (state.status == MessageStatus.failure) {
+          } else if (state.conversationStatus == MessageStatus.failure) {
             setState(() => _isCreatingConversation = false);
             AppToast.showError(
               context,

@@ -33,6 +33,14 @@ import {
 import { prismaMock, resetPrismaMocks } from "../mocks/prismaMock.js";
 
 mock.module("../../config/prisma.js", () => ({ default: prismaMock }));
+mock.module("../../config/queue.js", () => ({
+  notificationQueue: {
+    add: mock(() => Promise.resolve({ id: "job-1" })),
+  },
+  connection: {
+    quit: mock(() => Promise.resolve()),
+  },
+}));
 
 process.env.SUPABASE_JWT_SECRET = TEST_JWT_SECRET;
 process.env.NODE_ENV = "test";
