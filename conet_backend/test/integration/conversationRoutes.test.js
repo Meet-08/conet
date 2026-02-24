@@ -190,8 +190,8 @@ describe("GET /api/conversations/:conversationId/messages", () => {
       .set("Authorization", makeAuthHeader());
 
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
-    expect(res.body[0].content).toBe("Hello!");
+    expect(Array.isArray(res.body.messages)).toBe(true);
+    expect(res.body.messages[0].content).toBe("Hello!");
   });
 
   it("200 – passes limit param to Prisma", async () => {
@@ -202,7 +202,7 @@ describe("GET /api/conversations/:conversationId/messages", () => {
       .set("Authorization", makeAuthHeader());
 
     expect(prismaMock.messages.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 10 }),
+      expect.objectContaining({ take: 11 }),
     );
   });
 
@@ -282,6 +282,10 @@ describe("POST /api/conversations/:conversationId/messages", () => {
 // ─────────────────────────────────────────────────────────────────────────────
 describe("POST /api/conversations/:conversationId/mark_as_read", () => {
   it("200 – marks messages as read successfully", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      user_one: TEST_USER.id,
+      user_two: TEST_USER_B.id,
+    });
     prismaMock.messages.updateMany.mockResolvedValue({ count: 3 });
 
     const res = await request(app)
