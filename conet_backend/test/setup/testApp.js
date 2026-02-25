@@ -18,6 +18,7 @@
 import express from "express";
 import errorHandler from "../../middleware/errorhandler.js";
 import conversationRoutes from "../../routes/conversationRoutes.js";
+import groupRoutes from "../../routes/groupRoutes.js";
 import postRoutes from "../../routes/postRoutes.js";
 import profileRoutes from "../../routes/profileRoutes.js";
 import { makeAuthBypassMiddleware, TEST_USER } from "../mocks/authMock.js";
@@ -40,6 +41,7 @@ export function buildTestApp({ user = TEST_USER, noAuth = false } = {}) {
 
   app.use("/api/posts", postRoutes);
   app.use("/api/conversations", conversationRoutes);
+  app.use("/api/groups", groupRoutes);
   app.use("/api/profile", profileRoutes);
 
   app.get("/health", (_req, res) => {

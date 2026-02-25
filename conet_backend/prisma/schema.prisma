@@ -10,35 +10,37 @@ datasource db {
 }
 
 model users {
-  id                                             String           @id @db.Uuid
-  email                                          String?          @unique
+  id                                             String                 @id @db.Uuid
+  email                                          String?                @unique
   first_name                                     String?
   last_name                                      String?
-  username                                       String?          @unique
+  username                                       String?                @unique
   profile_pic_url                                String?
   about_me                                       String?
-  user_role                                      String?          @default("user")
+  user_role                                      String?                @default("user")
   interests                                      String[]
-  is_verified                                    Boolean?         @default(false)
+  is_verified                                    Boolean?               @default(false)
   banner_image_url                               String?
   gender                                         String?
-  social_links                                   Json?            @default("{}")
-  created_at                                     DateTime         @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
-  updated_at                                     DateTime?        @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @db.Timestamptz(6)
-  date_of_birth                                  DateTime?        @db.Date
-  unseen_notification_count                      Int              @default(0)
-  conversations_conversations_user_oneTousers    conversations[]  @relation("conversations_user_oneTousers")
-  conversations_conversations_user_twoTousers    conversations[]  @relation("conversations_user_twoTousers")
+  social_links                                   Json?                  @default("{}")
+  created_at                                     DateTime               @default(dbgenerated("timezone('utc'::text, now())")) @db.Timestamptz(6)
+  updated_at                                     DateTime?              @default(dbgenerated("timezone('utc'::text, now())")) @updatedAt @db.Timestamptz(6)
+  date_of_birth                                  DateTime?              @db.Date
+  unseen_notification_count                      Int                    @default(0)
+  conversation_members                           conversation_members[]
+  conversations_conversations_created_byTousers  conversations[]        @relation("conversations_created_byTousers")
+  conversations_conversations_user_oneTousers    conversations[]        @relation("conversations_user_oneTousers")
+  conversations_conversations_user_twoTousers    conversations[]        @relation("conversations_user_twoTousers")
   messages                                       messages[]
-  notifications_notifications_actor_idTousers    notifications[]  @relation("notifications_actor_idTousers")
-  notifications_notifications_receiver_idTousers notifications[]  @relation("notifications_receiver_idTousers")
+  notifications_notifications_actor_idTousers    notifications[]        @relation("notifications_actor_idTousers")
+  notifications_notifications_receiver_idTousers notifications[]        @relation("notifications_receiver_idTousers")
   post_comments                                  post_comments[]
   posts                                          posts[]
   user_academics                                 user_academics[]
   user_devices                                   user_devices[]
-  user_follows_user_follows_follower_idTousers   user_follows[]   @relation("user_follows_follower_idTousers")
-  user_follows_user_follows_following_idTousers  user_follows[]   @relation("user_follows_following_idTousers")
-  users                                          auth_users       @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user_follows_user_follows_follower_idTousers   user_follows[]         @relation("user_follows_follower_idTousers")
+  user_follows_user_follows_following_idTousers  user_follows[]         @relation("user_follows_following_idTousers")
+  users                                          auth_users             @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
 }
@@ -57,6 +59,7 @@ model posts {
   user          users?          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([created_at(sort: Desc)], map: "idx_posts_created_at_desc")
+  @@index([updated_at])
   @@schema("public")
 }
 
@@ -495,20 +498,26 @@ model auth_users {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model conversations {
-  id                                               String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  user_one                                         String     @db.Uuid
-  user_two                                         String     @db.Uuid
-  created_at                                       DateTime?  @default(now()) @db.Timestamptz(6)
-  updated_at                                       DateTime?  @default(now()) @db.Timestamptz(6)
-  last_message_id                                  String?    @db.Uuid
-  messages_conversations_last_message_idTomessages messages?  @relation("conversations_last_message_idTomessages", fields: [last_message_id], references: [id], onUpdate: NoAction, map: "conversations_last_message_fkey")
-  users_conversations_user_oneTousers              users      @relation("conversations_user_oneTousers", fields: [user_one], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  users_conversations_user_twoTousers              users      @relation("conversations_user_twoTousers", fields: [user_two], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                                               String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_one                                         String?                @db.Uuid
+  user_two                                         String?                @db.Uuid
+  created_at                                       DateTime?              @default(now()) @db.Timestamptz(6)
+  updated_at                                       DateTime?              @default(now()) @db.Timestamptz(6)
+  last_message_id                                  String?                @db.Uuid
+  type                                             String?                @default("direct")
+  name                                             String?
+  group_image_url                                  String?
+  created_by                                       String?                @db.Uuid
+  conversation_members                             conversation_members[]
+  users_conversations_created_byTousers            users?                 @relation("conversations_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  messages_conversations_last_message_idTomessages messages?              @relation("conversations_last_message_idTomessages", fields: [last_message_id], references: [id], onUpdate: NoAction, map: "conversations_last_message_fkey")
+  users_conversations_user_oneTousers              users?                 @relation("conversations_user_oneTousers", fields: [user_one], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_conversations_user_twoTousers              users?                 @relation("conversations_user_twoTousers", fields: [user_two], references: [id], onDelete: NoAction, onUpdate: NoAction)
   messages                                         messages[]
 
-  @@unique([user_one, user_two], map: "unique_pair")
   @@index([user_one], map: "idx_conversations_user_one")
   @@index([user_two], map: "idx_conversations_user_two")
+  @@index([type], map: "idx_conversations_type")
   @@schema("public")
 }
 
@@ -528,6 +537,7 @@ model messages {
   @@index([conversation_id, created_at(sort: Desc)], map: "idx_messages_conversation_created_at")
   @@index([conversation_id, is_read], map: "idx_messages_unread")
   @@index([conversation_id, sender_id, is_read], map: "idx_messages_conversation_sender_read")
+  @@index([conversation_id], map: "idx_messages_conversation")
   @@schema("public")
 }
 
@@ -594,6 +604,22 @@ model user_devices {
 
   @@index([user_id], map: "idx_user_devices_user")
   @@index([user_id, is_active], map: "idx_user_devices_user_active")
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model conversation_members {
+  conversation_id String        @db.Uuid
+  user_id         String        @db.Uuid
+  role            String?       @default("member")
+  joined_at       DateTime?     @default(now()) @db.Timestamptz(6)
+  conversations   conversations @relation(fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users           users         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([conversation_id, user_id])
+  @@index([conversation_id], map: "idx_conversation_members_conversation")
+  @@index([user_id], map: "idx_conversation_members_user")
   @@schema("public")
 }
 

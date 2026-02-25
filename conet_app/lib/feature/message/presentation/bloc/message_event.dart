@@ -49,7 +49,23 @@ class MessageConversationCreated extends MessageEvent {
   MessageConversationCreated(this.userId);
 }
 
+class MessageGroupCreated extends MessageEvent {
+  final String name;
+  final List<String> userIds;
+  final String? groupImageUrl;
+  MessageGroupCreated({
+    required this.name,
+    required this.userIds,
+    this.groupImageUrl,
+  });
+}
+
 class MessageConversationsRequested extends MessageEvent {}
+
+class MessageFilterChanged extends MessageEvent {
+  final String filter;
+  MessageFilterChanged(this.filter);
+}
 
 class MessageUserSearchRequested extends MessageEvent {
   final String query;
@@ -59,3 +75,36 @@ class MessageUserSearchRequested extends MessageEvent {
 class MessageUserSearchCleared extends MessageEvent {}
 
 class MessageCreatedConversationHandled extends MessageEvent {}
+
+class MessageConversationRealtimePinged extends MessageEvent {}
+
+// ─── Group management events ──────────────────────────────────────────────────
+
+class MessageGroupUpdated extends MessageEvent {
+  final String groupId;
+  final String? name;
+  final String? groupImageUrl;
+  MessageGroupUpdated({required this.groupId, this.name, this.groupImageUrl});
+}
+
+class MessageGroupDeleted extends MessageEvent {
+  final String groupId;
+  MessageGroupDeleted(this.groupId);
+}
+
+class MessageGroupMembersRequested extends MessageEvent {
+  final String groupId;
+  MessageGroupMembersRequested(this.groupId);
+}
+
+class MessageGroupMemberAdded extends MessageEvent {
+  final String groupId;
+  final String userId;
+  MessageGroupMemberAdded({required this.groupId, required this.userId});
+}
+
+class MessageGroupMemberRemoved extends MessageEvent {
+  final String groupId;
+  final String userId;
+  MessageGroupMemberRemoved({required this.groupId, required this.userId});
+}

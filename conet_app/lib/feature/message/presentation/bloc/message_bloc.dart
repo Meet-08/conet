@@ -2,14 +2,21 @@ import 'dart:async';
 
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
+import 'package:conet_app/feature/message/domain/entities/group_member.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/domain/entities/message_realtime_event.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_add_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_conversation.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_create_group.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_delete_group.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_conversations.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_get_group_members.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_remove_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_update_group.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_watch_conversation_updates.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_watch_messages.dart';
 import 'package:file_picker/file_picker.dart';
@@ -34,11 +41,17 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   final MessageWatchMessages _watchMessages;
   final MessageWatchConversationUpdates _watchConversationUpdates;
   final MessageSearchUsers _searchUsers;
+  final MessageCreateGroup _createGroup;
+  final MessageUpdateGroup _updateGroup;
+  final MessageDeleteGroup _deleteGroup;
+  final MessageGetGroupMembers _getGroupMembers;
+  final MessageAddGroupMember _addGroupMember;
+  final MessageRemoveGroupMember _removeGroupMember;
   final String? Function() _getCurrentUserId;
   StreamSubscription<MessageRealtimeEvent>? _messagesSubscription;
   StreamSubscription<void>? _globalSubscription;
+  String? _globalSubscriptionUserId;
   int _searchToken = 0;
-  Timer? _refreshTimer;
   final Set<String> _markAsReadInFlightConversations = {};
   final Map<String, DateTime> _lastMarkAsReadAt = {};
 
@@ -51,6 +64,12 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     required MessageWatchMessages watchMessages,
     required MessageWatchConversationUpdates watchConversationUpdates,
     required MessageSearchUsers searchUsers,
+    required MessageCreateGroup createGroup,
+    required MessageUpdateGroup updateGroup,
+    required MessageDeleteGroup deleteGroup,
+    required MessageGetGroupMembers getGroupMembers,
+    required MessageAddGroupMember addGroupMember,
+    required MessageRemoveGroupMember removeGroupMember,
     String? Function()? getCurrentUserId,
   }) : _createConversation = createConversation,
        _getConversationsUsecase = getConversationsUsecase,
@@ -60,6 +79,12 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
        _watchMessages = watchMessages,
        _watchConversationUpdates = watchConversationUpdates,
        _searchUsers = searchUsers,
+       _createGroup = createGroup,
+       _updateGroup = updateGroup,
+       _deleteGroup = deleteGroup,
+       _getGroupMembers = getGroupMembers,
+       _addGroupMember = addGroupMember,
+       _removeGroupMember = removeGroupMember,
        _getCurrentUserId =
            (getCurrentUserId ??
            (() => Supabase.instance.client.auth.currentUser?.id)),
@@ -77,34 +102,51 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     on<MessageFetchHistoryRequested>(_onFetchHistoryRequested);
     on<MessageMarkAsReadRequested>(_onMarkAsReadRequested);
     on<MessageConversationCreated>(_onConversationCreated);
+    on<MessageGroupCreated>(_onGroupCreated);
     on<MessageConversationsRequested>(_onConversationsRequested);
+    on<MessageFilterChanged>(_onFilterChanged);
+    on<MessageConversationRealtimePinged>(_onConversationRealtimePinged);
     on<MessageUserSearchRequested>(_onUserSearchRequested);
     on<MessageUserSearchCleared>(_onUserSearchCleared);
     on<MessageCreatedConversationHandled>(_onCreatedConversationHandled);
+    on<MessageGroupUpdated>(_onGroupUpdated);
+    on<MessageGroupDeleted>(_onGroupDeleted);
+    on<MessageGroupMembersRequested>(_onGroupMembersRequested);
+    on<MessageGroupMemberAdded>(_onGroupMemberAdded);
+    on<MessageGroupMemberRemoved>(_onGroupMemberRemoved);
 
-    // Initial load and global subscription setup
+    // Initial global subscription setup
     _initGlobalSubscription();
   }
 
   void _initGlobalSubscription() {
+    final currentUserId = _getCurrentUserId();
+    final hasExistingSubscription = _globalSubscription != null;
+    final isSameUser = _globalSubscriptionUserId == currentUserId;
+
+    if (hasExistingSubscription && isSameUser) {
+      return;
+    }
+
     _globalSubscription?.cancel();
+    _globalSubscriptionUserId = currentUserId;
     _globalSubscription = _watchConversationUpdates().listen((_) {
-      _debounceRefresh();
+      add(MessageConversationRealtimePinged());
     });
   }
 
-  void _debounceRefresh() {
-    _refreshTimer?.cancel();
-    _refreshTimer = Timer(const Duration(milliseconds: 500), () {
-      add(MessageConversationsRequested());
-    });
+  void _onConversationRealtimePinged(
+    MessageConversationRealtimePinged event,
+    Emitter<MessageState> emit,
+  ) {
+    emit(state.copyWith(lastConversationRealtimeAt: DateTime.now()));
+    add(MessageConversationsRequested());
   }
 
   @override
   Future<void> close() {
     _messagesSubscription?.cancel();
     _globalSubscription?.cancel();
-    _refreshTimer?.cancel();
     _markAsReadInFlightConversations.clear();
     _lastMarkAsReadAt.clear();
     return super.close();
@@ -114,6 +156,8 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     MessageConversationsRequested event,
     Emitter<MessageState> emit,
   ) async {
+    _initGlobalSubscription();
+
     final shouldShowLoading =
         state.conversations.isEmpty &&
         state.conversationStatus != MessageStatus.success;
@@ -121,7 +165,9 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
       emit(state.copyWith(conversationStatus: MessageStatus.loading));
     }
 
-    final result = await _getConversationsUsecase();
+    final result = await _getConversationsUsecase(
+      type: state.conversationFilter,
+    );
     result.fold(
       (l) {
         if (state.conversations.isNotEmpty) {
@@ -177,6 +223,111 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     Emitter<MessageState> emit,
   ) {
     emit(state.copyWith(clearCreatedConversation: true));
+  }
+
+  Future<void> _onGroupCreated(
+    MessageGroupCreated event,
+    Emitter<MessageState> emit,
+  ) async {
+    emit(state.copyWith(conversationStatus: MessageStatus.loading));
+    final result = await _createGroup(
+      name: event.name,
+      memberIds: event.userIds,
+      groupImageUrl: event.groupImageUrl,
+    );
+    result.fold(
+      (l) => emit(
+        state.copyWith(
+          conversationStatus: MessageStatus.failure,
+          errorMessage: l.message,
+        ),
+      ),
+      (r) {
+        emit(
+          state.copyWith(
+            conversationStatus: MessageStatus.success,
+            createdConversation: r,
+            userSuggestions: const [],
+            userSearchError: null,
+            isSearchingUsers: false,
+          ),
+        );
+        add(MessageConversationsRequested());
+      },
+    );
+  }
+
+  void _onFilterChanged(
+    MessageFilterChanged event,
+    Emitter<MessageState> emit,
+  ) {
+    emit(state.copyWith(conversationFilter: event.filter));
+    add(MessageConversationsRequested());
+  }
+
+  Future<void> _onGroupUpdated(
+    MessageGroupUpdated event,
+    Emitter<MessageState> emit,
+  ) async {
+    final result = await _updateGroup(
+      groupId: event.groupId,
+      name: event.name,
+      groupImageUrl: event.groupImageUrl,
+    );
+    result.fold(
+      (l) => emit(state.copyWith(errorMessage: l.message)),
+      (r) => add(MessageConversationsRequested()),
+    );
+  }
+
+  Future<void> _onGroupDeleted(
+    MessageGroupDeleted event,
+    Emitter<MessageState> emit,
+  ) async {
+    final result = await _deleteGroup(groupId: event.groupId);
+    result.fold(
+      (l) => emit(state.copyWith(errorMessage: l.message)),
+      (r) => add(MessageConversationsRequested()),
+    );
+  }
+
+  Future<void> _onGroupMembersRequested(
+    MessageGroupMembersRequested event,
+    Emitter<MessageState> emit,
+  ) async {
+    final result = await _getGroupMembers(groupId: event.groupId);
+    result.fold(
+      (l) => emit(state.copyWith(errorMessage: l.message)),
+      (r) => emit(state.copyWith(groupMembers: r)),
+    );
+  }
+
+  Future<void> _onGroupMemberAdded(
+    MessageGroupMemberAdded event,
+    Emitter<MessageState> emit,
+  ) async {
+    final result = await _addGroupMember(
+      groupId: event.groupId,
+      userId: event.userId,
+    );
+    result.fold(
+      (l) => emit(state.copyWith(errorMessage: l.message)),
+      (r) => add(MessageGroupMembersRequested(event.groupId)),
+    );
+  }
+
+  Future<void> _onGroupMemberRemoved(
+    MessageGroupMemberRemoved event,
+    Emitter<MessageState> emit,
+  ) async {
+    final result = await _removeGroupMember(
+      groupId: event.groupId,
+      userId: event.userId,
+    );
+    result.fold(
+      (l) => emit(state.copyWith(errorMessage: l.message)),
+      (r) => add(MessageGroupMembersRequested(event.groupId)),
+    );
   }
 
   Future<void> _onWatchStarted(
@@ -461,7 +612,13 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
           (conversation) => conversation.id == event.conversationId
               ? Conversation(
                   id: conversation.id,
+                  type: conversation.type,
                   otherUser: conversation.otherUser,
+                  name: conversation.name,
+                  groupImageUrl: conversation.groupImageUrl,
+                  createdBy: conversation.createdBy,
+                  currentUserRole: conversation.currentUserRole,
+                  members: conversation.members,
                   lastMessage: conversation.lastMessage,
                   updatedAt: conversation.updatedAt,
                   unreadCount: 0,

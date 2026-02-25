@@ -61,17 +61,25 @@ const mockConversation = {
   created_at: new Date(),
   updated_at: new Date(),
   messages_conversations_last_message_idTomessages: null,
-  users_conversations_user_oneTousers: {
-    id: TEST_USER.id,
-    username: "alice",
-    email: TEST_USER.email,
-    first_name: "Alice",
-    last_name: "Smith",
-    profile_pic_url: null,
-    user_role: "user",
-    is_verified: false,
-  },
-  users_conversations_user_twoTousers: mockOtherUser,
+  conversation_members: [
+    {
+      user_id: TEST_USER.id,
+      users: {
+        id: TEST_USER.id,
+        username: "alice",
+        email: TEST_USER.email,
+        first_name: "Alice",
+        last_name: "Smith",
+        profile_pic_url: null,
+        user_role: "user",
+        is_verified: false,
+      },
+    },
+    {
+      user_id: TEST_USER_B.id,
+      users: mockOtherUser,
+    },
+  ],
 };
 
 const mockMessage = {
@@ -92,11 +100,15 @@ beforeEach(() => {
 describe("POST /api/conversations", () => {
   it("201 – creates or retrieves a conversation with a UUID user ID", async () => {
     prismaMock.users.findUnique.mockResolvedValue(mockOtherUser);
-    prismaMock.conversations.upsert.mockResolvedValue({
+    // Service now uses findFirst + create (upsert can't target partial indexes)
+    prismaMock.conversations.findFirst.mockResolvedValue(null);
+    prismaMock.conversations.create.mockResolvedValue({
       id: CONV_ID,
+      type: "direct",
       user_one: TEST_USER.id,
       user_two: TEST_USER_B.id,
       updated_at: new Date(),
+      conversation_members: [],
     });
 
     const res = await request(app)
@@ -218,6 +230,10 @@ describe("POST /api/conversations/:conversationId/messages", () => {
       id: CONV_ID,
       user_one: TEST_USER.id,
       user_two: TEST_USER_B.id,
+      conversation_members: [
+        { user_id: TEST_USER.id },
+        { user_id: TEST_USER_B.id },
+      ],
     });
     prismaMock.messages.create.mockResolvedValue(mockMessage);
 
@@ -245,6 +261,10 @@ describe("POST /api/conversations/:conversationId/messages", () => {
       id: CONV_ID,
       user_one: TEST_USER_B.id, // alice is NOT user_one
       user_two: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee", // alice is NOT user_two
+      conversation_members: [
+        { user_id: TEST_USER_B.id },
+        { user_id: "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee" },
+      ],
     });
 
     const res = await request(app)
@@ -281,6 +301,10 @@ describe("POST /api/conversations/:conversationId/mark_as_read", () => {
     prismaMock.conversations.findUnique.mockResolvedValue({
       user_one: TEST_USER.id,
       user_two: TEST_USER_B.id,
+      conversation_members: [
+        { user_id: TEST_USER.id },
+        { user_id: TEST_USER_B.id },
+      ],
     });
     prismaMock.messages.updateMany.mockResolvedValue({ count: 3 });
 

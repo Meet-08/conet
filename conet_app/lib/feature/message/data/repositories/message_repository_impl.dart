@@ -5,6 +5,7 @@ import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_real_time_datasource.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
+import 'package:conet_app/feature/message/domain/entities/group_member.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/domain/entities/message_page.dart';
 import 'package:conet_app/feature/message/domain/entities/message_realtime_event.dart';
@@ -96,8 +97,10 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<Either<AppFailure, List<Conversation>>> getConversations() {
-    return _getResult(() => _messageDataSource.getConversations());
+  Future<Either<AppFailure, List<Conversation>>> getConversations({
+    String type = 'all',
+  }) {
+    return _getResult(() => _messageDataSource.getConversations(type: type));
   }
 
   @override
@@ -107,6 +110,75 @@ class MessageRepositoryImpl implements MessageRepository {
   }) {
     return _getResult(
       () => _messageDataSource.searchUsers(query: query, limit: limit),
+    );
+  }
+
+  // ─── Group operations ───────────────────────────────────────────────────────
+
+  @override
+  Future<Either<AppFailure, Conversation>> createGroup({
+    required String name,
+    required List<String> memberIds,
+    String? groupImageUrl,
+  }) {
+    return _getResult(
+      () => _messageDataSource.createGroup(
+        name: name,
+        memberIds: memberIds,
+        groupImageUrl: groupImageUrl,
+      ),
+    );
+  }
+
+  @override
+  Future<Either<AppFailure, Conversation>> updateGroup({
+    required String groupId,
+    String? name,
+    String? groupImageUrl,
+  }) {
+    return _getResult(
+      () => _messageDataSource.updateGroup(
+        groupId: groupId,
+        name: name,
+        groupImageUrl: groupImageUrl,
+      ),
+    );
+  }
+
+  @override
+  Future<Either<AppFailure, Unit>> deleteGroup(String groupId) {
+    return _getResult(() => _messageDataSource.deleteGroup(groupId: groupId));
+  }
+
+  @override
+  Future<Either<AppFailure, List<GroupMember>>> getGroupMembers(
+    String groupId,
+  ) {
+    return _getResult(
+      () => _messageDataSource.getGroupMembers(groupId: groupId),
+    );
+  }
+
+  @override
+  Future<Either<AppFailure, GroupMember>> addGroupMember({
+    required String groupId,
+    required String userId,
+  }) {
+    return _getResult(
+      () => _messageDataSource.addGroupMember(groupId: groupId, userId: userId),
+    );
+  }
+
+  @override
+  Future<Either<AppFailure, Unit>> removeGroupMember({
+    required String groupId,
+    required String userId,
+  }) {
+    return _getResult(
+      () => _messageDataSource.removeGroupMember(
+        groupId: groupId,
+        userId: userId,
+      ),
     );
   }
 

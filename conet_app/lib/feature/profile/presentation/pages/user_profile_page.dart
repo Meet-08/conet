@@ -67,7 +67,7 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
   void _onChatTapped(String profileId) {
     final messageBloc = context.read<MessageBloc>();
     final conv = messageBloc.state.conversations
-        .where((c) => c.otherUser.id == profileId)
+        .where((c) => c.otherUser?.id == profileId)
         .firstOrNull;
 
     if (conv != null) {
@@ -112,13 +112,13 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
       listener: (context, state) {
         if (_isCreatingConversation) {
           final conv = state.conversations
-              .where((c) => c.otherUser.id == widget.userId)
+              .where((c) => c.otherUser?.id == widget.userId)
               .firstOrNull;
           if (conv != null) {
             setState(() => _isCreatingConversation = false);
             context.push('/chat-detail', extra: conv);
           } else if (state.createdConversation != null &&
-              state.createdConversation!.otherUser.id == widget.userId) {
+              state.createdConversation!.otherUser?.id == widget.userId) {
             setState(() => _isCreatingConversation = false);
             context.push('/chat-detail', extra: state.createdConversation);
             context.read<MessageBloc>().add(

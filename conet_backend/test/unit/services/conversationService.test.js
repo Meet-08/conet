@@ -69,11 +69,19 @@ const mockConversationRow = {
     content: "Hello!",
     media_urls: [],
   },
-  users_conversations_user_oneTousers: {
-    id: TEST_USER.id,
-    username: "alice",
-  },
-  users_conversations_user_twoTousers: mockOtherUser,
+  conversation_members: [
+    {
+      user_id: TEST_USER.id,
+      users: {
+        id: TEST_USER.id,
+        username: "alice",
+      },
+    },
+    {
+      user_id: TEST_USER_B.id,
+      users: mockOtherUser,
+    },
+  ],
   _count: { unreadMessages: 0 },
 };
 
@@ -85,11 +93,15 @@ beforeEach(() => {
 describe("createConversationService", () => {
   it("creates a new conversation between two different users", async () => {
     prismaMock.users.findUnique.mockResolvedValue(mockOtherUser);
-    prismaMock.conversations.upsert.mockResolvedValue({
+    // Service uses findFirst+create (upsert can't target partial indexes)
+    prismaMock.conversations.findFirst.mockResolvedValue(null);
+    prismaMock.conversations.create.mockResolvedValue({
       id: CONV_ID,
+      type: "direct",
       user_one: TEST_USER.id,
       user_two: TEST_USER_B.id,
       updated_at: new Date(),
+      conversation_members: [],
     });
 
     const result = await createConversationService(
@@ -112,14 +124,17 @@ describe("createConversationService", () => {
   });
 
   it("resolves user by username when a non-UUID identifier is provided", async () => {
-    // First findFirst resolves username → UUID
-    prismaMock.users.findFirst.mockResolvedValue({ id: TEST_USER_B.id });
+    // First findFirst resolves username → UUID; second findFirst checks existing conv
+    prismaMock.users.findFirst.mockResolvedValueOnce({ id: TEST_USER_B.id });
     prismaMock.users.findUnique.mockResolvedValue(mockOtherUser);
-    prismaMock.conversations.upsert.mockResolvedValue({
+    prismaMock.conversations.findFirst.mockResolvedValue(null);
+    prismaMock.conversations.create.mockResolvedValue({
       id: CONV_ID,
+      type: "direct",
       user_one: TEST_USER.id,
       user_two: TEST_USER_B.id,
       updated_at: new Date(),
+      conversation_members: [],
     });
 
     const result = await createConversationService(TEST_USER.id, "bob");
@@ -160,18 +175,22 @@ describe("createConversationService", () => {
     const userB = "00000000-0000-0000-0000-000000000001";
 
     prismaMock.users.findUnique.mockResolvedValue({ id: userA });
-    prismaMock.conversations.upsert.mockResolvedValue({
+    prismaMock.conversations.findFirst.mockResolvedValue(null);
+    prismaMock.conversations.create.mockResolvedValue({
       id: CONV_ID,
+      type: "direct",
       user_one: userB,
       user_two: userA,
       updated_at: new Date(),
+      conversation_members: [],
     });
 
     await createConversationService(userA, userB);
 
-    const upsertCall = prismaMock.conversations.upsert.mock.calls[0][0];
-    expect(upsertCall.where.user_one_user_two.user_one).toBe(userB);
-    expect(upsertCall.where.user_one_user_two.user_two).toBe(userA);
+    // Service now uses create; check data payload contains the normalised pair
+    const createCall = prismaMock.conversations.create.mock.calls[0][0];
+    expect(createCall.data.user_one).toBe(userB);
+    expect(createCall.data.user_two).toBe(userA);
   });
 });
 
@@ -331,6 +350,10 @@ describe("sendMessageService", () => {
       id: CONV_ID,
       user_one: TEST_USER.id,
       user_two: TEST_USER_B.id,
+      conversation_members: [
+        { user_id: TEST_USER.id },
+        { user_id: TEST_USER_B.id },
+      ],
     });
     prismaMock.messages.create.mockResolvedValue({
       id: "msg-new",
@@ -365,6 +388,10 @@ describe("sendMessageService", () => {
       id: CONV_ID,
       user_one: TEST_USER.id,
       user_two: TEST_USER_B.id,
+      conversation_members: [
+        { user_id: TEST_USER.id },
+        { user_id: TEST_USER_B.id },
+      ],
     });
 
     await expect(
@@ -380,6 +407,10 @@ describe("sendMessageService", () => {
       id: CONV_ID,
       user_one: TEST_USER.id,
       user_two: TEST_USER_B.id,
+      conversation_members: [
+        { user_id: TEST_USER.id },
+        { user_id: TEST_USER_B.id },
+      ],
     });
     prismaMock.messages.create.mockResolvedValue({
       id: "msg-media",
@@ -406,6 +437,10 @@ describe("markAsReadService", () => {
       id: CONV_ID,
       user_one: TEST_USER.id,
       user_two: TEST_USER_B.id,
+      conversation_members: [
+        { user_id: TEST_USER.id },
+        { user_id: TEST_USER_B.id },
+      ],
     });
     prismaMock.messages.updateMany.mockResolvedValue({ count: 2 });
 
@@ -414,7 +449,7 @@ describe("markAsReadService", () => {
     expect(updatedCount).toBe(2);
     expect(prismaMock.conversations.findUnique).toHaveBeenCalledWith({
       where: { id: CONV_ID },
-      select: { user_one: true, user_two: true },
+      include: { conversation_members: true },
     });
 
     expect(prismaMock.messages.updateMany).toHaveBeenCalledWith({
@@ -443,6 +478,10 @@ describe("markAsReadService", () => {
       id: CONV_ID,
       user_one: TEST_USER.id,
       user_two: TEST_USER_B.id,
+      conversation_members: [
+        { user_id: TEST_USER.id },
+        { user_id: TEST_USER_B.id },
+      ],
     });
 
     await expect(

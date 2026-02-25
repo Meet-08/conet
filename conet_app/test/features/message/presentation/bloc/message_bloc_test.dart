@@ -5,12 +5,18 @@ import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/domain/entities/message_page.dart';
 import 'package:conet_app/feature/message/domain/entities/message_realtime_event.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_add_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_conversation.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_create_group.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_delete_group.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_conversations.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_get_group_members.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_remove_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_update_group.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_watch_conversation_updates.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_watch_messages.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
@@ -37,6 +43,21 @@ class MockMessageWatchConversationUpdates extends Mock
 
 class MockMessageSearchUsers extends Mock implements MessageSearchUsers {}
 
+class MockMessageCreateGroup extends Mock implements MessageCreateGroup {}
+
+class MockMessageUpdateGroup extends Mock implements MessageUpdateGroup {}
+
+class MockMessageDeleteGroup extends Mock implements MessageDeleteGroup {}
+
+class MockMessageGetGroupMembers extends Mock
+    implements MessageGetGroupMembers {}
+
+class MockMessageAddGroupMember extends Mock
+    implements MessageAddGroupMember {}
+
+class MockMessageRemoveGroupMember extends Mock
+    implements MessageRemoveGroupMember {}
+
 void main() {
   late MessageBloc messageBloc;
   late MockMessageCreateConversation mockCreateConversation;
@@ -47,6 +68,12 @@ void main() {
   late MockMessageWatchMessages mockWatchMessages;
   late MockMessageWatchConversationUpdates mockWatchConversationUpdates;
   late MockMessageSearchUsers mockSearchUsers;
+  late MockMessageCreateGroup mockCreateGroup;
+  late MockMessageUpdateGroup mockUpdateGroup;
+  late MockMessageDeleteGroup mockDeleteGroup;
+  late MockMessageGetGroupMembers mockGetGroupMembers;
+  late MockMessageAddGroupMember mockAddGroupMember;
+  late MockMessageRemoveGroupMember mockRemoveGroupMember;
 
   const tUser = User(
     id: 'user-123',
@@ -88,6 +115,12 @@ void main() {
     mockWatchMessages = MockMessageWatchMessages();
     mockWatchConversationUpdates = MockMessageWatchConversationUpdates();
     mockSearchUsers = MockMessageSearchUsers();
+    mockCreateGroup = MockMessageCreateGroup();
+    mockUpdateGroup = MockMessageUpdateGroup();
+    mockDeleteGroup = MockMessageDeleteGroup();
+    mockGetGroupMembers = MockMessageGetGroupMembers();
+    mockAddGroupMember = MockMessageAddGroupMember();
+    mockRemoveGroupMember = MockMessageRemoveGroupMember();
 
     // Stub global subscription
     when(
@@ -103,6 +136,12 @@ void main() {
       watchMessages: mockWatchMessages,
       watchConversationUpdates: mockWatchConversationUpdates,
       searchUsers: mockSearchUsers,
+      createGroup: mockCreateGroup,
+      updateGroup: mockUpdateGroup,
+      deleteGroup: mockDeleteGroup,
+      getGroupMembers: mockGetGroupMembers,
+      addGroupMember: mockAddGroupMember,
+      removeGroupMember: mockRemoveGroupMember,
       getCurrentUserId: () => 'user-123',
     );
   });

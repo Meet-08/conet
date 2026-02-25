@@ -116,8 +116,10 @@ describe("Edge case: Non-participant sending a message", () => {
 
     prismaMock.conversations.findUnique.mockResolvedValue({
       id: CONV_ID,
-      user_one: TEST_USER.id,
-      user_two: TEST_USER_B.id,
+      conversation_members: [
+        { user_id: TEST_USER.id },
+        { user_id: TEST_USER_B.id },
+      ],
     });
 
     await expect(
@@ -135,32 +137,45 @@ describe("Edge case: Conversation pair normalisation", () => {
     const userB = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb";
 
     prismaMock.users.findUnique.mockResolvedValue({ id: userB });
-    prismaMock.conversations.upsert.mockResolvedValue({
+    prismaMock.conversations.findFirst.mockResolvedValue(null);
+    prismaMock.conversations.create.mockResolvedValue({
       id: CONV_ID,
+      type: "direct",
       user_one: userA,
       user_two: userB,
       updated_at: new Date(),
+      conversation_members: [],
     });
 
     await createConversationService(userA, userB);
 
-    const callA = prismaMock.conversations.upsert.mock.calls[0][0];
-    const pairA = callA.where.user_one_user_two;
+    // Service now uses create; inspect data payload for the normalised pair
+    const callA = prismaMock.conversations.create.mock.calls[0][0];
+    const pairA = {
+      user_one: callA.data.user_one,
+      user_two: callA.data.user_two,
+    };
 
     // Reset and try the reverse direction
     resetPrismaMocks();
     prismaMock.users.findUnique.mockResolvedValue({ id: userA });
-    prismaMock.conversations.upsert.mockResolvedValue({
+    prismaMock.conversations.findFirst.mockResolvedValue(null);
+    prismaMock.conversations.create.mockResolvedValue({
       id: CONV_ID,
+      type: "direct",
       user_one: userA,
       user_two: userB,
       updated_at: new Date(),
+      conversation_members: [],
     });
 
     await createConversationService(userB, userA);
 
-    const callB = prismaMock.conversations.upsert.mock.calls[0][0];
-    const pairB = callB.where.user_one_user_two;
+    const callB = prismaMock.conversations.create.mock.calls[0][0];
+    const pairB = {
+      user_one: callB.data.user_one,
+      user_two: callB.data.user_two,
+    };
 
     // Both calls must produce the same canonical pair
     expect(pairA.user_one).toBe(pairB.user_one);

@@ -3,15 +3,21 @@ import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/repositories/message_repository.dart';
 import 'package:fpdart/fpdart.dart';
 
-class MessageGetConversations {
+class MessageUpdateGroup {
   final MessageRepository _messageRepository;
 
-  MessageGetConversations({required MessageRepository messageRepository})
+  MessageUpdateGroup({required MessageRepository messageRepository})
     : _messageRepository = messageRepository;
 
-  Future<Either<AppFailure, List<Conversation>>> call({
-    String type = 'all',
-  }) async {
-    return _messageRepository.getConversations(type: type);
+  Future<Either<AppFailure, Conversation>> call({
+    required String groupId,
+    String? name,
+    String? groupImageUrl,
+  }) {
+    return _messageRepository.updateGroup(
+      groupId: groupId,
+      name: name,
+      groupImageUrl: groupImageUrl,
+    );
   }
 }

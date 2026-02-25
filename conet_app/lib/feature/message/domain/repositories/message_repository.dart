@@ -1,6 +1,7 @@
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
+import 'package:conet_app/feature/message/domain/entities/group_member.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/domain/entities/message_page.dart';
 import 'package:conet_app/feature/message/domain/entities/message_realtime_event.dart';
@@ -28,10 +29,40 @@ abstract interface class MessageRepository {
   Stream<MessageRealtimeEvent> watchMessages(String conversationId);
   Stream<void> watchConversationUpdates();
 
-  Future<Either<AppFailure, List<Conversation>>> getConversations();
+  Future<Either<AppFailure, List<Conversation>>> getConversations({
+    String type = 'all',
+  });
 
   Future<Either<AppFailure, List<User>>> searchUsers(
     String query, {
     int limit = 3,
+  });
+
+  // ─── Group operations ───────────────────────────────────────────────────────
+
+  Future<Either<AppFailure, Conversation>> createGroup({
+    required String name,
+    required List<String> memberIds,
+    String? groupImageUrl,
+  });
+
+  Future<Either<AppFailure, Conversation>> updateGroup({
+    required String groupId,
+    String? name,
+    String? groupImageUrl,
+  });
+
+  Future<Either<AppFailure, Unit>> deleteGroup(String groupId);
+
+  Future<Either<AppFailure, List<GroupMember>>> getGroupMembers(String groupId);
+
+  Future<Either<AppFailure, GroupMember>> addGroupMember({
+    required String groupId,
+    required String userId,
+  });
+
+  Future<Either<AppFailure, Unit>> removeGroupMember({
+    required String groupId,
+    required String userId,
   });
 }

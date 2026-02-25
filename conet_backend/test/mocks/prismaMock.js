@@ -41,6 +41,7 @@ export const prismaMock = {
   post_likes: makeMethods(),
   post_comments: makeMethods(),
   conversations: makeMethods(),
+  conversation_members: makeMethods(),
   messages: makeMethods(),
   notifications: makeMethods(),
   $transaction: mock((fn) =>

@@ -6,6 +6,7 @@ class MessageState {
   final List<Message> messages;
   final List<Conversation> conversations;
   final List<User> userSuggestions;
+  final List<GroupMember> groupMembers;
   final MessageStatus conversationStatus;
   final MessageStatus messageStatus;
   final bool isSearchingUsers;
@@ -17,11 +18,14 @@ class MessageState {
   final bool hasMoreHistory;
   final DateTime? nextBeforeCursor;
   final String? activeConversationId;
+  final DateTime? lastConversationRealtimeAt;
+  final String conversationFilter; // 'all', 'direct', 'group'
 
   MessageState({
     this.messages = const [],
     this.conversations = const [],
     this.userSuggestions = const [],
+    this.groupMembers = const [],
     this.conversationStatus = MessageStatus.initial,
     this.messageStatus = MessageStatus.initial,
     this.isSearchingUsers = false,
@@ -33,12 +37,15 @@ class MessageState {
     this.hasMoreHistory = true,
     this.nextBeforeCursor,
     this.activeConversationId,
+    this.lastConversationRealtimeAt,
+    this.conversationFilter = 'all',
   });
 
   MessageState copyWith({
     List<Message>? messages,
     List<Conversation>? conversations,
     List<User>? userSuggestions,
+    List<GroupMember>? groupMembers,
     MessageStatus? conversationStatus,
     MessageStatus? messageStatus,
     bool? isSearchingUsers,
@@ -51,12 +58,15 @@ class MessageState {
     bool? hasMoreHistory,
     DateTime? nextBeforeCursor,
     String? activeConversationId,
+    DateTime? lastConversationRealtimeAt,
     bool clearNextBeforeCursor = false,
+    String? conversationFilter,
   }) {
     return MessageState(
       messages: messages ?? this.messages,
       conversations: conversations ?? this.conversations,
       userSuggestions: userSuggestions ?? this.userSuggestions,
+      groupMembers: groupMembers ?? this.groupMembers,
       conversationStatus: conversationStatus ?? this.conversationStatus,
       messageStatus: messageStatus ?? this.messageStatus,
       isSearchingUsers: isSearchingUsers ?? this.isSearchingUsers,
@@ -72,6 +82,9 @@ class MessageState {
           ? null
           : (nextBeforeCursor ?? this.nextBeforeCursor),
       activeConversationId: activeConversationId ?? this.activeConversationId,
+      lastConversationRealtimeAt:
+          lastConversationRealtimeAt ?? this.lastConversationRealtimeAt,
+      conversationFilter: conversationFilter ?? this.conversationFilter,
     );
   }
 }

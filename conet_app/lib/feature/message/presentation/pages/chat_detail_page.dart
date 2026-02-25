@@ -97,7 +97,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ChatAppBar(otherUser: widget.conversation.otherUser),
+      appBar: ChatAppBar(conversation: widget.conversation),
       body: Column(
         children: [
           Expanded(

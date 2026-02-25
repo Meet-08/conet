@@ -1,11 +1,17 @@
 import asyncHandler from "express-async-handler";
 import {
+  addGroupMemberService,
   createConversationService,
+  createGroupService,
+  deleteGroupService,
   getConversationsService,
+  getGroupMembersService,
   getMessagesService,
   markAsReadService,
+  removeGroupMemberService,
   searchUsersService,
   sendMessageService,
+  updateGroupService,
 } from "../services/conversationService.js";
 
 // POST /api/conversations?other_user={userId}
@@ -29,10 +35,17 @@ export const createConversation = asyncHandler(async (req, res) => {
   });
 });
 
-// GET /api/conversations
+// GET /api/conversations?type=all|direct|group
 export const getConversations = asyncHandler(async (req, res) => {
   const currentUserId = req.user.id;
-  const conversations = await getConversationsService(currentUserId);
+  const { type = "all" } = req.query;
+
+  if (!["all", "direct", "group"].includes(type)) {
+    res.status(400);
+    throw new Error("type must be one of: all, direct, group");
+  }
+
+  const conversations = await getConversationsService(currentUserId, type);
 
   res.status(200).json(conversations);
 });
@@ -110,4 +123,91 @@ export const searchUsers = asyncHandler(async (req, res) => {
   const users = await searchUsersService(query, limit, currentUserId);
 
   res.status(200).json(users);
+});
+
+// ─── Group conversations ────────────────────────────────────────────────────────
+
+// POST /api/groups
+// Body: { name, memberIds: string[], groupImageUrl? }
+export const createGroup = asyncHandler(async (req, res) => {
+  const currentUserId = req.user.id;
+  const { name, memberIds, groupImageUrl } = req.body;
+
+  if (!name) {
+    res.status(400);
+    throw new Error("name is required");
+  }
+
+  if (!Array.isArray(memberIds) || memberIds.length === 0) {
+    res.status(400);
+    throw new Error("memberIds must be a non-empty array");
+  }
+
+  const group = await createGroupService(currentUserId, {
+    name,
+    memberIds,
+    groupImageUrl,
+  });
+
+  res.status(201).json({ success: true, group });
+});
+
+// GET /api/groups/:groupId/members
+export const getGroupMembers = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+  const currentUserId = req.user.id;
+
+  const members = await getGroupMembersService(groupId, currentUserId);
+
+  res.status(200).json(members);
+});
+
+// POST /api/groups/:groupId/members  { userId }
+export const addGroupMember = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+  const currentUserId = req.user.id;
+  const { userId } = req.body;
+
+  if (!userId) {
+    res.status(400);
+    throw new Error("userId is required");
+  }
+
+  const member = await addGroupMemberService(groupId, currentUserId, userId);
+
+  res.status(201).json({ success: true, member });
+});
+
+// DELETE /api/groups/:groupId/members/:userId
+export const removeGroupMember = asyncHandler(async (req, res) => {
+  const { groupId, userId } = req.params;
+  const currentUserId = req.user.id;
+
+  await removeGroupMemberService(groupId, currentUserId, userId);
+
+  res.status(200).json({ success: true });
+});
+
+// PATCH /api/groups/:groupId  { name?, groupImageUrl? }
+export const updateGroup = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+  const currentUserId = req.user.id;
+  const { name, groupImageUrl } = req.body;
+
+  const group = await updateGroupService(groupId, currentUserId, {
+    name,
+    groupImageUrl,
+  });
+
+  res.status(200).json({ success: true, group });
+});
+
+// DELETE /api/groups/:groupId
+export const deleteGroup = asyncHandler(async (req, res) => {
+  const { groupId } = req.params;
+  const currentUserId = req.user.id;
+
+  await deleteGroupService(groupId, currentUserId);
+
+  res.status(200).json({ success: true });
 });

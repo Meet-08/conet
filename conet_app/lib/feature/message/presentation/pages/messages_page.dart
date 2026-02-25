@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/message/presentation/widgets/conversation_list.dart';
 import 'package:conet_app/feature/message/presentation/widgets/message_app_bar.dart';
 import 'package:conet_app/feature/message/presentation/widgets/message_filters.dart';
+import 'package:conet_app/feature/message/presentation/widgets/new_message_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -16,133 +19,101 @@ class MessagesPage extends StatefulWidget {
   State<MessagesPage> createState() => _MessagesPageState();
 }
 
-class _MessagesPageState extends State<MessagesPage> {
+class _MessagesPageState extends State<MessagesPage>
+    with WidgetsBindingObserver {
+  static const Duration _minFallbackInterval = Duration(seconds: 15);
+  static const Duration _maxFallbackInterval = Duration(seconds: 60);
+  Timer? _fallbackTimer;
+  Duration _currentFallbackInterval = _minFallbackInterval;
+  bool _isAppInForeground = true;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     context.read<MessageBloc>().add(MessageConversationsRequested());
+    _scheduleNextFallbackCheck();
+  }
+
+  void _scheduleNextFallbackCheck() {
+    _fallbackTimer?.cancel();
+    _fallbackTimer = Timer(_currentFallbackInterval, _runFallbackCheck);
+  }
+
+  bool _isCurrentRouteVisible() {
+    final route = ModalRoute.of(context);
+    if (route == null) {
+      return true;
+    }
+    return route.isCurrent;
+  }
+
+  void _runFallbackCheck() {
+    if (!mounted) {
+      return;
+    }
+
+    if (!_isAppInForeground || !_isCurrentRouteVisible()) {
+      _scheduleNextFallbackCheck();
+      return;
+    }
+
+    final blocState = context.read<MessageBloc>().state;
+    final lastRealtimeAt = blocState.lastConversationRealtimeAt;
+    final staleThreshold = _currentFallbackInterval * 2;
+    final isRealtimeStale =
+        lastRealtimeAt == null ||
+        DateTime.now().difference(lastRealtimeAt) > staleThreshold;
+
+    if (isRealtimeStale) {
+      context.read<MessageBloc>().add(MessageConversationsRequested());
+      _currentFallbackInterval = Duration(
+        seconds: (_currentFallbackInterval.inSeconds * 2).clamp(
+          _minFallbackInterval.inSeconds,
+          _maxFallbackInterval.inSeconds,
+        ),
+      );
+    }
+
+    _scheduleNextFallbackCheck();
+  }
+
+  void _resetFallbackInterval() {
+    _currentFallbackInterval = _minFallbackInterval;
+    _scheduleNextFallbackCheck();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!mounted) {
+      return;
+    }
+
+    _isAppInForeground = state == AppLifecycleState.resumed;
+
+    if (state == AppLifecycleState.resumed) {
+      context.read<MessageBloc>().add(MessageConversationsRequested());
+      _resetFallbackInterval();
+    }
+  }
+
+  @override
+  void dispose() {
+    _fallbackTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   Future<void> _showCreateConversationDialog() async {
-    final controller = TextEditingController();
-    await showDialog<void>(
+    context.read<MessageBloc>().add(MessageUserSearchCleared());
+    await showModalBottomSheet<void>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Start a conversation'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: controller,
-                  onChanged: (value) {
-                    dialogContext.read<MessageBloc>().add(
-                      MessageUserSearchRequested(value),
-                    );
-                  },
-                  decoration: const InputDecoration(
-                    labelText: 'Username or Email',
-                    hintText: 'Start typing to search',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                BlocBuilder<MessageBloc, MessageState>(
-                  builder: (context, state) {
-                    if (state.isSearchingUsers) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        child: LinearProgressIndicator(),
-                      );
-                    }
-
-                    if (state.userSearchError != null) {
-                      return Text(
-                        state.userSearchError!,
-                        style: const TextStyle(color: Colors.redAccent),
-                      );
-                    }
-
-                    if (state.userSuggestions.isEmpty) {
-                      return const SizedBox.shrink();
-                    }
-
-                    return ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: state.userSuggestions.length,
-                      separatorBuilder: (_, _) => const Divider(height: 8),
-                      itemBuilder: (context, index) {
-                        final user = state.userSuggestions[index];
-                        final displayName = '${user.firstName} ${user.lastName}'
-                            .trim();
-                        final subtitle = user.email.isNotEmpty
-                            ? user.email
-                            : (user.username.isNotEmpty
-                                  ? '@${user.username}'
-                                  : '');
-                        final initials = displayName.isNotEmpty
-                            ? displayName
-                                  .split(RegExp(r'\s+'))
-                                  .map((part) => part.isNotEmpty ? part[0] : '')
-                                  .take(2)
-                                  .join()
-                                  .toUpperCase()
-                            : (user.username.isNotEmpty
-                                  ? user.username[0].toUpperCase()
-                                  : 'U');
-
-                        return ListTile(
-                          dense: true,
-                          contentPadding: EdgeInsets.zero,
-                          leading: CircleAvatar(
-                            backgroundImage:
-                                (user.profilePicUrl != null &&
-                                    user.profilePicUrl!.isNotEmpty)
-                                ? NetworkImage(user.profilePicUrl!)
-                                : null,
-                            child:
-                                (user.profilePicUrl == null ||
-                                    user.profilePicUrl!.isEmpty)
-                                ? Text(initials)
-                                : null,
-                          ),
-                          title: Text(
-                            displayName.isNotEmpty
-                                ? displayName
-                                : (user.username.isNotEmpty
-                                      ? user.username
-                                      : 'User'),
-                          ),
-                          subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
-                          onTap: () {
-                            Navigator.pop(dialogContext);
-                            context.read<MessageBloc>().add(
-                              MessageConversationCreated(user.id),
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                dialogContext.read<MessageBloc>().add(
-                  MessageUserSearchCleared(),
-                );
-                Navigator.pop(dialogContext);
-              },
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => BlocProvider.value(
+        value: context.read<MessageBloc>(),
+        child: const NewMessageSheet(),
+      ),
     );
   }
 
@@ -168,6 +139,14 @@ class _MessagesPageState extends State<MessagesPage> {
               MessageCreatedConversationHandled(),
             );
             context.push('/chat-detail', extra: conversation);
+          },
+        ),
+        BlocListener<MessageBloc, MessageState>(
+          listenWhen: (previous, current) =>
+              previous.lastConversationRealtimeAt !=
+              current.lastConversationRealtimeAt,
+          listener: (context, state) {
+            _resetFallbackInterval();
           },
         ),
       ],

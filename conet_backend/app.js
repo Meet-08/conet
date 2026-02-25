@@ -4,6 +4,7 @@ import errorHandler from "./middleware/errorhandler.js";
 import requestLogger from "./middleware/requestLogger.js";
 import conversationRoutes from "./routes/conversationRoutes.js";
 import deviceRoutes from "./routes/deviceRoutes.js";
+import groupRoutes from "./routes/groupRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
@@ -21,6 +22,7 @@ export function createApp() {
 
   app.use("/api/posts", postRoutes);
   app.use("/api/conversations", conversationRoutes);
+  app.use("/api/groups", groupRoutes);
   app.use("/api/profile", profileRoutes);
   app.use("/api/devices", deviceRoutes);
   app.use("/api/notifications", notificationRoutes);

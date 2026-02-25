@@ -69,12 +69,8 @@ class ConversationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final otherUser = conversation.otherUser;
-    final displayName =
-        (otherUser.firstName.trim().isNotEmpty ||
-            otherUser.lastName.trim().isNotEmpty)
-        ? '${otherUser.firstName} ${otherUser.lastName}'.trim()
-        : (otherUser.username.isNotEmpty ? otherUser.username : 'User');
+    final displayName = conversation.displayName;
+    final imageUrl = conversation.displayImageUrl;
     final initials = _getInitials(displayName);
     final hasUnread = conversation.unreadCount > 0;
 
@@ -92,25 +88,30 @@ class ConversationTile extends StatelessWidget {
               backgroundColor: Colors
                   .primaries[displayName.hashCode % Colors.primaries.length]
                   .shade100,
-              backgroundImage:
-                  (otherUser.profilePicUrl != null &&
-                      otherUser.profilePicUrl!.isNotEmpty)
-                  ? NetworkImage(otherUser.profilePicUrl!)
+              backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
+                  ? NetworkImage(imageUrl)
                   : null,
-              child:
-                  (otherUser.profilePicUrl == null ||
-                      otherUser.profilePicUrl!.isEmpty)
-                  ? Text(
-                      initials,
-                      style: TextStyle(
-                        color: Colors
-                            .primaries[displayName.hashCode %
-                                Colors.primaries.length]
-                            .shade800,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                      ),
-                    )
+              child: (imageUrl == null || imageUrl.isEmpty)
+                  ? conversation.isGroup
+                        ? Icon(
+                            Icons.group,
+                            color: Colors
+                                .primaries[displayName.hashCode %
+                                    Colors.primaries.length]
+                                .shade800,
+                            size: 20,
+                          )
+                        : Text(
+                            initials,
+                            style: TextStyle(
+                              color: Colors
+                                  .primaries[displayName.hashCode %
+                                      Colors.primaries.length]
+                                  .shade800,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                            ),
+                          )
                   : null,
             ),
             const SizedBox(width: 14),

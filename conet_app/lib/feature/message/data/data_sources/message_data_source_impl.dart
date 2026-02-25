@@ -5,6 +5,7 @@ import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_real_time_datasource.dart';
 import 'package:conet_app/feature/message/data/models/conversation_model.dart';
+import 'package:conet_app/feature/message/data/models/group_member_model.dart';
 import 'package:conet_app/feature/message/data/models/message_model.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/message_page.dart';
@@ -117,9 +118,12 @@ class MessageDataSourceImpl implements MessageDataSource {
   }
 
   @override
-  Future<List<Conversation>> getConversations() async {
+  Future<List<Conversation>> getConversations({String type = 'all'}) async {
     try {
-      final res = await _dioClient.dio.get("/conversations");
+      final res = await _dioClient.dio.get(
+        "/conversations",
+        queryParameters: {'type': type},
+      );
       if (res.statusCode != 200) {
         throw ServerException("Failed to get conversations");
       }
@@ -149,6 +153,126 @@ class MessageDataSourceImpl implements MessageDataSource {
       return users;
     } catch (e) {
       logger.e("Failed to search users: ${e.toString()}");
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  // ─── Group operations ───────────────────────────────────────────────────────
+
+  @override
+  Future<Conversation> createGroup({
+    required String name,
+    required List<String> memberIds,
+    String? groupImageUrl,
+  }) async {
+    try {
+      final body = <String, dynamic>{'name': name, 'memberIds': memberIds};
+      if (groupImageUrl != null) {
+        body['groupImageUrl'] = groupImageUrl;
+      }
+      final res = await _dioClient.dio.post("/groups", data: body);
+      if (res.statusCode != 201) {
+        throw ServerException("Failed to create group");
+      }
+      final data = res.data as Map<String, dynamic>;
+      return ConversationModel.fromJson(data['group'] as Map<String, dynamic>);
+    } catch (e) {
+      logger.e("Failed to create group: ${e.toString()}");
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<Conversation> updateGroup({
+    required String groupId,
+    String? name,
+    String? groupImageUrl,
+  }) async {
+    try {
+      final body = <String, dynamic>{};
+      if (name != null) body['name'] = name;
+      if (groupImageUrl != null) body['groupImageUrl'] = groupImageUrl;
+
+      final res = await _dioClient.dio.patch("/groups/$groupId", data: body);
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to update group");
+      }
+      final data = res.data as Map<String, dynamic>;
+      return ConversationModel.fromJson(data['group'] as Map<String, dynamic>);
+    } catch (e) {
+      logger.e("Failed to update group: ${e.toString()}");
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<Unit> deleteGroup({required String groupId}) async {
+    try {
+      final res = await _dioClient.dio.delete("/groups/$groupId");
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to delete group");
+      }
+      return unit;
+    } catch (e) {
+      logger.e("Failed to delete group: ${e.toString()}");
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<List<GroupMemberModel>> getGroupMembers({
+    required String groupId,
+  }) async {
+    try {
+      final res = await _dioClient.dio.get("/groups/$groupId/members");
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to get group members");
+      }
+      return (res.data as List<dynamic>)
+          .map((e) => GroupMemberModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      logger.e("Failed to get group members: ${e.toString()}");
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<GroupMemberModel> addGroupMember({
+    required String groupId,
+    required String userId,
+  }) async {
+    try {
+      final res = await _dioClient.dio.post(
+        "/groups/$groupId/members",
+        data: {'userId': userId},
+      );
+      if (res.statusCode != 201) {
+        throw ServerException("Failed to add group member");
+      }
+      final data = res.data as Map<String, dynamic>;
+      return GroupMemberModel.fromJson(data['member'] as Map<String, dynamic>);
+    } catch (e) {
+      logger.e("Failed to add group member: ${e.toString()}");
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<Unit> removeGroupMember({
+    required String groupId,
+    required String userId,
+  }) async {
+    try {
+      final res = await _dioClient.dio.delete(
+        "/groups/$groupId/members/$userId",
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to remove group member");
+      }
+      return unit;
+    } catch (e) {
+      logger.e("Failed to remove group member: ${e.toString()}");
       throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }

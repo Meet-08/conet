@@ -212,6 +212,24 @@ void _initMessage() {
   serviceLocator.registerFactory(
     () => MessageWatchConversationUpdates(messageRepository: serviceLocator()),
   );
+  serviceLocator.registerFactory(
+    () => MessageCreateGroup(messageRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
+    () => MessageUpdateGroup(messageRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
+    () => MessageDeleteGroup(messageRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
+    () => MessageGetGroupMembers(messageRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
+    () => MessageAddGroupMember(messageRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
+    () => MessageRemoveGroupMember(messageRepository: serviceLocator()),
+  );
 
   // Bloc
   serviceLocator.registerLazySingleton(
@@ -224,6 +242,12 @@ void _initMessage() {
       watchMessages: serviceLocator(),
       watchConversationUpdates: serviceLocator(),
       searchUsers: serviceLocator(),
+      createGroup: serviceLocator(),
+      updateGroup: serviceLocator(),
+      deleteGroup: serviceLocator(),
+      getGroupMembers: serviceLocator(),
+      addGroupMember: serviceLocator(),
+      removeGroupMember: serviceLocator(),
     ),
   );
 }
