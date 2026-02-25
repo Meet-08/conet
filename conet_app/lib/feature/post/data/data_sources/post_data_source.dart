@@ -11,6 +11,8 @@ abstract class PostDataSource {
     required List<PlatformFile> media,
   });
 
+  Future<Post> getPost(String postId);
+
   Future<List<Post>> getPosts({int page = 1, int limit = 20});
 
   Future<List<Post>> getUserPosts({

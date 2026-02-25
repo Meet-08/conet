@@ -12,17 +12,94 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class PostDetailPage extends StatelessWidget {
-  final Post post;
+  final Post? post;
+  final String? postId;
 
-  const PostDetailPage({super.key, required this.post});
+  const PostDetailPage({super.key, this.post, this.postId})
+    : assert(
+        post != null || postId != null,
+        'Either post or postId must be provided',
+      );
 
   @override
   Widget build(BuildContext context) {
+    final resolvedId = post?.id ?? postId!;
+
     return BlocProvider(
-      create: (context) =>
-          serviceLocator<PostDetailBloc>()
-            ..add(PostDetailWatchCommentsEvent(postId: post.id)),
-      child: _PostDetailPageContent(post: post),
+      create: (context) {
+        final bloc = serviceLocator<PostDetailBloc>();
+        if (post == null) {
+          bloc.add(PostDetailFetchPostEvent(postId: resolvedId));
+        }
+        return bloc;
+      },
+      child: post != null
+          ? _PostDetailPageContent(post: post!)
+          : const _PostDetailPageFetchWrapper(),
+    );
+  }
+}
+
+class _PostDetailPageFetchWrapper extends StatelessWidget {
+  const _PostDetailPageFetchWrapper();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<PostDetailBloc, PostDetailState>(
+      buildWhen: (previous, current) =>
+          current is PostDetailPostLoaded ||
+          current is PostDetailPostFailure ||
+          current is PostDetailLoading,
+      builder: (context, state) {
+        if (state is PostDetailPostLoaded) {
+          return _PostDetailPageContent(post: state.post);
+        }
+
+        if (state is PostDetailPostFailure) {
+          return Scaffold(
+            backgroundColor: Colors.white,
+            appBar: AppBar(
+              backgroundColor: Colors.white,
+              elevation: 0,
+              leading: IconButton(
+                icon: const FaIcon(
+                  FontAwesomeIcons.arrowLeft,
+                  color: Colors.black,
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FaIcon(
+                    FontAwesomeIcons.circleExclamation,
+                    size: 48,
+                    color: Colors.red.shade300,
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    state.message,
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Go Back'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        return const Scaffold(
+          backgroundColor: Colors.white,
+          body: Center(child: Loader()),
+        );
+      },
     );
   }
 }
@@ -45,6 +122,9 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
   void initState() {
     super.initState();
     _displayPost = widget.post;
+    context.read<PostDetailBloc>().add(
+      PostDetailWatchCommentsEvent(postId: widget.post.id),
+    );
   }
 
   @override

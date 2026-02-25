@@ -39,6 +39,11 @@ class PostRepositoryImpl implements PostRepository {
   }
 
   @override
+  Future<Either<AppFailure, Post>> getPost(String postId) {
+    return _getResult<Post>(() => _postDataSource.getPost(postId));
+  }
+
+  @override
   Future<Either<AppFailure, List<Post>>> getPosts({
     int page = 1,
     int limit = 20,

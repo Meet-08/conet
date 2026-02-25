@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.conet_app",
+      "sha256_cert_fingerprints": [
+        "73:AD:3A:3B:47:8A:90:AC:7A:B8:7B:5E:7B:E8:D3:B6:0B:44:38:4F:DE:D8:68:EB:B5:08:27:C9:7B:B6:AA:16"
+      ]
+    }
+  }
+]

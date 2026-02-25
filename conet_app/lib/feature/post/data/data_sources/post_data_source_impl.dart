@@ -52,6 +52,20 @@ class PostDataSourceImpl implements PostDataSource {
   }
 
   @override
+  Future<Post> getPost(String postId) async {
+    try {
+      logger.i("Getting post $postId");
+      final res = await dioClient.dio.get("/posts/$postId");
+      if (res.statusCode != 200) throw ServerException("Failed to get post");
+      final data = res.data as Map<String, dynamic>;
+      return PostModel.fromJson(data['post']);
+    } catch (e) {
+      logger.e("Failed to get post $postId", error: e);
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
   Future<Unit> commentPost(String postId, String comment) async {
     try {
       logger.i("Commenting on post $postId");

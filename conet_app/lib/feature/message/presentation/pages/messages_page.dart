@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
@@ -19,89 +17,11 @@ class MessagesPage extends StatefulWidget {
   State<MessagesPage> createState() => _MessagesPageState();
 }
 
-class _MessagesPageState extends State<MessagesPage>
-    with WidgetsBindingObserver {
-  static const Duration _minFallbackInterval = Duration(seconds: 15);
-  static const Duration _maxFallbackInterval = Duration(seconds: 60);
-  Timer? _fallbackTimer;
-  Duration _currentFallbackInterval = _minFallbackInterval;
-  bool _isAppInForeground = true;
-
+class _MessagesPageState extends State<MessagesPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     context.read<MessageBloc>().add(MessageConversationsRequested());
-    _scheduleNextFallbackCheck();
-  }
-
-  void _scheduleNextFallbackCheck() {
-    _fallbackTimer?.cancel();
-    _fallbackTimer = Timer(_currentFallbackInterval, _runFallbackCheck);
-  }
-
-  bool _isCurrentRouteVisible() {
-    final route = ModalRoute.of(context);
-    if (route == null) {
-      return true;
-    }
-    return route.isCurrent;
-  }
-
-  void _runFallbackCheck() {
-    if (!mounted) {
-      return;
-    }
-
-    if (!_isAppInForeground || !_isCurrentRouteVisible()) {
-      _scheduleNextFallbackCheck();
-      return;
-    }
-
-    final blocState = context.read<MessageBloc>().state;
-    final lastRealtimeAt = blocState.lastConversationRealtimeAt;
-    final staleThreshold = _currentFallbackInterval * 2;
-    final isRealtimeStale =
-        lastRealtimeAt == null ||
-        DateTime.now().difference(lastRealtimeAt) > staleThreshold;
-
-    if (isRealtimeStale) {
-      context.read<MessageBloc>().add(MessageConversationsRequested());
-      _currentFallbackInterval = Duration(
-        seconds: (_currentFallbackInterval.inSeconds * 2).clamp(
-          _minFallbackInterval.inSeconds,
-          _maxFallbackInterval.inSeconds,
-        ),
-      );
-    }
-
-    _scheduleNextFallbackCheck();
-  }
-
-  void _resetFallbackInterval() {
-    _currentFallbackInterval = _minFallbackInterval;
-    _scheduleNextFallbackCheck();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!mounted) {
-      return;
-    }
-
-    _isAppInForeground = state == AppLifecycleState.resumed;
-
-    if (state == AppLifecycleState.resumed) {
-      context.read<MessageBloc>().add(MessageConversationsRequested());
-      _resetFallbackInterval();
-    }
-  }
-
-  @override
-  void dispose() {
-    _fallbackTimer?.cancel();
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
   }
 
   Future<void> _showCreateConversationDialog() async {
@@ -139,14 +59,6 @@ class _MessagesPageState extends State<MessagesPage>
               MessageCreatedConversationHandled(),
             );
             context.push('/chat-detail', extra: conversation);
-          },
-        ),
-        BlocListener<MessageBloc, MessageState>(
-          listenWhen: (previous, current) =>
-              previous.lastConversationRealtimeAt !=
-              current.lastConversationRealtimeAt,
-          listener: (context, state) {
-            _resetFallbackInterval();
           },
         ),
       ],

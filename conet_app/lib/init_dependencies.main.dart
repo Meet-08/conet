@@ -152,10 +152,15 @@ void _initPost() {
   );
 
   serviceLocator.registerFactory(
+    () => PostGetPost(postRepository: serviceLocator()),
+  );
+
+  serviceLocator.registerFactory(
     () => PostDetailBloc(
       getPostComments: serviceLocator(),
       watchPostComments: serviceLocator(),
       commentPost: serviceLocator(),
+      getPost: serviceLocator(),
     ),
   );
 

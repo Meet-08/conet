@@ -109,12 +109,23 @@ class SupabaseMessageRealTimeDataSourceImpl
   Stream<void> watchConversationUpdates() {
     final controller = StreamController<void>();
 
-    final channel = _supabaseClient
-        .channel('public:messages_global')
+    final channel = _supabaseClient.channel('public:messages_global');
+
+    channel
         .onPostgresChanges(
-          event: PostgresChangeEvent.insert,
+          event: PostgresChangeEvent.all,
           schema: 'public',
           table: 'messages',
+          callback: (payload) {
+            if (!controller.isClosed) {
+              controller.add(null);
+            }
+          },
+        )
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'conversations',
           callback: (payload) {
             if (!controller.isClosed) {
               controller.add(null);

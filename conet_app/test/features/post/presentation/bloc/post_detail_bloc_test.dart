@@ -2,6 +2,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/post/domain/entities/comment.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_comment.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_get_post.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_post_comments.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_watch_post_comments.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_detail_bloc.dart';
@@ -15,11 +16,14 @@ class MockPostWatchPostComments extends Mock implements PostWatchPostComments {}
 
 class MockPostComment extends Mock implements PostComment {}
 
+class MockPostGetPost extends Mock implements PostGetPost {}
+
 void main() {
   late PostDetailBloc postDetailBloc;
   late MockPostGetPostComments mockGetPostComments;
   late MockPostWatchPostComments mockWatchPostComments;
   late MockPostComment mockCommentPost;
+  late MockPostGetPost mockGetPost;
 
   final tComment = Comment(
     id: 'comment-123',
@@ -36,6 +40,7 @@ void main() {
     mockGetPostComments = MockPostGetPostComments();
     mockWatchPostComments = MockPostWatchPostComments();
     mockCommentPost = MockPostComment();
+    mockGetPost = MockPostGetPost();
 
     when(
       () => mockWatchPostComments(any()),
@@ -45,6 +50,7 @@ void main() {
       getPostComments: mockGetPostComments,
       watchPostComments: mockWatchPostComments,
       commentPost: mockCommentPost,
+      getPost: mockGetPost,
     );
   });
 

@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:conet_app/feature/post/domain/entities/comment.dart';
+import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_comment.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_get_post.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_post_comments.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_watch_post_comments.dart';
 import 'package:flutter/foundation.dart';
@@ -14,16 +16,20 @@ class PostDetailBloc extends Bloc<PostDetailEvent, PostDetailState> {
   final PostGetPostComments _getPostComments;
   final PostWatchPostComments _watchPostComments;
   final PostComment _commentPost;
+  final PostGetPost _getPost;
   StreamSubscription<List<Comment>>? _commentsSubscription;
 
   PostDetailBloc({
     required PostGetPostComments getPostComments,
     required PostWatchPostComments watchPostComments,
     required PostComment commentPost,
+    required PostGetPost getPost,
   }) : _getPostComments = getPostComments,
        _watchPostComments = watchPostComments,
        _commentPost = commentPost,
+       _getPost = getPost,
        super(PostDetailInitial()) {
+    on<PostDetailFetchPostEvent>(_onFetchPost);
     on<PostDetailWatchCommentsEvent>(_onWatchComments);
     on<PostDetailCommentsUpdatedEvent>(_onCommentsUpdated);
     on<PostDetailCommentsFailedEvent>(_onCommentsFailed);
@@ -41,12 +47,24 @@ class PostDetailBloc extends Bloc<PostDetailEvent, PostDetailState> {
     Emitter<PostDetailState> emit,
   ) {
     _commentsSubscription?.cancel();
-    emit(PostDetailLoading());
     _commentsSubscription = _watchPostComments(event.postId).listen(
       (comments) => add(PostDetailCommentsUpdatedEvent(comments: comments)),
       onError: (error) =>
           add(PostDetailCommentsFailedEvent(message: error.toString())),
     );
+  }
+
+  Future<void> _onFetchPost(
+    PostDetailFetchPostEvent event,
+    Emitter<PostDetailState> emit,
+  ) async {
+    emit(PostDetailLoading());
+    final result = await _getPost(event.postId);
+    result.fold((failure) => emit(PostDetailPostFailure(failure.message)), (
+      post,
+    ) {
+      emit(PostDetailPostLoaded(post));
+    });
   }
 
   void _onCommentsUpdated(

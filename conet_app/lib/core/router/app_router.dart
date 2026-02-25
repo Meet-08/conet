@@ -40,6 +40,54 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
+  static String? _pendingRedirectLocation;
+
+  static const Set<String> _publicAuthRoutes = {
+    '/welcome',
+    '/login',
+    '/register',
+    '/email-signup',
+    '/add-details',
+  };
+
+  static bool _isAuthRoute(String path) => _publicAuthRoutes.contains(path);
+
+  static String _locationFromUri(Uri uri) {
+    final query = uri.hasQuery ? '?${uri.query}' : '';
+    return '${uri.path}$query';
+  }
+
+  static String? _sanitizeRedirect(String? value) {
+    if (value == null || value.isEmpty) return null;
+    if (!value.startsWith('/')) return null;
+
+    final uri = Uri.tryParse(value);
+    if (uri == null) return null;
+
+    if (uri.path == '/' || _isAuthRoute(uri.path)) return null;
+    return value;
+  }
+
+  static void _rememberRedirect(String location) {
+    final sanitized = _sanitizeRedirect(location);
+    if (sanitized != null) {
+      _pendingRedirectLocation = sanitized;
+    }
+  }
+
+  static String? _resolveRedirectCandidate(Uri currentUri) {
+    final fromQuery = _sanitizeRedirect(currentUri.queryParameters['redirect']);
+    return fromQuery ?? _pendingRedirectLocation;
+  }
+
+  static String _buildAuthPath(String basePath, String? redirectTarget) {
+    if (redirectTarget == null) return basePath;
+    return Uri(
+      path: basePath,
+      queryParameters: {'redirect': redirectTarget},
+    ).toString();
+  }
+
   static final router = GoRouter(
     // Start on splash page during auth check
     initialLocation: '/',
@@ -50,58 +98,60 @@ class AppRouter {
 
     redirect: (context, state) {
       final userState = serviceLocator<AppUserCubit>().state;
-      final location = state.uri.toString();
-
-      // Auth pages that unauthenticated users can access
-      final publicAuthRoutes = [
-        '/welcome',
-        '/login',
-        '/register',
-        '/email-signup',
-        '/add-details',
-      ];
-
-      // Routes that authenticated users with complete profile can access
-      final protectedRoutes = [
-        '/home',
-        '/create-post',
-        '/profile',
-        '/edit-profile',
-        '/event',
-        '/explore',
-        '/messages',
-        '/chat-detail',
-      ];
+      final uri = state.uri;
+      final path = uri.path;
+      final location = _locationFromUri(uri);
 
       // While auth state is unknown, stay on/go to splash
       if (userState is AppUserUnknown) {
-        return location == '/' ? null : '/';
+        if (path == '/') return null;
+        _rememberRedirect(location);
+        return '/';
       }
 
       // User is not authenticated
       if (userState is AppUserUnauthenticated) {
-        // If on splash or protected route, go to welcome
-        if (location == '/' || protectedRoutes.contains(location)) {
-          return '/welcome';
+        if (path == '/') {
+          final redirect = _resolveRedirectCandidate(uri);
+          return _buildAuthPath('/welcome', redirect);
         }
-        // Otherwise stay where they are (login, signup, etc.)
-        return null;
+
+        // Keep query redirect if auth pages are opened manually after deep-link.
+        if (_isAuthRoute(path)) {
+          final redirectInQuery = _sanitizeRedirect(
+            uri.queryParameters['redirect'],
+          );
+          if (redirectInQuery != null) {
+            _pendingRedirectLocation = redirectInQuery;
+          }
+          return null;
+        }
+
+        // Any non-auth page is protected for unauthenticated users.
+        _rememberRedirect(location);
+        return _buildAuthPath('/welcome', _pendingRedirectLocation);
       }
 
       // User is authenticated
       if (userState is AppUserAuthenticated) {
         final hasUsername = userState.user.username.isNotEmpty;
+        final redirectTarget = _resolveRedirectCandidate(uri);
 
         // If user doesn't have username, force to add-details
-        if (!hasUsername && location != '/add-details') {
-          return '/add-details';
+        if (!hasUsername && path != '/add-details') {
+          return _buildAuthPath('/add-details', redirectTarget);
         }
 
-        // If user has complete profile and is on splash/auth routes, go home
+        // If user has complete profile and is on splash/auth routes, go to pending target first.
         if (hasUsername) {
-          if (location == '/' || publicAuthRoutes.contains(location)) {
-            return '/home';
+          if (path == '/' || _isAuthRoute(path)) {
+            final destination = _sanitizeRedirect(redirectTarget);
+            _pendingRedirectLocation = null;
+            return destination ?? '/home';
           }
+
+          // Already on app content; pending redirect no longer needed.
+          _pendingRedirectLocation = null;
         }
       }
 
@@ -151,10 +201,16 @@ class AppRouter {
       ),
 
       GoRoute(
-        path: '/post-detail',
+        path: '/post-detail/:id',
         builder: (context, state) {
-          final post = state.extra as Post;
-          return PostDetailPage(post: post);
+          final post = state.extra as Post?;
+          final postId = state.pathParameters['id'];
+
+          if (post != null) {
+            return PostDetailPage(post: post);
+          }
+
+          return PostDetailPage(postId: postId);
         },
       ),
 

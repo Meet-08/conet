@@ -3,6 +3,11 @@ part of 'post_detail_bloc.dart';
 @immutable
 sealed class PostDetailEvent {}
 
+class PostDetailFetchPostEvent extends PostDetailEvent {
+  final String postId;
+  PostDetailFetchPostEvent({required this.postId});
+}
+
 class PostDetailWatchCommentsEvent extends PostDetailEvent {
   final String postId;
   PostDetailWatchCommentsEvent({required this.postId});

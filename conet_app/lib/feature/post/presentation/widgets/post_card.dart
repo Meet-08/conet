@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:conet_app/core/utils/date_formatter.dart';
+import 'package:conet_app/core/utils/post_share_helper.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:flutter/material.dart';
@@ -67,7 +68,10 @@ class _PostCardState extends State<PostCard> {
       onTap: widget.isDetailView
           ? null
           : () {
-              context.push('/post-detail', extra: widget.post);
+              context.push(
+                '/post-detail/${widget.post.id}',
+                extra: widget.post,
+              );
             },
       child: Container(
         decoration: BoxDecoration(
@@ -275,7 +279,10 @@ class _PostCardState extends State<PostCard> {
                   onTap: widget.isDetailView
                       ? null
                       : () {
-                          context.push('/post-detail', extra: widget.post);
+                          context.push(
+                            '/post-detail/${widget.post.id}',
+                            extra: widget.post,
+                          );
                         },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
@@ -291,7 +298,13 @@ class _PostCardState extends State<PostCard> {
                 ),
                 InkWell(
                   borderRadius: BorderRadius.circular(8),
-                  onTap: () {},
+                  onTap: () async {
+                    await PostShareHelper.sharePost(
+                      postId: widget.post.id,
+                      username: widget.post.user.username,
+                      content: widget.post.content,
+                    );
+                  },
                   child: const Padding(
                     padding: EdgeInsets.all(4),
                     child: FaIcon(

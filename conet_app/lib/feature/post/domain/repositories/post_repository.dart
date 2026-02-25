@@ -11,6 +11,7 @@ abstract interface class PostRepository {
   });
 
   Future<Either<AppFailure, Unit>> deletePost(String postId);
+  Future<Either<AppFailure, Post>> getPost(String postId);
   Future<Either<AppFailure, Unit>> toggleLikePost(String postId);
   Future<Either<AppFailure, Unit>> commentPost(String postId, String comment);
   Future<Either<AppFailure, List<Comment>>> getPostComments(String postId);
