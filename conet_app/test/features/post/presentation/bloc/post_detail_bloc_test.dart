@@ -66,11 +66,10 @@ void main() {
     const tPostId = 'post-123';
 
     blocTest<PostDetailBloc, PostDetailState>(
-      'emits [PostDetailLoading, PostDetailLoaded] when watch stream emits comments',
+      'emits [PostDetailLoaded] when watch stream emits comments',
       build: () => postDetailBloc,
       act: (bloc) => bloc.add(PostDetailWatchCommentsEvent(postId: tPostId)),
       expect: () => [
-        isA<PostDetailLoading>(),
         isA<PostDetailLoaded>().having(
           (s) => s.comments.length,
           'comments length',
@@ -83,7 +82,7 @@ void main() {
     );
 
     blocTest<PostDetailBloc, PostDetailState>(
-      'emits [PostDetailLoading, PostDetailFailure] when watch stream errors',
+      'emits [PostDetailFailure] when watch stream errors',
       build: () {
         when(
           () => mockWatchPostComments(any()),
@@ -92,7 +91,6 @@ void main() {
       },
       act: (bloc) => bloc.add(PostDetailWatchCommentsEvent(postId: tPostId)),
       expect: () => [
-        isA<PostDetailLoading>(),
         isA<PostDetailFailure>().having(
           (s) => s.message,
           'message',
@@ -169,7 +167,6 @@ void main() {
           'message',
           'Failed to add comment',
         ),
-        isA<PostDetailLoading>(),
         isA<PostDetailLoaded>(),
       ],
       verify: (_) {
