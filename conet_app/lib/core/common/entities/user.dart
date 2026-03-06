@@ -42,9 +42,6 @@ class User extends Equatable {
   @JsonKey(name: 'user_role', defaultValue: UserRole.user)
   final UserRole userRole;
 
-  @JsonKey(name: 'is_verified', defaultValue: false)
-  final bool isVerified;
-
   @JsonKey(name: 'unseen_notification_count', defaultValue: 0)
   final int unseenNotificationCount;
 
@@ -59,7 +56,6 @@ class User extends Equatable {
     required this.username,
     this.profilePicUrl,
     required this.userRole,
-    this.isVerified = false,
     this.unseenNotificationCount = 0,
     this.isOnline = false,
   });
@@ -77,7 +73,6 @@ class User extends Equatable {
     username,
     profilePicUrl,
     userRole,
-    isVerified,
     unseenNotificationCount,
     isOnline,
   ];

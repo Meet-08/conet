@@ -91,7 +91,6 @@ class AppUserCubit extends Cubit<AppUserState> {
       username: user.username,
       profilePicUrl: user.profilePicUrl,
       userRole: user.userRole,
-      isVerified: user.isVerified,
       unseenNotificationCount:
           unseenNotificationCount ?? user.unseenNotificationCount,
       isOnline: isOnline ?? user.isOnline,

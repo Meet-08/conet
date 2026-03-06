@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-02-26
+> Last updated: 2026-03-06
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -153,7 +153,20 @@
 
 > Backend routes, domain use cases, and/or data layer are implemented — but the Flutter UI screens have **not been built yet**.
 
-_No features in this state currently._
+### Events
+
+- **Create Event** — Organizer can create a new event as draft or publish it immediately, with optional activity timeline and prizes
+- **Update Event** — Organizer can edit all event fields, activity, and prizes (wholesale replace)
+- **Publish Event** — Organizer promotes a draft event to published status
+- **Cancel Event** — Organizer cancels a published or draft event
+- **Get Event** — Fetch a single event; non-organizers can only see published events
+- **Discover Events** — Paginated list of published events with category, location type, date range, and text search filters
+- **My Organized Events** — Organizer retrieves their own events, optionally filtered by status (draft/published/cancelled)
+- **Add Co-host** — Organizer adds another user as a co-host
+- **Remove Co-host** — Organizer removes a co-host
+- **List Co-hosts** — Retrieve all co-hosts for an event
+
+**Backend Endpoints:** `GET /events`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
 
 ---
 
@@ -183,7 +196,7 @@ _No features in this state currently._
 - **EventCard** — Static card widget
 - **EmptyEventsState** — Generic empty state widget
 
-> ⚠️ No use cases, no repository, no bloc, no backend routes. Zero dynamic data.
+> ⚠️ No use cases, no repository, no bloc. Backend is implemented — UI wiring pending.
 
 ---
 

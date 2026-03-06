@@ -13,7 +13,6 @@ class UserModel extends User {
     required super.username,
     required super.profilePicUrl,
     required super.userRole,
-    required super.isVerified,
     super.unseenNotificationCount = 0,
     super.isOnline = false,
   });
@@ -32,7 +31,6 @@ class UserModel extends User {
     String? username,
     String? profilePicUrl,
     UserRole? userRole,
-    bool? isVerified,
     int? unseenNotificationCount,
     bool? isOnline,
   }) {
@@ -44,7 +42,6 @@ class UserModel extends User {
       username: username ?? this.username,
       profilePicUrl: profilePicUrl ?? this.profilePicUrl,
       userRole: userRole ?? this.userRole,
-      isVerified: isVerified ?? this.isVerified,
       unseenNotificationCount:
           unseenNotificationCount ?? this.unseenNotificationCount,
       isOnline: isOnline ?? this.isOnline,

@@ -25,7 +25,6 @@ void main() {
     username: 'currentuser',
     profilePicUrl: 'https://example.com/avatar.png',
     userRole: UserRole.user,
-    isVerified: true,
   );
 
   group('UserCurrent', () {

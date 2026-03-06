@@ -57,7 +57,6 @@ void main() {
     username: 'bloctest',
     profilePicUrl: '',
     userRole: UserRole.user,
-    isVerified: true,
   );
 
   const tNewUser = User(
@@ -68,7 +67,6 @@ void main() {
     username: '',
     profilePicUrl: '',
     userRole: UserRole.user,
-    isVerified: false,
   );
 
   setUp(() {

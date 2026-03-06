@@ -27,7 +27,6 @@ void main() {
     username: 'bobwilson',
     profilePicUrl: '',
     userRole: UserRole.user,
-    isVerified: true,
   );
 
   group('UserVerifyOtp', () {

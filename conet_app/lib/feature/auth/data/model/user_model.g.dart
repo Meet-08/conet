@@ -16,7 +16,6 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
   userRole:
       $enumDecodeNullable(_$UserRoleEnumMap, json['user_role']) ??
       UserRole.user,
-  isVerified: json['is_verified'] as bool? ?? false,
   unseenNotificationCount:
       (json['unseen_notification_count'] as num?)?.toInt() ?? 0,
   isOnline: json['is_online'] as bool? ?? false,
@@ -30,7 +29,6 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'username': instance.username,
   'profile_pic_url': instance.profilePicUrl,
   'user_role': _$UserRoleEnumMap[instance.userRole]!,
-  'is_verified': instance.isVerified,
   'unseen_notification_count': instance.unseenNotificationCount,
   'is_online': instance.isOnline,
 };

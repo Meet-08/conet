@@ -45,7 +45,6 @@ void main() {
     username: 'johndoe',
     profilePicUrl: '',
     userRole: UserRole.user,
-    isVerified: true,
   );
 
   const tConversationModel = ConversationModel(

@@ -19,25 +19,7 @@ class NotificationModel extends Notification {
     super.actorProfilePicUrl,
   });
 
-  factory NotificationModel.fromJson(Map<String, dynamic> json) {
-    // Extract actor data from the nested join field
-    final actor =
-        json['users_notifications_actor_idTousers'] as Map<String, dynamic>?;
-
-    return NotificationModel(
-      id: json['id'] as String,
-      actorId: json['actor_id'] as String,
-      receiverId: json['receiver_id'] as String,
-      isSeen: json['is_seen'] as bool,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      content: json['content'] as String?,
-      type: json['type'] as String,
-      actorFirstName: actor?['first_name'] as String?,
-      actorLastName: actor?['last_name'] as String?,
-      actorUsername: actor?['username'] as String?,
-      actorProfilePicUrl: actor?['profile_pic_url'] as String?,
-    );
-  }
-
+  factory NotificationModel.fromJson(Map<String, dynamic> json) =>
+      _$NotificationModelFromJson(json);
   Map<String, dynamic> toJson() => _$NotificationModelToJson(this);
 }

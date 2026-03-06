@@ -55,7 +55,6 @@ class PostBookmarkLocalDataSourceImpl implements PostBookmarkLocalDataSource {
       'username': post.user.username,
       'profile_pic_url': post.user.profilePicUrl,
       'user_role': post.user.userRole.name,
-      'is_verified': post.user.isVerified,
     },
     'content': post.content,
     'media_urls': List<String>.from(post.mediaUrls),

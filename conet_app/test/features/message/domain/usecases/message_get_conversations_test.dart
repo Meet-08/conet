@@ -26,7 +26,6 @@ void main() {
     username: 'johndoe',
     profilePicUrl: '',
     userRole: UserRole.user,
-    isVerified: true,
   );
 
   const tConversation = Conversation(id: 'conversation-123', otherUser: tUser);

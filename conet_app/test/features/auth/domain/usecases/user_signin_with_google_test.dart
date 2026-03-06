@@ -25,7 +25,6 @@ void main() {
     username: 'janesmith',
     profilePicUrl: 'https://example.com/pic.jpg',
     userRole: UserRole.user,
-    isVerified: true,
   );
 
   group('UserSigninWithGoogle', () {

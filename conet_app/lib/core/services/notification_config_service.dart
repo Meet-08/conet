@@ -27,7 +27,7 @@ class NotificationConfigService {
     }
 
     await _flutterLocalNotificationsPlugin.initialize(
-      const InitializationSettings(
+      settings: const InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
         iOS: DarwinInitializationSettings(
           requestAlertPermission: false,
@@ -40,10 +40,10 @@ class NotificationConfigService {
 
   void showNotification(RemoteMessage message) {
     _flutterLocalNotificationsPlugin.show(
-      message.hashCode,
-      message.notification?.title ?? 'Conet Notification',
-      message.notification?.body ?? '',
-      NotificationDetails(
+      id: message.hashCode,
+      title: message.notification?.title ?? 'Conet Notification',
+      body: message.notification?.body ?? '',
+      notificationDetails: NotificationDetails(
         android: AndroidNotificationDetails(
           _androidChannel.id,
           _androidChannel.name,

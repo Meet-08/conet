@@ -52,8 +52,7 @@ class MockMessageDeleteGroup extends Mock implements MessageDeleteGroup {}
 class MockMessageGetGroupMembers extends Mock
     implements MessageGetGroupMembers {}
 
-class MockMessageAddGroupMember extends Mock
-    implements MessageAddGroupMember {}
+class MockMessageAddGroupMember extends Mock implements MessageAddGroupMember {}
 
 class MockMessageRemoveGroupMember extends Mock
     implements MessageRemoveGroupMember {}
@@ -83,7 +82,6 @@ void main() {
     username: 'johndoe',
     profilePicUrl: '',
     userRole: UserRole.user,
-    isVerified: true,
   );
 
   const tConversation = Conversation(id: 'conversation-123', otherUser: tUser);

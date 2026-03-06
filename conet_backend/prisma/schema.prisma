@@ -31,6 +31,10 @@ model users {
   conversations_conversations_created_byTousers  conversations[]        @relation("conversations_created_byTousers")
   conversations_conversations_user_oneTousers    conversations[]        @relation("conversations_user_oneTousers")
   conversations_conversations_user_twoTousers    conversations[]        @relation("conversations_user_twoTousers")
+  event_bookmarks                                event_bookmarks[]
+  event_cohosts                                  event_cohosts[]
+  event_registrations                            event_registrations[]
+  events                                         events[]
   messages                                       messages[]
   notifications_notifications_actor_idTousers    notifications[]        @relation("notifications_actor_idTousers")
   notifications_notifications_receiver_idTousers notifications[]        @relation("notifications_receiver_idTousers")
@@ -623,6 +627,142 @@ model conversation_members {
   @@schema("public")
 }
 
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model custom_oauth_providers {
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider_type         String
+  identifier            String    @unique
+  name                  String
+  client_id             String
+  client_secret         String
+  acceptable_client_ids String[]  @default([])
+  scopes                String[]  @default([])
+  pkce_enabled          Boolean   @default(true)
+  attribute_mapping     Json      @default("{}")
+  authorization_params  Json      @default("{}")
+  enabled               Boolean   @default(true)
+  email_optional        Boolean   @default(false)
+  issuer                String?
+  discovery_url         String?
+  skip_nonce_check      Boolean   @default(false)
+  cached_discovery      Json?
+  discovery_cached_at   DateTime? @db.Timestamptz(6)
+  authorization_url     String?
+  token_url             String?
+  userinfo_url          String?
+  jwks_uri              String?
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at])
+  @@index([enabled])
+  @@index([identifier])
+  @@index([provider_type])
+  @@schema("auth")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model event_activity {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  event_id       String   @db.Uuid
+  activity_time  DateTime @db.Timestamp(6)
+  activity_title String   @db.VarChar(255)
+  events         events   @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([event_id], map: "idx_event_activity_event")
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model event_bookmarks {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  event_id   String    @db.Uuid
+  user_id    String    @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  events     events    @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([event_id, user_id])
+  @@index([event_id], map: "idx_event_bookmarks_event")
+  @@index([user_id], map: "idx_event_bookmarks_user")
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model event_cohosts {
+  id         String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  event_id   String    @db.Uuid
+  user_id    String    @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  events     events    @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([event_id, user_id])
+  @@index([event_id], map: "idx_event_cohosts_event")
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model event_prizes {
+  id       String  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  event_id String  @db.Uuid
+  position String  @db.VarChar(255)
+  prize    String? @db.VarChar(255)
+  events   events  @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([event_id], map: "idx_event_prizes_event")
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model event_registrations {
+  id                  String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  event_id            String                    @db.Uuid
+  user_id             String                    @db.Uuid
+  registration_status registration_status_enum? @default(registered)
+  registered_at       DateTime?                 @default(now()) @db.Timestamp(6)
+  events              events                    @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users               users                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([event_id, user_id])
+  @@index([event_id], map: "idx_event_registrations_event")
+  @@index([user_id], map: "idx_event_registrations_user")
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model events {
+  id                  String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organizer_id        String                  @db.Uuid
+  title               String                  @db.VarChar(255)
+  category            String                  @db.VarChar(100)
+  about               String?
+  event_date          DateTime                @db.Date
+  start_time          DateTime                @db.Time(6)
+  end_time            DateTime                @db.Time(6)
+  location_type       location_type_enum
+  location            String?                 @db.VarChar(255)
+  meeting_link        String?                 @db.VarChar(500)
+  ticket_price_type   ticket_price_type_enum? @default(FREE)
+  price               Decimal?                @db.Decimal(10, 2)
+  max_participant     Int?                    @default(-1)
+  event_status        event_status_enum?      @default(draft)
+  eligibility         String?                 @db.VarChar(255)
+  event_image_url     String?                 @db.VarChar(500)
+  created_at          DateTime?               @default(now()) @db.Timestamp(6)
+  event_activity      event_activity[]
+  event_bookmarks     event_bookmarks[]
+  event_cohosts       event_cohosts[]
+  event_prizes        event_prizes[]
+  event_registrations event_registrations[]
+  users               users                   @relation(fields: [organizer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([event_date], map: "idx_events_date")
+  @@index([organizer_id], map: "idx_events_organizer")
+  @@index([event_status], map: "idx_events_status")
+  @@schema("public")
+}
+
 enum aal_level {
   aal1
   aal2
@@ -691,4 +831,34 @@ enum one_time_token_type {
   phone_change_token
 
   @@schema("auth")
+}
+
+enum event_status_enum {
+  draft
+  published
+  cancelled
+
+  @@schema("public")
+}
+
+enum location_type_enum {
+  ONLINE
+  OFFLINE
+
+  @@schema("public")
+}
+
+enum registration_status_enum {
+  registered
+  cancelled
+  attended
+
+  @@schema("public")
+}
+
+enum ticket_price_type_enum {
+  FREE
+  PAID
+
+  @@schema("public")
 }

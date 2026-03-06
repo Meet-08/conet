@@ -29,7 +29,6 @@ void main() {
     username: 'newusername',
     profilePicUrl: '',
     userRole: UserRole.user,
-    isVerified: true,
   );
 
   group('UserAddDetails', () {

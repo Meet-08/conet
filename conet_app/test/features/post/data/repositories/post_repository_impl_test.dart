@@ -41,7 +41,6 @@ void main() {
     username: 'johndoe',
     profilePicUrl: '',
     userRole: UserRole.user,
-    isVerified: true,
   );
 
   final tPostModel = PostModel(

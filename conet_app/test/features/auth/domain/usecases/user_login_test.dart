@@ -27,7 +27,6 @@ void main() {
     username: 'johndoe',
     profilePicUrl: '',
     userRole: UserRole.user,
-    isVerified: true,
   );
 
   group('UserLogin', () {
