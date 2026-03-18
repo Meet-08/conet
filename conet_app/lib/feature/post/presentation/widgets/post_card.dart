@@ -1,8 +1,9 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:conet_app/core/utils/date_formatter.dart';
+import 'package:conet_app/core/utils/media_type_utils.dart';
 import 'package:conet_app/core/utils/post_share_helper.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
+import 'package:conet_app/feature/post/presentation/widgets/media/post_media_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -63,6 +64,23 @@ class _PostCardState extends State<PostCard> {
   Widget build(BuildContext context) {
     final tags = _extractTags(widget.post.content);
     final displayedContent = _removeTags(widget.post.content);
+    final imageUrlsForViewer = widget.post.mediaUrls
+        .where((url) => getMediaType(url) == MediaType.image)
+        .toList();
+    final currentMediaUrl = widget.post.mediaUrls.isNotEmpty
+        ? widget.post.mediaUrls[_currentImageIndex.clamp(
+            0,
+            widget.post.mediaUrls.length - 1,
+          )]
+        : '';
+    final currentMediaType = currentMediaUrl.isEmpty
+        ? MediaType.unknown
+        : getMediaType(currentMediaUrl);
+    final mediaAspectRatio =
+        (currentMediaType == MediaType.image ||
+            currentMediaType == MediaType.video)
+        ? 4 / 3
+        : 16 / 10;
 
     return InkWell(
       onTap: widget.isDetailView
@@ -162,7 +180,7 @@ class _PostCardState extends State<PostCard> {
                   alignment: Alignment.bottomCenter,
                   children: [
                     AspectRatio(
-                      aspectRatio: 16 / 10,
+                      aspectRatio: mediaAspectRatio,
                       child: PageView.builder(
                         controller: _pageController,
                         onPageChanged: (index) {
@@ -172,21 +190,9 @@ class _PostCardState extends State<PostCard> {
                         },
                         itemCount: widget.post.mediaUrls.length,
                         itemBuilder: (context, index) {
-                          return CachedNetworkImage(
-                            imageUrl: widget.post.mediaUrls[index],
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) =>
-                                Container(color: Colors.grey.shade200),
-                            errorWidget: (context, url, error) => Container(
-                              color: Colors.grey.shade200,
-                              child: const Center(
-                                child: FaIcon(
-                                  FontAwesomeIcons.triangleExclamation,
-                                  size: 48,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            ),
+                          return PostMediaItem(
+                            mediaUrl: widget.post.mediaUrls[index],
+                            imageUrlsForViewer: imageUrlsForViewer,
                           );
                         },
                       ),

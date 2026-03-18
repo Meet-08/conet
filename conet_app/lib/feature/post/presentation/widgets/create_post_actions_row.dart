@@ -12,7 +12,7 @@ class CreatePostActionsRow extends StatelessWidget {
       children: [
         IconButton(
           onPressed: onMediaTap,
-          icon: const FaIcon(FontAwesomeIcons.image),
+          icon: const FaIcon(FontAwesomeIcons.paperclip),
         ),
         const SizedBox(width: 16),
         const FaIcon(FontAwesomeIcons.bold),

@@ -1,17 +1,15 @@
-import 'dart:io';
-
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/utils/pick_files.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/create_post_actions_row.dart';
 import 'package:conet_app/feature/post/presentation/widgets/create_post_add_tags_section.dart';
 import 'package:conet_app/feature/post/presentation/widgets/create_post_app_bar.dart';
+import 'package:conet_app/feature/post/presentation/widgets/create_post_media_preview_list.dart';
 import 'package:conet_app/feature/post/presentation/widgets/create_post_popular_tags.dart';
 import 'package:conet_app/feature/post/presentation/widgets/create_post_text_field.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class CreatePostPage extends StatefulWidget {
@@ -22,6 +20,7 @@ class CreatePostPage extends StatefulWidget {
 }
 
 class _CreatePostPageState extends State<CreatePostPage> {
+  static const int _maxMediaCount = 10;
   final TextEditingController _contentController = TextEditingController();
   final TextEditingController _tagController = TextEditingController();
   List<PlatformFile> _selectedFiles = [];
@@ -41,13 +40,6 @@ class _CreatePostPageState extends State<CreatePostPage> {
     }
 
     final content = _contentController.text;
-    // You might want to append tags to content or handle them separately in backend
-    // For now, let's append them to content if your API expects that, or just keep them as is.
-    // Based on previous code, it seems only content and media are sent.
-    // If tags are part of content (hashtags), we can append them.
-    // If there is a separate field for tags, we need to check PostCreatePostEvent.
-
-    // Assuming tags are part of content for now as implied by "hashtags" usage.
     final fullContent = _selectedTags.isEmpty
         ? content
         : '$content\n\n${_selectedTags.map((t) => '#$t').join(' ')}';
@@ -58,26 +50,67 @@ class _CreatePostPageState extends State<CreatePostPage> {
   }
 
   Future<void> _pickFiles() async {
-    final files = await pickFiles();
-    if (files != null) {
-      setState(() {
-        _selectedFiles = files;
-      });
+    final remainingSlots = _maxMediaCount - _selectedFiles.length;
+    if (remainingSlots <= 0) {
+      AppToast.showWarning(
+        context,
+        'You can attach up to $_maxMediaCount files per post',
+      );
+      return;
     }
-  }
 
-  void _addTag(String tag) {
-    if (!_selectedTags.contains(tag)) {
-      setState(() {
-        _selectedTags.add(tag);
-      });
-    }
-  }
+    final files = await pickFiles(limit: remainingSlots);
+    if (files == null || files.isEmpty) return;
 
-  void _removeTag(String tag) {
     setState(() {
-      _selectedTags.remove(tag);
+      _selectedFiles = [..._selectedFiles, ...files];
     });
+  }
+
+  void _removeFile(int index) {
+    setState(() {
+      _selectedFiles.removeAt(index);
+    });
+  }
+
+  void _clearAllFiles() {
+    if (_selectedFiles.isEmpty) return;
+    setState(() {
+      _selectedFiles = [];
+    });
+  }
+
+  Widget _selectedMediaHeader() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Attached media (${_selectedFiles.length}/$_maxMediaCount)',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Colors.grey.shade800,
+          ),
+        ),
+        TextButton(onPressed: _clearAllFiles, child: const Text('Clear all')),
+      ],
+    );
+  }
+
+  Widget _selectedMediaSection() {
+    if (_selectedFiles.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _selectedMediaHeader(),
+        const SizedBox(height: 8),
+        CreatePostMediaPreviewList(
+          files: _selectedFiles,
+          onRemove: _removeFile,
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
   }
 
   @override
@@ -103,62 +136,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
               children: [
                 CreatePostTextField(controller: _contentController),
                 const SizedBox(height: 12),
-                if (_selectedFiles.isNotEmpty) ...[
-                  SizedBox(
-                    height: 100,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: _selectedFiles.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 8),
-                      itemBuilder: (context, index) {
-                        final file = _selectedFiles[index];
-                        return Stack(
-                          children: [
-                            Container(
-                              height: 100,
-                              width: 100,
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade200,
-                                borderRadius: BorderRadius.circular(8),
-                                image: DecorationImage(
-                                  image: file.bytes != null
-                                      ? MemoryImage(file.bytes!)
-                                      : FileImage(File(file.path!))
-                                            as ImageProvider,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _selectedFiles.removeAt(index);
-                                  });
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: const BoxDecoration(
-                                    color: Colors.black54,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const FaIcon(
-                                    FontAwesomeIcons.xmark,
-                                    size: 16,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
+                _selectedMediaSection(),
                 CreatePostActionsRow(onMediaTap: _pickFiles),
                 const SizedBox(height: 20),
                 CreatePostAddTagsSection(
@@ -175,5 +153,19 @@ class _CreatePostPageState extends State<CreatePostPage> {
         );
       },
     );
+  }
+
+  void _addTag(String tag) {
+    if (!_selectedTags.contains(tag)) {
+      setState(() {
+        _selectedTags.add(tag);
+      });
+    }
+  }
+
+  void _removeTag(String tag) {
+    setState(() {
+      _selectedTags.remove(tag);
+    });
   }
 }
