@@ -1,0 +1,21 @@
+import 'package:conet_app/core/error/app_failure.dart';
+import 'package:conet_app/feature/event/domain/entities/event.dart';
+import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
+import 'package:conet_app/feature/event/domain/entities/event_page.dart';
+import 'package:fpdart/fpdart.dart';
+
+abstract interface class EventRepository {
+  Future<Either<AppFailure, Event>> publishEvent(EventCreatePayload payload);
+
+  Future<Either<AppFailure, Event>> saveEventDraft(EventCreatePayload payload);
+
+  Future<Either<AppFailure, EventPage>> getPublishedEvents({
+    int limit = 20,
+    String? cursor,
+    String? category,
+    String? locationType,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    String? search,
+  });
+}

@@ -18,7 +18,6 @@ const router = express.Router();
 // All event routes require a valid Supabase token
 router.use(validateSupabaseToken);
 
-// Public discovery (authenticated)
 router.get("/", listPublishedEvents);
 router.get("/organized", listMyOrganizedEvents);
 router.get("/:id", getEvent);

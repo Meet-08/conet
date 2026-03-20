@@ -20,9 +20,16 @@ class Notification extends Equatable {
   final String type;
 
   // Actor profile fields (joined from backend)
+  @JsonKey(name: 'actor_first_name')
   final String? actorFirstName;
+
+  @JsonKey(name: 'actor_last_name')
   final String? actorLastName;
+
+  @JsonKey(name: 'actor_username')
   final String? actorUsername;
+
+  @JsonKey(name: 'actor_profile_pic_url')
   final String? actorProfilePicUrl;
 
   const Notification({

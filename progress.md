@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-03-06
+> Last updated: 2026-03-18
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -47,6 +47,8 @@
 - **Delete Post** — Delete own posts
 - **Bookmark (Local)** — Save/unsave posts locally (no backend persistence)
 - **Liked Posts** — View all posts liked by the current user
+- **Typed Media Rendering** — Post card renders image (tap-to-view), muted autoplay video (tap to unmute), audio banner controls, and per-media download option
+- **Create Post Mixed Media Picker** — Post creation accepts mixed media attachments (image/video/audio/doc), shows typed previews, and supports per-item removal
 
 **Use Cases:** `PostCreate`, `PostDelete`, `PostGetPosts`, `PostGetUserPosts`, `PostGetPost`, `PostGetPostComments`, `PostWatchPostComments`, `PostToggleLike`, `PostComment`, `PostBookmark`, `PostRemoveBookmark`, `PostGetBookmarks`, `PostGetLikedPosts`, `PostIsBookmarked`
 **Backend Endpoints:** `GET/POST /posts`, `GET/PUT/DELETE /posts/:id`, `GET /posts/liked`, `GET /posts/user/:userId`, `GET /posts/:id/comments`, `PUT /posts/like/:id`, `POST /posts/comment/:id`, `PUT/DELETE /posts/:postId/comment/:commentId`
@@ -166,6 +168,7 @@
 - **Remove Co-host** — Organizer removes a co-host
 - **List Co-hosts** — Retrieve all co-hosts for an event
 
+**Use Cases:** `EventPublish`, `EventSaveDraft`, `EventGetPublishedEvents`
 **Backend Endpoints:** `GET /events`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
 
 ---
@@ -196,7 +199,7 @@
 - **EventCard** — Static card widget
 - **EmptyEventsState** — Generic empty state widget
 
-> ⚠️ No use cases, no repository, no bloc. Backend is implemented — UI wiring pending.
+> ⚠️ Event domain/data layer and backend are implemented, but these presentation screens are still placeholder-only and not wired to live event states yet.
 
 ---
 

@@ -337,6 +337,38 @@ void _initDevice() {
     );
 }
 
+void _initEvent() {
+  serviceLocator.registerFactory<EventDataSource>(
+    () => EventDataSourceImpl(
+      dioClient: serviceLocator<DioClient>(),
+      fileUploadDataSource: serviceLocator<FileUploadDataSource>(),
+    ),
+  );
+
+  serviceLocator.registerLazySingleton<EventRepository>(
+    () => EventRepositoryImpl(eventDataSource: serviceLocator()),
+  );
+
+  serviceLocator.registerFactory(
+    () => EventPublish(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
+    () => EventSaveDraft(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
+    () =>
+        EventGetPublishedEvents(repository: serviceLocator<EventRepository>()),
+  );
+
+  serviceLocator.registerFactory(
+    () => EventBloc(
+      getPublishedEvents: serviceLocator(),
+      publishEvent: serviceLocator(),
+      saveDraft: serviceLocator(),
+    ),
+  );
+}
+
 void _initNotification() {
   // Data Sources
   serviceLocator.registerFactory<NotificationDataSource>(

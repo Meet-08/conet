@@ -1,131 +1,55 @@
 import prisma from "../config/prisma.js";
+import {
+  assertEndAfterStart,
+  assertEventExists,
+  assertOrganizer,
+  eventInclude,
+  eventSummarySelect,
+  mapEvent,
+  mapEventSummary,
+  parseTimeString,
+  validateEventPayload,
+} from "./utils.js";
 
-// ─── Shared mappers ──────────────────────────────────────────────────────────
+const buildPublishedEventsCursor = (eventDate, id) =>
+  Buffer.from(
+    JSON.stringify({ eventDate: eventDate.toISOString(), id }),
+  ).toString("base64");
 
-const mapCohost = (c) => ({
-  id: c.id,
-  user_id: c.user_id,
-  username: c.users?.username ?? null,
-  profile_pic_url: c.users?.profile_pic_url ?? null,
-  first_name: c.users?.first_name ?? null,
-  last_name: c.users?.last_name ?? null,
-});
-
-const mapEvent = (event, viewerId = null) => ({
-  id: event.id,
-  organizer_id: event.organizer_id,
-  organizer: event.users ?? null,
-  title: event.title,
-  category: event.category,
-  about: event.about ?? null,
-  event_date: event.event_date,
-  start_time: event.start_time,
-  end_time: event.end_time,
-  location_type: event.location_type,
-  location: event.location ?? null,
-  meeting_link: event.meeting_link ?? null,
-  ticket_price_type: event.ticket_price_type,
-  price: event.price ? Number(event.price) : null,
-  max_participant: event.max_participant,
-  event_status: event.event_status,
-  eligibility: event.eligibility ?? null,
-  event_image_url: event.event_image_url ?? null,
-  created_at: event.created_at,
-  cohosts: event.event_cohosts?.map(mapCohost) ?? [],
-  activity: event.event_activity ?? [],
-  prizes: event.event_prizes ?? [],
-  registration_count: event._count?.event_registrations ?? 0,
-  is_registered:
-    viewerId ?
-      (event.event_registrations?.some((r) => r.user_id === viewerId) ?? false)
-    : false,
-  is_bookmarked:
-    viewerId ?
-      (event.event_bookmarks?.some((b) => b.user_id === viewerId) ?? false)
-    : false,
-});
-
-const eventInclude = (viewerId = null) => ({
-  users: {
-    select: {
-      id: true,
-      username: true,
-      first_name: true,
-      last_name: true,
-      profile_pic_url: true,
-    },
-  },
-  event_cohosts: {
-    include: {
-      users: {
-        select: {
-          id: true,
-          username: true,
-          first_name: true,
-          last_name: true,
-          profile_pic_url: true,
-        },
-      },
-    },
-  },
-  event_activity: { orderBy: { activity_time: "asc" } },
-  event_prizes: true,
-  _count: { select: { event_registrations: true } },
-  ...(viewerId ?
-    {
-      event_registrations: {
-        where: { user_id: viewerId, registration_status: "registered" },
-        select: { user_id: true },
-      },
-      event_bookmarks: {
-        where: { user_id: viewerId },
-        select: { user_id: true },
-      },
+const parsePublishedEventsCursor = (cursor) => {
+  try {
+    const decoded = JSON.parse(Buffer.from(cursor, "base64").toString("utf8"));
+    if (!decoded?.eventDate || !decoded?.id) {
+      return null;
     }
-  : {}),
-});
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const assertEventExists = async (eventId) => {
-  const event = await prisma.events.findUnique({ where: { id: eventId } });
-  if (!event) {
-    const err = new Error("Event not found");
-    err.statusCode = 404;
-    throw err;
-  }
-  return event;
-};
-
-const assertOrganizer = (event, userId) => {
-  if (event.organizer_id !== userId) {
-    const err = new Error("Only the organizer can perform this action");
-    err.statusCode = 403;
-    throw err;
+    const eventDate = new Date(decoded.eventDate);
+    if (Number.isNaN(eventDate.getTime())) {
+      return null;
+    }
+    return { eventDate, id: decoded.id };
+  } catch {
+    return null;
   }
 };
 
-const validateEventPayload = ({
-  location_type,
-  location,
-  meeting_link,
-  ticket_price_type,
-  price,
-}) => {
-  if (location_type === "OFFLINE" && !location) {
-    const err = new Error("location is required for offline events");
-    err.statusCode = 400;
-    throw err;
-  }
-  if (location_type === "ONLINE" && !meeting_link) {
-    const err = new Error("meeting_link is required for online events");
-    err.statusCode = 400;
-    throw err;
-  }
-  if (ticket_price_type === "PAID" && (price == null || Number(price) <= 0)) {
-    const err = new Error("price must be a positive number for paid events");
-    err.statusCode = 400;
-    throw err;
+const buildOrganizedEventsCursor = (createdAt, id) =>
+  Buffer.from(
+    JSON.stringify({ createdAt: createdAt.toISOString(), id }),
+  ).toString("base64");
+
+const parseOrganizedEventsCursor = (cursor) => {
+  try {
+    const decoded = JSON.parse(Buffer.from(cursor, "base64").toString("utf8"));
+    if (!decoded?.createdAt || !decoded?.id) {
+      return null;
+    }
+    const createdAt = new Date(decoded.createdAt);
+    if (Number.isNaN(createdAt.getTime())) {
+      return null;
+    }
+    return { createdAt, id: decoded.id };
+  } catch {
+    return null;
   }
 };
 
@@ -147,9 +71,15 @@ export const createEventService = async (organizerId, body) => {
     max_participant = -1,
     eligibility,
     event_image_url,
+    venue,
+    registration_deadline,
+    participation_type,
+    min_team_size,
+    max_team_size,
     publish = false,
     activity = [],
     prizes = [],
+    faqs = [],
   } = body;
 
   if (
@@ -175,6 +105,10 @@ export const createEventService = async (organizerId, body) => {
     price,
   });
 
+  const parsedStartTime = parseTimeString(start_time, "start_time");
+  const parsedEndTime = parseTimeString(end_time, "end_time");
+  assertEndAfterStart(parsedStartTime, parsedEndTime);
+
   const event = await prisma.events.create({
     data: {
       organizer_id: organizerId,
@@ -182,8 +116,8 @@ export const createEventService = async (organizerId, body) => {
       category,
       about,
       event_date: new Date(event_date),
-      start_time: new Date(`1970-01-01T${start_time}Z`),
-      end_time: new Date(`1970-01-01T${end_time}Z`),
+      start_time: parsedStartTime,
+      end_time: parsedEndTime,
       location_type,
       location,
       meeting_link,
@@ -193,6 +127,12 @@ export const createEventService = async (organizerId, body) => {
       event_status: publish ? "published" : "draft",
       eligibility,
       event_image_url,
+      venue,
+      registration_deadline:
+        registration_deadline ? new Date(registration_deadline) : null,
+      participation_type,
+      min_team_size,
+      max_team_size,
       event_activity:
         activity.length ?
           {
@@ -205,6 +145,10 @@ export const createEventService = async (organizerId, body) => {
       event_prizes:
         prizes.length ?
           { create: prizes.map(({ position, prize }) => ({ position, prize })) }
+        : undefined,
+      event_faqs:
+        faqs.length ?
+          { create: faqs.map(({ question, answer }) => ({ question, answer })) }
         : undefined,
     },
     include: eventInclude(organizerId),
@@ -240,8 +184,14 @@ export const updateEventService = async (eventId, organizerId, body) => {
     max_participant,
     eligibility,
     event_image_url,
+    venue,
+    registration_deadline,
+    participation_type,
+    min_team_size,
+    max_team_size,
     activity,
     prizes,
+    faqs,
   } = body;
 
   if (
@@ -260,17 +210,26 @@ export const updateEventService = async (eventId, organizerId, body) => {
     });
   }
 
+  let parsedStartTime, parsedEndTime;
+  if (start_time !== undefined) {
+    parsedStartTime = parseTimeString(start_time, "start_time");
+  }
+  if (end_time !== undefined) {
+    parsedEndTime = parseTimeString(end_time, "end_time");
+  }
+  if (start_time !== undefined || end_time !== undefined) {
+    const effectiveStart = parsedStartTime ?? existing.start_time;
+    const effectiveEnd = parsedEndTime ?? existing.end_time;
+    assertEndAfterStart(effectiveStart, effectiveEnd);
+  }
+
   const updateData = {
     ...(title !== undefined && { title }),
     ...(category !== undefined && { category }),
     ...(about !== undefined && { about }),
     ...(event_date !== undefined && { event_date: new Date(event_date) }),
-    ...(start_time !== undefined && {
-      start_time: new Date(`1970-01-01T${start_time}Z`),
-    }),
-    ...(end_time !== undefined && {
-      end_time: new Date(`1970-01-01T${end_time}Z`),
-    }),
+    ...(start_time !== undefined && { start_time: parsedStartTime }),
+    ...(end_time !== undefined && { end_time: parsedEndTime }),
     ...(location_type !== undefined && { location_type }),
     ...(location !== undefined && { location }),
     ...(meeting_link !== undefined && { meeting_link }),
@@ -279,9 +238,16 @@ export const updateEventService = async (eventId, organizerId, body) => {
     ...(max_participant !== undefined && { max_participant }),
     ...(eligibility !== undefined && { eligibility }),
     ...(event_image_url !== undefined && { event_image_url }),
+    ...(venue !== undefined && { venue }),
+    ...(registration_deadline !== undefined && {
+      registration_deadline:
+        registration_deadline ? new Date(registration_deadline) : null,
+    }),
+    ...(participation_type !== undefined && { participation_type }),
+    ...(min_team_size !== undefined && { min_team_size }),
+    ...(max_team_size !== undefined && { max_team_size }),
   };
 
-  // All mutations run inside a single transaction — no partial state on failure
   const updated = await prisma.$transaction(async (tx) => {
     if (activity !== undefined) {
       await tx.event_activity.deleteMany({ where: { event_id: eventId } });
@@ -304,6 +270,19 @@ export const updateEventService = async (eventId, organizerId, body) => {
             event_id: eventId,
             position,
             prize,
+          })),
+        });
+      }
+    }
+
+    if (faqs !== undefined) {
+      await tx.event_faqs.deleteMany({ where: { event_id: eventId } });
+      if (faqs.length) {
+        await tx.event_faqs.createMany({
+          data: faqs.map(({ question, answer }) => ({
+            event_id: eventId,
+            question,
+            answer,
           })),
         });
       }
@@ -392,11 +371,27 @@ export const getEventService = async (eventId, viewerId) => {
 
 // ─── List published events (cursor-paginated, filterable) ───────────────────
 
-export const listPublishedEventsService = async (
-  { category, location_type, date_from, date_to, search, cursor, limit = 20 },
-  viewerId,
-) => {
-  const safeLimit = Math.min(100, Math.max(1, Math.floor(Number(limit) || 20)));
+export const listPublishedEventsService = async ({
+  category,
+  location_type,
+  date_from,
+  date_to,
+  search,
+  cursor,
+  page_size = 20,
+}) => {
+  const safePageSize = Math.min(
+    100,
+    Math.max(1, Math.floor(Number(page_size) || 20)),
+  );
+
+  const parsedCursor = cursor ? parsePublishedEventsCursor(cursor) : null;
+  if (cursor && !parsedCursor) {
+    const err = new Error("Invalid cursor format");
+    err.statusCode = 400;
+    throw err;
+  }
+
   const where = {
     event_status: "published",
     ...(category && { category }),
@@ -416,25 +411,39 @@ export const listPublishedEventsService = async (
         { category: { contains: search, mode: "insensitive" } },
       ],
     }),
+    ...(parsedCursor && {
+      OR: [
+        { event_date: { gt: parsedCursor.eventDate } },
+        {
+          event_date: parsedCursor.eventDate,
+          id: { gt: parsedCursor.id },
+        },
+      ],
+    }),
   };
 
   const rows = await prisma.events.findMany({
     where,
-    take: safeLimit + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    take: safePageSize + 1,
     orderBy: [{ event_date: "asc" }, { id: "asc" }],
-    include: eventInclude(viewerId),
+    select: eventSummarySelect,
   });
 
-  const hasMore = rows.length > safeLimit;
+  const hasMore = rows.length > safePageSize;
   if (hasMore) rows.pop();
-  const nextCursor = hasMore ? rows[rows.length - 1].id : null;
+  const nextCursor =
+    hasMore ?
+      buildPublishedEventsCursor(
+        rows[rows.length - 1].event_date,
+        rows[rows.length - 1].id,
+      )
+    : null;
 
   return {
-    events: rows.map((e) => mapEvent(e, viewerId)),
+    events: rows.map(mapEventSummary),
     nextCursor,
     hasMore,
-    limit: safeLimit,
+    pageSize: safePageSize,
   };
 };
 
@@ -442,32 +451,53 @@ export const listPublishedEventsService = async (
 
 export const listMyOrganizedEventsService = async (
   organizerId,
-  { cursor, limit = 20, status },
+  { cursor, page_size = 20, status },
 ) => {
-  const safeLimit = Math.min(100, Math.max(1, Math.floor(Number(limit) || 20)));
+  const safePageSize = Math.min(
+    100,
+    Math.max(1, Math.floor(Number(page_size) || 20)),
+  );
+
+  const parsedCursor = cursor ? parseOrganizedEventsCursor(cursor) : null;
+  if (cursor && !parsedCursor) {
+    const err = new Error("Invalid cursor format");
+    err.statusCode = 400;
+    throw err;
+  }
 
   const where = {
     organizer_id: organizerId,
     ...(status && { event_status: status }),
+    ...(parsedCursor && {
+      OR: [
+        { created_at: { lt: parsedCursor.createdAt } },
+        { created_at: parsedCursor.createdAt, id: { lt: parsedCursor.id } },
+      ],
+    }),
   };
 
   const rows = await prisma.events.findMany({
     where,
-    take: safeLimit + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    take: safePageSize + 1,
     orderBy: [{ created_at: "desc" }, { id: "desc" }],
-    include: eventInclude(organizerId),
+    select: eventSummarySelect,
   });
 
-  const hasMore = rows.length > safeLimit;
+  const hasMore = rows.length > safePageSize;
   if (hasMore) rows.pop();
-  const nextCursor = hasMore ? rows[rows.length - 1].id : null;
+  const nextCursor =
+    hasMore ?
+      buildOrganizedEventsCursor(
+        rows[rows.length - 1].created_at,
+        rows[rows.length - 1].id,
+      )
+    : null;
 
   return {
-    events: rows.map((e) => mapEvent(e, organizerId)),
+    events: rows.map(mapEventSummary),
     nextCursor,
     hasMore,
-    limit: safeLimit,
+    pageSize: safePageSize,
   };
 };
 

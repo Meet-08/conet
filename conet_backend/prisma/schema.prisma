@@ -34,6 +34,8 @@ model users {
   event_bookmarks                                event_bookmarks[]
   event_cohosts                                  event_cohosts[]
   event_registrations                            event_registrations[]
+  event_team_members                             event_team_members[]
+  event_teams                                    event_teams[]
   events                                         events[]
   messages                                       messages[]
   notifications_notifications_actor_idTousers    notifications[]        @relation("notifications_actor_idTousers")
@@ -721,7 +723,9 @@ model event_registrations {
   user_id             String                    @db.Uuid
   registration_status registration_status_enum? @default(registered)
   registered_at       DateTime?                 @default(now()) @db.Timestamp(6)
+  team_id             String?                   @db.Uuid
   events              events                    @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  event_teams         event_teams?              @relation(fields: [team_id], references: [id], onUpdate: NoAction)
   users               users                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([event_id, user_id])
@@ -732,35 +736,43 @@ model event_registrations {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model events {
-  id                  String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  organizer_id        String                  @db.Uuid
-  title               String                  @db.VarChar(255)
-  category            String                  @db.VarChar(100)
-  about               String?
-  event_date          DateTime                @db.Date
-  start_time          DateTime                @db.Time(6)
-  end_time            DateTime                @db.Time(6)
-  location_type       location_type_enum
-  location            String?                 @db.VarChar(255)
-  meeting_link        String?                 @db.VarChar(500)
-  ticket_price_type   ticket_price_type_enum? @default(FREE)
-  price               Decimal?                @db.Decimal(10, 2)
-  max_participant     Int?                    @default(-1)
-  event_status        event_status_enum?      @default(draft)
-  eligibility         String?                 @db.VarChar(255)
-  event_image_url     String?                 @db.VarChar(500)
-  created_at          DateTime?               @default(now()) @db.Timestamp(6)
-  event_activity      event_activity[]
-  event_bookmarks     event_bookmarks[]
-  event_cohosts       event_cohosts[]
-  event_faqs          event_faqs[]
-  event_prizes        event_prizes[]
-  event_registrations event_registrations[]
-  users               users                   @relation(fields: [organizer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                    String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  organizer_id          String                  @db.Uuid
+  title                 String                  @db.VarChar(255)
+  category              String                  @db.VarChar(100)
+  about                 String?
+  event_date            DateTime                @db.Date
+  start_time            DateTime                @db.Time(6)
+  end_time              DateTime                @db.Time(6)
+  location_type         location_type_enum
+  location              String?                 @db.VarChar(255)
+  meeting_link          String?                 @db.VarChar(500)
+  ticket_price_type     ticket_price_type_enum? @default(FREE)
+  price                 Decimal?                @db.Decimal(10, 2)
+  max_participant       Int?                    @default(-1)
+  event_status          event_status_enum?      @default(draft)
+  eligibility           String?                 @db.VarChar(255)
+  event_image_url       String?                 @db.VarChar(500)
+  created_at            DateTime?               @default(now()) @db.Timestamp(6)
+  venue                 String?                 @db.VarChar
+  registration_deadline DateTime?               @db.Timestamp(6)
+  participation_type    participation_type_enum @default(individual)
+  min_team_size         Int?                    @default(1)
+  max_team_size         Int?                    @default(1)
+  event_activity        event_activity[]
+  event_bookmarks       event_bookmarks[]
+  event_cohosts         event_cohosts[]
+  event_faqs            event_faqs[]
+  event_prizes          event_prizes[]
+  event_registrations   event_registrations[]
+  event_team_members    event_team_members[]
+  event_teams           event_teams[]
+  users                 users                   @relation(fields: [organizer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([event_date], map: "idx_events_date")
   @@index([organizer_id], map: "idx_events_organizer")
   @@index([event_status], map: "idx_events_status")
+  @@index([participation_type], map: "idx_events_participation_type")
   @@schema("public")
 }
 
@@ -774,6 +786,47 @@ model event_faqs {
   events     events    @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([event_id], map: "idx_event_faqs_event")
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model event_team_members {
+  id          String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  team_id     String      @db.Uuid
+  event_id    String      @db.Uuid
+  user_id     String      @db.Uuid
+  role        String      @default("member")
+  joined_at   DateTime?   @default(now()) @db.Timestamp(6)
+  events      events      @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  event_teams event_teams @relation(fields: [team_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users       users       @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([event_id, user_id], map: "event_team_members_unique_user_per_event")
+  @@index([event_id], map: "idx_event_team_members_event_id")
+  @@index([team_id], map: "idx_event_team_members_team_id")
+  @@index([user_id], map: "idx_event_team_members_user_id")
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model event_teams {
+  id                  String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  event_id            String                @db.Uuid
+  team_name           String                @db.VarChar
+  leader_id           String                @db.Uuid
+  metadata            Json                  @default("{}")
+  created_at          DateTime?             @default(now()) @db.Timestamp(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamp(6)
+  event_registrations event_registrations[]
+  event_team_members  event_team_members[]
+  events              events                @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  users               users                 @relation(fields: [leader_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([event_id, team_name], map: "event_teams_unique_name_per_event")
+  @@index([event_id], map: "idx_event_teams_event_id")
+  @@index([leader_id], map: "idx_event_teams_leader_id")
+  @@index([metadata], map: "idx_event_teams_metadata", type: Gin)
   @@schema("public")
 }
 
@@ -873,6 +926,13 @@ enum registration_status_enum {
 enum ticket_price_type_enum {
   FREE
   PAID
+
+  @@schema("public")
+}
+
+enum participation_type_enum {
+  individual
+  team
 
   @@schema("public")
 }

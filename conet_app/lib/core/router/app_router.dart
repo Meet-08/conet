@@ -7,7 +7,8 @@ import 'package:conet_app/feature/auth/presentation/pages/add_details_page.dart'
 import 'package:conet_app/feature/auth/presentation/pages/email_signup_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/login_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/welcome_page.dart';
-import 'package:conet_app/feature/event/pages/event_page.dart';
+import 'package:conet_app/feature/event/presentation/pages/create_event_page.dart';
+import 'package:conet_app/feature/event/presentation/pages/event_page.dart';
 import 'package:conet_app/feature/explore/pages/explore_page.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/presentation/pages/chat_detail_page.dart';
@@ -175,6 +176,11 @@ class AppRouter {
       GoRoute(
         path: '/create-post',
         builder: (context, state) => const CreatePostPage(),
+      ),
+
+      GoRoute(
+        path: '/create-event',
+        builder: (context, state) => const CreateEventPage(),
       ),
 
       GoRoute(

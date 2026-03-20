@@ -60,25 +60,23 @@ export const getEvent = asyncHandler(async (req, res) => {
 export const listPublishedEvents = asyncHandler(async (req, res) => {
   const { category, location_type, date_from, date_to, search, cursor } =
     req.query;
-  const rawLimit = parseInt(req.query.limit);
-  if (req.query.limit !== undefined && (isNaN(rawLimit) || rawLimit < 1)) {
+  const pageSizeInput = req.query.page_size;
+  const rawPageSize = parseInt(pageSizeInput);
+  if (pageSizeInput !== undefined && (isNaN(rawPageSize) || rawPageSize < 1)) {
     res.status(400);
-    throw new Error("limit must be a positive integer");
+    throw new Error("page_size must be a positive integer");
   }
-  const limit = Math.min(rawLimit || 20, 100);
+  const page_size = Math.min(rawPageSize || 20, 100);
 
-  const result = await listPublishedEventsService(
-    {
-      category,
-      location_type,
-      date_from,
-      date_to,
-      search,
-      cursor: cursor || null,
-      limit,
-    },
-    req.user.id,
-  );
+  const result = await listPublishedEventsService({
+    category,
+    location_type,
+    date_from,
+    date_to,
+    search,
+    cursor: cursor || null,
+    page_size,
+  });
 
   res.status(200).json({ success: true, ...result });
 });
@@ -87,16 +85,17 @@ export const listPublishedEvents = asyncHandler(async (req, res) => {
 
 export const listMyOrganizedEvents = asyncHandler(async (req, res) => {
   const { cursor, status } = req.query;
-  const rawLimit = parseInt(req.query.limit);
-  if (req.query.limit !== undefined && (isNaN(rawLimit) || rawLimit < 1)) {
+  const pageSizeInput = req.query.page_size;
+  const rawPageSize = parseInt(pageSizeInput);
+  if (pageSizeInput !== undefined && (isNaN(rawPageSize) || rawPageSize < 1)) {
     res.status(400);
-    throw new Error("limit must be a positive integer");
+    throw new Error("page_size must be a positive integer");
   }
-  const limit = Math.min(rawLimit || 20, 100);
+  const page_size = Math.min(rawPageSize || 20, 100);
 
   const result = await listMyOrganizedEventsService(req.user.id, {
     cursor: cursor || null,
-    limit,
+    page_size,
     status,
   });
 

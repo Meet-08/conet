@@ -15,10 +15,10 @@ NotificationModel _$NotificationModelFromJson(Map<String, dynamic> json) =>
       createdAt: DateTime.parse(json['created_at'] as String),
       content: json['content'] as String?,
       type: json['type'] as String,
-      actorFirstName: json['actorFirstName'] as String?,
-      actorLastName: json['actorLastName'] as String?,
-      actorUsername: json['actorUsername'] as String?,
-      actorProfilePicUrl: json['actorProfilePicUrl'] as String?,
+      actorFirstName: json['actor_first_name'] as String?,
+      actorLastName: json['actor_last_name'] as String?,
+      actorUsername: json['actor_username'] as String?,
+      actorProfilePicUrl: json['actor_profile_pic_url'] as String?,
     );
 
 Map<String, dynamic> _$NotificationModelToJson(NotificationModel instance) =>
@@ -30,8 +30,8 @@ Map<String, dynamic> _$NotificationModelToJson(NotificationModel instance) =>
       'created_at': instance.createdAt.toIso8601String(),
       'content': instance.content,
       'type': instance.type,
-      'actorFirstName': instance.actorFirstName,
-      'actorLastName': instance.actorLastName,
-      'actorUsername': instance.actorUsername,
-      'actorProfilePicUrl': instance.actorProfilePicUrl,
+      'actor_first_name': instance.actorFirstName,
+      'actor_last_name': instance.actorLastName,
+      'actor_username': instance.actorUsername,
+      'actor_profile_pic_url': instance.actorProfilePicUrl,
     };

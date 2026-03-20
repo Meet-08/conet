@@ -25,6 +25,14 @@ import 'package:conet_app/feature/device/data/repository/device_repository_impl.
 import 'package:conet_app/feature/device/domain/repository/device_repository.dart';
 import 'package:conet_app/feature/device/domain/usecases/register_device_usecase.dart';
 import 'package:conet_app/feature/device/domain/usecases/remove_device_usecase.dart';
+import 'package:conet_app/feature/event/data/data_sources/event_data_source.dart';
+import 'package:conet_app/feature/event/data/data_sources/event_data_source_impl.dart';
+import 'package:conet_app/feature/event/data/repositories/event_repository_impl.dart';
+import 'package:conet_app/feature/event/domain/repositories/event_repository.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
+import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source_impl.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_real_time_datasource.dart';
@@ -104,7 +112,6 @@ part 'init_dependencies.main.dart';
 final serviceLocator = GetIt.instance;
 
 Future<void> initDependencies() async {
-  // Initialize Hive for local persistence (bookmarks, etc.)
   await Hive.initFlutter();
   await Hive.openBox(PostBookmarkLocalDataSourceImpl.boxName);
 
@@ -138,6 +145,7 @@ Future<void> initDependencies() async {
   _initProfile();
   _initDevice();
   _initNotification();
+  _initEvent();
 
   await serviceLocator<NotificationConfigService>().init();
 }

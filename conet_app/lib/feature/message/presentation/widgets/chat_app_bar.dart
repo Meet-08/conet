@@ -4,6 +4,7 @@ import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final Conversation conversation;
@@ -115,38 +116,43 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             BlocSelector<PresenceCubit, Set<String>, bool>(
               selector: (onlineIds) => onlineIds.contains(otherUser.id),
               builder: (context, isOnline) {
-                return Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: Colors
-                          .primaries[displayName.hashCode %
-                              Colors.primaries.length]
-                          .shade100,
-                      backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
-                          ? NetworkImage(imageUrl)
-                          : null,
-                      child: (imageUrl == null || imageUrl.isEmpty)
-                          ? Text(
-                              initials,
-                              style: TextStyle(
-                                color: Colors
-                                    .primaries[displayName.hashCode %
-                                        Colors.primaries.length]
-                                    .shade800,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 15,
-                              ),
-                            )
-                          : null,
-                    ),
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: OnlineIndicator(isOnline: isOnline),
-                    ),
-                  ],
+                return GestureDetector(
+                  onTap: () =>
+                      context.push('/user-profile', extra: otherUser.id),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors
+                            .primaries[displayName.hashCode %
+                                Colors.primaries.length]
+                            .shade100,
+                        backgroundImage:
+                            (imageUrl != null && imageUrl.isNotEmpty)
+                            ? NetworkImage(imageUrl)
+                            : null,
+                        child: (imageUrl == null || imageUrl.isEmpty)
+                            ? Text(
+                                initials,
+                                style: TextStyle(
+                                  color: Colors
+                                      .primaries[displayName.hashCode %
+                                          Colors.primaries.length]
+                                      .shade800,
+                                  fontWeight: .w700,
+                                  fontSize: 15,
+                                ),
+                              )
+                            : null,
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: OnlineIndicator(isOnline: isOnline),
+                      ),
+                    ],
+                  ),
                 );
               },
             )
@@ -162,7 +168,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   color: Colors
                       .primaries[displayName.hashCode % Colors.primaries.length]
                       .shade800,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: .w700,
                   fontSize: 15,
                 ),
               ),
@@ -174,14 +180,11 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               selector: (onlineIds) => onlineIds.contains(otherUser.id),
               builder: (context, isOnline) {
                 return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     Text(
                       displayName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: const TextStyle(fontSize: 14, fontWeight: .w600),
                     ),
                     Text(
                       isOnline ? 'Online' : 'Offline',
@@ -197,7 +200,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
           else
             Text(
               displayName,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              style: const TextStyle(fontSize: 14, fontWeight: .w600),
             ),
         ],
       ),
