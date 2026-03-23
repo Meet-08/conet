@@ -12,6 +12,7 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
   firstName: json['first_name'] as String? ?? '',
   lastName: json['last_name'] as String? ?? '',
   username: json['username'] as String? ?? '',
+  phone: json['phone'] as String?,
   profilePicUrl: json['profile_pic_url'] as String?,
   userRole:
       $enumDecodeNullable(_$UserRoleEnumMap, json['user_role']) ??
@@ -27,6 +28,7 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
   'first_name': instance.firstName,
   'last_name': instance.lastName,
   'username': instance.username,
+  'phone': instance.phone,
   'profile_pic_url': instance.profilePicUrl,
   'user_role': _$UserRoleEnumMap[instance.userRole]!,
   'unseen_notification_count': instance.unseenNotificationCount,

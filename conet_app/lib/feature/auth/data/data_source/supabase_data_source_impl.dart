@@ -221,6 +221,7 @@ class SupabaseDataSourceImpl implements AuthDataSource {
               first_name,
               last_name,
               email,
+              phone,
               profile_pic_url,
               user_role,
               is_verified

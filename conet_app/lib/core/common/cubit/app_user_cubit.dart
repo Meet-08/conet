@@ -89,6 +89,7 @@ class AppUserCubit extends Cubit<AppUserState> {
       firstName: user.firstName,
       lastName: user.lastName,
       username: user.username,
+      phone: user.phone,
       profilePicUrl: user.profilePicUrl,
       userRole: user.userRole,
       unseenNotificationCount:

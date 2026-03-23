@@ -36,6 +36,8 @@ class User extends Equatable {
   @JsonKey(defaultValue: "")
   final String username;
 
+  final String? phone;
+
   @JsonKey(name: 'profile_pic_url')
   final String? profilePicUrl;
 
@@ -54,6 +56,7 @@ class User extends Equatable {
     required this.firstName,
     required this.lastName,
     required this.username,
+    this.phone,
     this.profilePicUrl,
     required this.userRole,
     this.unseenNotificationCount = 0,
@@ -71,6 +74,7 @@ class User extends Equatable {
     firstName,
     lastName,
     username,
+    phone,
     profilePicUrl,
     userRole,
     unseenNotificationCount,

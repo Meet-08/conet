@@ -11,6 +11,7 @@ class UserModel extends User {
     required super.firstName,
     required super.lastName,
     required super.username,
+    super.phone,
     required super.profilePicUrl,
     required super.userRole,
     super.unseenNotificationCount = 0,
@@ -29,6 +30,7 @@ class UserModel extends User {
     String? firstName,
     String? lastName,
     String? username,
+    String? phone,
     String? profilePicUrl,
     UserRole? userRole,
     int? unseenNotificationCount,
@@ -40,6 +42,7 @@ class UserModel extends User {
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       username: username ?? this.username,
+      phone: phone ?? this.phone,
       profilePicUrl: profilePicUrl ?? this.profilePicUrl,
       userRole: userRole ?? this.userRole,
       unseenNotificationCount:
