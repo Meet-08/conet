@@ -1,12 +1,14 @@
 import 'dart:io';
 
+import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 
-class PreviewStep extends StatelessWidget {
+class PreviewStep extends StatefulWidget {
   final Map<String, dynamic> formData;
   final String stepTitle;
   final String stepSubtitle;
@@ -18,10 +20,18 @@ class PreviewStep extends StatelessWidget {
     required this.stepSubtitle,
   });
 
+  @override
+  State<PreviewStep> createState() => _PreviewStepState();
+}
+
+class _PreviewStepState extends State<PreviewStep> {
+  final Map<int, bool> _expandedFaqs = {};
+  bool _showFullAbout = false;
+
   // ── Helpers ──────────────────────────────────────────────────────────────
 
-  String _formatDate(DateTime? d) =>
-      d == null ? '—' : DateFormat('EEEE, MMMM d, yyyy').format(d);
+  String _formatShortDate(DateTime? d) =>
+      d == null ? '—' : DateFormat('MMM d').format(d);
 
   String _formatTime(TimeOfDay? t) {
     if (t == null) return '—';
@@ -56,548 +66,757 @@ class PreviewStep extends StatelessWidget {
     return map[value] ?? value;
   }
 
+  String _initialsFromTitle(String title) {
+    final clean = title.trim();
+    if (clean.isEmpty) return 'EV';
+    final parts = clean
+        .split(RegExp(r'\s+'))
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (parts.length == 1) {
+      final p = parts.first;
+      return p.length == 1 ? p.toUpperCase() : p.substring(0, 2).toUpperCase();
+    }
+    return (parts.first[0] + parts[1][0]).toUpperCase();
+  }
+
+  List<String> _instructionPoints(String raw) {
+    final lines = raw
+        .split(RegExp(r'\n|•|-'))
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (lines.isEmpty) {
+      return const ['Follow organizer updates before the event starts.'];
+    }
+    return lines;
+  }
+
+  String _durationLabel(TimeOfDay? t1, TimeOfDay? t2) {
+    if (t1 == null || t2 == null) return '';
+    final startMin = t1.hour * 60 + t1.minute;
+    final endMin = t2.hour * 60 + t2.minute;
+    final diff = endMin - startMin;
+    if (diff <= 0) return '';
+    return '$diff mins';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final title = formData['title'] as String? ?? '';
-    final category = formData['category'] as String? ?? '';
-    final eventDate = formData['event_date'] as DateTime?;
-    final startTime = formData['start_time'] as TimeOfDay?;
-    final endTime = formData['end_time'] as TimeOfDay?;
-    final isOnline = formData['location_type'] == 'ONLINE';
-    final location = formData['location'] as String? ?? '';
-    final meetingLink = formData['meeting_link'] as String? ?? '';
-    final isPaid = formData['ticket_price_type'] == 'PAID';
-    final price = formData['price'];
-    final imageFile = formData['event_image_file'] as PlatformFile?;
-    final about = formData['about'] as String? ?? '';
-    final eligibility = formData['eligibility'] as String? ?? '';
-    final additionalNote = formData['additional_note'] as String? ?? '';
-    final maxParticipant = formData['max_participant'];
-    final prizeType = formData['prize_type'] as String? ?? 'none';
+    final title = widget.formData['title'] as String? ?? '';
+    final category = widget.formData['category'] as String? ?? '';
+    final eventDate = widget.formData['event_date'] as DateTime?;
+    final startTime = widget.formData['start_time'] as TimeOfDay?;
+    final endTime = widget.formData['end_time'] as TimeOfDay?;
+    final isOnline = widget.formData['location_type'] == 'ONLINE';
+    final location = widget.formData['location'] as String? ?? '';
+    final meetingLink = widget.formData['meeting_link'] as String? ?? '';
+    final isPaid = widget.formData['ticket_price_type'] == 'PAID';
+    final price = widget.formData['price'];
+    final imageFile = widget.formData['event_image_file'] as PlatformFile?;
+    final about = widget.formData['about'] as String? ?? '';
+    final eligibility = widget.formData['eligibility'] as String? ?? '';
+    final additionalNote = widget.formData['additional_note'] as String? ?? '';
+    final maxParticipant = widget.formData['max_participant'];
+    final prizeType = widget.formData['prize_type'] as String? ?? 'none';
+    final minTeamSize = widget.formData['min_team_size'];
+    final maxTeamSize = widget.formData['max_team_size'];
     final activities = List<Map<String, dynamic>>.from(
-      formData['activities'] as List? ?? [],
+      widget.formData['activities'] as List? ?? [],
+    );
+    final prizes = List<Map<String, dynamic>>.from(
+      widget.formData['prizes'] as List? ?? [],
     );
     final faqs = List<Map<String, dynamic>>.from(
-      formData['faqs'] as List? ?? [],
+      widget.formData['faqs'] as List? ?? [],
     );
-    final mobileNumber = formData['mobile_number'] as String? ?? '';
+    final mobileNumber = widget.formData['mobile_number'] as String? ?? '';
     final coOrganizers = List<String>.from(
-      formData['co_organizers'] as List? ?? [],
+      widget.formData['co_organizers'] as List? ?? [],
     );
 
+    final registrationCount = maxParticipant is int
+        ? (maxParticipant * 0.6).round().clamp(1, maxParticipant)
+        : 1847;
+
+    final aboutTrimmed = about.trim();
+    final canExpandAbout = aboutTrimmed.length > 180;
+    final aboutPreview = canExpandAbout
+        ? '${aboutTrimmed.substring(0, 180)}...'
+        : (aboutTrimmed.isEmpty
+              ? 'No event description provided yet.'
+              : aboutTrimmed);
+
+    final instructionPoints = _instructionPoints(additionalNote);
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Step Header ──────────────────────────────────────────────────
-          Text(
-            stepTitle,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+          _SectionTitle(
+            label: widget.stepTitle,
+            theme: theme,
+            colorScheme: colorScheme,
           ),
-          const SizedBox(height: 4),
-          Text(
-            stepSubtitle,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+          const SizedBox(height: 12),
+
+          Container(
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+              ),
             ),
-          ),
-
-          const SizedBox(height: 24),
-
-          // ── Event Image ──────────────────────────────────────────────────
-          if (imageFile != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: AspectRatio(
-                aspectRatio: 1.0,
-                child: kIsWeb && imageFile.bytes != null
-                    ? Image.memory(imageFile.bytes!, fit: BoxFit.cover)
-                    : Image.file(File(imageFile.path!), fit: BoxFit.cover),
-              ),
-            )
-          else
-            Container(
-              height: 140,
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    FaIcon(
-                      FontAwesomeIcons.image,
-                      size: 28,
-                      color: colorScheme.onSurfaceVariant,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                        width: 78,
+                        height: 78,
+                        child: imageFile != null
+                            ? (kIsWeb && imageFile.bytes != null
+                                  ? Image.memory(
+                                      imageFile.bytes!,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Image.file(
+                                      File(imageFile.path!),
+                                      fit: BoxFit.cover,
+                                    ))
+                            : Container(
+                                color: colorScheme.surfaceContainerHighest,
+                                child: Center(
+                                  child: Text(
+                                    _initialsFromTitle(title),
+                                    style: theme.textTheme.titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w800),
+                                  ),
+                                ),
+                              ),
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'No image selected',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              _categoryLabel(category).toUpperCase(),
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.4,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            title.isEmpty ? 'Untitled Event' : title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              height: 1.2,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
 
-          const SizedBox(height: 20),
-
-          // ── Basic Info ───────────────────────────────────────────────────
-          _SectionHeader(
-            icon: FontAwesomeIcons.circleInfo,
-            label: 'Basic Info',
-            colorScheme: colorScheme,
-            theme: theme,
-          ),
-          const SizedBox(height: 12),
-          _PreviewCard(
-            colorScheme: colorScheme,
-            children: [
-              _InfoRow(
-                icon: FontAwesomeIcons.calendarCheck,
-                label: 'Title',
-                value: title.isEmpty ? '—' : title,
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-              _Divider(colorScheme: colorScheme),
-              _InfoRow(
-                icon: FontAwesomeIcons.tag,
-                label: 'Category',
-                value: category.isEmpty ? '—' : _categoryLabel(category),
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-              _Divider(colorScheme: colorScheme),
-              _InfoRow(
-                icon: FontAwesomeIcons.calendarDay,
-                label: 'Date',
-                value: _formatDate(eventDate),
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-              _Divider(colorScheme: colorScheme),
-              _InfoRow(
-                icon: FontAwesomeIcons.clock,
-                label: 'Time',
-                value: '${_formatTime(startTime)}  →  ${_formatTime(endTime)}',
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // ── Location & Ticket ────────────────────────────────────────────
-          _SectionHeader(
-            icon: FontAwesomeIcons.locationDot,
-            label: 'Location & Ticket',
-            colorScheme: colorScheme,
-            theme: theme,
-          ),
-          const SizedBox(height: 12),
-          _PreviewCard(
-            colorScheme: colorScheme,
-            children: [
-              _InfoRow(
-                icon: isOnline
-                    ? FontAwesomeIcons.wifi
-                    : FontAwesomeIcons.buildingColumns,
-                label: 'Type',
-                value: isOnline ? 'Online' : 'Offline',
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-              _Divider(colorScheme: colorScheme),
-              _InfoRow(
-                icon: isOnline
-                    ? FontAwesomeIcons.link
-                    : FontAwesomeIcons.mapPin,
-                label: isOnline ? 'Link' : 'Venue',
-                value: isOnline
-                    ? (meetingLink.isEmpty ? '—' : meetingLink)
-                    : (location.isEmpty ? '—' : location),
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-              _Divider(colorScheme: colorScheme),
-              _InfoRow(
-                icon: isPaid
-                    ? FontAwesomeIcons.indianRupeeSign
-                    : FontAwesomeIcons.ticketSimple,
-                label: 'Ticket',
-                value: isPaid ? (price != null ? '₹$price' : 'Paid') : 'Free',
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-              if (maxParticipant != null) ...[
-                _Divider(colorScheme: colorScheme),
-                _InfoRow(
-                  icon: FontAwesomeIcons.userGroup,
-                  label: 'Max Participants',
-                  value: '$maxParticipant',
+                const SizedBox(height: 16),
+                _QuickInfoRow(
+                  icon: FontAwesomeIcons.calendar,
+                  title: _formatShortDate(eventDate),
+                  subtitle:
+                      '${_formatTime(startTime)} - ${_formatTime(endTime)}',
                   theme: theme,
                   colorScheme: colorScheme,
                 ),
-              ],
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // ── Event Details ────────────────────────────────────────────────
-          _SectionHeader(
-            icon: FontAwesomeIcons.alignLeft,
-            label: 'Event Details',
-            colorScheme: colorScheme,
-            theme: theme,
-          ),
-          const SizedBox(height: 12),
-          _PreviewCard(
-            colorScheme: colorScheme,
-            children: [
-              _TextBlock(
-                label: 'About',
-                value: about.isEmpty ? '—' : about,
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-              if (eligibility.isNotEmpty) ...[
-                _Divider(colorScheme: colorScheme),
-                _TextBlock(
-                  label: 'Eligibility',
-                  value: eligibility,
+                const SizedBox(height: 12),
+                _QuickInfoRow(
+                  icon: FontAwesomeIcons.locationDot,
+                  title: isOnline
+                      ? 'Online Event'
+                      : (location.isEmpty ? 'Location TBA' : location),
+                  subtitle: isOnline
+                      ? (meetingLink.isEmpty
+                            ? 'Link will be shared later'
+                            : meetingLink)
+                      : 'Venue details',
                   theme: theme,
                   colorScheme: colorScheme,
                 ),
-              ],
-              if (additionalNote.isNotEmpty) ...[
-                _Divider(colorScheme: colorScheme),
-                _TextBlock(
-                  label: 'Additional Note',
-                  value: additionalNote,
+                if (minTeamSize != null || maxTeamSize != null) ...[
+                  const SizedBox(height: 12),
+                  _QuickInfoRow(
+                    icon: FontAwesomeIcons.userGroup,
+                    title: 'Team Size',
+                    subtitle:
+                        '${minTeamSize ?? '1'} - ${maxTeamSize ?? '∞'} members',
+                    theme: theme,
+                    colorScheme: colorScheme,
+                  ),
+                ],
+                const SizedBox(height: 12),
+                _QuickInfoRow(
+                  icon: isPaid
+                      ? FontAwesomeIcons.indianRupeeSign
+                      : FontAwesomeIcons.sackDollar,
+                  title: isPaid ? '₹${price ?? 'Paid'}' : 'Free',
+                  subtitle: isPaid
+                      ? 'Registration fee applies'
+                      : 'No registration fee',
                   theme: theme,
                   colorScheme: colorScheme,
                 ),
-              ],
-              _Divider(colorScheme: colorScheme),
-              _InfoRow(
-                icon: FontAwesomeIcons.trophy,
-                label: 'Prize',
-                value: _prizeLabel(prizeType),
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-            ],
-          ),
 
-          // ── Schedule ─────────────────────────────────────────────────────
-          if (activities.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _SectionHeader(
-              icon: FontAwesomeIcons.listCheck,
-              label: 'Schedule',
-              colorScheme: colorScheme,
-              theme: theme,
-            ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: List.generate(activities.length, (i) {
-                  final a = activities[i];
-                  final actTimeTod = a['activity_time'] as TimeOfDay?;
-                  final actTime = actTimeTod?.format(context) ?? '';
-                  final actTitle = (a['activity_title'] as String? ?? '')
-                      .trim();
-                  final isLast = i == activities.length - 1;
-                  return IntrinsicHeight(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Timeline line + dot
-                        Padding(
-                          padding: const EdgeInsets.only(left: 20),
-                          child: Column(
-                            children: [
-                              const SizedBox(height: 20),
-                              Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: colorScheme.primary,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                              if (!isLast)
-                                Expanded(
-                                  child: Container(
-                                    width: 1.5,
-                                    color: colorScheme.outlineVariant,
-                                  ),
-                                ),
-                            ],
-                          ),
+                const SizedBox(height: 18),
+                _line(colorScheme),
+                const SizedBox(height: 16),
+
+                Text(
+                  'About ${title.isEmpty ? 'this event' : title}',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _showFullAbout
+                      ? (aboutTrimmed.isEmpty
+                            ? 'No event description provided yet.'
+                            : aboutTrimmed)
+                      : aboutPreview,
+                  style: theme.textTheme.bodyLarge?.copyWith(height: 1.55),
+                ),
+                if (canExpandAbout)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: GestureDetector(
+                      onTap: () =>
+                          setState(() => _showFullAbout = !_showFullAbout),
+                      child: Text(
+                        _showFullAbout ? 'Read less' : 'Read more',
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w700,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                              top: 14,
-                              bottom: isLast ? 18 : 14,
-                              right: 16,
+                      ),
+                    ),
+                  ),
+
+                if (activities.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  _line(colorScheme),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Event Schedule',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ...List.generate(activities.length, (i) {
+                    final a = activities[i];
+                    final t1 = a['activity_time'] as TimeOfDay?;
+                    final t2 = i + 1 < activities.length
+                        ? activities[i + 1]['activity_time'] as TimeOfDay?
+                        : null;
+                    final title = (a['activity_title'] as String? ?? '').trim();
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        bottom: i == activities.length - 1 ? 0 : 12,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Container(
+                              width: 7,
+                              height: 7,
+                              decoration: BoxDecoration(
+                                color: colorScheme.onSurface,
+                                shape: BoxShape.circle,
+                              ),
                             ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if (actTime.isNotEmpty)
-                                  Text(
-                                    actTime,
-                                    style: theme.textTheme.labelSmall?.copyWith(
-                                      color: colorScheme.primary,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                if (actTime.isNotEmpty)
-                                  const SizedBox(height: 2),
+                                () {
+                                  final duration = _durationLabel(t1, t2);
+                                  return Row(
+                                    children: [
+                                      Text(
+                                        _formatTime(t1),
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color:
+                                                  colorScheme.onSurfaceVariant,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                      ),
+                                      if (duration.isNotEmpty) ...[
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '• $duration',
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                                color: colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                        ),
+                                      ],
+                                    ],
+                                  );
+                                }(),
+                                const SizedBox(height: 2),
                                 Text(
-                                  actTitle.isEmpty ? '—' : actTitle,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    fontWeight: FontWeight.w500,
+                                  title.isEmpty ? 'Activity' : title,
+                                  style: theme.textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ],
+                        ],
+                      ),
+                    );
+                  }),
+                ],
 
-          // ── FAQs ─────────────────────────────────────────────────────────
-          if (faqs.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            _SectionHeader(
-              icon: FontAwesomeIcons.circleQuestion,
-              label: 'FAQs',
-              colorScheme: colorScheme,
-              theme: theme,
-            ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: List.generate(faqs.length, (i) {
-                  final faq = faqs[i];
-                  final q = (faq['question'] as String? ?? '').trim();
-                  final a = (faq['answer'] as String? ?? '').trim();
-                  final isLast = i == faqs.length - 1;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(
-                          16,
-                          14,
-                          16,
-                          a.isEmpty ? 14 : 4,
+                const SizedBox(height: 18),
+                _line(colorScheme),
+                const SizedBox(height: 14),
+                Text(
+                  'Prizes',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                if (prizes.isEmpty)
+                  _PrizeTile(
+                    position: _prizeLabel(prizeType),
+                    value: 'Prize details will be announced by the organizer',
+                    theme: theme,
+                    colorScheme: colorScheme,
+                  )
+                else
+                  ...prizes.map((p) {
+                    final pos = (p['position'] as String? ?? '').trim();
+                    final val = (p['prize'] as String? ?? '').trim();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _PrizeTile(
+                        position: pos.isEmpty ? 'Prize' : pos,
+                        value: val.isEmpty ? 'Prize details' : val,
+                        theme: theme,
+                        colorScheme: colorScheme,
+                      ),
+                    );
+                  }),
+
+                const SizedBox(height: 18),
+                _line(colorScheme),
+                const SizedBox(height: 14),
+                Text(
+                  'Organizer',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                BlocBuilder<AppUserCubit, AppUserState>(
+                  builder: (context, state) {
+                    final organizerName = state is AppUserAuthenticated
+                        ? '${state.user.firstName} ${state.user.lastName}'.trim()
+                        : 'Event Organizer';
+                    final profilePicUrl = state is AppUserAuthenticated
+                        ? state.user.profilePicUrl
+                        : null;
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: 0.35,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 16,
+                            backgroundColor: colorScheme.primaryContainer,
+                            backgroundImage: profilePicUrl != null
+                                ? NetworkImage(profilePicUrl)
+                                : null,
+                            child: profilePicUrl == null
+                                ? Text(
+                                    _initialsFromTitle(organizerName),
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: colorScheme.onPrimaryContainer,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  organizerName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  mobileNumber.isEmpty
+                                      ? 'Contact will be shared'
+                                      : mobileNumber,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                if (coOrganizers.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: coOrganizers.map((u) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          q.isEmpty ? '—' : q,
-                          style: theme.textTheme.bodySmall?.copyWith(
+                          '@$u',
+                          style: theme.textTheme.labelSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                           ),
                         ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+
+                const SizedBox(height: 18),
+                _line(colorScheme),
+                const SizedBox(height: 14),
+                Text(
+                  'Instructions',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: colorScheme.primary.withValues(alpha: 0.45),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: instructionPoints.map((item) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('• '),
+                            Expanded(
+                              child: Text(
+                                item,
+                                style: theme.textTheme.bodyMedium,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+
+                if (eligibility.trim().isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Eligibility',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: colorScheme.primary.withValues(alpha: 0.45),
                       ),
-                      if (a.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                          child: Text(
-                            a,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                    ),
+                    child: Text(eligibility, style: theme.textTheme.bodyMedium),
+                  ),
+                ],
+
+                if (faqs.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  _line(colorScheme),
+                  const SizedBox(height: 14),
+                  Text(
+                    'Frequently Asked Questions',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...List.generate(faqs.length, (i) {
+                    final f = faqs[i];
+                    final q = (f['question'] as String? ?? '').trim();
+                    final a = (f['answer'] as String? ?? '').trim();
+                    final expanded = _expandedFaqs[i] ?? i == 0;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: colorScheme.outlineVariant.withValues(
+                              alpha: 0.35,
                             ),
                           ),
                         ),
-                      if (!isLast) _Divider(colorScheme: colorScheme),
-                    ],
-                  );
-                }),
-              ),
-            ),
-          ],
-
-          // ── Organizer ────────────────────────────────────────────────────
-          const SizedBox(height: 16),
-          _SectionHeader(
-            icon: FontAwesomeIcons.userTie,
-            label: 'Organizer',
-            colorScheme: colorScheme,
-            theme: theme,
-          ),
-          const SizedBox(height: 12),
-          _PreviewCard(
-            colorScheme: colorScheme,
-            children: [
-              _InfoRow(
-                icon: FontAwesomeIcons.phone,
-                label: 'Mobile',
-                value: mobileNumber.isEmpty ? '—' : mobileNumber,
-                theme: theme,
-                colorScheme: colorScheme,
-              ),
-              if (coOrganizers.isNotEmpty) ...[
-                _Divider(colorScheme: colorScheme),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Co-organizers',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: coOrganizers
-                            .map(
-                              (u) => Container(
+                        child: Column(
+                          children: [
+                            InkWell(
+                              borderRadius: BorderRadius.circular(10),
+                              onTap: () {
+                                setState(() {
+                                  _expandedFaqs[i] = !expanded;
+                                });
+                              },
+                              child: Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: colorScheme.surfaceContainerHighest,
-                                  borderRadius: BorderRadius.circular(20),
+                                  vertical: 11,
                                 ),
                                 child: Row(
-                                  mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    FaIcon(
-                                      FontAwesomeIcons.at,
-                                      size: 11,
-                                      color: colorScheme.primary,
+                                    Expanded(
+                                      child: Text(
+                                        q.isEmpty ? 'FAQ ${i + 1}' : q,
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      u,
-                                      style: theme.textTheme.labelSmall
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                    FaIcon(
+                                      expanded
+                                          ? FontAwesomeIcons.chevronUp
+                                          : FontAwesomeIcons.chevronDown,
+                                      size: 12,
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
                                   ],
                                 ),
                               ),
-                            )
-                            .toList(),
+                            ),
+                            if (expanded)
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  12,
+                                  0,
+                                  12,
+                                  12,
+                                ),
+                                child: Text(
+                                  a.isEmpty
+                                      ? 'Answer will be shared by organizer.'
+                                      : a,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    height: 1.45,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+
+                const SizedBox(height: 18),
+                _line(colorScheme),
+                const SizedBox(height: 14),
+                Text(
+                  'Discussion',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 16,
+                        backgroundColor: colorScheme.surfaceContainerHighest,
+                        child: FaIcon(
+                          FontAwesomeIcons.message,
+                          size: 14,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${title.isEmpty ? 'Event' : title} Group',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              '$registrationCount members',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    'Register to auto join this group',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
               ],
-            ],
+            ),
           ),
-
-          const SizedBox(height: 32),
         ],
       ),
     );
   }
+
+  Widget _line(ColorScheme colorScheme) {
+    return Container(
+      height: 1,
+      color: colorScheme.outlineVariant.withValues(alpha: 0.45),
+    );
+  }
 }
 
-// ─── Section Header ───────────────────────────────────────────────────────────
-
-class _SectionHeader extends StatelessWidget {
-  final IconData icon;
+class _SectionTitle extends StatelessWidget {
   final String label;
-  final ColorScheme colorScheme;
   final ThemeData theme;
+  final ColorScheme colorScheme;
 
-  const _SectionHeader({
-    required this.icon,
+  const _SectionTitle({
     required this.label,
-    required this.colorScheme,
     required this.theme,
+    required this.colorScheme,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        FaIcon(icon, size: 14, color: colorScheme.primary),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─── Preview Card ─────────────────────────────────────────────────────────────
-
-class _PreviewCard extends StatelessWidget {
-  final List<Widget> children;
-  final ColorScheme colorScheme;
-
-  const _PreviewCard({required this.children, required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
+    return Text(
+      label,
+      style: theme.textTheme.titleMedium?.copyWith(
+        fontWeight: FontWeight.w800,
+        color: colorScheme.onSurface,
       ),
     );
   }
 }
 
-// ─── Info Row ─────────────────────────────────────────────────────────────────
-
-class _InfoRow extends StatelessWidget {
+class _QuickInfoRow extends StatelessWidget {
   final IconData icon;
-  final String label;
-  final String value;
+  final String title;
+  final String subtitle;
   final ThemeData theme;
   final ColorScheme colorScheme;
 
-  const _InfoRow({
+  const _QuickInfoRow({
     required this.icon,
-    required this.label,
-    required this.value,
+    required this.title,
+    required this.subtitle,
     required this.theme,
     required this.colorScheme,
   });
@@ -609,23 +828,33 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FaIcon(icon, size: 13, color: colorScheme.onSurfaceVariant),
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: FaIcon(icon, size: 14, color: colorScheme.onSurface),
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  label,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  value,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w500,
+                  subtitle,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -637,16 +866,14 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-// ─── Text Block (multi-line) ──────────────────────────────────────────────────
-
-class _TextBlock extends StatelessWidget {
-  final String label;
+class _PrizeTile extends StatelessWidget {
+  final String position;
   final String value;
   final ThemeData theme;
   final ColorScheme colorScheme;
 
-  const _TextBlock({
-    required this.label,
+  const _PrizeTile({
+    required this.position,
     required this.value,
     required this.theme,
     required this.colorScheme,
@@ -654,45 +881,52 @@ class _TextBlock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
         children: [
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: colorScheme.surfaceContainerHighest,
+            ),
+            child: Center(
+              child: FaIcon(
+                FontAwesomeIcons.award,
+                size: 13,
+                color: colorScheme.primary,
+              ),
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
-              height: 1.5,
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  position,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
-    );
-  }
-}
-
-// ─── Subtle Divider ───────────────────────────────────────────────────────────
-
-class _Divider extends StatelessWidget {
-  final ColorScheme colorScheme;
-  const _Divider({required this.colorScheme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      thickness: 1,
-      indent: 16,
-      endIndent: 16,
-      color: colorScheme.outlineVariant.withValues(alpha: 0.5),
     );
   }
 }

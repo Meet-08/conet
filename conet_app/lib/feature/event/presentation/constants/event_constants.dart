@@ -55,18 +55,16 @@ const List<EventCategory> eventCategories = [
   EventCategory(value: 'other', label: 'Other', description: 'Anything else'),
 ];
 
-const totalSteps = 5;
+const totalSteps = 4;
 const stepTitles = [
   'Basic Details',
   'Event Details',
-  'FAQs',
-  'Organizer Details',
+  'Rewards & Organizer',
   'Review & Publish',
 ];
 const stepSubtitles = [
   'Set the foundation for your event',
   'Tell us more about the experience',
-  'Help attendees with common questions',
-  'Set up your event organizer profile',
+  'Configure rewards, FAQs, and organizer contacts',
   'Check your event details before publishing',
 ];

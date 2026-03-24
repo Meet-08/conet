@@ -7,10 +7,9 @@ import 'package:conet_app/feature/event/domain/entities/event_prize.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/event/presentation/constants/event_constants.dart';
 import 'package:conet_app/feature/event/presentation/widgets/basic_info_step.dart';
-import 'package:conet_app/feature/event/presentation/widgets/faqs_step.dart';
-import 'package:conet_app/feature/event/presentation/widgets/organizer_step.dart';
 import 'package:conet_app/feature/event/presentation/widgets/participation_and_registration_step.dart';
 import 'package:conet_app/feature/event/presentation/widgets/preview_step.dart';
+import 'package:conet_app/feature/event/presentation/widgets/reward_and_organizer_step.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -48,6 +47,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
     'activities': <Map<String, dynamic>>[], // [{activity_time, activity_title}]
     'max_participant': null,
     'prize_type': 'none', // 'none' | 'certificate' | 'cash' | 'custom'
+    'prizes': <Map<String, dynamic>>[], // [{position, prize}]
     'faqs': <Map<String, dynamic>>[], // [{question, answer}]
     'mobile_number': '',
     'co_organizers': <String>[],
@@ -363,22 +363,16 @@ class _CreateEventPageState extends State<CreateEventPage> {
             stepTitle: stepTitles[1],
             stepSubtitle: stepSubtitles[1],
           ),
-          FaqsStep(
+          RewardAndOrganizerStep(
             formData: _formData,
             onFormDataChange: _onFormDataChange,
             stepTitle: stepTitles[2],
             stepSubtitle: stepSubtitles[2],
           ),
-          OrganizerStep(
-            formData: _formData,
-            onFormDataChange: _onFormDataChange,
-            stepTitle: stepTitles[3],
-            stepSubtitle: stepSubtitles[3],
-          ),
           PreviewStep(
             formData: _formData,
-            stepTitle: stepTitles[4],
-            stepSubtitle: stepSubtitles[4],
+            stepTitle: stepTitles[3],
+            stepSubtitle: stepSubtitles[3],
           ),
         ],
       ),
