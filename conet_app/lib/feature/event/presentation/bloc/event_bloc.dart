@@ -1,8 +1,10 @@
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_get_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -11,24 +13,45 @@ part 'event_event.dart';
 part 'event_state.dart';
 
 class EventBloc extends Bloc<EventEvent, EventState> {
+  final EventGetById _getById;
   final EventGetPublishedEvents _getPublishedEvents;
   final EventPublish _publishEvent;
+  final EventRegister _registerEvent;
   final EventSaveDraft _saveDraft;
 
   String? _nextCursor;
 
   EventBloc({
+    required EventGetById getById,
     required EventGetPublishedEvents getPublishedEvents,
     required EventPublish publishEvent,
+    required EventRegister registerEvent,
     required EventSaveDraft saveDraft,
-  }) : _getPublishedEvents = getPublishedEvents,
+  }) : _getById = getById,
+       _getPublishedEvents = getPublishedEvents,
        _publishEvent = publishEvent,
+       _registerEvent = registerEvent,
        _saveDraft = saveDraft,
        super(EventInitial()) {
+    on<EventFetchByIdEvent>(_onFetchById);
     on<EventFetchPublishedEventsEvent>(_onFetchPublishedEvents);
     on<EventFetchMorePublishedEventsEvent>(_onFetchMorePublishedEvents);
     on<EventPublishEvent>(_onPublish);
+    on<EventRegisterEvent>(_onRegister);
     on<EventSaveDraftEvent>(_onSaveDraft);
+  }
+
+  Future<void> _onFetchById(
+    EventFetchByIdEvent event,
+    Emitter<EventState> emit,
+  ) async {
+    emit(EventDetailLoading());
+
+    final result = await _getById(event.eventId);
+    result.fold(
+      (failure) => emit(EventDetailFailure(failure.message)),
+      (event) => emit(EventDetailLoaded(event)),
+    );
   }
 
   Future<void> _onFetchPublishedEvents(
@@ -112,6 +135,19 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     } else {
       emit(EventCreateSuccess(event: created!, isDraft: false));
     }
+  }
+
+  Future<void> _onRegister(
+    EventRegisterEvent event,
+    Emitter<EventState> emit,
+  ) async {
+    emit(EventRegistrationLoading());
+
+    final result = await _registerEvent(event.eventId);
+    result.fold(
+      (failure) => emit(EventRegistrationFailure(failure.message)),
+      (event) => emit(EventRegistrationSuccess(event)),
+    );
   }
 
   Future<void> _onSaveDraft(

@@ -52,6 +52,7 @@ export const mapEvent = (event, viewerId = null) => ({
 });
 
 export const mapEventSummary = (event) => ({
+  id: event.id,
   event_image_url: event.event_image_url ?? null,
   title: event.title,
   category: event.category,

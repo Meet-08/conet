@@ -5,6 +5,10 @@ import 'package:conet_app/feature/event/domain/entities/event_page.dart';
 import 'package:fpdart/fpdart.dart';
 
 abstract interface class EventRepository {
+  Future<Either<AppFailure, Event>> getEventById(String eventId);
+
+  Future<Either<AppFailure, Event>> registerEvent(String eventId);
+
   Future<Either<AppFailure, Event>> publishEvent(EventCreatePayload payload);
 
   Future<Either<AppFailure, Event>> saveEventDraft(EventCreatePayload payload);

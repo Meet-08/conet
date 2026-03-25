@@ -8,6 +8,7 @@ import {
   listMyOrganizedEvents,
   listPublishedEvents,
   publishEvent,
+  registerEvent,
   removeCohost,
   updateEvent,
 } from "../controllers/eventController.js";
@@ -21,6 +22,7 @@ router.use(validateSupabaseToken);
 router.get("/", listPublishedEvents);
 router.get("/organized", listMyOrganizedEvents);
 router.get("/:id", getEvent);
+router.post("/:id/register", registerEvent);
 
 // Organizer lifecycle
 router.post("/", createEvent);

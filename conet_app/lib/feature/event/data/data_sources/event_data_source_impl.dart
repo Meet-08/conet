@@ -22,6 +22,22 @@ class EventDataSourceImpl implements EventDataSource {
        _fileUploadDataSource = fileUploadDataSource;
 
   @override
+  Future<Event> getEventById(String eventId) async {
+    try {
+      final response = await _dioClient.dio.get('/events/$eventId');
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to fetch event');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      return EventModel.fromJson(data['event'] as Map<String, dynamic>);
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
   Future<EventPageModel> getPublishedEvents({
     int limit = 20,
     String? cursor,
@@ -53,6 +69,22 @@ class EventDataSourceImpl implements EventDataSource {
       }
 
       return EventPageModel.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<Event> registerEvent(String eventId) async {
+    try {
+      final response = await _dioClient.dio.post('/events/$eventId/register');
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to register event');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      return EventModel.fromJson(data['event'] as Map<String, dynamic>);
     } catch (e) {
       throw ServerException(AppErrorHandler.handleException(e), e);
     }

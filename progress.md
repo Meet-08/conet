@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-03-24
+> Last updated: 2026-03-25
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -109,6 +109,16 @@
 
 ---
 
+### Event Detail (Discover)
+
+- **Event Detail Page** — Dynamic event detail UI driven by `GET /events/:id` (header, schedule, prizes, organizer, eligibility, FAQs)
+- **Event Registration CTA** — Register button wired to backend registration flow and updates event state after success
+
+**Use Cases:** `EventGetById`, `EventRegister`
+**Backend Endpoints:** `GET /events/:id`, `POST /events/:id/register`
+
+---
+
 ### Device Management (FCM Token)
 
 > Background/infrastructure — no UI required by design.
@@ -162,14 +172,15 @@
 - **Publish Event** — Organizer promotes a draft event to published status
 - **Cancel Event** — Organizer cancels a published or draft event
 - **Get Event** — Fetch a single event; non-organizers can only see published events
+- **Register Event** — Authenticated user registers for a published event and receives the latest full event view
 - **Discover Events** — Paginated list of published events with category, location type, date range, and text search filters
 - **My Organized Events** — Organizer retrieves their own events, optionally filtered by status (draft/published/cancelled)
 - **Add Co-host** — Organizer adds another user as a co-host
 - **Remove Co-host** — Organizer removes a co-host
 - **List Co-hosts** — Retrieve all co-hosts for an event
 
-**Use Cases:** `EventPublish`, `EventSaveDraft`, `EventGetPublishedEvents`
-**Backend Endpoints:** `GET /events`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
+**Use Cases:** `EventGetById`, `EventRegister`, `EventPublish`, `EventSaveDraft`, `EventGetPublishedEvents`
+**Backend Endpoints:** `GET /events`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `POST /events/:id/register`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
 
 ---
 

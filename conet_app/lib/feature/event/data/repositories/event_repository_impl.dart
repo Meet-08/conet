@@ -14,6 +14,13 @@ class EventRepositoryImpl implements EventRepository {
     : _eventDataSource = eventDataSource;
 
   @override
+  Future<Either<AppFailure, Event>> getEventById(String eventId) {
+    return _getResult<Event, Event>(
+      () => _eventDataSource.getEventById(eventId),
+    );
+  }
+
+  @override
   Future<Either<AppFailure, EventPage>> getPublishedEvents({
     int limit = 20,
     String? cursor,
@@ -33,6 +40,13 @@ class EventRepositoryImpl implements EventRepository {
         dateTo: dateTo,
         search: search,
       ),
+    );
+  }
+
+  @override
+  Future<Either<AppFailure, Event>> registerEvent(String eventId) {
+    return _getResult<Event, Event>(
+      () => _eventDataSource.registerEvent(eventId),
     );
   }
 

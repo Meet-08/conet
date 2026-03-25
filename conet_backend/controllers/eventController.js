@@ -8,6 +8,7 @@ import {
   listMyOrganizedEventsService,
   listPublishedEventsService,
   publishEventService,
+  registerEventService,
   removeCohostService,
   updateEventService,
 } from "../services/eventService.js";
@@ -53,6 +54,13 @@ export const cancelEvent = asyncHandler(async (req, res) => {
 export const getEvent = asyncHandler(async (req, res) => {
   const event = await getEventService(req.params.id, req.user.id);
   res.status(200).json({ success: true, event });
+});
+
+export const registerEvent = asyncHandler(async (req, res) => {
+  const event = await registerEventService(req.params.id, req.user.id);
+  res
+    .status(200)
+    .json({ success: true, message: "Event registered successfully", event });
 });
 
 // ─── List published events ────────────────────────────────────────────────────

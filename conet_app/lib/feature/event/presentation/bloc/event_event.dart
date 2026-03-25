@@ -27,6 +27,18 @@ final class EventFetchMorePublishedEventsEvent extends EventEvent {
   const EventFetchMorePublishedEventsEvent();
 }
 
+final class EventFetchByIdEvent extends EventEvent {
+  final String eventId;
+
+  const EventFetchByIdEvent(this.eventId);
+}
+
+final class EventRegisterEvent extends EventEvent {
+  final String eventId;
+
+  const EventRegisterEvent(this.eventId);
+}
+
 final class EventPublishEvent extends EventEvent {
   final EventCreatePayload payload;
   const EventPublishEvent(this.payload);

@@ -3,6 +3,10 @@ import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 
 abstract class EventDataSource {
+  Future<Event> getEventById(String eventId);
+
+  Future<Event> registerEvent(String eventId);
+
   Future<Event> publishEvent(EventCreatePayload payload);
 
   Future<Event> saveEventDraft(EventCreatePayload payload);

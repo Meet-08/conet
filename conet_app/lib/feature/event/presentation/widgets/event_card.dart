@@ -1,6 +1,7 @@
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class EventCard extends StatelessWidget {
@@ -21,7 +22,7 @@ class EventCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: () {
-          // TODO: navigate to event detail
+          context.push('/event-detail/${event.id}');
         },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

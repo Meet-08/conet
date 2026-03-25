@@ -6,6 +6,7 @@ part 'event_list_item_model.g.dart';
 @JsonSerializable(fieldRename: FieldRename.snake)
 class EventListItemModel extends EventListItem {
   const EventListItemModel({
+    required super.id,
     super.eventImageUrl,
     required super.title,
     required super.category,
@@ -23,6 +24,7 @@ class EventListItemModel extends EventListItem {
 
   factory EventListItemModel.fromEntity(EventListItem entity) {
     return EventListItemModel(
+      id: entity.id,
       eventImageUrl: entity.eventImageUrl,
       title: entity.title,
       category: entity.category,

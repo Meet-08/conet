@@ -1,0 +1,862 @@
+import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/widgets/loader.dart';
+import 'package:conet_app/feature/event/domain/entities/event.dart';
+import 'package:conet_app/feature/event/domain/entities/event_activity.dart';
+import 'package:conet_app/feature/event/domain/entities/event_faq.dart';
+import 'package:conet_app/feature/event/domain/entities/event_prize.dart';
+import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
+
+class EventDetailPage extends StatefulWidget {
+  final String eventId;
+
+  const EventDetailPage({super.key, required this.eventId});
+
+  @override
+  State<EventDetailPage> createState() => _EventDetailPageState();
+}
+
+class _EventDetailPageState extends State<EventDetailPage> {
+  Event? _event;
+  bool _aboutExpanded = false;
+  int? _expandedFaqIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<EventBloc>().add(EventFetchByIdEvent(widget.eventId));
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return BlocConsumer<EventBloc, EventState>(
+      listener: (context, state) {
+        if (state is EventDetailLoaded) {
+          setState(() {
+            _event = state.event;
+          });
+        }
+
+        if (state is EventRegistrationSuccess) {
+          setState(() {
+            _event = state.event;
+          });
+          AppToast.showSuccess(context, 'Registered successfully');
+        }
+
+        if (state is EventRegistrationFailure) {
+          AppToast.showError(context, state.message);
+        }
+
+        if (state is EventDetailFailure) {
+          AppToast.showError(context, state.message);
+        }
+      },
+      builder: (context, state) {
+        if (_event == null &&
+            (state is EventDetailLoading || state is EventInitial)) {
+          return const Scaffold(body: Center(child: Loader()));
+        }
+
+        if (_event == null && state is EventDetailFailure) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Event')),
+            body: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(state.message, textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: () {
+                      context.read<EventBloc>().add(
+                        EventFetchByIdEvent(widget.eventId),
+                      );
+                    },
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        final event = _event;
+        if (event == null) {
+          return const Scaffold(body: Center(child: Loader()));
+        }
+
+        final isRegistering = state is EventRegistrationLoading;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              event.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            actions: [
+              IconButton(
+                onPressed: () {},
+                icon: const FaIcon(FontAwesomeIcons.shareNodes, size: 18),
+              ),
+              IconButton(
+                onPressed: () {},
+                icon: const FaIcon(FontAwesomeIcons.ellipsisVertical, size: 18),
+              ),
+            ],
+          ),
+          bottomNavigationBar: _RegisterBar(
+            event: event,
+            loading: isRegistering,
+            onRegister: () {
+              context.read<EventBloc>().add(EventRegisterEvent(event.id));
+            },
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _HeaderCard(event: event),
+                const SizedBox(height: 16),
+                _AboutSection(
+                  event: event,
+                  expanded: _aboutExpanded,
+                  onToggleExpanded: () {
+                    setState(() {
+                      _aboutExpanded = !_aboutExpanded;
+                    });
+                  },
+                ),
+                if (event.activities.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _ScheduleSection(activities: event.activities),
+                ],
+                if (event.prizes.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _PrizeSection(prizes: event.prizes),
+                ],
+                const SizedBox(height: 20),
+                _OrganizerSection(event: event),
+                if ((event.eligibility ?? '').trim().isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _EligibilitySection(eligibility: event.eligibility!.trim()),
+                ],
+                if (event.faqs.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _FaqSection(
+                    faqs: event.faqs,
+                    expandedFaqIndex: _expandedFaqIndex,
+                    onToggle: (index) {
+                      setState(() {
+                        _expandedFaqIndex = _expandedFaqIndex == index
+                            ? null
+                            : index;
+                      });
+                    },
+                  ),
+                ],
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    event.isRegistered
+                        ? 'You are registered for this event.'
+                        : 'Register to secure your participation.',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _HeaderCard extends StatelessWidget {
+  final Event event;
+
+  const _HeaderCard({required this.event});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final dateLabel = DateFormat('MMM d').format(event.eventDate);
+    final timeLabel =
+        '${_formatClock(event.startTime)} - ${_formatClock(event.endTime)}';
+    final locationLabel = event.venue ?? event.location ?? 'Location TBA';
+
+    final remaining = event.maxParticipant > -1
+        ? (event.maxParticipant - event.registrationCount).clamp(
+            0,
+            event.maxParticipant,
+          )
+        : null;
+
+    final teamSizeText = _teamSizeLabel(event);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: SizedBox(
+                    width: 92,
+                    height: 92,
+                    child: event.eventImageUrl != null
+                        ? Image.network(
+                            event.eventImageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) =>
+                                _imageFallback(colorScheme),
+                          )
+                        : _imageFallback(colorScheme),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _CategoryChip(category: event.category),
+                      const SizedBox(height: 8),
+                      Text(
+                        event.title,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            _InfoTile(
+              icon: FontAwesomeIcons.calendarDay,
+              title: dateLabel,
+              subtitle: timeLabel,
+            ),
+            _InfoTile(
+              icon: FontAwesomeIcons.locationDot,
+              title: locationLabel,
+              subtitle: event.locationType == 'ONLINE'
+                  ? 'Online event'
+                  : 'Offline event',
+            ),
+            _InfoTile(
+              icon: FontAwesomeIcons.userGroup,
+              title: '${event.registrationCount} Registered',
+              subtitle: remaining == null
+                  ? 'Unlimited spots'
+                  : '$remaining spots remaining',
+            ),
+            if (teamSizeText != null)
+              _InfoTile(
+                icon: FontAwesomeIcons.users,
+                title: 'Team Size',
+                subtitle: teamSizeText,
+              ),
+            _InfoTile(
+              icon: FontAwesomeIcons.indianRupeeSign,
+              title: event.isPaid ? _formatPrice(event.price) : 'Free',
+              subtitle: event.isPaid
+                  ? 'Registration fee applies'
+                  : 'No registration fee',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _imageFallback(ColorScheme colorScheme) {
+    return Container(
+      color: colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: FaIcon(
+          FontAwesomeIcons.calendar,
+          size: 30,
+          color: colorScheme.outline,
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  final String category;
+
+  const _CategoryChip({required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        category,
+        style: theme.textTheme.labelSmall?.copyWith(
+          letterSpacing: 0.2,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  const _InfoTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              shape: BoxShape.circle,
+            ),
+            child: Center(
+              child: FaIcon(
+                icon,
+                size: 14,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AboutSection extends StatelessWidget {
+  final Event event;
+  final bool expanded;
+  final VoidCallback onToggleExpanded;
+
+  const _AboutSection({
+    required this.event,
+    required this.expanded,
+    required this.onToggleExpanded,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final aboutText = (event.about ?? '').trim();
+
+    if (aboutText.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'About ${event.title}',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          expanded ? aboutText : _truncate(aboutText, 180),
+          style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
+        ),
+        if (aboutText.length > 180)
+          TextButton(
+            onPressed: onToggleExpanded,
+            style: TextButton.styleFrom(padding: EdgeInsets.zero),
+            child: Text(expanded ? 'Read less' : 'Read more'),
+          ),
+      ],
+    );
+  }
+}
+
+class _ScheduleSection extends StatelessWidget {
+  final List<EventActivity> activities;
+
+  const _ScheduleSection({required this.activities});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Event Schedule',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 10),
+        ...activities.map(
+          (activity) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 7),
+                  child: Icon(Icons.circle, size: 6),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _formatClock(activity.activityTime),
+                        style: theme.textTheme.labelMedium,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        activity.activityTitle,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PrizeSection extends StatelessWidget {
+  final List<EventPrize> prizes;
+
+  const _PrizeSection({required this.prizes});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Prizes',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 10),
+        ...prizes.map(
+          (prize) => Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const FaIcon(FontAwesomeIcons.award, size: 16),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(prize.position, style: theme.textTheme.bodyMedium),
+                      Text(
+                        prize.prize,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OrganizerSection extends StatelessWidget {
+  final Event event;
+
+  const _OrganizerSection({required this.event});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final organizer = event.organizer;
+
+    final organizerName = organizer == null
+        ? 'Organizer'
+        : '${organizer.firstName} ${organizer.lastName}'.trim().isEmpty
+        ? organizer.username
+        : '${organizer.firstName} ${organizer.lastName}'.trim();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Organizer',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            border: Border.all(color: colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: colorScheme.primaryContainer,
+                    backgroundImage: organizer?.profilePicUrl != null
+                        ? NetworkImage(organizer!.profilePicUrl!)
+                        : null,
+                    child: organizer?.profilePicUrl == null
+                        ? Text(
+                            _initials(organizerName),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      organizerName,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              if (event.cohosts.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: event.cohosts
+                      .take(5)
+                      .map(
+                        (cohost) => Chip(
+                          avatar: CircleAvatar(
+                            radius: 12,
+                            backgroundImage: cohost.profilePicUrl != null
+                                ? NetworkImage(cohost.profilePicUrl!)
+                                : null,
+                            child: cohost.profilePicUrl == null
+                                ? Text(
+                                    _initials(cohost.displayName),
+                                    style: theme.textTheme.labelSmall,
+                                  )
+                                : null,
+                          ),
+                          label: Text(cohost.displayName),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EligibilitySection extends StatelessWidget {
+  final String eligibility;
+
+  const _EligibilitySection({required this.eligibility});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Eligibility',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: colorScheme.primaryContainer.withValues(alpha: 0.25),
+            border: Border.all(
+              color: colorScheme.primary.withValues(alpha: 0.35),
+            ),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(eligibility, style: theme.textTheme.bodyMedium),
+        ),
+      ],
+    );
+  }
+}
+
+class _FaqSection extends StatelessWidget {
+  final List<EventFaq> faqs;
+  final int? expandedFaqIndex;
+  final ValueChanged<int> onToggle;
+
+  const _FaqSection({
+    required this.faqs,
+    required this.expandedFaqIndex,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Frequently Asked Questions',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 10),
+        ...faqs.asMap().entries.map((entry) {
+          final index = entry.key;
+          final faq = entry.value;
+          final expanded = expandedFaqIndex == index;
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ExpansionTile(
+              initiallyExpanded: expanded,
+              onExpansionChanged: (_) => onToggle(index),
+              title: Text(
+                faq.question,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                  child: Text(faq.answer, style: theme.textTheme.bodyMedium),
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
+    );
+  }
+}
+
+class _RegisterBar extends StatelessWidget {
+  final Event event;
+  final bool loading;
+  final VoidCallback onRegister;
+
+  const _RegisterBar({
+    required this.event,
+    required this.loading,
+    required this.onRegister,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final canRegister =
+        !loading && !event.isRegistered && event.eventStatus == 'published';
+
+    final buttonLabel = event.isRegistered
+        ? 'Registered'
+        : event.eventStatus != 'published'
+        ? 'Unavailable'
+        : 'Register Now';
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          border: Border(
+            top: BorderSide(color: theme.colorScheme.outlineVariant),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: theme.colorScheme.surfaceContainerHighest,
+              ),
+              child: Text(
+                event.isPaid ? _formatPrice(event.price) : 'Free',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: FilledButton(
+                onPressed: canRegister ? onRegister : null,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: loading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(buttonLabel),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String _formatClock(DateTime time) {
+  return DateFormat('h:mm a').format(time.toUtc());
+}
+
+String _formatPrice(double? price) {
+  if (price == null) return 'Free';
+  final number = price % 1 == 0
+      ? price.toInt().toString()
+      : price.toStringAsFixed(2);
+  return 'Rs $number';
+}
+
+String? _teamSizeLabel(Event event) {
+  if (event.participationType != 'team') {
+    return null;
+  }
+
+  final min = event.minTeamSize;
+  final max = event.maxTeamSize;
+
+  if (min == null && max == null) return null;
+  if (min != null && max != null) return '$min-$max members';
+  if (min != null) return 'Minimum $min members';
+  return 'Up to $max members';
+}
+
+String _truncate(String text, int maxChars) {
+  if (text.length <= maxChars) return text;
+  return '${text.substring(0, maxChars).trim()}...';
+}
+
+String _initials(String name) {
+  final words = name
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((w) => w.isNotEmpty)
+      .toList();
+  if (words.isEmpty) return 'U';
+  if (words.length == 1) return words.first[0].toUpperCase();
+  return '${words[0][0]}${words[1][0]}'.toUpperCase();
+}

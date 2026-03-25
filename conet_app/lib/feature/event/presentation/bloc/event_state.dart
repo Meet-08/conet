@@ -39,6 +39,34 @@ final class EventFailure extends EventState {
   const EventFailure(this.message);
 }
 
+final class EventDetailLoading extends EventState {}
+
+final class EventDetailLoaded extends EventState {
+  final Event event;
+
+  const EventDetailLoaded(this.event);
+}
+
+final class EventDetailFailure extends EventState {
+  final String message;
+
+  const EventDetailFailure(this.message);
+}
+
+final class EventRegistrationLoading extends EventState {}
+
+final class EventRegistrationSuccess extends EventState {
+  final Event event;
+
+  const EventRegistrationSuccess(this.event);
+}
+
+final class EventRegistrationFailure extends EventState {
+  final String message;
+
+  const EventRegistrationFailure(this.message);
+}
+
 // ── Create / Draft states ────────────────────────────────────────────────────
 
 final class EventCreateLoading extends EventState {}

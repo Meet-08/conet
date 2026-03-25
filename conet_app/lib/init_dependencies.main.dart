@@ -356,14 +356,22 @@ void _initEvent() {
     () => EventSaveDraft(repository: serviceLocator<EventRepository>()),
   );
   serviceLocator.registerFactory(
+    () => EventGetById(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
+    () => EventRegister(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
     () =>
         EventGetPublishedEvents(repository: serviceLocator<EventRepository>()),
   );
 
   serviceLocator.registerFactory(
     () => EventBloc(
+      getById: serviceLocator(),
       getPublishedEvents: serviceLocator(),
       publishEvent: serviceLocator(),
+      registerEvent: serviceLocator(),
       saveDraft: serviceLocator(),
     ),
   );

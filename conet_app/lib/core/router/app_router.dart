@@ -8,6 +8,7 @@ import 'package:conet_app/feature/auth/presentation/pages/email_signup_page.dart
 import 'package:conet_app/feature/auth/presentation/pages/login_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/welcome_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/create_event_page.dart';
+import 'package:conet_app/feature/event/presentation/pages/event_detail_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_page.dart';
 import 'package:conet_app/feature/explore/pages/explore_page.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
@@ -181,6 +182,20 @@ class AppRouter {
       GoRoute(
         path: '/create-event',
         builder: (context, state) => const CreateEventPage(),
+      ),
+
+      GoRoute(
+        path: '/event-detail/:id',
+        builder: (context, state) {
+          final eventId = state.pathParameters['id'];
+          if (eventId == null || eventId.isEmpty) {
+            return const Scaffold(
+              body: Center(child: Text('Invalid event id')),
+            );
+          }
+
+          return EventDetailPage(eventId: eventId);
+        },
       ),
 
       GoRoute(

@@ -369,6 +369,72 @@ export const getEventService = async (eventId, viewerId) => {
   return mapEvent(event, viewerId);
 };
 
+export const registerEventService = async (eventId, userId) => {
+  const event = await prisma.events.findUnique({ where: { id: eventId } });
+
+  if (!event) {
+    const err = new Error("Event not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (event.event_status !== "published") {
+    const err = new Error("Only published events can be registered");
+    err.statusCode = 409;
+    throw err;
+  }
+
+  if (event.organizer_id === userId) {
+    const err = new Error("Organizer cannot register for their own event");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (
+    event.registration_deadline &&
+    new Date(event.registration_deadline).getTime() < Date.now()
+  ) {
+    const err = new Error("Registration deadline has passed");
+    err.statusCode = 409;
+    throw err;
+  }
+
+  if (event.max_participant != null && event.max_participant > -1) {
+    const registrationCount = await prisma.event_registrations.count({
+      where: {
+        event_id: eventId,
+        registration_status: "registered",
+      },
+    });
+
+    if (registrationCount >= event.max_participant) {
+      const err = new Error("Event registration is full");
+      err.statusCode = 409;
+      throw err;
+    }
+  }
+
+  await prisma.event_registrations.upsert({
+    where: { event_id_user_id: { event_id: eventId, user_id: userId } },
+    create: {
+      event_id: eventId,
+      user_id: userId,
+      registration_status: "registered",
+    },
+    update: {
+      registration_status: "registered",
+      registered_at: new Date(),
+    },
+  });
+
+  const updatedEvent = await prisma.events.findUnique({
+    where: { id: eventId },
+    include: eventInclude(userId),
+  });
+
+  return mapEvent(updatedEvent, userId);
+};
+
 // ─── List published events (cursor-paginated, filterable) ───────────────────
 
 export const listPublishedEventsService = async ({
