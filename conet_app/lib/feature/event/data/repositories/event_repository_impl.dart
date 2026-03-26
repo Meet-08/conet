@@ -44,6 +44,21 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   @override
+  Future<Either<AppFailure, EventPage>> getMyEvents({
+    required String type,
+    int limit = 20,
+    String? cursor,
+  }) {
+    return _getResult<EventPage, EventPage>(
+      () => _eventDataSource.getMyEvents(
+        type: type,
+        limit: limit,
+        cursor: cursor,
+      ),
+    );
+  }
+
+  @override
   Future<Either<AppFailure, Event>> registerEvent(String eventId) {
     return _getResult<Event, Event>(
       () => _eventDataSource.registerEvent(eventId),

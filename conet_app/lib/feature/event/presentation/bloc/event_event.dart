@@ -27,6 +27,22 @@ final class EventFetchMorePublishedEventsEvent extends EventEvent {
   const EventFetchMorePublishedEventsEvent();
 }
 
+final class EventFetchMyEventsEvent extends EventEvent {
+  final String type;
+  final String? cursor;
+  final int limit;
+
+  const EventFetchMyEventsEvent({
+    required this.type,
+    this.cursor,
+    this.limit = 20,
+  });
+}
+
+final class EventFetchMoreMyEventsEvent extends EventEvent {
+  const EventFetchMoreMyEventsEvent();
+}
+
 final class EventFetchByIdEvent extends EventEvent {
   final String eventId;
 

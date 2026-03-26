@@ -365,11 +365,15 @@ void _initEvent() {
     () =>
         EventGetPublishedEvents(repository: serviceLocator<EventRepository>()),
   );
+  serviceLocator.registerFactory(
+    () => EventGetMyEvents(repository: serviceLocator<EventRepository>()),
+  );
 
   serviceLocator.registerFactory(
     () => EventBloc(
       getById: serviceLocator(),
       getPublishedEvents: serviceLocator(),
+      getMyEvents: serviceLocator(),
       publishEvent: serviceLocator(),
       registerEvent: serviceLocator(),
       saveDraft: serviceLocator(),

@@ -7,14 +7,15 @@ import 'package:conet_app/feature/auth/presentation/pages/add_details_page.dart'
 import 'package:conet_app/feature/auth/presentation/pages/email_signup_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/login_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/welcome_page.dart';
+import 'package:conet_app/feature/event/presentation/constants/event_constants.dart';
 import 'package:conet_app/feature/event/presentation/pages/create_event_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_detail_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_page.dart';
+import 'package:conet_app/feature/event/presentation/pages/my_events_page.dart';
 import 'package:conet_app/feature/explore/pages/explore_page.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/presentation/pages/chat_detail_page.dart';
 import 'package:conet_app/feature/message/presentation/pages/messages_page.dart';
-import 'package:conet_app/feature/notification/presentation/bloc/notification_bloc.dart';
 import 'package:conet_app/feature/notification/presentation/pages/notification_page.dart'
     as notification_ui;
 import 'package:conet_app/feature/post/domain/entities/post.dart';
@@ -250,10 +251,7 @@ class AppRouter {
 
       GoRoute(
         path: '/notifications',
-        builder: (context, state) => BlocProvider.value(
-          value: serviceLocator<NotificationBloc>(),
-          child: const notification_ui.NotificationPage(),
-        ),
+        builder: (context, state) => const notification_ui.NotificationPage(),
       ),
 
       GoRoute(
@@ -310,6 +308,23 @@ class AppRouter {
             },
           ),
         ],
+      ),
+
+      GoRoute(
+        path: "/my-events",
+        builder: (context, state) {
+          final typeString = state.uri.queryParameters['type'];
+          EventType eventType = EventType.upcoming;
+          if (typeString != null) {
+            for (final type in EventType.values) {
+              if (type.name == typeString) {
+                eventType = type;
+                break;
+              }
+            }
+          }
+          return MyEventsPage(eventType: eventType);
+        },
       ),
 
       ShellRoute(

@@ -5,6 +5,7 @@ import {
   createEvent,
   getEvent,
   listCohosts,
+  listMyEvents,
   listMyOrganizedEvents,
   listPublishedEvents,
   publishEvent,
@@ -21,6 +22,7 @@ router.use(validateSupabaseToken);
 
 router.get("/", listPublishedEvents);
 router.get("/organized", listMyOrganizedEvents);
+router.get("/my", listMyEvents);
 router.get("/:id", getEvent);
 router.post("/:id/register", registerEvent);
 

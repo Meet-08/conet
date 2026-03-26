@@ -30,6 +30,7 @@ import 'package:conet_app/feature/event/data/data_sources/event_data_source_impl
 import 'package:conet_app/feature/event/data/repositories/event_repository_impl.dart';
 import 'package:conet_app/feature/event/domain/repositories/event_repository.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_by_id.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_get_my_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';

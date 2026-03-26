@@ -32,6 +32,27 @@ const parsePublishedEventsCursor = (cursor) => {
   }
 };
 
+const buildMyEventsCursor = (eventDate, id) =>
+  Buffer.from(
+    JSON.stringify({ eventDate: eventDate.toISOString(), id }),
+  ).toString("base64");
+
+const parseMyEventsCursor = (cursor) => {
+  try {
+    const decoded = JSON.parse(Buffer.from(cursor, "base64").toString("utf8"));
+    if (!decoded?.eventDate || !decoded?.id) {
+      return null;
+    }
+    const eventDate = new Date(decoded.eventDate);
+    if (Number.isNaN(eventDate.getTime())) {
+      return null;
+    }
+    return { eventDate, id: decoded.id };
+  } catch {
+    return null;
+  }
+};
+
 const buildOrganizedEventsCursor = (createdAt, id) =>
   Buffer.from(
     JSON.stringify({ createdAt: createdAt.toISOString(), id }),
@@ -560,6 +581,112 @@ export const listMyOrganizedEventsService = async (
     : null;
 
   return {
+    events: rows.map(mapEventSummary),
+    nextCursor,
+    hasMore,
+    pageSize: safePageSize,
+  };
+};
+
+// ─── List current user's events by chip type ────────────────────────────────
+
+export const listMyEventsService = async (
+  userId,
+  { type = "upcoming", cursor, page_size = 20 },
+) => {
+  const allowedTypes = ["upcoming", "past", "saved"];
+  if (!allowedTypes.includes(type)) {
+    const err = new Error("type must be one of: upcoming, past, saved");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const safePageSize = Math.min(
+    100,
+    Math.max(1, Math.floor(Number(page_size) || 20)),
+  );
+
+  const parsedCursor = cursor ? parseMyEventsCursor(cursor) : null;
+  if (cursor && !parsedCursor) {
+    const err = new Error("Invalid cursor format");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const now = new Date();
+  const today = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+
+  const baseWhere = {
+    event_status: "published",
+    ...(type === "saved" ?
+      {
+        event_bookmarks: { some: { user_id: userId } },
+      }
+    : {
+        OR: [
+          { organizer_id: userId },
+          {
+            event_registrations: {
+              some: { user_id: userId, registration_status: "registered" },
+            },
+          },
+        ],
+        ...(type === "upcoming" ?
+          { event_date: { gte: today } }
+        : { event_date: { lt: today } }),
+      }),
+  };
+
+  const cursorWhere =
+    !parsedCursor ? {}
+    : type === "past" ?
+      {
+        OR: [
+          { event_date: { lt: parsedCursor.eventDate } },
+          {
+            event_date: parsedCursor.eventDate,
+            id: { lt: parsedCursor.id },
+          },
+        ],
+      }
+    : {
+        OR: [
+          { event_date: { gt: parsedCursor.eventDate } },
+          {
+            event_date: parsedCursor.eventDate,
+            id: { gt: parsedCursor.id },
+          },
+        ],
+      };
+
+  const rows = await prisma.events.findMany({
+    where: {
+      ...baseWhere,
+      ...cursorWhere,
+    },
+    take: safePageSize + 1,
+    orderBy:
+      type === "past" ?
+        [{ event_date: "desc" }, { id: "desc" }]
+      : [{ event_date: "asc" }, { id: "asc" }],
+    select: eventSummarySelect,
+  });
+
+  const hasMore = rows.length > safePageSize;
+  if (hasMore) rows.pop();
+
+  const nextCursor =
+    hasMore ?
+      buildMyEventsCursor(
+        rows[rows.length - 1].event_date,
+        rows[rows.length - 1].id,
+      )
+    : null;
+
+  return {
+    type,
     events: rows.map(mapEventSummary),
     nextCursor,
     hasMore,

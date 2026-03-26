@@ -2,6 +2,7 @@ import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
+import 'package:conet_app/feature/event/presentation/widgets/event_app_bar.dart';
 import 'package:conet_app/feature/event/presentation/widgets/event_card.dart';
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
@@ -17,8 +18,6 @@ class EventPage extends StatefulWidget {
 }
 
 class _EventPageState extends State<EventPage> {
-  bool _isGridView = false;
-
   @override
   void initState() {
     super.initState();
@@ -30,10 +29,7 @@ class _EventPageState extends State<EventPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _EventAppBar(
-        isGridView: _isGridView,
-        onToggleView: () => setState(() => _isGridView = !_isGridView),
-      ),
+      appBar: const EventAppBar(),
       body: BlocConsumer<EventBloc, EventState>(
         listenWhen: (_, current) => current is EventFailure,
         listener: (context, state) {
@@ -54,7 +50,6 @@ class _EventPageState extends State<EventPage> {
             return _EventBody(
               events: state.events,
               hasMore: state.hasMore,
-              isGridView: _isGridView,
               onRefresh: () async {
                 context.read<EventBloc>().add(
                   const EventFetchPublishedEventsEvent(),
@@ -74,74 +69,17 @@ class _EventPageState extends State<EventPage> {
   }
 }
 
-// ─── App Bar ─────────────────────────────────────────────────────────────────
-
-class _EventAppBar extends StatelessWidget implements PreferredSizeWidget {
-  final bool isGridView;
-  final VoidCallback onToggleView;
-
-  const _EventAppBar({required this.isGridView, required this.onToggleView});
-
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return AppBar(
-      title: const Text('Events'),
-      centerTitle: false,
-      actions: [
-        IconButton(
-          onPressed: () {},
-          // TODO: open search
-          icon: FaIcon(
-            FontAwesomeIcons.magnifyingGlass,
-            size: 17,
-            color: colorScheme.onSurface,
-          ),
-          tooltip: 'Search events',
-        ),
-        IconButton(
-          onPressed: onToggleView,
-          icon: FaIcon(
-            isGridView
-                ? FontAwesomeIcons.listUl
-                : FontAwesomeIcons.tableCellsLarge,
-            size: 17,
-            color: colorScheme.onSurface,
-          ),
-          tooltip: isGridView ? 'List view' : 'Grid view',
-        ),
-        IconButton(
-          onPressed: () {},
-          // TODO: open calendar view
-          icon: FaIcon(
-            FontAwesomeIcons.calendarDays,
-            size: 17,
-            color: colorScheme.onSurface,
-          ),
-          tooltip: 'Calendar view',
-        ),
-        const SizedBox(width: 4),
-      ],
-    );
-  }
-}
-
 // ─── Loaded Body ─────────────────────────────────────────────────────────────
 
 class _EventBody extends StatefulWidget {
   final List<EventListItem> events;
   final bool hasMore;
-  final bool isGridView;
   final Future<void> Function() onRefresh;
   final VoidCallback onLoadMore;
 
   const _EventBody({
     required this.events,
     required this.hasMore,
-    required this.isGridView,
     required this.onRefresh,
     required this.onLoadMore,
   });
@@ -181,12 +119,9 @@ class _EventBodyState extends State<_EventBody> {
         controller: _scrollController,
         padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
         children: [
-          const _CampusSection(),
+          _CampusSection(events: widget.events),
           const SizedBox(height: 28),
-          _DiscoverSection(
-            events: widget.events,
-            isGridView: widget.isGridView,
-          ),
+          _DiscoverSection(events: widget.events),
           if (widget.hasMore)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16),
@@ -208,7 +143,7 @@ class _EventEmptyBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
       children: const [
-        _CampusSection(),
+        _CampusSection(events: []),
         SizedBox(height: 28),
         _DiscoverSection(events: []),
       ],
@@ -219,7 +154,9 @@ class _EventEmptyBody extends StatelessWidget {
 // ─── From Your Campus Section ─────────────────────────────────────────────────
 
 class _CampusSection extends StatelessWidget {
-  const _CampusSection();
+  final List<EventListItem> events;
+
+  const _CampusSection({required this.events});
 
   @override
   Widget build(BuildContext context) {
@@ -256,68 +193,79 @@ class _CampusSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        // Dashed card — full width
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: DottedBorder(
-            options: RoundedRectDottedBorderOptions(
-              radius: const .circular(16),
-              color: colorScheme.outlineVariant,
-              strokeWidth: 1.5,
-              dashPattern: const [6, 4],
-            ),
-            child: SizedBox(
-              width: double.infinity,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 36,
-                  horizontal: 24,
-                ),
-                child: Column(
-                  children: [
-                    // Graduation cap in circle
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerHighest,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: FaIcon(
-                          FontAwesomeIcons.graduationCap,
-                          size: 26,
-                          color: colorScheme.onSurfaceVariant,
+        if (events.isNotEmpty)
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: events.length > 2 ? 2 : events.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 12),
+            itemBuilder: (_, i) => EventCard(event: events[i]),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: DottedBorder(
+              options: RoundedRectDottedBorderOptions(
+                radius: const Radius.circular(16),
+                color: colorScheme.outlineVariant,
+                strokeWidth: 1.5,
+                dashPattern: const [6, 4],
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 36,
+                    horizontal: 24,
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(
+                          child: FaIcon(
+                            FontAwesomeIcons.graduationCap,
+                            size: 26,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No upcoming campus events yet!',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 20),
-                    OutlinedButton.icon(
-                      onPressed: () => context.push('/create-event'),
-                      icon: const FaIcon(FontAwesomeIcons.circlePlus, size: 15),
-                      label: const Text('Host Event'),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 22,
-                          vertical: 10,
+                      const SizedBox(height: 16),
+                      Text(
+                        'No upcoming campus events yet!',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
-                        shape: const StadiumBorder(),
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 20),
+                      OutlinedButton.icon(
+                        onPressed: () => context.push('/create-event'),
+                        icon: const FaIcon(
+                          FontAwesomeIcons.circlePlus,
+                          size: 15,
+                        ),
+                        label: const Text('Host Event'),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 22,
+                            vertical: 10,
+                          ),
+                          shape: const StadiumBorder(),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -327,9 +275,8 @@ class _CampusSection extends StatelessWidget {
 
 class _DiscoverSection extends StatelessWidget {
   final List<EventListItem> events;
-  final bool isGridView;
 
-  const _DiscoverSection({required this.events, this.isGridView = false});
+  const _DiscoverSection({required this.events});
 
   @override
   Widget build(BuildContext context) {
@@ -369,9 +316,7 @@ class _DiscoverSection extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         if (events.isNotEmpty)
-          isGridView
-              ? _buildGrid(context, theme, colorScheme)
-              : _buildList(context, theme, colorScheme)
+          _buildList(context, theme, colorScheme)
         else
           // Empty state
           Padding(
@@ -480,28 +425,6 @@ class _DiscoverSection extends StatelessWidget {
       itemCount: events.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (_, i) => EventCard(event: events[i]),
-    );
-  }
-
-  Widget _buildGrid(
-    BuildContext context,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.75,
-        ),
-        itemCount: events.length,
-        itemBuilder: (_, i) => EventCard(event: events[i], compact: true),
-      ),
     );
   }
 }

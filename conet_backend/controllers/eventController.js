@@ -5,6 +5,7 @@ import {
   createEventService,
   getEventService,
   listCohostsService,
+  listMyEventsService,
   listMyOrganizedEventsService,
   listPublishedEventsService,
   publishEventService,
@@ -105,6 +106,28 @@ export const listMyOrganizedEvents = asyncHandler(async (req, res) => {
     cursor: cursor || null,
     page_size,
     status,
+  });
+
+  res.status(200).json({ success: true, ...result });
+});
+
+// ─── List current user's events by selected type ────────────────────────────
+
+export const listMyEvents = asyncHandler(async (req, res) => {
+  const { cursor, type = "upcoming" } = req.query;
+  const pageSizeInput = req.query.page_size;
+  const rawPageSize = parseInt(pageSizeInput);
+
+  if (pageSizeInput !== undefined && (isNaN(rawPageSize) || rawPageSize < 1)) {
+    res.status(400);
+    throw new Error("page_size must be a positive integer");
+  }
+
+  const page_size = Math.min(rawPageSize || 20, 100);
+  const result = await listMyEventsService(req.user.id, {
+    type,
+    cursor: cursor || null,
+    page_size,
   });
 
   res.status(200).json({ success: true, ...result });

@@ -20,4 +20,10 @@ abstract class EventDataSource {
     DateTime? dateTo,
     String? search,
   });
+
+  Future<EventPageModel> getMyEvents({
+    required String type,
+    int limit = 20,
+    String? cursor,
+  });
 }

@@ -68,3 +68,5 @@ const stepSubtitles = [
   'Configure rewards, FAQs, and organizer contacts',
   'Check your event details before publishing',
 ];
+
+enum EventType { upcoming, past, saved }

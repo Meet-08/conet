@@ -22,4 +22,10 @@ abstract interface class EventRepository {
     DateTime? dateTo,
     String? search,
   });
+
+  Future<Either<AppFailure, EventPage>> getMyEvents({
+    required String type,
+    int limit = 20,
+    String? cursor,
+  });
 }

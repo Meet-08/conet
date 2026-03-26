@@ -2,6 +2,7 @@ import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_by_id.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_get_my_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
@@ -15,20 +16,25 @@ part 'event_state.dart';
 class EventBloc extends Bloc<EventEvent, EventState> {
   final EventGetById _getById;
   final EventGetPublishedEvents _getPublishedEvents;
+  final EventGetMyEvents _getMyEvents;
   final EventPublish _publishEvent;
   final EventRegister _registerEvent;
   final EventSaveDraft _saveDraft;
 
   String? _nextCursor;
+  String? _myEventsNextCursor;
+  String _myEventsType = 'upcoming';
 
   EventBloc({
     required EventGetById getById,
     required EventGetPublishedEvents getPublishedEvents,
+    required EventGetMyEvents getMyEvents,
     required EventPublish publishEvent,
     required EventRegister registerEvent,
     required EventSaveDraft saveDraft,
   }) : _getById = getById,
        _getPublishedEvents = getPublishedEvents,
+       _getMyEvents = getMyEvents,
        _publishEvent = publishEvent,
        _registerEvent = registerEvent,
        _saveDraft = saveDraft,
@@ -36,6 +42,8 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     on<EventFetchByIdEvent>(_onFetchById);
     on<EventFetchPublishedEventsEvent>(_onFetchPublishedEvents);
     on<EventFetchMorePublishedEventsEvent>(_onFetchMorePublishedEvents);
+    on<EventFetchMyEventsEvent>(_onFetchMyEvents);
+    on<EventFetchMoreMyEventsEvent>(_onFetchMoreMyEvents);
     on<EventPublishEvent>(_onPublish);
     on<EventRegisterEvent>(_onRegister);
     on<EventSaveDraftEvent>(_onSaveDraft);
@@ -112,6 +120,68 @@ class EventBloc extends Bloc<EventEvent, EventState> {
         );
       },
     );
+  }
+
+  Future<void> _onFetchMyEvents(
+    EventFetchMyEventsEvent event,
+    Emitter<EventState> emit,
+  ) async {
+    emit(MyEventsLoading());
+
+    _myEventsType = event.type;
+    _myEventsNextCursor = null;
+
+    final result = await _getMyEvents(
+      type: event.type,
+      cursor: event.cursor,
+      limit: event.limit,
+    );
+
+    String? failureMessage;
+    MyEventsLoaded? loaded;
+
+    result.fold((failure) => failureMessage = failure.message, (page) {
+      _myEventsNextCursor = page.nextCursor;
+      loaded = MyEventsLoaded(
+        type: event.type,
+        events: page.events,
+        nextCursor: page.nextCursor,
+        hasMore: page.hasMore,
+        pageSize: event.limit,
+      );
+    });
+
+    if (failureMessage != null) {
+      emit(MyEventsFailure(failureMessage!));
+    } else {
+      emit(loaded!);
+    }
+  }
+
+  Future<void> _onFetchMoreMyEvents(
+    EventFetchMoreMyEventsEvent event,
+    Emitter<EventState> emit,
+  ) async {
+    if (state is! MyEventsLoaded) return;
+    final current = state as MyEventsLoaded;
+    if (!current.hasMore || _myEventsNextCursor == null) return;
+
+    final result = await _getMyEvents(
+      type: _myEventsType,
+      cursor: _myEventsNextCursor,
+      limit: current.pageSize,
+    );
+
+    result.fold((failure) {}, (page) {
+      _myEventsNextCursor = page.nextCursor;
+      emit(
+        current.copyWith(
+          events: [...current.events, ...page.events],
+          nextCursor: page.nextCursor,
+          hasMore: page.hasMore,
+        ),
+      );
+    });
   }
 
   Future<void> _onPublish(

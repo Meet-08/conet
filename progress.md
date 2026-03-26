@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-03-25
+> Last updated: 2026-03-26
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -119,6 +119,19 @@
 
 ---
 
+### Events Feed (Discover + Campus)
+
+- **Events Page** — Published events feed with pull-to-refresh and infinite scroll
+- **From Your Campus Section** — Reuses event cards to highlight campus-facing event list on top
+- **Discover Section** — Lists discoverable events with filter affordance and empty-state handling
+- **My Events Entry** — App bar quick action routes to `/my-events`
+- **My Events Page** — Redesigned chip-based list (`Upcoming`, `Past`, `Saved`) backed by filtered API fetching with pagination
+
+**Use Cases:** `EventGetPublishedEvents`, `EventGetMyEvents`
+**Backend Endpoints:** `GET /events`, `GET /events/my`
+
+---
+
 ### Device Management (FCM Token)
 
 > Background/infrastructure — no UI required by design.
@@ -179,8 +192,8 @@
 - **Remove Co-host** — Organizer removes a co-host
 - **List Co-hosts** — Retrieve all co-hosts for an event
 
-**Use Cases:** `EventGetById`, `EventRegister`, `EventPublish`, `EventSaveDraft`, `EventGetPublishedEvents`
-**Backend Endpoints:** `GET /events`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `POST /events/:id/register`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
+**Use Cases:** `EventGetById`, `EventRegister`, `EventPublish`, `EventSaveDraft`, `EventGetPublishedEvents`, `EventGetMyEvents`
+**Backend Endpoints:** `GET /events`, `GET /events/my`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `POST /events/:id/register`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
 
 ---
 
@@ -196,21 +209,6 @@
 - **ExplorePostCard** — Post card with hardcoded static user ("David Park") and content
 
 > ⚠️ No use cases, no repository, no bloc, no backend routes. Pure placeholder shell.
-
----
-
-### Events
-
-- **EventPage** — Tab-based scaffold with Discover / My Events / Organized tabs
-- **EventAppBar** — App bar
-- **EventTabs** — TabBar (3 tabs)
-- **DiscoverTab** — Renders `EmptyEventsState` only
-- **MyEventsTab** — Hardcoded "Saved Events (17)" and "Past Events (6)" sections with static `EventCard` widgets
-- **OrganizedTab** — Placeholder tab
-- **EventCard** — Static card widget
-- **EmptyEventsState** — Generic empty state widget
-
-> ⚠️ Event domain/data layer and backend are implemented, but these presentation screens are still placeholder-only and not wired to live event states yet.
 
 ---
 

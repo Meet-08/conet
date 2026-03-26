@@ -75,6 +75,32 @@ class EventDataSourceImpl implements EventDataSource {
   }
 
   @override
+  Future<EventPageModel> getMyEvents({
+    required String type,
+    int limit = 20,
+    String? cursor,
+  }) async {
+    try {
+      final response = await _dioClient.dio.get(
+        '/events/my',
+        queryParameters: {
+          'type': type,
+          'page_size': limit,
+          if (cursor != null && cursor.trim().isNotEmpty) 'cursor': cursor,
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to fetch my events');
+      }
+
+      return EventPageModel.fromJson(response.data as Map<String, dynamic>);
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
   Future<Event> registerEvent(String eventId) async {
     try {
       final response = await _dioClient.dio.post('/events/$eventId/register');
