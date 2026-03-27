@@ -133,8 +133,6 @@ class _EventBodyState extends State<_EventBody> {
   }
 }
 
-// ─── Empty Body ───────────────────────────────────────────────────────────────
-
 class _EventEmptyBody extends StatelessWidget {
   const _EventEmptyBody();
 
@@ -150,8 +148,6 @@ class _EventEmptyBody extends StatelessWidget {
     );
   }
 }
-
-// ─── From Your Campus Section ─────────────────────────────────────────────────
 
 class _CampusSection extends StatelessWidget {
   final List<EventListItem> events;

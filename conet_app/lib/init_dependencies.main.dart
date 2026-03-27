@@ -368,6 +368,13 @@ void _initEvent() {
   serviceLocator.registerFactory(
     () => EventGetMyEvents(repository: serviceLocator<EventRepository>()),
   );
+  serviceLocator.registerFactory(
+    () =>
+        EventGetRegistrationInfo(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
+    () => EventMarkAttendance(repository: serviceLocator<EventRepository>()),
+  );
 
   serviceLocator.registerFactory(
     () => EventBloc(
@@ -377,6 +384,13 @@ void _initEvent() {
       publishEvent: serviceLocator(),
       registerEvent: serviceLocator(),
       saveDraft: serviceLocator(),
+    ),
+  );
+
+  serviceLocator.registerFactory(
+    () => EventRegistrationBloc(
+      getRegistrationInfo: serviceLocator(),
+      markAttendance: serviceLocator(),
     ),
   );
 }

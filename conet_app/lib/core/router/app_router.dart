@@ -12,6 +12,7 @@ import 'package:conet_app/feature/event/presentation/pages/create_event_page.dar
 import 'package:conet_app/feature/event/presentation/pages/event_detail_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/my_events_page.dart';
+import 'package:conet_app/feature/event/presentation/pages/view_ticket.dart';
 import 'package:conet_app/feature/explore/pages/explore_page.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/presentation/pages/chat_detail_page.dart';
@@ -327,6 +328,22 @@ class AppRouter {
         },
       ),
 
+      GoRoute(
+        path: "/view-ticket",
+        builder: (context, state) {
+          final extras = state.extra as Map<String, String>?;
+          final eventId = extras?['eventId'];
+          final ticketId = extras?['ticketId'];
+
+          if (eventId == null || eventId.isEmpty) {
+            return const Scaffold(
+              body: Center(child: Text('Invalid event id')),
+            );
+          }
+
+          return ViewTicket(eventId: eventId, ticketId: ticketId);
+        },
+      ),
       ShellRoute(
         builder: (context, state, child) {
           return MainScaffold(child: child);

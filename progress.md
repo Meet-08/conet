@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-03-26
+> Last updated: 2026-03-27
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -113,6 +113,7 @@
 
 - **Event Detail Page** — Dynamic event detail UI driven by `GET /events/:id` (header, schedule, prizes, organizer, eligibility, FAQs)
 - **Event Registration CTA** — Register button wired to backend registration flow and updates event state after success
+- **View Ticket Page** — Dedicated ticket UI that fetches registration identifiers and renders QR payload for event check-in
 
 **Use Cases:** `EventGetById`, `EventRegister`
 **Backend Endpoints:** `GET /events/:id`, `POST /events/:id/register`
@@ -186,14 +187,16 @@
 - **Cancel Event** — Organizer cancels a published or draft event
 - **Get Event** — Fetch a single event; non-organizers can only see published events
 - **Register Event** — Authenticated user registers for a published event and receives the latest full event view
+- **Registration Ticket Info** — Registered user fetches ticket payload data for QR generation
+- **Attend Event (Scan Ticket)** — Organizer/co-host scans ticket payload and marks attendee as attended with live attendance summary
 - **Discover Events** — Paginated list of published events with category, location type, date range, and text search filters
 - **My Organized Events** — Organizer retrieves their own events, optionally filtered by status (draft/published/cancelled)
 - **Add Co-host** — Organizer adds another user as a co-host
 - **Remove Co-host** — Organizer removes a co-host
 - **List Co-hosts** — Retrieve all co-hosts for an event
 
-**Use Cases:** `EventGetById`, `EventRegister`, `EventPublish`, `EventSaveDraft`, `EventGetPublishedEvents`, `EventGetMyEvents`
-**Backend Endpoints:** `GET /events`, `GET /events/my`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `POST /events/:id/register`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
+**Use Cases:** `EventGetById`, `EventRegister`, `EventPublish`, `EventSaveDraft`, `EventGetPublishedEvents`, `EventGetMyEvents`, `EventGetRegistrationInfo`, `EventMarkAttendance`
+**Backend Endpoints:** `GET /events`, `GET /events/my`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `POST /events/:id/register`, `GET /events/:id/registration-info`, `POST /events/:id/attend`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
 
 ---
 

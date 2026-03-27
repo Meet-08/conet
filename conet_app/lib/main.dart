@@ -4,6 +4,7 @@ import 'package:conet_app/core/router/app_router.dart';
 import 'package:conet_app/core/services/presence_service.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
+import 'package:conet_app/feature/event/presentation/bloc/event_registration_bloc.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/notification/presentation/bloc/notification_bloc.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
@@ -45,6 +46,7 @@ void main() async {
         BlocProvider(create: (_) => serviceLocator<NotificationBloc>()),
         BlocProvider(create: (_) => serviceLocator<ProfileBloc>()),
         BlocProvider(create: (_) => serviceLocator<EventBloc>()),
+        BlocProvider(create: (_) => serviceLocator<EventRegistrationBloc>()),
       ],
       child: const MyApp(),
     ),

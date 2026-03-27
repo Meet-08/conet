@@ -1,9 +1,11 @@
+import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/event/presentation/constants/event_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class MyEventsPage extends StatefulWidget {
@@ -82,14 +84,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
               current is MyEventsFailure || current is MyEventsLoaded,
           listener: (context, state) {
             if (state is MyEventsFailure) {
-              ScaffoldMessenger.of(context)
-                ..hideCurrentSnackBar()
-                ..showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+              AppToast.showError(context, state.message);
             }
 
             if (state is MyEventsLoaded) {
@@ -365,7 +360,9 @@ class _MyEventCard extends StatelessWidget {
                   filled: true,
                   icon: FontAwesomeIcons.ticket,
                   label: 'View Ticket',
-                  onTap: () {},
+                  onTap: () {
+                    context.push('/view-ticket', extra: {'eventId': event.id});
+                  },
                 ),
               ),
               const SizedBox(width: 10),

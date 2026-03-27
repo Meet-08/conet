@@ -1,9 +1,11 @@
 import express from "express";
 import {
   addCohost,
+  attendEvent,
   cancelEvent,
   createEvent,
   getEvent,
+  getRegistrationInfo,
   listCohosts,
   listMyEvents,
   listMyOrganizedEvents,
@@ -25,6 +27,8 @@ router.get("/organized", listMyOrganizedEvents);
 router.get("/my", listMyEvents);
 router.get("/:id", getEvent);
 router.post("/:id/register", registerEvent);
+router.get("/:id/registration-info", getRegistrationInfo);
+router.post("/:id/attend", attendEvent);
 
 // Organizer lifecycle
 router.post("/", createEvent);

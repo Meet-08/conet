@@ -1,7 +1,9 @@
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
+import 'package:conet_app/feature/event/domain/entities/event_attendance_result.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_page.dart';
+import 'package:conet_app/feature/event/domain/entities/event_registration_ticket.dart';
 import 'package:fpdart/fpdart.dart';
 
 abstract interface class EventRepository {
@@ -27,5 +29,15 @@ abstract interface class EventRepository {
     required String type,
     int limit = 20,
     String? cursor,
+  });
+
+  Future<Either<AppFailure, EventRegistrationTicket>> getRegistrationInfo(
+    String eventId,
+  );
+
+  Future<Either<AppFailure, EventAttendanceResult>> markAttendance({
+    required String eventId,
+    required String userId,
+    required String registrationId,
   });
 }

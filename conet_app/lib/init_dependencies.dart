@@ -32,10 +32,13 @@ import 'package:conet_app/feature/event/domain/repositories/event_repository.dar
 import 'package:conet_app/feature/event/domain/usecases/event_get_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_get_registration_info.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_mark_attendance.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
+import 'package:conet_app/feature/event/presentation/bloc/event_registration_bloc.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source_impl.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_real_time_datasource.dart';

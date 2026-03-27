@@ -5,11 +5,43 @@ import {
   assertOrganizer,
   eventInclude,
   eventSummarySelect,
+  mapCohost,
   mapEvent,
   mapEventSummary,
   parseTimeString,
   validateEventPayload,
 } from "./utils.js";
+
+const assertAttendanceScanner = async (eventId, scannerUserId) => {
+  const event = await assertEventExists(eventId);
+
+  if (event.event_status !== "published") {
+    const err = new Error("Only published events can accept attendance");
+    err.statusCode = 409;
+    throw err;
+  }
+
+  if (event.organizer_id === scannerUserId) {
+    return event;
+  }
+
+  const cohost = await prisma.event_cohosts.findUnique({
+    where: {
+      event_id_user_id: {
+        event_id: eventId,
+        user_id: scannerUserId,
+      },
+    },
+  });
+
+  if (!cohost) {
+    const err = new Error("Only organizer or co-host can scan tickets");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  return event;
+};
 
 const buildPublishedEventsCursor = (eventDate, id) =>
   Buffer.from(
@@ -454,6 +486,118 @@ export const registerEventService = async (eventId, userId) => {
   });
 
   return mapEvent(updatedEvent, userId);
+};
+
+export const getRegistrationInfoService = async (eventId, userId) => {
+  const event = await prisma.events.findUnique({
+    where: { id: eventId },
+    select: {
+      id: true,
+      title: true,
+      event_date: true,
+      start_time: true,
+      end_time: true,
+      venue: true,
+      location: true,
+      event_status: true,
+    },
+  });
+
+  if (!event) {
+    const err = new Error("Event not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (event.event_status !== "published") {
+    const err = new Error("Ticket is only available for published events");
+    err.statusCode = 409;
+    throw err;
+  }
+
+  const registration = await prisma.event_registrations.findUnique({
+    where: {
+      event_id_user_id: {
+        event_id: eventId,
+        user_id: userId,
+      },
+    },
+    include: {
+      users: {
+        select: {
+          id: true,
+          username: true,
+          first_name: true,
+          last_name: true,
+        },
+      },
+    },
+  });
+
+  if (
+    !registration ||
+    registration.registration_status === "cancelled" ||
+    !registration.registration_status
+  ) {
+    const err = new Error("You are not registered for this event");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  return {
+    event_id: event.id,
+    user_id: registration.users.id,
+    registration_id: registration.id,
+  };
+};
+
+export const attendEventService = async (eventId, scannerUserId, body = {}) => {
+  await assertAttendanceScanner(eventId, scannerUserId);
+
+  const { event_id, user_id, registration_id } = body;
+
+  if (!event_id || !user_id || !registration_id) {
+    const err = new Error("event_id, user_id and registration_id are required");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (event_id !== eventId) {
+    const err = new Error("event_id does not match route event id");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const registration = await prisma.event_registrations.findFirst({
+    where: { id: registration_id, event_id: eventId, user_id },
+  });
+
+  if (!registration || registration.registration_status === "cancelled") {
+    const err = new Error("Valid registration not found for this event");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const alreadyAttended = registration.registration_status === "attended";
+
+  if (!alreadyAttended) {
+    await prisma.event_registrations.update({
+      where: { id: registration_id },
+      data: {
+        registration_status: "attended",
+      },
+    });
+
+    return {
+      success: true,
+      message: "Attendance updated successfully",
+    };
+  }
+
+  return {
+    success: true,
+    message: "User already marked as attended",
+  };
 };
 
 // ─── List published events (cursor-paginated, filterable) ───────────────────
