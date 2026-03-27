@@ -3,6 +3,7 @@ import 'package:conet_app/feature/event/domain/entities/event_create_payload.dar
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_events.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_get_my_organized_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
@@ -17,6 +18,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   final EventGetById _getById;
   final EventGetPublishedEvents _getPublishedEvents;
   final EventGetMyEvents _getMyEvents;
+  final EventGetMyOrganizedEvents _getMyOrganizedEvents;
   final EventPublish _publishEvent;
   final EventRegister _registerEvent;
   final EventSaveDraft _saveDraft;
@@ -24,17 +26,21 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   String? _nextCursor;
   String? _myEventsNextCursor;
   String _myEventsType = 'upcoming';
+  String? _organizedNextCursor;
+  String? _organizedStatus;
 
   EventBloc({
     required EventGetById getById,
     required EventGetPublishedEvents getPublishedEvents,
     required EventGetMyEvents getMyEvents,
+    required EventGetMyOrganizedEvents getMyOrganizedEvents,
     required EventPublish publishEvent,
     required EventRegister registerEvent,
     required EventSaveDraft saveDraft,
   }) : _getById = getById,
        _getPublishedEvents = getPublishedEvents,
        _getMyEvents = getMyEvents,
+       _getMyOrganizedEvents = getMyOrganizedEvents,
        _publishEvent = publishEvent,
        _registerEvent = registerEvent,
        _saveDraft = saveDraft,
@@ -44,6 +50,8 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     on<EventFetchMorePublishedEventsEvent>(_onFetchMorePublishedEvents);
     on<EventFetchMyEventsEvent>(_onFetchMyEvents);
     on<EventFetchMoreMyEventsEvent>(_onFetchMoreMyEvents);
+    on<EventFetchMyOrganizedEventsEvent>(_onFetchMyOrganizedEvents);
+    on<EventFetchMoreMyOrganizedEventsEvent>(_onFetchMoreMyOrganizedEvents);
     on<EventPublishEvent>(_onPublish);
     on<EventRegisterEvent>(_onRegister);
     on<EventSaveDraftEvent>(_onSaveDraft);
@@ -174,6 +182,68 @@ class EventBloc extends Bloc<EventEvent, EventState> {
 
     result.fold((failure) {}, (page) {
       _myEventsNextCursor = page.nextCursor;
+      emit(
+        current.copyWith(
+          events: [...current.events, ...page.events],
+          nextCursor: page.nextCursor,
+          hasMore: page.hasMore,
+        ),
+      );
+    });
+  }
+
+  Future<void> _onFetchMyOrganizedEvents(
+    EventFetchMyOrganizedEventsEvent event,
+    Emitter<EventState> emit,
+  ) async {
+    emit(MyOrganizedEventsLoading());
+
+    _organizedStatus = event.status;
+    _organizedNextCursor = null;
+
+    final result = await _getMyOrganizedEvents(
+      status: event.status,
+      cursor: event.cursor,
+      limit: event.limit,
+    );
+
+    String? failureMessage;
+    MyOrganizedEventsLoaded? loaded;
+
+    result.fold((failure) => failureMessage = failure.message, (page) {
+      _organizedNextCursor = page.nextCursor;
+      loaded = MyOrganizedEventsLoaded(
+        status: event.status,
+        events: page.events,
+        nextCursor: page.nextCursor,
+        hasMore: page.hasMore,
+        pageSize: event.limit,
+      );
+    });
+
+    if (failureMessage != null) {
+      emit(MyOrganizedEventsFailure(failureMessage!));
+    } else {
+      emit(loaded!);
+    }
+  }
+
+  Future<void> _onFetchMoreMyOrganizedEvents(
+    EventFetchMoreMyOrganizedEventsEvent event,
+    Emitter<EventState> emit,
+  ) async {
+    if (state is! MyOrganizedEventsLoaded) return;
+    final current = state as MyOrganizedEventsLoaded;
+    if (!current.hasMore || _organizedNextCursor == null) return;
+
+    final result = await _getMyOrganizedEvents(
+      status: _organizedStatus,
+      cursor: _organizedNextCursor,
+      limit: current.pageSize,
+    );
+
+    result.fold((failure) {}, (page) {
+      _organizedNextCursor = page.nextCursor;
       emit(
         current.copyWith(
           events: [...current.events, ...page.events],

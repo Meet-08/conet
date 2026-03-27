@@ -369,6 +369,11 @@ void _initEvent() {
     () => EventGetMyEvents(repository: serviceLocator<EventRepository>()),
   );
   serviceLocator.registerFactory(
+    () => EventGetMyOrganizedEvents(
+      repository: serviceLocator<EventRepository>(),
+    ),
+  );
+  serviceLocator.registerFactory(
     () =>
         EventGetRegistrationInfo(repository: serviceLocator<EventRepository>()),
   );
@@ -381,6 +386,7 @@ void _initEvent() {
       getById: serviceLocator(),
       getPublishedEvents: serviceLocator(),
       getMyEvents: serviceLocator(),
+      getMyOrganizedEvents: serviceLocator(),
       publishEvent: serviceLocator(),
       registerEvent: serviceLocator(),
       saveDraft: serviceLocator(),

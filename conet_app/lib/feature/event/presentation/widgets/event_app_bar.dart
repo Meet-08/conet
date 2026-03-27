@@ -37,9 +37,7 @@ class EventAppBar extends StatelessWidget implements PreferredSizeWidget {
           tooltip: 'My events',
         ),
         IconButton(
-          onPressed: () {
-            //TODO: Implement browse event sections functionality
-          },
+          onPressed: () => context.push('/event-dashboard'),
           icon: FaIcon(
             FontAwesomeIcons.tableCellsLarge,
             size: 16,

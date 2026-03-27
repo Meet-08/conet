@@ -79,6 +79,46 @@ final class MyEventsFailure extends EventState {
   const MyEventsFailure(this.message);
 }
 
+final class MyOrganizedEventsLoading extends EventState {}
+
+final class MyOrganizedEventsLoaded extends EventState {
+  final String? status;
+  final List<EventListItem> events;
+  final String? nextCursor;
+  final bool hasMore;
+  final int pageSize;
+
+  const MyOrganizedEventsLoaded({
+    this.status,
+    required this.events,
+    this.nextCursor,
+    this.hasMore = false,
+    this.pageSize = 20,
+  });
+
+  MyOrganizedEventsLoaded copyWith({
+    String? status,
+    List<EventListItem>? events,
+    String? nextCursor,
+    bool clearCursor = false,
+    bool? hasMore,
+    int? pageSize,
+  }) {
+    return MyOrganizedEventsLoaded(
+      status: status ?? this.status,
+      events: events ?? this.events,
+      nextCursor: clearCursor ? null : (nextCursor ?? this.nextCursor),
+      hasMore: hasMore ?? this.hasMore,
+      pageSize: pageSize ?? this.pageSize,
+    );
+  }
+}
+
+final class MyOrganizedEventsFailure extends EventState {
+  final String message;
+  const MyOrganizedEventsFailure(this.message);
+}
+
 final class EventDetailLoading extends EventState {}
 
 final class EventDetailLoaded extends EventState {

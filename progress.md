@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-03-27
+> Last updated: 2026-03-28
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -123,13 +123,15 @@
 ### Events Feed (Discover + Campus)
 
 - **Events Page** — Published events feed with pull-to-refresh and infinite scroll
+- **Event Dashboard Page** — Organizer-style dashboard with filter tabs (`All`, `Active`, `Upcoming`, `Past`, `Drafts`) backed by live `/events/organized` data
+- **Attendance QR Scanner** — Organizer/co-host scans attendee QR using mobile camera and marks attendance via backend
 - **From Your Campus Section** — Reuses event cards to highlight campus-facing event list on top
 - **Discover Section** — Lists discoverable events with filter affordance and empty-state handling
 - **My Events Entry** — App bar quick action routes to `/my-events`
 - **My Events Page** — Redesigned chip-based list (`Upcoming`, `Past`, `Saved`) backed by filtered API fetching with pagination
 
-**Use Cases:** `EventGetPublishedEvents`, `EventGetMyEvents`
-**Backend Endpoints:** `GET /events`, `GET /events/my`
+**Use Cases:** `EventGetPublishedEvents`, `EventGetMyEvents`, `EventGetMyOrganizedEvents`, `EventMarkAttendance`
+**Backend Endpoints:** `GET /events`, `GET /events/my`, `GET /events/organized`, `POST /events/:id/attend`
 
 ---
 

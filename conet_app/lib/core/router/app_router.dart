@@ -9,6 +9,8 @@ import 'package:conet_app/feature/auth/presentation/pages/login_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/welcome_page.dart';
 import 'package:conet_app/feature/event/presentation/constants/event_constants.dart';
 import 'package:conet_app/feature/event/presentation/pages/create_event_page.dart';
+import 'package:conet_app/feature/event/presentation/pages/event_attendance_scanner_page.dart';
+import 'package:conet_app/feature/event/presentation/pages/event_dashboard_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_detail_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/my_events_page.dart';
@@ -344,6 +346,32 @@ class AppRouter {
           return ViewTicket(eventId: eventId, ticketId: ticketId);
         },
       ),
+
+      GoRoute(
+        path: '/event-dashboard',
+        builder: (_, _) => const EventDashboardPage(),
+      ),
+
+      GoRoute(
+        path: '/event-attendance-scan',
+        builder: (context, state) {
+          final extras = state.extra as Map<String, String>?;
+          final eventId = extras?['eventId'];
+          final eventTitle = extras?['eventTitle'];
+
+          if (eventId == null || eventId.isEmpty) {
+            return const Scaffold(
+              body: Center(child: Text('Invalid event id')),
+            );
+          }
+
+          return EventAttendanceScannerPage(
+            eventId: eventId,
+            eventTitle: eventTitle,
+          );
+        },
+      ),
+
       ShellRoute(
         builder: (context, state, child) {
           return MainScaffold(child: child);

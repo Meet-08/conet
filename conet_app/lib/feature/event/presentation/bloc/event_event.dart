@@ -43,6 +43,22 @@ final class EventFetchMoreMyEventsEvent extends EventEvent {
   const EventFetchMoreMyEventsEvent();
 }
 
+final class EventFetchMyOrganizedEventsEvent extends EventEvent {
+  final String? status;
+  final String? cursor;
+  final int limit;
+
+  const EventFetchMyOrganizedEventsEvent({
+    this.status,
+    this.cursor,
+    this.limit = 20,
+  });
+}
+
+final class EventFetchMoreMyOrganizedEventsEvent extends EventEvent {
+  const EventFetchMoreMyOrganizedEventsEvent();
+}
+
 final class EventFetchByIdEvent extends EventEvent {
   final String eventId;
 

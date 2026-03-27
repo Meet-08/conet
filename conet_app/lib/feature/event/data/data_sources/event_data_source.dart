@@ -29,6 +29,12 @@ abstract class EventDataSource {
     String? cursor,
   });
 
+  Future<EventPageModel> getMyOrganizedEvents({
+    String? status,
+    int limit = 20,
+    String? cursor,
+  });
+
   Future<EventRegistrationTicketModel> getRegistrationInfo(String eventId);
 
   Future<EventAttendanceResultModel> markAttendance({

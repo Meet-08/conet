@@ -31,6 +31,12 @@ abstract interface class EventRepository {
     String? cursor,
   });
 
+  Future<Either<AppFailure, EventPage>> getMyOrganizedEvents({
+    String? status,
+    int limit = 20,
+    String? cursor,
+  });
+
   Future<Either<AppFailure, EventRegistrationTicket>> getRegistrationInfo(
     String eventId,
   );
