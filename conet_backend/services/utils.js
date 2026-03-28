@@ -5,7 +5,7 @@ import prisma from "../config/prisma.js";
 export const mapCohost = (c) => ({
   id: c.id,
   user_id: c.user_id,
-  username: c.users?.username ?? null,
+  username: c.users?.username ?? "",
   profile_pic_url: c.users?.profile_pic_url ?? null,
   first_name: c.users?.first_name ?? null,
   last_name: c.users?.last_name ?? null,

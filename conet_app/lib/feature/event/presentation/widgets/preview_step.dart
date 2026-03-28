@@ -137,6 +137,9 @@ class _PreviewStepState extends State<PreviewStep> {
     final coOrganizers = List<String>.from(
       widget.formData['co_organizers'] as List? ?? [],
     );
+    final coOrganizerUsers = List<Map<String, dynamic>>.from(
+      widget.formData['co_organizer_users'] as List? ?? [],
+    );
 
     final registrationCount = maxParticipant is int
         ? (maxParticipant * 0.6).round().clamp(1, maxParticipant)
@@ -455,7 +458,8 @@ class _PreviewStepState extends State<PreviewStep> {
                 BlocBuilder<AppUserCubit, AppUserState>(
                   builder: (context, state) {
                     final organizerName = state is AppUserAuthenticated
-                        ? '${state.user.firstName} ${state.user.lastName}'.trim()
+                        ? '${state.user.firstName} ${state.user.lastName}'
+                              .trim()
                         : 'Event Organizer';
                     final profilePicUrl = state is AppUserAuthenticated
                         ? state.user.profilePicUrl
@@ -518,29 +522,61 @@ class _PreviewStepState extends State<PreviewStep> {
                     );
                   },
                 ),
-                if (coOrganizers.isNotEmpty) ...[
+                if (coOrganizerUsers.isNotEmpty || coOrganizers.isNotEmpty) ...[
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: coOrganizers.map((u) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          '@$u',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      );
-                    }).toList(),
+                    children: coOrganizerUsers.isNotEmpty
+                        ? coOrganizerUsers.map((cohost) {
+                            final firstName =
+                                (cohost['first_name'] as String? ?? '').trim();
+                            final lastName =
+                                (cohost['last_name'] as String? ?? '').trim();
+                            final username =
+                                (cohost['username'] as String? ?? '').trim();
+                            final displayName =
+                                '$firstName $lastName'.trim().isNotEmpty
+                                ? '$firstName $lastName'.trim()
+                                : (username.isNotEmpty
+                                      ? '@$username'
+                                      : 'Co-host');
+
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                displayName,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          }).toList()
+                        : coOrganizers.map((u) {
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                '@$u',
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            );
+                          }).toList(),
                   ),
                 ],
 

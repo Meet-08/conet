@@ -51,6 +51,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
     'faqs': <Map<String, dynamic>>[], // [{question, answer}]
     'mobile_number': '',
     'co_organizers': <String>[],
+    'co_organizer_ids': <String>[],
+    'co_organizer_users': <Map<String, dynamic>>[],
   };
 
   @override
@@ -236,6 +238,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
       activities: activities,
       prizes: prizes,
       faqs: faqs,
+      cohostUserIds: List<String>.from(
+        _formData['co_organizer_ids'] as List? ?? const <String>[],
+      ).toSet().toList(growable: false),
     );
   }
 

@@ -1,4 +1,8 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/common/entities/user.dart';
+import 'package:conet_app/core/widgets/user_selector_bottom_sheet.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
+import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -38,6 +42,27 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
   List<String> get _coOrganizers =>
       List<String>.from(widget.formData['co_organizers'] as List? ?? []);
 
+  List<User> get _coOrganizerUsers {
+    final rawUsers = List<Map<String, dynamic>>.from(
+      widget.formData['co_organizer_users'] as List? ?? [],
+    );
+
+    return rawUsers
+        .map(
+          (raw) => User(
+            id: (raw['id'] as String?) ?? '',
+            email: (raw['email'] as String?) ?? '',
+            firstName: (raw['first_name'] as String?) ?? '',
+            lastName: (raw['last_name'] as String?) ?? '',
+            username: (raw['username'] as String?) ?? '',
+            profilePicUrl: raw['profile_pic_url'] as String?,
+            userRole: UserRole.user,
+          ),
+        )
+        .where((user) => user.id.isNotEmpty)
+        .toList(growable: false);
+  }
+
   void _addPrize() {
     final list = _prizes..add({'position': '', 'prize': ''});
     _update({'prizes': list});
@@ -70,58 +95,79 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
     _update({'faqs': list});
   }
 
-  void _addCoOrganizer(String username) {
-    if (username.trim().isEmpty) return;
-    final list = _coOrganizers..add(username.trim());
-    _update({'co_organizers': list});
-  }
+  void _persistCoOrganizers(List<User> users) {
+    final uniqueById = <String, User>{for (final user in users) user.id: user};
+    final normalizedUsers = uniqueById.values.toList(growable: false);
 
-  void _removeCoOrganizer(int i) {
-    final list = _coOrganizers..removeAt(i);
-    _update({'co_organizers': list});
-  }
+    final usernames = normalizedUsers
+        .map((user) {
+          if (user.username.trim().isNotEmpty) {
+            return user.username.trim();
+          }
+          final fullName = '${user.firstName} ${user.lastName}'.trim();
+          return fullName;
+        })
+        .where((value) => value.isNotEmpty)
+        .toList(growable: false);
 
-  void _showAddCoOrganizerDialog() {
-    final controller = TextEditingController();
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Add Co-organizer'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(
-            hintText: '@username',
-            prefixIcon: const Padding(
-              padding: EdgeInsets.only(left: 12, right: 8),
-              child: FaIcon(FontAwesomeIcons.at, size: 15),
-            ),
-            prefixIconConstraints: const BoxConstraints(
-              minWidth: 0,
-              minHeight: 0,
-            ),
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              _addCoOrganizer(controller.text);
-              Navigator.of(ctx).pop();
+    _update({
+      'co_organizers': usernames,
+      'co_organizer_ids': normalizedUsers
+          .map((user) => user.id)
+          .toList(growable: false),
+      'co_organizer_users': normalizedUsers
+          .map(
+            (user) => {
+              'id': user.id,
+              'email': user.email,
+              'username': user.username,
+              'first_name': user.firstName,
+              'last_name': user.lastName,
+              'profile_pic_url': user.profilePicUrl,
             },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
+          )
+          .toList(growable: false),
+    });
+  }
+
+  void _removeCoOrganizerById(String userId) {
+    final list = _coOrganizerUsers.where((user) => user.id != userId).toList();
+    _persistCoOrganizers(list);
+  }
+
+  void _removeLegacyCoOrganizer(int index) {
+    final list = _coOrganizers..removeAt(index);
+    _update({'co_organizers': list});
+  }
+
+  Future<void> _showAddCoOrganizerSheet() async {
+    final appUserState = context.read<AppUserCubit>().state;
+    final currentUserId = appUserState is AppUserAuthenticated
+        ? appUserState.user.id
+        : null;
+
+    final searchUsers = serviceLocator<MessageSearchUsers>();
+    final selectedUsers = await showUserSelectorBottomSheet(
+      context: context,
+      title: 'Add Co-hosts',
+      searchHint: 'Search users to add as co-host',
+      emptyMessage: 'Search by name or username',
+      noResultsMessage: 'No matching users found',
+      actionLabel: 'Done',
+      excludedUserId: currentUserId,
+      initialSelectedUsers: _coOrganizerUsers,
+      searchUsers: (query, limit) async {
+        final result = await searchUsers(query: query, limit: limit);
+        return result.fold((failure) => throw Exception(failure.message), (
+          users,
+        ) {
+          return users;
+        });
+      },
     );
+
+    if (selectedUsers == null) return;
+    _persistCoOrganizers(selectedUsers);
   }
 
   // TODO: Implement actual OTP sending logic with backend
@@ -197,6 +243,7 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
     final colorScheme = theme.colorScheme;
     final prizes = _prizes;
     final faqs = _faqs;
+    final coOrganizerUsers = _coOrganizerUsers;
     final coOrganizers = _coOrganizers;
     final mobileNumber = widget.formData['mobile_number'] as String? ?? '';
 
@@ -415,16 +462,81 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
             icon: FontAwesomeIcons.users,
             title: 'Co-Organizers',
             actionLabel: '+ Add',
-            onTapAction: _showAddCoOrganizerDialog,
+            onTapAction: _showAddCoOrganizerSheet,
           ),
           const SizedBox(height: 12),
-          if (coOrganizers.isEmpty)
+          if (coOrganizerUsers.isEmpty && coOrganizers.isEmpty)
             _EmptyBox(
               icon: FontAwesomeIcons.userGroup,
               text: 'No co-organizers added yet',
               colorScheme: colorScheme,
               theme: theme,
             )
+          else if (coOrganizerUsers.isNotEmpty)
+            ...coOrganizerUsers.map((cohostUser) {
+              final fullName = '${cohostUser.firstName} ${cohostUser.lastName}'
+                  .trim();
+              final label = fullName.isNotEmpty
+                  ? fullName
+                  : (cohostUser.username.isNotEmpty
+                        ? cohostUser.username
+                        : 'Co-host');
+
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 14,
+                        backgroundColor: colorScheme.surfaceContainerHighest,
+                        backgroundImage:
+                            cohostUser.profilePicUrl != null &&
+                                cohostUser.profilePicUrl!.isNotEmpty
+                            ? NetworkImage(cohostUser.profilePicUrl!)
+                            : null,
+                        child:
+                            (cohostUser.profilePicUrl == null ||
+                                cohostUser.profilePicUrl!.isEmpty)
+                            ? FaIcon(
+                                FontAwesomeIcons.user,
+                                size: 12,
+                                color: colorScheme.onSurfaceVariant,
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          label,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => _removeCoOrganizerById(cohostUser.id),
+                        icon: FaIcon(
+                          FontAwesomeIcons.trashCan,
+                          size: 14,
+                          color: colorScheme.error,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            })
           else
             ...List.generate(coOrganizers.length, (i) {
               return Padding(
@@ -459,7 +571,7 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
                         ),
                       ),
                       IconButton(
-                        onPressed: () => _removeCoOrganizer(i),
+                        onPressed: () => _removeLegacyCoOrganizer(i),
                         icon: FaIcon(
                           FontAwesomeIcons.trashCan,
                           size: 14,

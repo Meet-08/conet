@@ -19,7 +19,6 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
   int _selectedFilterIndex = 0;
 
   static const _filters = [
-    _DashboardFilter(label: 'All', status: null),
     _DashboardFilter(label: 'Active', status: 'published'),
     _DashboardFilter(label: 'Upcoming', status: 'published'),
     _DashboardFilter(label: 'Past', status: 'published'),
@@ -91,7 +90,16 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Events'), centerTitle: false),
+      appBar: AppBar(
+        title: const Text('Events'),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            onPressed: () => context.push('/create-event'),
+            icon: const FaIcon(FontAwesomeIcons.plus),
+          ),
+        ],
+      ),
       body: BlocConsumer<EventBloc, EventState>(
         listenWhen: (_, state) => state is MyOrganizedEventsFailure,
         listener: (context, state) {

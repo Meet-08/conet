@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-03-28
+> Last updated: 2026-03-29
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -184,6 +184,7 @@
 ### Events
 
 - **Create Event** — Organizer can create a new event as draft or publish it immediately, with optional activity timeline and prizes
+- **Create Event Co-host Picker** — Organizer can search users and attach co-hosts during create flow, then app syncs co-hosts after draft creation
 - **Update Event** — Organizer can edit all event fields, activity, and prizes (wholesale replace)
 - **Publish Event** — Organizer promotes a draft event to published status
 - **Cancel Event** — Organizer cancels a published or draft event

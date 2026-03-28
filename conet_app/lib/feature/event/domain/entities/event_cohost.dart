@@ -7,6 +7,7 @@ class EventCohost extends Equatable {
   @JsonKey(name: 'user_id')
   final String userId;
 
+  @JsonKey(defaultValue: '')
   final String username;
 
   @JsonKey(name: 'first_name')

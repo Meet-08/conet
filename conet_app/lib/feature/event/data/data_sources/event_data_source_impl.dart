@@ -257,6 +257,42 @@ class EventDataSourceImpl implements EventDataSource {
     }
 
     final data = response.data as Map<String, dynamic>;
-    return EventModel.fromJson(data['event'] as Map<String, dynamic>);
+    final createdEvent = EventModel.fromJson(
+      data['event'] as Map<String, dynamic>,
+    );
+
+    await _syncCohostsForEvent(
+      eventId: createdEvent.id,
+      cohostUserIds: payload.cohostUserIds,
+    );
+
+    return createdEvent;
+  }
+
+  Future<void> _syncCohostsForEvent({
+    required String eventId,
+    required List<String> cohostUserIds,
+  }) async {
+    if (cohostUserIds.isEmpty) return;
+
+    final uniqueIds = cohostUserIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet();
+
+    for (final userId in uniqueIds) {
+      try {
+        final response = await _dioClient.dio.post(
+          '/events/$eventId/cohosts',
+          data: {'user_id': userId},
+        );
+
+        if (response.statusCode != 200 && response.statusCode != 201) {
+          logger.e('Failed to add cohost $userId for event $eventId');
+        }
+      } catch (e) {
+        logger.e('Failed to add cohost $userId for event $eventId', error: e);
+      }
+    }
   }
 }

@@ -22,6 +22,7 @@ class EventCreatePayload extends Equatable {
   final List<EventActivity> activities;
   final List<EventPrize> prizes;
   final List<EventFaq> faqs;
+  final List<String> cohostUserIds;
 
   const EventCreatePayload({
     required this.title,
@@ -41,6 +42,7 @@ class EventCreatePayload extends Equatable {
     this.activities = const [],
     this.prizes = const [],
     this.faqs = const [],
+    this.cohostUserIds = const [],
   });
 
   @override
@@ -62,5 +64,6 @@ class EventCreatePayload extends Equatable {
     activities,
     prizes,
     faqs,
+    cohostUserIds,
   ];
 }
