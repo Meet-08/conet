@@ -24,6 +24,7 @@ const makeMethods = () => ({
   findFirst: mock(() => Promise.resolve(null)),
   findMany: mock(() => Promise.resolve([])),
   create: mock(() => Promise.resolve({})),
+  createMany: mock(() => Promise.resolve({ count: 0 })),
   update: mock(() => Promise.resolve({})),
   upsert: mock(() => Promise.resolve({})),
   delete: mock(() => Promise.resolve({})),
@@ -40,6 +41,13 @@ export const prismaMock = {
   posts: makeMethods(),
   post_likes: makeMethods(),
   post_comments: makeMethods(),
+  events: makeMethods(),
+  event_activity: makeMethods(),
+  event_prizes: makeMethods(),
+  event_faqs: makeMethods(),
+  event_cohosts: makeMethods(),
+  event_registrations: makeMethods(),
+  event_bookmarks: makeMethods(),
   conversations: makeMethods(),
   conversation_members: makeMethods(),
   messages: makeMethods(),
@@ -72,6 +80,7 @@ export const resetPrismaMocks = () => {
           ) {
             method.mockResolvedValue([]);
           } else if (
+            method._name?.includes("createMany") ||
             method._name?.includes("deleteMany") ||
             method._name?.includes("updateMany")
           ) {
