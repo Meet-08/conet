@@ -5,6 +5,7 @@ import 'package:conet_app/core/common/data_sources/file_upload_data_source.dart'
 import 'package:conet_app/core/common/data_sources/presence_data_source.dart';
 import 'package:conet_app/core/common/data_sources/supabase_file_upload_data_source.dart';
 import 'package:conet_app/core/common/data_sources/supabase_presence_data_source.dart';
+import 'package:conet_app/core/router/app_router.dart';
 import 'package:conet_app/core/services/device_service.dart';
 import 'package:conet_app/core/services/notification_config_service.dart';
 import 'package:conet_app/core/services/presence_service.dart';

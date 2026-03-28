@@ -99,6 +99,7 @@ void main() {
       appUserCubit: mockAppUserCubit,
       presenceService: mockPresenceService,
       deviceService: mockDeviceService,
+      goToRoute: (_) {},
     );
   });
 

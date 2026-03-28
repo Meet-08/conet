@@ -50,6 +50,7 @@ void _initAuth() {
         appUserCubit: serviceLocator<AppUserCubit>(),
         presenceService: serviceLocator<PresenceService>(),
         deviceService: serviceLocator<DeviceService>(),
+        goToRoute: (path) => AppRouter.router.go(path),
       ),
     );
 }

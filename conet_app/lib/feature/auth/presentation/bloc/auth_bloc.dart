@@ -27,6 +27,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AppUserCubit _appUserCubit;
   final PresenceService _presenceService;
   final DeviceService _deviceService;
+  final void Function(String) _goToRoute;
 
   AuthBloc({
     required UserLogin userLogin,
@@ -39,6 +40,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required AppUserCubit appUserCubit,
     required PresenceService presenceService,
     required DeviceService deviceService,
+    void Function(String)? goToRoute,
   }) : _userLogin = userLogin,
        _userSendOtp = userSendOtp,
        _userSigninWithGoogle = userSigninWithGoogle,
@@ -49,6 +51,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
        _appUserCubit = appUserCubit,
        _presenceService = presenceService,
        _deviceService = deviceService,
+       _goToRoute = goToRoute ?? ((path) => AppRouter.router.go(path)),
 
        super(AuthInitial()) {
     on<AuthLogin>(_onAuthLogin);
@@ -69,7 +72,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     res.fold((l) => emit(AuthFailure(l.message)), (r) {
       _appUserCubit.logout();
       emit(AuthInitial());
-      AppRouter.router.go('/');
+      _goToRoute('/');
     });
   }
 
