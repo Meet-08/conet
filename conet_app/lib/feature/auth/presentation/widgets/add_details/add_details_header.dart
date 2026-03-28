@@ -1,4 +1,7 @@
+import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AddDetailsHeader extends StatelessWidget {
   final bool isGoogle;
@@ -11,10 +14,10 @@ class AddDetailsHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
-          onTap: () => Navigator.pop(context),
+          onTap: () => {context.read<AuthBloc>().add(AuthLogout())},
           child: const Row(
             children: [
-              Icon(Icons.arrow_back, size: 20),
+              Icon(FontAwesomeIcons.arrowLeft, size: 20),
               SizedBox(width: 6),
               Text('Back'),
             ],

@@ -61,6 +61,8 @@ export const mapEventSummary = (event) => ({
   event_start_date: event.event_date,
   venue: event.venue ?? null,
   location: event.location ?? null,
+  max_participant: event.max_participant ?? null,
+  registration_count: event._count?.event_registrations ?? 0,
 });
 
 export const eventSummarySelect = {
@@ -72,6 +74,8 @@ export const eventSummarySelect = {
   event_date: true,
   venue: true,
   location: true,
+  max_participant: true,
+  _count: { select: { event_registrations: true } },
   id: true,
   created_at: true,
 };

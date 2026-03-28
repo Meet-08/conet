@@ -18,6 +18,12 @@ class EventListItem extends Equatable {
   @JsonKey(name: 'event_start_date')
   final DateTime eventStartDate;
 
+  @JsonKey(name: 'max_participant')
+  final int? maxParticipant;
+
+  @JsonKey(name: 'registration_count')
+  final int registrationCount;
+
   final String? venue;
   final String? location;
 
@@ -29,6 +35,8 @@ class EventListItem extends Equatable {
     required this.ticketPriceType,
     this.price,
     required this.eventStartDate,
+    this.maxParticipant,
+    this.registrationCount = 0,
     this.venue,
     this.location,
   });
@@ -43,6 +51,8 @@ class EventListItem extends Equatable {
     String? ticketPriceType,
     double? price,
     DateTime? eventStartDate,
+    int? maxParticipant,
+    int? registrationCount,
     String? venue,
     String? location,
   }) {
@@ -54,6 +64,8 @@ class EventListItem extends Equatable {
       ticketPriceType: ticketPriceType ?? this.ticketPriceType,
       price: price ?? this.price,
       eventStartDate: eventStartDate ?? this.eventStartDate,
+      maxParticipant: maxParticipant ?? this.maxParticipant,
+      registrationCount: registrationCount ?? this.registrationCount,
       venue: venue ?? this.venue,
       location: location ?? this.location,
     );
@@ -68,6 +80,8 @@ class EventListItem extends Equatable {
     ticketPriceType,
     price,
     eventStartDate,
+    maxParticipant,
+    registrationCount,
     venue,
     location,
   ];

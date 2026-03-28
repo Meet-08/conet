@@ -196,7 +196,8 @@ class _CampusSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: events.length > 2 ? 2 : events.length,
             separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (_, i) => EventCard(event: events[i]),
+            itemBuilder: (_, i) =>
+                EventCard(event: events[i], showActionRow: true),
           )
         else
           Padding(

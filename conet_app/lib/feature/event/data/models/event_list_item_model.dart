@@ -13,6 +13,8 @@ class EventListItemModel extends EventListItem {
     required super.ticketPriceType,
     super.price,
     required super.eventStartDate,
+    super.maxParticipant,
+    super.registrationCount,
     super.venue,
     super.location,
   });
@@ -31,6 +33,8 @@ class EventListItemModel extends EventListItem {
       ticketPriceType: entity.ticketPriceType,
       price: entity.price,
       eventStartDate: entity.eventStartDate,
+      maxParticipant: entity.maxParticipant,
+      registrationCount: entity.registrationCount,
       venue: entity.venue,
       location: entity.location,
     );

@@ -1,5 +1,6 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/common/entities/user.dart';
+import 'package:conet_app/core/router/app_router.dart';
 import 'package:conet_app/core/services/device_service.dart';
 import 'package:conet_app/core/services/presence_service.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_add_details.dart';
@@ -68,6 +69,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     res.fold((l) => emit(AuthFailure(l.message)), (r) {
       _appUserCubit.logout();
       emit(AuthInitial());
+      AppRouter.router.go('/');
     });
   }
 
