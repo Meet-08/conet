@@ -10,6 +10,7 @@ import 'package:conet_app/feature/event/domain/usecases/event_get_my_organized_e
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -30,6 +31,8 @@ class MockEventPublish extends Mock implements EventPublish {}
 
 class MockEventRegister extends Mock implements EventRegister {}
 
+class MockEventSave extends Mock implements EventSave {}
+
 class MockEventSaveDraft extends Mock implements EventSaveDraft {}
 
 void main() {
@@ -40,6 +43,7 @@ void main() {
   late MockEventGetMyOrganizedEvents mockGetMyOrganizedEvents;
   late MockEventPublish mockPublish;
   late MockEventRegister mockRegister;
+  late MockEventSave mockSave;
   late MockEventSaveDraft mockSaveDraft;
 
   final tEventListItem1 = EventListItem(
@@ -109,6 +113,7 @@ void main() {
     mockGetMyOrganizedEvents = MockEventGetMyOrganizedEvents();
     mockPublish = MockEventPublish();
     mockRegister = MockEventRegister();
+    mockSave = MockEventSave();
     mockSaveDraft = MockEventSaveDraft();
 
     bloc = EventBloc(
@@ -118,6 +123,7 @@ void main() {
       getMyOrganizedEvents: mockGetMyOrganizedEvents,
       publishEvent: mockPublish,
       registerEvent: mockRegister,
+      saveEvent: mockSave,
       saveDraft: mockSaveDraft,
     );
   });
