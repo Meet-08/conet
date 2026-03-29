@@ -63,9 +63,10 @@ export const mapEventSummary = (event) => ({
   location: event.location ?? null,
   max_participant: event.max_participant ?? null,
   registration_count: event._count?.event_registrations ?? 0,
+  is_bookmarked: (event.event_bookmarks?.length ?? 0) > 0,
 });
 
-export const eventSummarySelect = {
+export const eventSummarySelect = (viewerId = null) => ({
   event_image_url: true,
   title: true,
   category: true,
@@ -78,7 +79,15 @@ export const eventSummarySelect = {
   _count: { select: { event_registrations: true } },
   id: true,
   created_at: true,
-};
+  ...(viewerId ?
+    {
+      event_bookmarks: {
+        where: { user_id: viewerId },
+        select: { user_id: true },
+      },
+    }
+  : {}),
+});
 
 export const eventInclude = (viewerId = null) => ({
   users: {

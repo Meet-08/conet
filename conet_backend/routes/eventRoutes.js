@@ -13,6 +13,7 @@ import {
   publishEvent,
   registerEvent,
   removeCohost,
+  saveEvent,
   updateEvent,
 } from "../controllers/eventController.js";
 import validateSupabaseToken from "../middleware/validateSupabaseToken.js";
@@ -29,6 +30,7 @@ router.get("/:id", getEvent);
 router.post("/:id/register", registerEvent);
 router.get("/:id/registration-info", getRegistrationInfo);
 router.post("/:id/attend", attendEvent);
+router.post("/:id/save", saveEvent);
 
 // Organizer lifecycle
 router.post("/", createEvent);

@@ -7,6 +7,7 @@ import 'package:conet_app/feature/event/domain/usecases/event_get_my_organized_e
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -21,6 +22,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   final EventGetMyOrganizedEvents _getMyOrganizedEvents;
   final EventPublish _publishEvent;
   final EventRegister _registerEvent;
+  final EventSave _saveEvent;
   final EventSaveDraft _saveDraft;
 
   String? _nextCursor;
@@ -36,6 +38,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     required EventGetMyOrganizedEvents getMyOrganizedEvents,
     required EventPublish publishEvent,
     required EventRegister registerEvent,
+    required EventSave saveEvent,
     required EventSaveDraft saveDraft,
   }) : _getById = getById,
        _getPublishedEvents = getPublishedEvents,
@@ -43,6 +46,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
        _getMyOrganizedEvents = getMyOrganizedEvents,
        _publishEvent = publishEvent,
        _registerEvent = registerEvent,
+       _saveEvent = saveEvent,
        _saveDraft = saveDraft,
        super(EventInitial()) {
     on<EventFetchByIdEvent>(_onFetchById);
@@ -54,6 +58,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     on<EventFetchMoreMyOrganizedEventsEvent>(_onFetchMoreMyOrganizedEvents);
     on<EventPublishEvent>(_onPublish);
     on<EventRegisterEvent>(_onRegister);
+    on<EventSaveEvent>(_onSaveEvent);
     on<EventSaveDraftEvent>(_onSaveDraft);
   }
 
@@ -288,6 +293,62 @@ class EventBloc extends Bloc<EventEvent, EventState> {
       (failure) => emit(EventRegistrationFailure(failure.message)),
       (event) => emit(EventRegistrationSuccess(event)),
     );
+  }
+
+  Future<void> _onSaveEvent(
+    EventSaveEvent event,
+    Emitter<EventState> emit,
+  ) async {
+    final previousState = state;
+    final optimisticState = _toggleSavedInState(previousState, event.eventId);
+    if (optimisticState != null) {
+      emit(optimisticState);
+    }
+
+    final result = await _saveEvent(event.eventId);
+
+    result.fold(
+      (failure) {
+        emit(EventSaveFailure(failure.message));
+        if (optimisticState != null) {
+          emit(previousState);
+        }
+      },
+      (response) {
+        emit(EventSaveSuccess(response.message));
+        if (optimisticState != null) {
+          emit(optimisticState);
+        }
+      },
+    );
+  }
+
+  EventState? _toggleSavedInState(EventState state, String eventId) {
+    if (state case EventLoaded current) {
+      return current.copyWith(events: _toggleSaved(current.events, eventId));
+    }
+    if (state case MyEventsLoaded current) {
+      return current.copyWith(events: _toggleSaved(current.events, eventId));
+    }
+    if (state case MyOrganizedEventsLoaded current) {
+      return current.copyWith(events: _toggleSaved(current.events, eventId));
+    }
+    if (state case EventDetailLoaded current) {
+      return EventDetailLoaded(
+        current.event.copyWith(isBookmarked: !current.event.isBookmarked),
+      );
+    }
+    return null;
+  }
+
+  List<EventListItem> _toggleSaved(List<EventListItem> items, String eventId) {
+    return items
+        .map(
+          (item) => item.id == eventId
+              ? item.copyWith(isBookmarked: !item.isBookmarked)
+              : item,
+        )
+        .toList();
   }
 
   Future<void> _onSaveDraft(

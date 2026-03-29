@@ -24,6 +24,9 @@ class EventListItem extends Equatable {
   @JsonKey(name: 'registration_count')
   final int registrationCount;
 
+  @JsonKey(name: 'is_bookmarked')
+  final bool isBookmarked;
+
   final String? venue;
   final String? location;
 
@@ -37,6 +40,7 @@ class EventListItem extends Equatable {
     required this.eventStartDate,
     this.maxParticipant,
     this.registrationCount = 0,
+    this.isBookmarked = false,
     this.venue,
     this.location,
   });
@@ -53,6 +57,7 @@ class EventListItem extends Equatable {
     DateTime? eventStartDate,
     int? maxParticipant,
     int? registrationCount,
+    bool? isBookmarked,
     String? venue,
     String? location,
   }) {
@@ -66,6 +71,7 @@ class EventListItem extends Equatable {
       eventStartDate: eventStartDate ?? this.eventStartDate,
       maxParticipant: maxParticipant ?? this.maxParticipant,
       registrationCount: registrationCount ?? this.registrationCount,
+      isBookmarked: isBookmarked ?? this.isBookmarked,
       venue: venue ?? this.venue,
       location: location ?? this.location,
     );
@@ -82,6 +88,7 @@ class EventListItem extends Equatable {
     eventStartDate,
     maxParticipant,
     registrationCount,
+    isBookmarked,
     venue,
     location,
   ];

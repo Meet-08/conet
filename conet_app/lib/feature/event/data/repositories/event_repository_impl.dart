@@ -83,6 +83,13 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   @override
+  Future<Either<AppFailure, EventAttendanceResult>> saveEvent(String eventId) {
+    return _getResult<EventAttendanceResult, EventAttendanceResult>(
+      () => _eventDataSource.saveEvent(eventId),
+    );
+  }
+
+  @override
   Future<Either<AppFailure, Event>> publishEvent(EventCreatePayload payload) {
     return _getResult<Event, Event>(
       () => _eventDataSource.publishEvent(payload),

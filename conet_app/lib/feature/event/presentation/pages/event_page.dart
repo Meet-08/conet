@@ -31,9 +31,13 @@ class _EventPageState extends State<EventPage> {
     return Scaffold(
       appBar: const EventAppBar(),
       body: BlocConsumer<EventBloc, EventState>(
-        listenWhen: (_, current) => current is EventFailure,
+        listenWhen: (_, current) =>
+            current is EventFailure || current is EventSaveFailure,
         listener: (context, state) {
           if (state is EventFailure) {
+            AppToast.showError(context, state.message);
+          }
+          if (state is EventSaveFailure) {
             AppToast.showError(context, state.message);
           }
         },

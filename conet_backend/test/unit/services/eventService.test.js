@@ -16,6 +16,7 @@ import {
   publishEventService,
   registerEventService,
   removeCohostService,
+  saveEventService,
 } from "../../../services/eventService.js";
 
 const ORGANIZER_ID = TEST_USER.id;
@@ -94,6 +95,13 @@ beforeEach(() => {
   prismaMock.event_registrations.findFirst.mockResolvedValue(null);
   prismaMock.event_registrations.update.mockResolvedValue({
     id: REGISTRATION_ID,
+  });
+
+  prismaMock.event_bookmarks.findUnique.mockResolvedValue(null);
+  prismaMock.event_bookmarks.create.mockResolvedValue({
+    id: "bookmark-1",
+    event_id: EVENT_ID,
+    user_id: ATTENDEE_ID,
   });
 
   prismaMock.event_cohosts.findUnique.mockResolvedValue(null);
@@ -396,6 +404,79 @@ describe("attendEventService", () => {
 
     expect(prismaMock.event_registrations.update).not.toHaveBeenCalled();
     expect(result.message).toBe("User already marked as attended");
+  });
+});
+
+describe("saveEventService", () => {
+  it("throws 404 when event does not exist", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(null);
+
+    await expect(saveEventService(EVENT_ID, ATTENDEE_ID)).rejects.toMatchObject(
+      {
+        statusCode: 404,
+        message: "Event not found",
+      },
+    );
+  });
+
+  it("throws 409 when event is not published", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({ event_status: "draft" }),
+    );
+
+    await expect(saveEventService(EVENT_ID, ATTENDEE_ID)).rejects.toMatchObject(
+      {
+        statusCode: 409,
+        message: "Only published events can be saved",
+      },
+    );
+  });
+
+  it("returns idempotent success when event is already saved", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({ event_status: "published" }),
+    );
+    prismaMock.event_bookmarks.findUnique.mockResolvedValue({
+      id: "bookmark-1",
+      event_id: EVENT_ID,
+      user_id: ATTENDEE_ID,
+    });
+
+    const result = await saveEventService(EVENT_ID, ATTENDEE_ID);
+
+    expect(prismaMock.event_bookmarks.create).not.toHaveBeenCalled();
+    expect(prismaMock.event_bookmarks.delete).toHaveBeenCalledWith({
+      where: {
+        event_id_user_id: {
+          event_id: EVENT_ID,
+          user_id: ATTENDEE_ID,
+        },
+      },
+    });
+    expect(result).toEqual({
+      success: true,
+      message: "Event removed from saved",
+    });
+  });
+
+  it("creates bookmark and returns success message", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({ event_status: "published" }),
+    );
+    prismaMock.event_bookmarks.findUnique.mockResolvedValue(null);
+
+    const result = await saveEventService(EVENT_ID, ATTENDEE_ID);
+
+    expect(prismaMock.event_bookmarks.create).toHaveBeenCalledWith({
+      data: {
+        event_id: EVENT_ID,
+        user_id: ATTENDEE_ID,
+      },
+    });
+    expect(result).toEqual({
+      success: true,
+      message: "Event saved successfully",
+    });
   });
 });
 

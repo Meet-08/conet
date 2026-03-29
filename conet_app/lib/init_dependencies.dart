@@ -38,6 +38,7 @@ import 'package:conet_app/feature/event/domain/usecases/event_get_registration_i
 import 'package:conet_app/feature/event/domain/usecases/event_mark_attendance.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_registration_bloc.dart';

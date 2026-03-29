@@ -71,6 +71,12 @@ final class EventRegisterEvent extends EventEvent {
   const EventRegisterEvent(this.eventId);
 }
 
+final class EventSaveEvent extends EventEvent {
+  final String eventId;
+
+  const EventSaveEvent(this.eventId);
+}
+
 final class EventPublishEvent extends EventEvent {
   final EventCreatePayload payload;
   const EventPublishEvent(this.payload);

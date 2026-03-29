@@ -17,6 +17,7 @@ EventListItemModel _$EventListItemModelFromJson(Map<String, dynamic> json) =>
       eventStartDate: DateTime.parse(json['event_start_date'] as String),
       maxParticipant: (json['max_participant'] as num?)?.toInt(),
       registrationCount: (json['registration_count'] as num?)?.toInt() ?? 0,
+      isBookmarked: json['is_bookmarked'] as bool? ?? false,
       venue: json['venue'] as String?,
       location: json['location'] as String?,
     );
@@ -32,6 +33,7 @@ Map<String, dynamic> _$EventListItemModelToJson(EventListItemModel instance) =>
       'event_start_date': instance.eventStartDate.toIso8601String(),
       'max_participant': instance.maxParticipant,
       'registration_count': instance.registrationCount,
+      'is_bookmarked': instance.isBookmarked,
       'venue': instance.venue,
       'location': instance.location,
     };

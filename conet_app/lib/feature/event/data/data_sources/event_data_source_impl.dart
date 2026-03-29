@@ -146,6 +146,23 @@ class EventDataSourceImpl implements EventDataSource {
   }
 
   @override
+  Future<EventAttendanceResultModel> saveEvent(String eventId) async {
+    try {
+      final response = await _dioClient.dio.post('/events/$eventId/save');
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to save event');
+      }
+
+      return EventAttendanceResultModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
   Future<EventRegistrationTicketModel> getRegistrationInfo(
     String eventId,
   ) async {

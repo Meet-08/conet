@@ -147,6 +147,18 @@ final class EventRegistrationFailure extends EventState {
   const EventRegistrationFailure(this.message);
 }
 
+final class EventSaveSuccess extends EventState {
+  final String message;
+
+  const EventSaveSuccess(this.message);
+}
+
+final class EventSaveFailure extends EventState {
+  final String message;
+
+  const EventSaveFailure(this.message);
+}
+
 // ── Create / Draft states ────────────────────────────────────────────────────
 
 final class EventCreateLoading extends EventState {}

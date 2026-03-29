@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-03-29 (Academic Info Form extracted to reusable core widget)
+> Last updated: 2026-03-29
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -116,10 +116,11 @@
 
 - **Event Detail Page** — Dynamic event detail UI driven by `GET /events/:id` (header, schedule, prizes, organizer, eligibility, FAQs)
 - **Event Registration CTA** — Register button wired to backend registration flow and updates event state after success
+- **Save Event** — Bookmark action on event detail saves published events with backend persistence and success feedback
 - **View Ticket Page** — Dedicated ticket UI that fetches registration identifiers and renders QR payload for event check-in
 
-**Use Cases:** `EventGetById`, `EventRegister`
-**Backend Endpoints:** `GET /events/:id`, `POST /events/:id/register`
+**Use Cases:** `EventGetById`, `EventRegister`, `EventSave`
+**Backend Endpoints:** `GET /events/:id`, `POST /events/:id/register`, `POST /events/:id/save`
 
 ---
 

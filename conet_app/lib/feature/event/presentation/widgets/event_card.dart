@@ -1,5 +1,7 @@
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
+import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -126,7 +128,12 @@ class EventCard extends StatelessWidget {
                     ),
                     _iconActionButton(
                       colorScheme: colorScheme,
-                      icon: FontAwesomeIcons.bookmark,
+                      icon: event.isBookmarked
+                          ? FontAwesomeIcons.solidBookmark
+                          : FontAwesomeIcons.bookmark,
+                      onTap: () {
+                        context.read<EventBloc>().add(EventSaveEvent(event.id));
+                      },
                     ),
                     const SizedBox(width: 8),
                     FilledButton(
@@ -170,7 +177,12 @@ class EventCard extends StatelessWidget {
                     ),
                     _iconActionButton(
                       colorScheme: colorScheme,
-                      icon: FontAwesomeIcons.bookmark,
+                      icon: event.isBookmarked
+                          ? FontAwesomeIcons.solidBookmark
+                          : FontAwesomeIcons.bookmark,
+                      onTap: () {
+                        context.read<EventBloc>().add(EventSaveEvent(event.id));
+                      },
                     ),
                   ],
                 ),
@@ -235,17 +247,26 @@ class EventCard extends StatelessWidget {
   Widget _iconActionButton({
     required ColorScheme colorScheme,
     required IconData icon,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      width: 38,
-      height: 38,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: colorScheme.outlineVariant),
-        color: colorScheme.surface,
-      ),
-      child: Center(
-        child: FaIcon(icon, size: 14, color: colorScheme.onSurfaceVariant),
+    return Material(
+      color: Colors.transparent,
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: colorScheme.outlineVariant),
+            color: colorScheme.surface,
+          ),
+          child: Center(
+            child: FaIcon(icon, size: 14, color: colorScheme.onSurfaceVariant),
+          ),
+        ),
       ),
     );
   }

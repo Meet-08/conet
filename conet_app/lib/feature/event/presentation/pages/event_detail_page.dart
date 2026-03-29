@@ -56,6 +56,10 @@ class _EventDetailPageState extends State<EventDetailPage> {
           AppToast.showError(context, state.message);
         }
 
+        if (state is EventSaveFailure) {
+          AppToast.showError(context, state.message);
+        }
+
         if (state is EventDetailFailure) {
           AppToast.showError(context, state.message);
         }
@@ -109,8 +113,17 @@ class _EventDetailPageState extends State<EventDetailPage> {
                 icon: const FaIcon(FontAwesomeIcons.shareNodes, size: 18),
               ),
               IconButton(
-                onPressed: () {},
-                icon: const FaIcon(FontAwesomeIcons.ellipsisVertical, size: 18),
+                onPressed: event.isBookmarked
+                    ? null
+                    : () {
+                        context.read<EventBloc>().add(EventSaveEvent(event.id));
+                      },
+                icon: FaIcon(
+                  event.isBookmarked
+                      ? FontAwesomeIcons.solidBookmark
+                      : FontAwesomeIcons.bookmark,
+                  size: 18,
+                ),
               ),
             ],
           ),

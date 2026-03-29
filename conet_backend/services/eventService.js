@@ -600,9 +600,63 @@ export const attendEventService = async (eventId, scannerUserId, body = {}) => {
   };
 };
 
+export const saveEventService = async (eventId, userId) => {
+  const event = await prisma.events.findUnique({ where: { id: eventId } });
+
+  if (!event) {
+    const err = new Error("Event not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (event.event_status !== "published") {
+    const err = new Error("Only published events can be saved");
+    err.statusCode = 409;
+    throw err;
+  }
+
+  const existingBookmark = await prisma.event_bookmarks.findUnique({
+    where: {
+      event_id_user_id: {
+        event_id: eventId,
+        user_id: userId,
+      },
+    },
+  });
+
+  if (existingBookmark) {
+    await prisma.event_bookmarks.delete({
+      where: {
+        event_id_user_id: {
+          event_id: eventId,
+          user_id: userId,
+        },
+      },
+    });
+
+    return {
+      success: true,
+      message: "Event removed from saved",
+    };
+  }
+
+  await prisma.event_bookmarks.create({
+    data: {
+      event_id: eventId,
+      user_id: userId,
+    },
+  });
+
+  return {
+    success: true,
+    message: "Event saved successfully",
+  };
+};
+
 // ─── List published events (cursor-paginated, filterable) ───────────────────
 
 export const listPublishedEventsService = async ({
+  viewerId,
   category,
   location_type,
   date_from,
@@ -657,7 +711,7 @@ export const listPublishedEventsService = async ({
     where,
     take: safePageSize + 1,
     orderBy: [{ event_date: "asc" }, { id: "asc" }],
-    select: eventSummarySelect,
+    select: eventSummarySelect(viewerId),
   });
 
   const hasMore = rows.length > safePageSize;
@@ -711,7 +765,7 @@ export const listMyOrganizedEventsService = async (
     where,
     take: safePageSize + 1,
     orderBy: [{ created_at: "desc" }, { id: "desc" }],
-    select: eventSummarySelect,
+    select: eventSummarySelect(organizerId),
   });
 
   const hasMore = rows.length > safePageSize;
@@ -815,7 +869,7 @@ export const listMyEventsService = async (
       type === "past" ?
         [{ event_date: "desc" }, { id: "desc" }]
       : [{ event_date: "asc" }, { id: "asc" }],
-    select: eventSummarySelect,
+    select: eventSummarySelect(userId),
   });
 
   const hasMore = rows.length > safePageSize;

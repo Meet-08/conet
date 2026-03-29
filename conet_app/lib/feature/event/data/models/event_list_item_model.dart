@@ -15,6 +15,7 @@ class EventListItemModel extends EventListItem {
     required super.eventStartDate,
     super.maxParticipant,
     super.registrationCount,
+    super.isBookmarked,
     super.venue,
     super.location,
   });
@@ -35,6 +36,7 @@ class EventListItemModel extends EventListItem {
       eventStartDate: entity.eventStartDate,
       maxParticipant: entity.maxParticipant,
       registrationCount: entity.registrationCount,
+      isBookmarked: entity.isBookmarked,
       venue: entity.venue,
       location: entity.location,
     );

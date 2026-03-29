@@ -13,6 +13,7 @@ import {
   publishEventService,
   registerEventService,
   removeCohostService,
+  saveEventService,
   updateEventService,
 } from "../services/eventService.js";
 
@@ -79,6 +80,11 @@ export const attendEvent = asyncHandler(async (req, res) => {
   res.status(200).json(result);
 });
 
+export const saveEvent = asyncHandler(async (req, res) => {
+  const result = await saveEventService(req.params.id, req.user.id);
+  res.status(200).json(result);
+});
+
 // ─── List published events ────────────────────────────────────────────────────
 
 export const listPublishedEvents = asyncHandler(async (req, res) => {
@@ -93,6 +99,7 @@ export const listPublishedEvents = asyncHandler(async (req, res) => {
   const page_size = Math.min(rawPageSize || 20, 100);
 
   const result = await listPublishedEventsService({
+    viewerId: req.user.id,
     category,
     location_type,
     date_from,

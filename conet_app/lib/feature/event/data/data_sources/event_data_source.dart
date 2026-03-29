@@ -9,6 +9,8 @@ abstract class EventDataSource {
 
   Future<Event> registerEvent(String eventId);
 
+  Future<EventAttendanceResultModel> saveEvent(String eventId);
+
   Future<Event> publishEvent(EventCreatePayload payload);
 
   Future<Event> saveEventDraft(EventCreatePayload payload);
