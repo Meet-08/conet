@@ -28,7 +28,7 @@ class ProfileHeaderCard extends StatelessWidget {
   List<UserAcademics> get _uniqueAcademics {
     final seen = <String>{};
     return userProfile.academics.where((a) {
-      final key = '${a.collegeName}|${a.course}|${a.major}';
+      final key = '${a.collegeName}|${a.degree}|${a.course}|${a.major}';
       return seen.add(key);
     }).toList();
   }
@@ -215,7 +215,11 @@ class ProfileHeaderCard extends StatelessWidget {
   }
 
   String _buildCourseText(dynamic academic) {
-    final buffer = StringBuffer(academic.course);
+    final buffer = StringBuffer();
+    if (academic.degree != null && academic.degree.toString().isNotEmpty) {
+      buffer.write('${academic.degree} • ');
+    }
+    buffer.write(academic.course);
     if (academic.startYear != null || academic.endYear != null) {
       buffer.write(' • ');
       if (academic.startYear != null) buffer.write('${academic.startYear}');

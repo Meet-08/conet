@@ -30,14 +30,14 @@ class ProfileUpdateInterestsEvent extends ProfileEvent {
 class ProfileUpdateAcademicInfoEvent extends ProfileEvent {
   final String collegeName;
   final String course;
-  final String? major;
+  final String degree;
   final int? startYear;
   final int? endYear;
 
   ProfileUpdateAcademicInfoEvent({
     required this.collegeName,
     required this.course,
-    this.major,
+    required this.degree,
     this.startYear,
     this.endYear,
   });

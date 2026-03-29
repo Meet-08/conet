@@ -1,4 +1,5 @@
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/widgets/academic_info_form.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
@@ -16,66 +17,56 @@ class EditAcademicInfoPage extends StatefulWidget {
 }
 
 class _EditAcademicInfoPageState extends State<EditAcademicInfoPage> {
-  late final TextEditingController _collegeController;
-  late final TextEditingController _courseController;
-  late final TextEditingController _startYearController;
-  late final TextEditingController _endYearController;
+  late final GlobalKey<FormState> _formKey;
+  late final GlobalKey _academicFormStateKey;
   bool _hasUpdated = false;
 
   @override
   void initState() {
     super.initState();
-    final academics = widget.userProfile.academics;
-    final firstAcademic = academics.isNotEmpty ? academics.first : null;
-
-    _collegeController = TextEditingController(
-      text: firstAcademic?.collegeName ?? '',
-    );
-    _courseController = TextEditingController(
-      text: firstAcademic?.course ?? '',
-    );
-    _startYearController = TextEditingController(
-      text: firstAcademic?.startYear != null
-          ? firstAcademic!.startYear.toString()
-          : '',
-    );
-    _endYearController = TextEditingController(
-      text: firstAcademic?.endYear != null
-          ? firstAcademic!.endYear.toString()
-          : '',
-    );
+    _formKey = GlobalKey<FormState>();
+    _academicFormStateKey = GlobalKey();
   }
 
   @override
   void dispose() {
-    _collegeController.dispose();
-    _courseController.dispose();
-    _startYearController.dispose();
-    _endYearController.dispose();
     super.dispose();
   }
 
   void _save(BuildContext context) {
-    final startYear = int.tryParse(_startYearController.text.trim());
-    final endYear = int.tryParse(_endYearController.text.trim());
+    if (!_formKey.currentState!.validate()) {
+      AppToast.showError(context, 'Please fill all required fields');
+      return;
+    }
+
+    final formState = _academicFormStateKey.currentState as dynamic;
+    final values = formState.getValues();
+
+    if (values.college == null || values.degree == null || values.course == null) {
+      AppToast.showError(context, 'Please fill all required fields');
+      return;
+    }
 
     context.read<ProfileBloc>().add(
       ProfileUpdateAcademicInfoEvent(
-        collegeName: _collegeController.text.trim(),
-        course: _courseController.text.trim(),
-        startYear: startYear,
-        endYear: endYear,
+        collegeName: values.college as String,
+        degree: values.degree as String,
+        course: values.course as String,
+        startYear: values.startYear as int?,
+        endYear: values.endYear as int?,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final academics = widget.userProfile.academics;
+    final firstAcademic = academics.isNotEmpty ? academics.first : null;
+
     return BlocConsumer<ProfileBloc, ProfileState>(
       listener: (context, state) {
         if (state is ProfileUpdateSuccess) {
           AppToast.showSuccess(context, 'Academic info updated successfully');
-
           setState(() {
             _hasUpdated = true;
           });
@@ -123,111 +114,30 @@ class _EditAcademicInfoPageState extends State<EditAcademicInfoPage> {
             ),
             body: Padding(
               padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'College / University',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildTextField(
-                    controller: _collegeController,
-                    hint: 'Stanford University',
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Course / Major',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildTextField(
-                    controller: _courseController,
-                    hint: 'Electronics Engineering',
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Start Year',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            _buildTextField(
-                              controller: _startYearController,
-                              hint: '2023',
-                              keyboardType: TextInputType.number,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'End Year',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            _buildTextField(
-                              controller: _endYearController,
-                              hint: '2027',
-                              keyboardType: TextInputType.number,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              child: AcademicInfoForm(
+                key: _academicFormStateKey,
+                formKey: _formKey,
+                initialCollege: firstAcademic?.collegeName,
+                initialDegree: firstAcademic?.degree,
+                initialCourse: firstAcademic?.course,
+                initialStartYear: firstAcademic?.startYear,
+                initialEndYear: firstAcademic?.endYear,
+                isCreationMode: false,
+                isLoading: isLoading,
+                onChanged: ({
+                  required college,
+                  required degree,
+                  required course,
+                  required startYear,
+                  required endYear,
+                }) {
+                  // No-op for changes, data is managed by AcademicInfoForm state
+                },
               ),
             ),
           ),
         );
       },
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return TextField(
-      controller: controller,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey.shade400),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.black),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
-        ),
-      ),
     );
   }
 }

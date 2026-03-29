@@ -88,12 +88,18 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
   List<UserAcademics> _uniqueAcademics(List<UserAcademics> list) {
     final seen = <String>{};
     return list
-        .where((a) => seen.add('${a.collegeName}|${a.course}|${a.major}'))
+        .where(
+          (a) => seen.add('${a.collegeName}|${a.degree}|${a.course}|${a.major}'),
+        )
         .toList();
   }
 
   String _courseText(UserAcademics a) {
-    final buffer = StringBuffer(a.course);
+    final buffer = StringBuffer();
+    if (a.degree != null && a.degree!.isNotEmpty) {
+      buffer.write('${a.degree} • ');
+    }
+    buffer.write(a.course);
     if (a.startYear != null || a.endYear != null) {
       buffer.write(' • ');
       if (a.startYear != null) buffer.write('${a.startYear}');

@@ -118,7 +118,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     final result = await _updateAcademicInfo(
       collegeName: event.collegeName,
       course: event.course,
-      major: event.major,
+      degree: event.degree,
       startYear: event.startYear,
       endYear: event.endYear,
     );

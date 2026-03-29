@@ -23,8 +23,8 @@ abstract interface class ProfileDataSource {
 
   Future<UserModel> updateAcademicInfo({
     required String collegeName,
+    required String degree,
     required String course,
-    String? major,
     int? startYear,
     int? endYear,
   });

@@ -4,6 +4,7 @@ class UserAcademics extends Equatable {
   final String id;
   final String userId;
   final String collegeName;
+  final String? degree;
   final String course;
   final String? major;
   final int? startYear;
@@ -14,6 +15,7 @@ class UserAcademics extends Equatable {
     required this.id,
     required this.userId,
     required this.collegeName,
+    this.degree,
     required this.course,
     this.major,
     this.startYear,
@@ -26,6 +28,7 @@ class UserAcademics extends Equatable {
     id,
     userId,
     collegeName,
+    degree,
     course,
     major,
     startYear,

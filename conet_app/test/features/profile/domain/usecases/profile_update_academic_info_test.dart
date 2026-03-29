@@ -21,8 +21,8 @@ void main() {
       when(
         () => mockRepository.updateAcademicInfo(
           collegeName: any(named: 'collegeName'),
+          degree: any(named: 'degree'),
           course: any(named: 'course'),
-          major: any(named: 'major'),
           startYear: any(named: 'startYear'),
           endYear: any(named: 'endYear'),
         ),
@@ -30,8 +30,8 @@ void main() {
 
       await usecase(
         collegeName: 'Test University',
+        degree: 'Bachelor of Science',
         course: 'Computer Science',
-        major: 'AI',
         startYear: 2022,
         endYear: 2026,
       );
@@ -39,8 +39,8 @@ void main() {
       verify(
         () => mockRepository.updateAcademicInfo(
           collegeName: 'Test University',
+          degree: 'Bachelor of Science',
           course: 'Computer Science',
-          major: 'AI',
           startYear: 2022,
           endYear: 2026,
         ),
@@ -51,8 +51,8 @@ void main() {
       when(
         () => mockRepository.updateAcademicInfo(
           collegeName: any(named: 'collegeName'),
+          degree: any(named: 'degree'),
           course: any(named: 'course'),
-          major: any(named: 'major'),
           startYear: any(named: 'startYear'),
           endYear: any(named: 'endYear'),
         ),
@@ -60,6 +60,7 @@ void main() {
 
       final result = await usecase(
         collegeName: 'Test University',
+        degree: 'Bachelor of Science',
         course: 'CS',
       );
 
@@ -71,14 +72,18 @@ void main() {
       when(
         () => mockRepository.updateAcademicInfo(
           collegeName: any(named: 'collegeName'),
+          degree: any(named: 'degree'),
           course: any(named: 'course'),
-          major: any(named: 'major'),
           startYear: any(named: 'startYear'),
           endYear: any(named: 'endYear'),
         ),
       ).thenAnswer((_) async => Left(tFailure));
 
-      final result = await usecase(collegeName: 'Test', course: 'CS');
+      final result = await usecase(
+        collegeName: 'Test',
+        degree: 'Bachelor of Science',
+        course: 'CS',
+      );
 
       expect(result.isLeft(), true);
       result.fold(
@@ -91,8 +96,8 @@ void main() {
       when(
         () => mockRepository.updateAcademicInfo(
           collegeName: any(named: 'collegeName'),
+          degree: any(named: 'degree'),
           course: any(named: 'course'),
-          major: any(named: 'major'),
           startYear: any(named: 'startYear'),
           endYear: any(named: 'endYear'),
         ),
@@ -100,6 +105,7 @@ void main() {
 
       final result = await usecase(
         collegeName: 'University',
+        degree: 'Bachelor of Science',
         course: 'Engineering',
       );
 
@@ -107,8 +113,8 @@ void main() {
       verify(
         () => mockRepository.updateAcademicInfo(
           collegeName: 'University',
+          degree: 'Bachelor of Science',
           course: 'Engineering',
-          major: null,
           startYear: null,
           endYear: null,
         ),

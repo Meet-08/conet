@@ -72,17 +72,17 @@ export const updateAboutMe = asyncHandler(async (req, res) => {
 // UPDATE ACADEMIC INFO
 export const updateAcademicInfo = asyncHandler(async (req, res) => {
   const userId = req.user.id;
-  const { college_name, course, major, start_year, end_year } = req.body;
+  const { college_name, degree, course, start_year, end_year } = req.body;
 
-  if (!college_name || !course) {
+  if (!college_name || !degree || !course) {
     res.status(400);
-    throw new Error("college_name and course are required");
+    throw new Error("college_name, degree and course are required");
   }
 
   const user = await updateAcademicInfoService(userId, {
     college_name,
+    degree,
     course,
-    major,
     start_year,
     end_year,
   });

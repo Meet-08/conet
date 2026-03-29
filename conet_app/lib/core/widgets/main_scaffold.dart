@@ -7,7 +7,7 @@ class MainScaffold extends StatelessWidget {
 
   const MainScaffold({super.key, required this.child});
 
-  static const tabs = ['/home', '/explore', '/event', '/messages', '/profile'];
+  static const tabs = ['/home', '/event', '/messages', '/profile'];
 
   @override
   Widget build(BuildContext context) {

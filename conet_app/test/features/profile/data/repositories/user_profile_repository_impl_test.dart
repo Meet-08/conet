@@ -221,8 +221,8 @@ void main() {
       when(
         () => mockDataSource.updateAcademicInfo(
           collegeName: any(named: 'collegeName'),
+          degree: any(named: 'degree'),
           course: any(named: 'course'),
-          major: any(named: 'major'),
           startYear: any(named: 'startYear'),
           endYear: any(named: 'endYear'),
         ),
@@ -230,8 +230,8 @@ void main() {
 
       final result = await repository.updateAcademicInfo(
         collegeName: 'Test University',
+        degree: 'Bachelor of Science',
         course: 'Computer Science',
-        major: 'AI',
         startYear: 2022,
         endYear: 2026,
       );
@@ -240,8 +240,8 @@ void main() {
       verify(
         () => mockDataSource.updateAcademicInfo(
           collegeName: 'Test University',
+          degree: 'Bachelor of Science',
           course: 'Computer Science',
-          major: 'AI',
           startYear: 2022,
           endYear: 2026,
         ),
@@ -252,8 +252,8 @@ void main() {
       when(
         () => mockDataSource.updateAcademicInfo(
           collegeName: any(named: 'collegeName'),
+          degree: any(named: 'degree'),
           course: any(named: 'course'),
-          major: any(named: 'major'),
           startYear: any(named: 'startYear'),
           endYear: any(named: 'endYear'),
         ),
@@ -261,6 +261,7 @@ void main() {
 
       final result = await repository.updateAcademicInfo(
         collegeName: 'Test',
+        degree: 'Bachelor of Science',
         course: 'CS',
       );
 

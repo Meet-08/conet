@@ -23,7 +23,7 @@ abstract interface class UserProfileRepository {
   Future<Either<AppFailure, Unit>> updateAcademicInfo({
     required String collegeName,
     required String course,
-    String? major,
+    required String degree,
     int? startYear,
     int? endYear,
   });

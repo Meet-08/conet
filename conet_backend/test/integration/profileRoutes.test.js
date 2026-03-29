@@ -218,7 +218,7 @@ describe("PUT /api/profile/academic-info", () => {
     const res = await request(app)
       .put("/api/profile/academic-info")
       .set("Authorization", makeAuthHeader())
-      .send({ college_name: "MIT", course: "CS" });
+      .send({ college_name: "MIT", degree: "B.S", course: "CS" });
 
     expect(res.status).toBe(200);
   });
@@ -227,7 +227,7 @@ describe("PUT /api/profile/academic-info", () => {
     const res = await request(app)
       .put("/api/profile/academic-info")
       .set("Authorization", makeAuthHeader())
-      .send({ course: "CS" });
+      .send({ degree: "B.S", course: "CS" });
 
     expect(res.status).toBe(400);
   });
@@ -236,7 +236,16 @@ describe("PUT /api/profile/academic-info", () => {
     const res = await request(app)
       .put("/api/profile/academic-info")
       .set("Authorization", makeAuthHeader())
-      .send({ college_name: "MIT" });
+      .send({ college_name: "MIT", degree: "B.S" });
+
+    expect(res.status).toBe(400);
+  });
+
+  it("400 – rejects when degree is missing", async () => {
+    const res = await request(app)
+      .put("/api/profile/academic-info")
+      .set("Authorization", makeAuthHeader())
+      .send({ college_name: "MIT", course: "CS" });
 
     expect(res.status).toBe(400);
   });

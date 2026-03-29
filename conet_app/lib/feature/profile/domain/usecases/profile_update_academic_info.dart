@@ -10,15 +10,15 @@ class ProfileUpdateAcademicInfo {
 
   Future<Either<AppFailure, Unit>> call({
     required String collegeName,
+    required String degree,
     required String course,
-    String? major,
     int? startYear,
     int? endYear,
   }) {
     return _repository.updateAcademicInfo(
       collegeName: collegeName,
+      degree: degree,
       course: course,
-      major: major,
       startYear: startYear,
       endYear: endYear,
     );

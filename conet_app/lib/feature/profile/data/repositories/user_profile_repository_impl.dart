@@ -56,16 +56,16 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   @override
   Future<Either<AppFailure, Unit>> updateAcademicInfo({
     required String collegeName,
+    required String degree,
     required String course,
-    String? major,
     int? startYear,
     int? endYear,
   }) async {
     return _performUpdate(
       () => profileDataSource.updateAcademicInfo(
         collegeName: collegeName,
+        degree: degree,
         course: course,
-        major: major,
         startYear: startYear,
         endYear: endYear,
       ),

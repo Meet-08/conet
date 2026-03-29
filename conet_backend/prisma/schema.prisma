@@ -557,7 +557,7 @@ model user_academics {
   user_id      String    @db.Uuid
   college_name String
   course       String
-  major        String?
+  degree       String?
   start_year   Int?
   end_year     Int?
   created_at   DateTime? @default(now()) @db.Timestamptz(6)

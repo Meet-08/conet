@@ -58,8 +58,8 @@ class ProfileDataSourceImpl implements ProfileDataSource {
   @override
   Future<UserModel> updateAcademicInfo({
     required String collegeName,
+    required String degree,
     required String course,
-    String? major,
     int? startYear,
     int? endYear,
   }) async {
@@ -68,8 +68,8 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         "/profile/academic-info",
         data: {
           "college_name": collegeName,
+          "degree": degree,
           "course": course,
-          "major": major,
           "start_year": startYear,
           "end_year": endYear,
         },

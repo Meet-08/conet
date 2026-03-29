@@ -40,11 +40,9 @@ export const getUserProfileService = async (uid, viewerId = null) => {
   let socialLinks = [];
   if (user.social_links) {
     socialLinks =
-      typeof user.social_links === "string"
-        ? JSON.parse(user.social_links)
-        : Array.isArray(user.social_links)
-          ? user.social_links
-          : [];
+      typeof user.social_links === "string" ? JSON.parse(user.social_links)
+      : Array.isArray(user.social_links) ? user.social_links
+      : [];
   }
 
   // Check if the viewer follows this profile
@@ -154,7 +152,7 @@ export const updateAboutMeService = async (userId, aboutMe) => {
 
 export const updateAcademicInfoService = async (
   userId,
-  { college_name, course, major, start_year, end_year },
+  { college_name, degree, course, start_year, end_year },
 ) => {
   // Upsert: update if exists, create if not
   const existing = await prisma.user_academics.findFirst({
@@ -166,8 +164,8 @@ export const updateAcademicInfoService = async (
       where: { id: existing.id },
       data: {
         college_name,
+        degree,
         course,
-        major: major ?? null,
         start_year: start_year ?? null,
         end_year: end_year ?? null,
       },
@@ -177,8 +175,8 @@ export const updateAcademicInfoService = async (
       data: {
         user_id: userId,
         college_name,
+        degree,
         course,
-        major: major ?? null,
         start_year: start_year ?? null,
         end_year: end_year ?? null,
       },

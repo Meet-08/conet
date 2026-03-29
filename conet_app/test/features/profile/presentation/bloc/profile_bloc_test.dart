@@ -295,8 +295,8 @@ void main() {
         when(
           () => mockUpdateAcademicInfo(
             collegeName: any(named: 'collegeName'),
+            degree: any(named: 'degree'),
             course: any(named: 'course'),
-            major: any(named: 'major'),
             startYear: any(named: 'startYear'),
             endYear: any(named: 'endYear'),
           ),
@@ -306,8 +306,8 @@ void main() {
       act: (bloc) => bloc.add(
         ProfileUpdateAcademicInfoEvent(
           collegeName: 'Test University',
+          degree: 'Bachelor of Science',
           course: 'CS',
-          major: 'AI',
           startYear: 2022,
           endYear: 2026,
         ),
@@ -317,8 +317,8 @@ void main() {
         verify(
           () => mockUpdateAcademicInfo(
             collegeName: 'Test University',
+            degree: 'Bachelor of Science',
             course: 'CS',
-            major: 'AI',
             startYear: 2022,
             endYear: 2026,
           ),
@@ -332,8 +332,8 @@ void main() {
         when(
           () => mockUpdateAcademicInfo(
             collegeName: any(named: 'collegeName'),
+            degree: any(named: 'degree'),
             course: any(named: 'course'),
-            major: any(named: 'major'),
             startYear: any(named: 'startYear'),
             endYear: any(named: 'endYear'),
           ),
@@ -341,7 +341,11 @@ void main() {
         return profileBloc;
       },
       act: (bloc) => bloc.add(
-        ProfileUpdateAcademicInfoEvent(collegeName: 'Test', course: 'CS'),
+        ProfileUpdateAcademicInfoEvent(
+          collegeName: 'Test',
+          degree: 'Bachelor of Science',
+          course: 'CS',
+        ),
       ),
       expect: () => [
         isA<ProfileLoading>(),

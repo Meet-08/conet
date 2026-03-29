@@ -264,6 +264,7 @@ describe("updateAcademicInfoService", () => {
 
     await updateAcademicInfoService(TEST_USER.id, {
       college_name: "MIT",
+      degree: "B.S",
       course: "CS",
     });
 
@@ -278,6 +279,7 @@ describe("updateAcademicInfoService", () => {
 
     await updateAcademicInfoService(TEST_USER.id, {
       college_name: "Stanford",
+      degree: "B.S",
       course: "Physics",
     });
 

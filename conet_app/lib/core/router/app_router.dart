@@ -15,7 +15,6 @@ import 'package:conet_app/feature/event/presentation/pages/event_detail_page.dar
 import 'package:conet_app/feature/event/presentation/pages/event_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/my_events_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/view_ticket.dart';
-import 'package:conet_app/feature/explore/pages/explore_page.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/presentation/pages/chat_detail_page.dart';
 import 'package:conet_app/feature/message/presentation/pages/messages_page.dart';
@@ -378,7 +377,6 @@ class AppRouter {
         },
         routes: [
           GoRoute(path: '/home', builder: (_, _) => const FeedPage()),
-          GoRoute(path: '/explore', builder: (_, _) => const ExplorePage()),
           GoRoute(path: '/event', builder: (_, _) => const EventPage()),
           GoRoute(path: '/messages', builder: (_, _) => const MessagesPage()),
           GoRoute(path: '/profile', builder: (_, _) => const ProfilePage()),

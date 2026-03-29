@@ -5,8 +5,17 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AddDetailsHeader extends StatelessWidget {
   final bool isGoogle;
+  final String? title;
+  final String? subtitle;
+  final VoidCallback? onBack;
 
-  const AddDetailsHeader({super.key, this.isGoogle = true});
+  const AddDetailsHeader({
+    super.key,
+    this.isGoogle = true,
+    this.title,
+    this.subtitle,
+    this.onBack,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +23,7 @@ class AddDetailsHeader extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         InkWell(
-          onTap: () => {context.read<AuthBloc>().add(AuthLogout())},
+          onTap: onBack ?? () => context.read<AuthBloc>().add(AuthLogout()),
           child: const Row(
             children: [
               Icon(FontAwesomeIcons.arrowLeft, size: 20),
@@ -24,15 +33,16 @@ class AddDetailsHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
-        const Text(
-          'Complete Your Profile',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
+        Text(
+          title ?? 'Complete Your Profile',
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 6),
         Text(
-          isGoogle
-              ? 'Add your name and choose a username'
-              : 'Set up your password and username',
+          subtitle ??
+              (isGoogle
+                  ? 'Add your name and choose a username'
+                  : 'Set up your password and username'),
           style: const TextStyle(fontSize: 14, color: Colors.grey),
         ),
       ],

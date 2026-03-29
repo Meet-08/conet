@@ -34,10 +34,6 @@ class AppBottomNav extends StatelessWidget {
               label: 'Home',
             ),
             const BottomNavigationBarItem(
-              icon: FaIcon(FontAwesomeIcons.magnifyingGlass),
-              label: 'Explore',
-            ),
-            const BottomNavigationBarItem(
               icon: FaIcon(FontAwesomeIcons.calendar),
               label: 'Events',
             ),

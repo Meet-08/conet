@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-03-29
+> Last updated: 2026-03-29 (Academic Info Form extracted to reusable core widget)
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -70,6 +70,9 @@
 
 **Use Cases:** `ProfileGetUser`, `ProfileUpdatePersonalInfo`, `ProfileUpdateAboutMe`, `ProfileUpdateInterests`, `ProfileUpdateAcademicInfo`, `ProfileUpdateSocialLinks`, `ProfileUpdatePictures`, `ProfileFollowUser`, `ProfileUnfollowUser`
 **Backend Endpoints:** `GET /profile/:uid`, `PUT /profile/about-me`, `PUT /profile/academic-info`, `PUT /profile/interests`, `PUT /profile/personal-info`, `PUT /profile/pictures`, `PUT /profile/social-links`, `POST/DELETE /profile/:uid/follow`
+**Implementation Notes:**
+
+- Academic Info Form (`AcademicInfoForm` in `core/widgets/academic_info_form.dart`) extracted as a reusable widget and is now used across both **Add Details (Auth)** onboarding and **Edit Academic Info (Profile)** screens with mode-based label rendering.
 
 ---
 
