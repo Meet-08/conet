@@ -75,6 +75,16 @@ void main() {
   );
 
   final tPostList = [tPost];
+  final tExistingPost = Post(
+    id: 'post-999',
+    user: tUser,
+    content: 'Existing post content',
+    mediaUrls: const [],
+    likeCount: 1,
+    commentCount: 0,
+    isLiked: false,
+    createdAt: DateTime(2023, 12, 31),
+  );
 
   setUp(() {
     mockGetPosts = MockPostGetPosts();
@@ -248,6 +258,31 @@ void main() {
       expect: () => [
         isA<PostLoaded>()
             .having((s) => s.posts, 'posts', [tPost])
+            .having((s) => s.recentlyCreated, 'recentlyCreated', true),
+      ],
+    );
+
+    blocTest<PostBloc, PostState>(
+      'prepends new post to top when feed already has posts',
+      build: () {
+        when(
+          () => mockCreatePost(
+            content: any(named: 'content'),
+            media: any(named: 'media'),
+          ),
+        ).thenAnswer((_) async => Right(tPost));
+        return postBloc;
+      },
+      seed: () => PostLoaded([tExistingPost]),
+      act: (bloc) =>
+          bloc.add(PostCreatePostEvent(content: tContent, media: tMedia)),
+      expect: () => [
+        isA<PostLoaded>()
+            .having((s) => s.posts.first.id, 'first post id', tPost.id)
+            .having((s) => s.posts.map((p) => p.id).toList(), 'post order', [
+              tPost.id,
+              tExistingPost.id,
+            ])
             .having((s) => s.recentlyCreated, 'recentlyCreated', true),
       ],
     );

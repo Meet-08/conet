@@ -76,11 +76,11 @@ class _PostCardState extends State<PostCard> {
     final currentMediaType = currentMediaUrl.isEmpty
         ? MediaType.unknown
         : getMediaType(currentMediaUrl);
-    final mediaAspectRatio =
-        (currentMediaType == MediaType.image ||
-            currentMediaType == MediaType.video)
-        ? 4 / 3
-        : 16 / 10;
+    final mediaAspectRatio = switch (currentMediaType) {
+      MediaType.image || MediaType.video => 4 / 3,
+      MediaType.audio => 16 / 7,
+      MediaType.document || MediaType.unknown => 16 / 4,
+    };
 
     return InkWell(
       onTap: widget.isDetailView

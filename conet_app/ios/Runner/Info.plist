@@ -78,6 +78,10 @@
         	</array>
     	</dict>
 	</array>
+	<key>NSDocumentUsageDescription</key>
+	<string>Conet needs access to your files to download and save media content.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Conet needs local network access for connectivity.</string>
   </dict>
 </array>
 </dict>

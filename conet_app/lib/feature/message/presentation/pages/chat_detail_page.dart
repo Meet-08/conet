@@ -1,3 +1,4 @@
+import 'package:conet_app/core/utils/media_type_utils.dart';
 import 'package:conet_app/core/utils/pick_files.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
@@ -70,7 +71,18 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 
   Future<void> _pickFiles() async {
-    final files = await pickFiles();
+    final files = await pickFiles(
+      allowedExtensions: [
+        // Images
+        'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp',
+        // Videos
+        'mp4', 'mov', 'mkv', 'webm', 'avi', '3gp', 'mpeg', 'mpg',
+        // Audio
+        'mp3', 'm4a', 'aac', 'wav', 'ogg', 'flac',
+        // Documents
+        'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv',
+      ],
+    );
     if (files != null) {
       setState(() {
         _selectedFiles = files;
@@ -82,6 +94,52 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     setState(() {
       _selectedFiles.removeAt(index);
     });
+  }
+
+  Widget _buildFilePreviewWidget(PlatformFile file) {
+    final fileName = file.name;
+    final mediaType = getMediaTypeFromFileName(fileName);
+
+    // Only show image preview for actual images
+    if (mediaType == MediaType.image && file.bytes != null) {
+      return Image.memory(
+        file.bytes!,
+        width: 80,
+        height: 80,
+        fit: BoxFit.cover,
+      );
+    }
+
+    // Show appropriate icon for non-image media types
+    final icon = switch (mediaType) {
+      MediaType.video => FontAwesomeIcons.play,
+      MediaType.audio => FontAwesomeIcons.music,
+      MediaType.document => FontAwesomeIcons.fileLines,
+      MediaType.image => FontAwesomeIcons.image,
+      MediaType.unknown => FontAwesomeIcons.file,
+    };
+
+    return Container(
+      width: 80,
+      height: 80,
+      color: Colors.grey.shade300,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FaIcon(icon, size: 24, color: Colors.grey.shade600),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: Text(
+              fileName.split('.').last.toUpperCase(),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   void _scrollToBottom() {
@@ -137,24 +195,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                   itemBuilder: (context, index) {
                     final file = _selectedFiles[index];
                     return Padding(
-                      padding: const .only(right: 8),
+                      padding: const EdgeInsets.only(right: 8),
                       child: Stack(
                         children: [
                           ClipRRect(
-                            borderRadius: .circular(8),
-                            child: file.bytes != null
-                                ? Image.memory(
-                                    file.bytes!,
-                                    width: 80,
-                                    height: 80,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Container(
-                                    width: 80,
-                                    height: 80,
-                                    color: Colors.grey.shade300,
-                                    child: const FaIcon(FontAwesomeIcons.image),
-                                  ),
+                            borderRadius: BorderRadius.circular(8),
+                            child: _buildFilePreviewWidget(file),
                           ),
                           Positioned(
                             top: 4,

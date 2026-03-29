@@ -1,6 +1,7 @@
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class PostImageViewerPage extends StatefulWidget {
   final List<String> imageUrls;
@@ -98,7 +99,7 @@ class _PostImageViewerPageState extends State<PostImageViewerPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => context.pop(),
                     icon: const FaIcon(
                       FontAwesomeIcons.xmark,
                       color: Colors.white,

@@ -5,10 +5,13 @@ Future<List<PlatformFile>?> pickFiles({
   FileType type = FileType.any,
   List<String>? allowedExtensions,
 }) async {
+  // When allowedExtensions is provided, must use FileType.custom
+  final fileType = allowedExtensions != null ? FileType.custom : type;
+
   final result = await FilePicker.platform.pickFiles(
     allowMultiple: true,
     withData: true,
-    type: type,
+    type: fileType,
     allowedExtensions: allowedExtensions,
   );
 

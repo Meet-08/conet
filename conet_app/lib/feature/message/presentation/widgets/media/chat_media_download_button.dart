@@ -9,12 +9,12 @@ import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 
-class PostMediaDownloadButton extends StatefulWidget {
+class ChatMediaDownloadButton extends StatefulWidget {
   final String mediaUrl;
   final Color iconColor;
   final Color backgroundColor;
 
-  const PostMediaDownloadButton({
+  const ChatMediaDownloadButton({
     super.key,
     required this.mediaUrl,
     this.iconColor = Colors.white,
@@ -22,11 +22,11 @@ class PostMediaDownloadButton extends StatefulWidget {
   });
 
   @override
-  State<PostMediaDownloadButton> createState() =>
-      _PostMediaDownloadButtonState();
+  State<ChatMediaDownloadButton> createState() =>
+      _ChatMediaDownloadButtonState();
 }
 
-class _PostMediaDownloadButtonState extends State<PostMediaDownloadButton> {
+class _ChatMediaDownloadButtonState extends State<ChatMediaDownloadButton> {
   static const MethodChannel _downloadsChannel = MethodChannel(
     'conet_app/downloads',
   );
@@ -211,29 +211,29 @@ class _PostMediaDownloadButtonState extends State<PostMediaDownloadButton> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: widget.backgroundColor,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: _isDownloading ? null : () => _download(context),
-        child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: _isDownloading
-              ? SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    value: _progress,
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(widget.iconColor),
-                  ),
-                )
-              : FaIcon(
-                  FontAwesomeIcons.download,
-                  size: 14,
-                  color: widget.iconColor,
-                ),
+    if (_isDownloading) {
+      return Padding(
+        padding: const EdgeInsets.all(4),
+        child: SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            value: _progress,
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(widget.iconColor),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(4),
+      child: GestureDetector(
+        onTap: () => _download(context),
+        child: FaIcon(
+          FontAwesomeIcons.download,
+          color: widget.iconColor,
+          size: 16,
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class ImageViewerPage extends StatefulWidget {
   final List<String> imageUrls;
@@ -105,7 +106,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                       FontAwesomeIcons.xmark,
                       color: Colors.white,
                     ),
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => context.pop(),
                   ),
                   // Image counter
                   if (widget.imageUrls.length > 1)

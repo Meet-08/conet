@@ -15,6 +15,7 @@ import 'package:conet_app/feature/event/presentation/pages/event_detail_page.dar
 import 'package:conet_app/feature/event/presentation/pages/event_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/my_events_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/view_ticket.dart';
+import 'package:conet_app/feature/message/data/models/conversation_model.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/presentation/pages/chat_detail_page.dart';
 import 'package:conet_app/feature/message/presentation/pages/messages_page.dart';
@@ -219,7 +220,19 @@ class AppRouter {
       GoRoute(
         path: '/chat-detail',
         builder: (context, state) {
-          final conversation = state.extra as Conversation;
+          final extra = state.extra;
+          final Conversation? conversation = switch (extra) {
+            Conversation c => c,
+            Map<String, dynamic> m => ConversationModel.fromJson(m),
+            _ => null,
+          };
+
+          if (conversation == null) {
+            return const Scaffold(
+              body: Center(child: Text('Invalid conversation payload')),
+            );
+          }
+
           return ChatDetailPage(conversation: conversation);
         },
       ),

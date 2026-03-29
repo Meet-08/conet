@@ -147,7 +147,7 @@ class PostBloc extends Bloc<PostEvent, PostState> {
       final currentPosts = currentState?.posts ?? <Post>[];
       emit(
         PostLoaded(
-          [...currentPosts, post],
+          [post, ...currentPosts],
           recentlyCreated: true,
           bookmarkedPostIds: currentState?.bookmarkedPostIds ?? const {},
         ),

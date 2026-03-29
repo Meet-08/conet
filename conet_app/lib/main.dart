@@ -111,7 +111,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         title: 'Conet App',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: .fromSeed(seedColor: Colors.black26),
+          colorScheme: .fromSeed(seedColor: Colors.teal),
           useMaterial3: true,
         ),
         routerConfig: AppRouter.router,

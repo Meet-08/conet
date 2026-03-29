@@ -1,6 +1,6 @@
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
-import 'package:conet_app/feature/message/presentation/pages/image_viewer_page.dart';
+import 'package:conet_app/feature/message/presentation/widgets/media/chat_media_item.dart';
 import 'package:flutter/material.dart';
 
 class ChatMessageBubble extends StatelessWidget {
@@ -63,11 +63,11 @@ class ChatMessageBubble extends StatelessWidget {
                         ),
                       ),
 
-                    // Add spacing between text and images
+                    // Add spacing between text and media
                     if (hasText && hasMedia) const SizedBox(height: 8),
 
-                    // Display images if present
-                    if (hasMedia) _buildImageGrid(context),
+                    // Display media if present
+                    if (hasMedia) _buildMediaGrid(context),
 
                     if (status == MessageDeliveryStatus.error) ...[
                       const SizedBox(height: 4),
@@ -111,103 +111,43 @@ class ChatMessageBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildImageGrid(BuildContext context) {
+  Widget _buildMediaGrid(BuildContext context) {
     if (mediaUrls.length == 1) {
-      return _buildSingleImage(context, mediaUrls[0], 0);
+      return SizedBox(
+        height: 200,
+        width: 200,
+        child: ChatMediaItem(
+          mediaUrl: mediaUrls[0],
+          imageUrlsForViewer: mediaUrls,
+          isMe: isMe,
+        ),
+      );
     }
 
-    // For multiple images, show in a grid
+    // For multiple media items, show in a grid
+    // For images only (backward compatibility), show in 2-3 per row
+    // For mixed media, show 1 per row
+    final maxWidth =
+        MediaQuery.of(context).size.width * 0.75 - 24; // Account for padding
+    final itemSize = mediaUrls.length == 2
+        ? (maxWidth - 4) /
+              2 // 2 items side by side
+        : (maxWidth - 8) / 3; // 3 items per row
+
     return Wrap(
       spacing: 4,
       runSpacing: 4,
       children: List.generate(
         mediaUrls.length,
-        (index) => _buildGridImage(context, mediaUrls[index], index),
-      ),
-    );
-  }
-
-  Widget _buildSingleImage(BuildContext context, String url, int index) {
-    return GestureDetector(
-      onTap: () => _openImageViewer(context, index),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image.network(
-          url,
-          fit: BoxFit.cover,
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) return child;
-            return Container(
-              height: 200,
-              alignment: Alignment.center,
-              child: Loader(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                    : null,
-              ),
-            );
-          },
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              height: 200,
-              color: Colors.grey.shade300,
-              child: const Icon(Icons.broken_image, size: 50),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildGridImage(BuildContext context, String url, int index) {
-    final maxWidth =
-        MediaQuery.of(context).size.width * 0.75 - 24; // Account for padding
-    final imageSize = mediaUrls.length == 2
-        ? (maxWidth - 4) /
-              2 // 2 images side by side
-        : (maxWidth - 8) / 3; // 3 images per row
-
-    return GestureDetector(
-      onTap: () => _openImageViewer(context, index),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: SizedBox(
-          width: imageSize,
-          height: imageSize,
-          child: Image.network(
-            url,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Container(
-                alignment: Alignment.center,
-                child: Loader(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                      : null,
-                ),
-              );
-            },
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                color: Colors.grey.shade300,
-                child: const Icon(Icons.broken_image, size: 30),
-              );
-            },
+        (index) => SizedBox(
+          width: itemSize,
+          height: itemSize,
+          child: ChatMediaItem(
+            mediaUrl: mediaUrls[index],
+            imageUrlsForViewer: mediaUrls,
+            isMe: isMe,
           ),
         ),
-      ),
-    );
-  }
-
-  void _openImageViewer(BuildContext context, int initialIndex) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) =>
-            ImageViewerPage(imageUrls: mediaUrls, initialIndex: initialIndex),
       ),
     );
   }
