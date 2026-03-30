@@ -54,6 +54,23 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
   String? _selectedDegree;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeSuggestedUsername();
+    });
+  }
+
+  Future<void> _initializeSuggestedUsername() async {
+    if (widget.isGoogle) {
+      await _prefillGoogleNameAndGenerateUsername();
+      return;
+    }
+
+    await _generateUniqueUsername();
+  }
+
+  @override
   void dispose() {
     _firstNameController.dispose();
     _lastNameController.dispose();
@@ -64,26 +81,157 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
     super.dispose();
   }
 
-  /// Generates a unique username and validates with Supabase
-  Future<void> _generateUniqueUsername() async {
-    final firstName = _firstNameController.text.toLowerCase().trim();
-    final lastName = _lastNameController.text.toLowerCase().trim();
+  Future<void> _prefillGoogleNameAndGenerateUsername() async {
+    final supabase = serviceLocator<SupabaseClient>();
+    final metadata = supabase.auth.currentSession?.user.userMetadata;
+
+    if (metadata == null) return;
+
+    final givenName = _extractMetadataString(metadata, 'given_name');
+    final familyName = _extractMetadataString(metadata, 'family_name');
+    final fullName =
+        _extractMetadataString(metadata, 'full_name') ??
+        _extractMetadataString(metadata, 'name');
+
+    String firstName = givenName ?? '';
+    String lastName = familyName ?? '';
+
+    if (firstName.isEmpty && fullName != null && fullName.isNotEmpty) {
+      final split = _splitFullName(fullName);
+      firstName = split.$1;
+      lastName = split.$2;
+    }
 
     if (firstName.isEmpty) return;
+
+    _firstNameController.text = firstName;
+    _lastNameController.text = lastName;
+    await _generateUniqueUsername();
+  }
+
+  String? _extractMetadataString(Map<String, dynamic> metadata, String key) {
+    final value = metadata[key];
+    if (value is String) {
+      final trimmed = value.trim();
+      if (trimmed.isNotEmpty) return trimmed;
+    }
+    return null;
+  }
+
+  (String, String) _splitFullName(String fullName) {
+    final parts = fullName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .toList();
+
+    if (parts.isEmpty) return ('', '');
+    if (parts.length == 1) return (parts.first, '');
+
+    return (parts.first, parts.sublist(1).join(' '));
+  }
+
+  String _extractEmailPrefix(String email) {
+    final trimmedEmail = email.trim();
+    if (trimmedEmail.isEmpty) return '';
+
+    final localPart = trimmedEmail.split('@').first;
+    return localPart.split('+').first;
+  }
+
+  String _sanitizeUsernamePart(String value) {
+    if (value.trim().isEmpty) return '';
+
+    final withUnderscores = value.trim().toLowerCase().replaceAll(
+      RegExp(r'[\s.-]+'),
+      '_',
+    );
+
+    final sanitized = withUnderscores
+        .replaceAll(RegExp(r'[^a-z0-9_]'), '')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+
+    return sanitized;
+  }
+
+  String _normalizeUsernameBase(String base) {
+    const fallback = 'user';
+
+    if (base.isEmpty) {
+      return fallback;
+    }
+
+    if (base.length >= 3) {
+      return base;
+    }
+
+    return (base + fallback).substring(0, 3);
+  }
+
+  String _buildUsernameBase() {
+    final supabase = serviceLocator<SupabaseClient>();
+    final metadata = supabase.auth.currentSession?.user.userMetadata;
+
+    final firstNameSeed = _sanitizeUsernamePart(_firstNameController.text);
+    final lastNameSeed = _sanitizeUsernamePart(_lastNameController.text);
+
+    if (firstNameSeed.isNotEmpty) {
+      return _normalizeUsernameBase(
+        '$firstNameSeed${lastNameSeed.isEmpty ? '' : lastNameSeed[0]}',
+      );
+    }
+
+    if (metadata != null) {
+      final metadataFirstName =
+          _extractMetadataString(metadata, 'first_name') ??
+          _extractMetadataString(metadata, 'given_name') ??
+          _extractMetadataString(metadata, 'name') ??
+          '';
+      final metadataLastName =
+          _extractMetadataString(metadata, 'last_name') ??
+          _extractMetadataString(metadata, 'family_name') ??
+          '';
+
+      final sanitizedFirst = _sanitizeUsernamePart(metadataFirstName);
+      final sanitizedLast = _sanitizeUsernamePart(metadataLastName);
+
+      if (sanitizedFirst.isNotEmpty) {
+        return _normalizeUsernameBase(
+          '$sanitizedFirst${sanitizedLast.isEmpty ? '' : sanitizedLast[0]}',
+        );
+      }
+    }
+
+    final emailSeed = _sanitizeUsernamePart(
+      _extractEmailPrefix(supabase.auth.currentUser?.email ?? ''),
+    );
+
+    return _normalizeUsernameBase(emailSeed);
+  }
+
+  /// Generates a unique username and validates with Supabase
+  Future<void> _generateUniqueUsername() async {
+    const maxUsernameLength = 20;
+    final base = _buildUsernameBase();
 
     setState(() => _isGeneratingUsername = true);
 
     try {
-      String username;
       bool isAvailable = false;
       int attempts = 0;
       const maxAttempts = 5;
+      final random = Random.secure();
 
       final supabase = serviceLocator<SupabaseClient>();
 
       while (!isAvailable && attempts < maxAttempts) {
-        final random = Random().nextInt(9999);
-        username = '$firstName${lastName.isEmpty ? '' : lastName[0]}$random';
+        final suffix = (1000 + random.nextInt(9000)).toString();
+        final maxBaseLength = maxUsernameLength - suffix.length;
+        final basePart = base.length > maxBaseLength
+            ? base.substring(0, maxBaseLength)
+            : base;
+        final username = '$basePart$suffix';
 
         // Check availability in Supabase
         final result = await supabase
@@ -103,15 +251,22 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
 
       // If all attempts failed, use timestamp for uniqueness
       if (!isAvailable) {
-        final timestamp = DateTime.now().millisecondsSinceEpoch % 100000;
-        _usernameController.text =
-            '$firstName${lastName.isEmpty ? '' : lastName[0]}$timestamp';
+        final suffix = (DateTime.now().millisecondsSinceEpoch % 100000)
+            .toString();
+        final maxBaseLength = maxUsernameLength - suffix.length;
+        final basePart = base.length > maxBaseLength
+            ? base.substring(0, maxBaseLength)
+            : base;
+        _usernameController.text = '$basePart$suffix';
       }
     } catch (e) {
       // Fallback to simple generation on error
-      final random = DateTime.now().millisecondsSinceEpoch % 10000;
-      _usernameController.text =
-          '$firstName${lastName.isEmpty ? '' : lastName[0]}$random';
+      final suffix = (DateTime.now().millisecondsSinceEpoch % 10000).toString();
+      const maxBaseLength = maxUsernameLength - 4;
+      final basePart = base.length > maxBaseLength
+          ? base.substring(0, maxBaseLength)
+          : base;
+      _usernameController.text = '$basePart$suffix';
     } finally {
       if (mounted) {
         setState(() => _isGeneratingUsername = false);
@@ -309,7 +464,7 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
               AuthTextField.username(
                 controller: _usernameController,
                 textInputAction: TextInputAction.done,
-                onRefresh: widget.isGoogle ? _generateUniqueUsername : null,
+                onRefresh: _generateUniqueUsername,
                 onSubmitted: (_) => _onContinueToAcademic(),
               ),
               if (_isGeneratingUsername)

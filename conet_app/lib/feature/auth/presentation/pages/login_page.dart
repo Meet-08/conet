@@ -54,7 +54,6 @@ class _LoginPageState extends State<LoginPage> {
           setState(() => _isLoading = true);
         } else if (state is AuthSuccess) {
           setState(() => _isLoading = false);
-          // Navigation is handled by AppRouter based on user state
         } else if (state is AuthFailure) {
           setState(() => _isLoading = false);
           AppToast.showError(context, state.message);

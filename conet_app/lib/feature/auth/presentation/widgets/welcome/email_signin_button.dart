@@ -17,10 +17,10 @@ class EmailSignInButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(30),
           ),
         ),
-        onPressed: () => context.push('/login'),
+        onPressed: () => context.push('/email-signup'),
         icon: const Icon(Icons.email_outlined, size: 20),
         label: const Text(
-          'Login with Email',
+          'Sign up with Email',
           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
         ),
       ),

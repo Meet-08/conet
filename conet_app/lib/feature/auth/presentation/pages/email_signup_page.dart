@@ -1,6 +1,6 @@
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
-import 'package:conet_app/feature/auth/presentation/widgets/common/otp_dialog.dart';
+import 'package:conet_app/feature/auth/presentation/pages/otp_page.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/email_signup/email_signup_footer.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/email_signup/email_signup_form.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/email_signup/email_signup_header.dart';
@@ -22,6 +22,7 @@ class _EmailSignupPageState extends State<EmailSignupPage> {
 
   bool _isLoading = false;
   bool _termsAccepted = false;
+  bool _otpPageOpened = false;
 
   @override
   void dispose() {
@@ -50,8 +51,20 @@ class _EmailSignupPageState extends State<EmailSignupPage> {
     );
   }
 
-  void _showOtpDialog() {
-    OtpDialog.show(context, email: _emailController.text.trim());
+  Future<void> _openOtpPage() async {
+    _otpPageOpened = true;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => OtpPage(email: _emailController.text.trim()),
+      ),
+    );
+
+    if (mounted) {
+      setState(() {
+        _otpPageOpened = false;
+      });
+    }
   }
 
   @override
@@ -64,7 +77,9 @@ class _EmailSignupPageState extends State<EmailSignupPage> {
           setState(() => _isLoading = true);
         } else if (state is AuthOtpSentSuccess) {
           setState(() => _isLoading = false);
-          _showOtpDialog();
+          if (!_otpPageOpened) {
+            _openOtpPage();
+          }
         } else if (state is AuthFailure) {
           setState(() => _isLoading = false);
           AppToast.showError(context, state.message);

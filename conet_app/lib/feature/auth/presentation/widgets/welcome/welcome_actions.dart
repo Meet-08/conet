@@ -11,23 +11,23 @@ class WelcomeActions extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const GoogleAuthButton(),
+        const GoogleAuthButton(label: "Sign up with Google"),
         const SizedBox(height: 14),
         const EmailSignInButton(),
         const SizedBox(height: 20),
         Text.rich(
           TextSpan(
-            text: "Don't have an account? ",
+            text: "Already have an account? ",
             style: const TextStyle(fontSize: 14),
             children: [
               TextSpan(
-                text: 'Sign up',
+                text: 'Log in',
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   decoration: TextDecoration.underline,
                 ),
                 recognizer: TapGestureRecognizer()
-                  ..onTap = () => context.push('/email-signup'),
+                  ..onTap = () => context.push('/login'),
               ),
             ],
           ),

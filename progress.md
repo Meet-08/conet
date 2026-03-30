@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-03-29
+> Last updated: 2026-03-30
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -26,6 +26,7 @@
 - **Email Sign Up** — Registration with OTP verification flow
 - **Google Sign-In** — OAuth flow via Supabase + Google
 - **OTP Verification** — Email OTP dispatch and verification
+- **OTP Verification Page** — Dedicated full-screen OTP entry with resend cooldown after email sign-up
 - **Add Details** — First name, last name, username onboarding step
 - **Logout** — Signs out, deregisters FCM token, stops presence
 - **Auth Guard** — Router-level redirect for unauthenticated users

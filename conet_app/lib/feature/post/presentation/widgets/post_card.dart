@@ -4,6 +4,7 @@ import 'package:conet_app/core/utils/post_share_helper.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/media/post_media_item.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -25,7 +26,13 @@ class _PostCardState extends State<PostCard> {
   late bool _isLiked;
   late int _likeCount;
 
-  static const _avatarColors = [Color(0xFFE0E0E0)];
+  static const _avatarColors = [
+    Color(0xFFF7E6E6),
+    Color(0xFFE8EEF9),
+    Color(0xFFE6F4EA),
+    Color(0xFFF9EFD9),
+    Color(0xFFEFE8FB),
+  ];
 
   @override
   void initState() {
@@ -62,6 +69,9 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
+    final user = widget.post.user;
+    final displayName = _buildDisplayName();
+    final handle = _buildHandle();
     final tags = _extractTags(widget.post.content);
     final displayedContent = _removeTags(widget.post.content);
     final imageUrlsForViewer = widget.post.mediaUrls
@@ -91,91 +101,106 @@ class _PostCardState extends State<PostCard> {
                 extra: widget.post,
               );
             },
+      borderRadius: BorderRadius.zero,
       child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(
-            bottom: BorderSide(color: Colors.grey.shade200, width: 0.5),
-          ),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        color: Colors.white,
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 GestureDetector(
                   onTap: () {
-                    context.push('/user-profile', extra: widget.post.user.id);
+                    context.push('/user-profile', extra: user.id);
                   },
                   child: CircleAvatar(
-                    radius: 22,
-                    backgroundColor: _getAvatarColor(widget.post.user.username),
+                    radius: 21,
+                    backgroundColor: _getAvatarColor(user.username),
                     backgroundImage:
-                        widget.post.user.profilePicUrl != null &&
-                            widget.post.user.profilePicUrl!.isNotEmpty
-                        ? NetworkImage(widget.post.user.profilePicUrl!)
+                        user.profilePicUrl != null &&
+                            user.profilePicUrl!.isNotEmpty
+                        ? NetworkImage(user.profilePicUrl!)
                         : null,
                     child:
-                        widget.post.user.profilePicUrl == null ||
-                            widget.post.user.profilePicUrl!.isEmpty
+                        user.profilePicUrl == null ||
+                            user.profilePicUrl!.isEmpty
                         ? Text(
-                            _getInitials(widget.post.user.username),
+                            _getInitials(),
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              fontSize: 15,
-                              color: Colors.grey.shade700,
+                              fontSize: 14,
+                              color: Colors.grey.shade800,
                             ),
                           )
                         : null,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    _formatDisplayName(widget.post.user.username),
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                      letterSpacing: -0.2,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 1),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$handle · ${DateFormatter.format(widget.post.createdAt)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: Colors.grey.shade600,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                Text(
-                  DateFormatter.format(widget.post.createdAt),
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
-                ),
-                const SizedBox(width: 6),
-                GestureDetector(
+                InkWell(
+                  borderRadius: BorderRadius.circular(16),
                   onTap: () {},
-                  child: Icon(
-                    FontAwesomeIcons.ellipsisVertical,
-                    color: Colors.grey.shade600,
-                    size: 20,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
+                    child: Icon(
+                      FontAwesomeIcons.ellipsisVertical,
+                      color: Colors.grey.shade600,
+                      size: 16,
+                    ),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 12),
-
-            // Content Text
-            Text(
-              displayedContent,
-              style: TextStyle(
-                fontSize: 14.5,
-                height: 1.5,
-                color: Colors.grey.shade900,
-                letterSpacing: -0.1,
+            if (displayedContent.isNotEmpty) ...[
+              const SizedBox(height: 11),
+              Text(
+                displayedContent,
+                style: TextStyle(
+                  fontSize: 15,
+                  height: 1.42,
+                  color: Colors.grey.shade900,
+                  letterSpacing: -0.05,
+                ),
               ),
-            ),
+            ],
 
-            // Carousel Image with Indicators
             if (widget.post.mediaUrls.isNotEmpty) ...[
               const SizedBox(height: 12),
               ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 child: Stack(
                   alignment: Alignment.bottomCenter,
                   children: [
@@ -197,7 +222,6 @@ class _PostCardState extends State<PostCard> {
                         },
                       ),
                     ),
-                    // Dot Indicators (only show if multiple images)
                     if (widget.post.mediaUrls.length > 1)
                       Positioned(
                         bottom: 12,
@@ -236,14 +260,12 @@ class _PostCardState extends State<PostCard> {
               ),
             ],
 
-            // Tags Section
             if (tags.isNotEmpty) ...[
               const SizedBox(height: 12),
               SingleChildScrollView(
                 scrollDirection: .horizontal,
-                child: Wrap(
-                  spacing: 10,
-                  runSpacing: 6,
+                child: Row(
+                  spacing: 8,
                   children: tags.map((tag) => _TagChip(text: tag)).toList(),
                 ),
               ),
@@ -251,9 +273,7 @@ class _PostCardState extends State<PostCard> {
 
             const SizedBox(height: 14),
 
-            // Action Buttons
             Row(
-              mainAxisAlignment: .spaceBetween,
               children: [
                 InkWell(
                   onTap: () {
@@ -276,10 +296,13 @@ class _PostCardState extends State<PostCard> {
                           ? FontAwesomeIcons.solidHeart
                           : FontAwesomeIcons.heart,
                       label: '$_likeCount',
-                      color: _isLiked ? Colors.red : Colors.grey.shade700,
+                      color: _isLiked
+                          ? const Color(0xFFE53935)
+                          : Colors.grey.shade700,
                     ),
                   ),
                 ),
+                const SizedBox(width: 12),
                 InkWell(
                   borderRadius: BorderRadius.circular(8),
                   onTap: widget.isDetailView
@@ -302,6 +325,7 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ),
                 ),
+                const SizedBox(width: 12),
                 InkWell(
                   borderRadius: BorderRadius.circular(8),
                   onTap: () async {
@@ -311,25 +335,23 @@ class _PostCardState extends State<PostCard> {
                       content: widget.post.content,
                     );
                   },
-                  child: const Padding(
-                    padding: EdgeInsets.all(4),
-                    child: FaIcon(
-                      FontAwesomeIcons.shareNodes,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      CupertinoIcons.arrowshape_turn_up_right,
+                      fontWeight: const FontWeight(500),
                       size: 20,
-                      color: Colors.grey,
+                      color: Colors.grey.shade700,
                     ),
                   ),
                 ),
-                // Bookmark button — state derived from PostBloc.bookmarkedPostIds
+                const Spacer(),
                 BlocBuilder<PostBloc, PostState>(
                   buildWhen: (prev, curr) {
-                    // Feed view: only rebuild when this post's bookmark status changes
                     if (prev is PostLoaded && curr is PostLoaded) {
                       return prev.bookmarkedPostIds.contains(widget.post.id) !=
                           curr.bookmarkedPostIds.contains(widget.post.id);
                     }
-                    // SavedPostsPage (PostBookmarksLoaded): rebuild on any list change
-                    // so the button reacts when a bookmark is removed
                     if (prev is PostBookmarksLoaded ||
                         curr is PostBookmarksLoaded) {
                       return true;
@@ -337,7 +359,6 @@ class _PostCardState extends State<PostCard> {
                     return false;
                   },
                   builder: (context, state) {
-                    // All posts shown in SavedPostsPage are bookmarked by definition
                     final isBookmarked = switch (state) {
                       PostLoaded s => s.bookmarkedPostIds.contains(
                         widget.post.id,
@@ -364,7 +385,7 @@ class _PostCardState extends State<PostCard> {
                           isBookmarked
                               ? FontAwesomeIcons.solidBookmark
                               : FontAwesomeIcons.bookmark,
-                          size: 20,
+                          size: 18,
                           color: isBookmarked
                               ? Theme.of(context).colorScheme.primary
                               : Colors.grey.shade700,
@@ -375,25 +396,35 @@ class _PostCardState extends State<PostCard> {
                 ),
               ],
             ),
+
+            if (!widget.isDetailView) ...[
+              const SizedBox(height: 12),
+              const Divider(
+                height: 1,
+                thickness: 0.7,
+                color: Color(0xFFE6E8EB),
+              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  String _getInitials(String username) {
-    if (username.isEmpty) return '?';
-    final parts = username.trim().split(' ');
+  String _getInitials() {
+    final base = _buildDisplayName();
+    if (base.isEmpty) return '?';
+
+    final parts = base.trim().split(RegExp(r'\s+'));
     if (parts.length >= 2) {
       return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
     }
-    return username.substring(0, username.length >= 2 ? 2 : 1).toUpperCase();
+    return base.substring(0, base.length >= 2 ? 2 : 1).toUpperCase();
   }
 
   String _formatDisplayName(String username) {
     if (username.isEmpty) return 'Unknown User';
 
-    // For now, just capitalize first letter of each word
     final words = username.split('_');
     return words
         .map((word) {
@@ -401,6 +432,32 @@ class _PostCardState extends State<PostCard> {
           return word[0].toUpperCase() + word.substring(1).toLowerCase();
         })
         .join(' ');
+  }
+
+  String _buildDisplayName() {
+    final first = widget.post.user.firstName.trim();
+    final last = widget.post.user.lastName.trim();
+    final full = '$first $last'.trim();
+
+    if (full.isNotEmpty) {
+      return full;
+    }
+
+    return _formatDisplayName(widget.post.user.username);
+  }
+
+  String _buildHandle() {
+    final username = widget.post.user.username.trim();
+    if (username.isNotEmpty) {
+      return '@$username';
+    }
+
+    final fallback = _buildDisplayName()
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), '_')
+        .replaceAll(RegExp(r'[^a-z0-9_]'), '');
+
+    return fallback.isEmpty ? '@user' : '@$fallback';
   }
 
   List<String> _extractTags(String content) {
@@ -422,14 +479,19 @@ class _TagChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(20),
+        color: const Color(0xFFF4F5F6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE4E6E8)),
       ),
       child: Text(
         text,
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF44505F),
+        ),
       ),
     );
   }
@@ -447,12 +509,12 @@ class _ActionItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        FaIcon(icon, size: 18, color: color ?? Colors.grey.shade700),
+        FaIcon(icon, size: 17, color: color ?? Colors.grey.shade700),
         const SizedBox(width: 6),
         Text(
           label,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12.5,
             fontWeight: FontWeight.w500,
             color: color ?? Colors.grey.shade700,
           ),

@@ -4,7 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class GoogleAuthButton extends StatelessWidget {
-  const GoogleAuthButton({super.key});
+  final String? label;
+  const GoogleAuthButton({super.key, this.label});
 
   @override
   Widget build(BuildContext context) {
@@ -23,16 +24,10 @@ class GoogleAuthButton extends StatelessWidget {
         onPressed: () {
           context.read<AuthBloc>().add(AuthSigninWithGoogle());
         },
-        // icon: Image.network(
-        //   'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
-        //   height: 24,
-        //   errorBuilder: (context, error, stackTrace) =>
-        //       const Icon(Icons.g_mobiledata, size: 24, color: Colors.white),
-        // ),
         icon: const Icon(FontAwesomeIcons.google),
-        label: const Text(
-          'Continue with Google',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        label: Text(
+          label ?? 'Continue with Google',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
       ),
     );

@@ -4,7 +4,6 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 class AuthTextField extends StatelessWidget {
   final String label;
   final String hintText;
-  final IconData? prefixIcon;
   final Widget? suffixIcon;
   final TextEditingController? controller;
   final TextInputType keyboardType;
@@ -19,7 +18,6 @@ class AuthTextField extends StatelessWidget {
     super.key,
     required this.label,
     required this.hintText,
-    this.prefixIcon,
     this.suffixIcon,
     this.controller,
     this.keyboardType = TextInputType.text,
@@ -31,7 +29,6 @@ class AuthTextField extends StatelessWidget {
     this.onSubmitted,
   });
 
-  /// Creates an email input field with pre-configured settings.
   factory AuthTextField.email({
     Key? key,
     TextEditingController? controller,
@@ -43,9 +40,8 @@ class AuthTextField extends StatelessWidget {
   }) {
     return AuthTextField(
       key: key,
-      label: isRequired ? 'Email *' : 'Email',
+      label: isRequired ? 'Email' : 'Email (optional)',
       hintText: 'your.email@example.com',
-      prefixIcon: FontAwesomeIcons.envelope,
       controller: controller,
       keyboardType: TextInputType.emailAddress,
       isRequired: isRequired,
@@ -68,9 +64,8 @@ class AuthTextField extends StatelessWidget {
   }) {
     return AuthTextField(
       key: key,
-      label: isRequired ? 'First Name *' : 'First Name',
+      label: isRequired ? 'First Name' : 'First Name (optional)',
       hintText: 'Enter your first name',
-      prefixIcon: FontAwesomeIcons.user,
       controller: controller,
       isRequired: isRequired,
       validator: validator ?? (isRequired ? _defaultFirstNameValidator : null),
@@ -92,9 +87,8 @@ class AuthTextField extends StatelessWidget {
   }) {
     return AuthTextField(
       key: key,
-      label: isRequired ? 'Last Name *' : 'Last Name',
+      label: isRequired ? 'Last Name' : 'Last Name (optional)',
       hintText: 'Enter your last name (optional)',
-      prefixIcon: FontAwesomeIcons.user,
       controller: controller,
       isRequired: isRequired,
       validator: validator ?? (isRequired ? _defaultLastNameValidator : null),
@@ -117,9 +111,8 @@ class AuthTextField extends StatelessWidget {
   }) {
     return AuthTextField(
       key: key,
-      label: isRequired ? 'Username *' : 'Username',
+      label: isRequired ? 'Username' : 'Username (optional)',
       hintText: 'johndoe4171',
-      prefixIcon: FontAwesomeIcons.at,
       suffixIcon: onRefresh != null
           ? IconButton(
               icon: const FaIcon(FontAwesomeIcons.arrowsRotate),
@@ -204,20 +197,6 @@ class AuthTextField extends StatelessWidget {
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             hintText: hintText,
-            prefixIcon: prefixIcon != null
-                ? Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: FaIcon(
-                      prefixIcon,
-                      size: 20,
-                      color: Colors.grey.shade700,
-                    ),
-                  )
-                : null,
-            prefixIconConstraints: const BoxConstraints(
-              minWidth: 0,
-              minHeight: 0,
-            ),
             suffixIcon: suffixIcon,
             filled: true,
             fillColor: Colors.grey.shade100,

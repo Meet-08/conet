@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-/// A reusable password input field for authentication forms.
-///
-/// Includes visibility toggle and validation support.
 class AuthPasswordField extends StatefulWidget {
   final String label;
   final String hintText;
@@ -26,7 +23,6 @@ class AuthPasswordField extends StatefulWidget {
     this.onSubmitted,
   });
 
-  /// Creates a password field for login.
   factory AuthPasswordField.login({
     Key? key,
     TextEditingController? controller,
@@ -47,7 +43,6 @@ class AuthPasswordField extends StatefulWidget {
     );
   }
 
-  /// Creates a password field for signup/registration.
   factory AuthPasswordField.signup({
     Key? key,
     TextEditingController? controller,
@@ -58,7 +53,7 @@ class AuthPasswordField extends StatefulWidget {
   }) {
     return AuthPasswordField(
       key: key,
-      label: 'Password *',
+      label: 'Password',
       hintText: 'Create a strong password',
       controller: controller,
       validator: validator ?? _strongPasswordValidator,
@@ -79,7 +74,7 @@ class AuthPasswordField extends StatefulWidget {
   }) {
     return AuthPasswordField(
       key: key,
-      label: 'Confirm Password *',
+      label: 'Confirm Password',
       hintText: 'Re-enter your password',
       controller: controller,
       validator: (value) {
@@ -140,7 +135,7 @@ class _AuthPasswordFieldState extends State<AuthPasswordField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          widget.isRequired ? '${widget.label} *' : widget.label,
+          widget.isRequired ? widget.label : "${widget.label} (optional)",
           style: const TextStyle(fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 6),
@@ -154,25 +149,13 @@ class _AuthPasswordFieldState extends State<AuthPasswordField> {
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(
             hintText: widget.hintText,
-            prefixIcon: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: FaIcon(
-                FontAwesomeIcons.lock,
-                size: 20,
-                color: Colors.grey.shade700,
-              ),
-            ),
-            prefixIconConstraints: const BoxConstraints(
-              minWidth: 0,
-              minHeight: 0,
-            ),
             suffixIcon: Padding(
               padding: const EdgeInsets.only(right: 8),
               child: IconButton(
                 icon: FaIcon(
                   _obscureText
-                      ? FontAwesomeIcons.eyeSlash
-                      : FontAwesomeIcons.eye,
+                      ? FontAwesomeIcons.eye
+                      : FontAwesomeIcons.eyeSlash,
                   size: 20,
                   color: Colors.grey.shade700,
                 ),
