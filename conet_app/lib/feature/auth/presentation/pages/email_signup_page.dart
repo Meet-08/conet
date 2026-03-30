@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/auth/presentation/pages/otp_page.dart';
@@ -6,6 +7,8 @@ import 'package:conet_app/feature/auth/presentation/widgets/email_signup/email_s
 import 'package:conet_app/feature/auth/presentation/widgets/email_signup/email_signup_header.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class EmailSignupPage extends StatefulWidget {
   const EmailSignupPage({super.key});
@@ -69,7 +72,7 @@ class _EmailSignupPageState extends State<EmailSignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    final semantic = context.semanticColors;
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
@@ -88,15 +91,42 @@ class _EmailSignupPageState extends State<EmailSignupPage> {
         }
       },
       child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          titleSpacing: AppSpace.s16,
+          title: Row(
+            children: [
+              SizedBox(
+                width: 44,
+                height: 44,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    backgroundColor: Colors.transparent,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppRadius.fullAll,
+                    ),
+                  ),
+                  onPressed: () => context.pop(),
+                  child: FaIcon(
+                    FontAwesomeIcons.arrowLeft,
+                    size: AppTypographyTokens.size16,
+                    color: semantic.iconPrimary,
+                  ),
+                ),
+              ),
+              const Text('Back', style: AppTextStyles.button),
+            ],
+          ),
+        ),
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: size.width * 0.07),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s12),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 16),
                   const EmailSignupHeader(),
                   const SizedBox(height: 28),
                   EmailSignupForm(

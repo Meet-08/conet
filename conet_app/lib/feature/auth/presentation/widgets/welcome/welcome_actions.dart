@@ -15,7 +15,7 @@ class WelcomeActions extends StatelessWidget {
 
     return Column(
       children: [
-        const GoogleAuthButton(label: "Sign up with Google"),
+        const GoogleAuthButton.primary(label: "Sign up with Google"),
         const SizedBox(height: AppSpace.s16),
         const EmailSignInButton(),
         const SizedBox(height: AppSpace.s20),

@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 
@@ -60,22 +61,26 @@ class AuthSubmitButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+
     return SizedBox(
       width: double.infinity,
-      height: 52,
+      height: 56,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: isPrimary ? Colors.black : Colors.grey,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          disabledBackgroundColor: Colors.grey.shade400,
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+          backgroundColor: isPrimary
+              ? semantic.backgroundBrand
+              : semantic.backgroundDisabled,
+          foregroundColor: isPrimary
+              ? semantic.textOnBrand
+              : semantic.textDisabled,
+          disabledBackgroundColor: semantic.backgroundDisabled,
         ),
         onPressed: isLoading ? null : onPressed,
         child: isLoading
-            ? const Loader(size: 20, strokeWidth: 2, color: Colors.white)
-            : Text(text, style: const TextStyle(fontSize: 15)),
+            ? Loader(size: 20, strokeWidth: 2, color: semantic.iconOnBrand)
+            : Text(text, style: Theme.of(context).textTheme.labelLarge),
       ),
     );
   }

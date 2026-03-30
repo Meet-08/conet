@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -131,14 +132,20 @@ class _AuthPasswordFieldState extends State<AuthPasswordField> {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final semantic = context.semanticColors;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           widget.isRequired ? widget.label : "${widget.label} (optional)",
-          style: const TextStyle(fontWeight: FontWeight.w500),
+          style: textTheme.titleMedium?.copyWith(
+            color: semantic.textPrimary,
+            fontWeight: AppTypographyTokens.weightMedium,
+          ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSpace.s8),
         TextFormField(
           controller: widget.controller,
           obscureText: _obscureText,
@@ -156,8 +163,8 @@ class _AuthPasswordFieldState extends State<AuthPasswordField> {
                   _obscureText
                       ? FontAwesomeIcons.eye
                       : FontAwesomeIcons.eyeSlash,
-                  size: 20,
-                  color: Colors.grey.shade700,
+                  size: AppTypographyTokens.size16,
+                  color: semantic.iconSecondary,
                 ),
                 onPressed: _toggleVisibility,
               ),
@@ -167,35 +174,25 @@ class _AuthPasswordFieldState extends State<AuthPasswordField> {
               minHeight: 0,
             ),
             filled: true,
-            fillColor: Colors.grey.shade100,
+            fillColor: semantic.backgroundSecondary,
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
+              horizontal: AppSpace.s16,
+              vertical: AppSpace.s12,
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+            border: const OutlineInputBorder(
+              borderRadius: AppRadius.mdAll,
               borderSide: BorderSide.none,
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+            enabledBorder: const OutlineInputBorder(
+              borderRadius: AppRadius.mdAll,
               borderSide: BorderSide.none,
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.black, width: 1.5),
+              borderRadius: AppRadius.mdAll,
+              borderSide: BorderSide(color: semantic.borderFocus, width: 1.2),
             ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
-            ),
-            errorStyle: const TextStyle(
-              color: Colors.redAccent,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+            errorStyle: textTheme.labelSmall?.copyWith(
+              color: semantic.textError,
             ),
           ),
         ),

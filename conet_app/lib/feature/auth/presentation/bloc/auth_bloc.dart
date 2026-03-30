@@ -10,6 +10,7 @@ import 'package:conet_app/feature/auth/domain/usecases/user_logout.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_send_otp.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_signin_with_google.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_verify_otp.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_update_academic_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -23,6 +24,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final UserVerifyOtp _userVerifyOtp;
   final UserCurrent _userCurrent;
   final UserAddDetails _userAddDetails;
+  final ProfileUpdateAcademicInfo _updateAcademicInfo;
   final UserLogout _userLogout;
   final AppUserCubit _appUserCubit;
   final PresenceService _presenceService;
@@ -36,6 +38,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required UserVerifyOtp userVerifyOtp,
     required UserCurrent userCurrent,
     required UserAddDetails userAddDetails,
+    required ProfileUpdateAcademicInfo updateAcademicInfo,
     required UserLogout userLogout,
     required AppUserCubit appUserCubit,
     required PresenceService presenceService,
@@ -47,6 +50,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
        _userVerifyOtp = userVerifyOtp,
        _userCurrent = userCurrent,
        _userAddDetails = userAddDetails,
+       _updateAcademicInfo = updateAcademicInfo,
        _userLogout = userLogout,
        _appUserCubit = appUserCubit,
        _presenceService = presenceService,
@@ -125,9 +129,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       password: event.password,
     );
 
-    addDetailsResult.fold(
-      (failure) => emit(AuthFailure(failure.message)),
-      (user) => _emitAuthSuccess(user, emit),
+    await addDetailsResult.fold(
+      (failure) async {
+        emit(AuthFailure(failure.message));
+      },
+      (user) async {
+        final updateAcademicResult = await _updateAcademicInfo(
+          collegeName: event.collegeName,
+          degree: event.degree,
+          course: event.course,
+          startYear: event.startYear,
+          endYear: event.endYear,
+        );
+
+        updateAcademicResult.fold(
+          (failure) => emit(AuthFailure(failure.message)),
+          (_) => _emitAuthSuccess(user, emit),
+        );
+      },
     );
   }
 

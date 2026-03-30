@@ -1,19 +1,18 @@
 import 'dart:math';
 
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/academic_info_form.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/auth/constants/constant.dart';
-import 'package:conet_app/feature/auth/domain/usecases/user_add_details.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
-import 'package:conet_app/feature/auth/presentation/widgets/add_details/add_details_header.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/common/auth_password_field.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/common/auth_submit_button.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/common/auth_text_field.dart';
-import 'package:conet_app/feature/profile/domain/usecases/profile_update_academic_info.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
@@ -42,7 +41,6 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
 
   // Common field
   final _usernameController = TextEditingController();
-  final _courseMajorController = TextEditingController();
 
   int _currentStep = 0;
 
@@ -52,6 +50,8 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
   String? _selectedCollege;
   String? _selectedCourse;
   String? _selectedDegree;
+  int? _selectedStartYear;
+  int? _selectedEndYear;
 
   @override
   void initState() {
@@ -77,7 +77,6 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _usernameController.dispose();
-    _courseMajorController.dispose();
     super.dispose();
   }
 
@@ -304,15 +303,35 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
   }
 
   void _onContinueToAcademic() {
-    if (!_basicFormKey.currentState!.validate()) return;
+    if (_isLoading) return;
+
+    final basicFormState = _basicFormKey.currentState;
+    if (basicFormState == null || !basicFormState.validate()) return;
     setState(() => _currentStep = 1);
   }
 
   Future<void> _onFinish() async {
-    if (!_academicFormKey.currentState!.validate()) return;
+    if (_isLoading) return;
 
-    if (!_basicFormKey.currentState!.validate()) {
-      setState(() => _currentStep = 0);
+    final academicFormState = _academicFormKey.currentState;
+    if (academicFormState == null) {
+      AppToast.showError(
+        context,
+        'Academic form is not ready. Please try again.',
+      );
+      return;
+    }
+
+    if (!academicFormState.validate()) return;
+
+    final college = _selectedCollege?.trim();
+    final degree = _selectedDegree?.trim();
+    final course = _selectedCourse?.trim();
+    final startYear = _selectedStartYear;
+    final endYear = _selectedEndYear;
+
+    if (college == null || degree == null || course == null) {
+      AppToast.showError(context, 'Please complete your academic details');
       return;
     }
 
@@ -324,103 +343,117 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
       }
     }
 
+    final password = widget.isGoogle
+        ? _generateSecurePassword()
+        : _passwordController.text;
+
     setState(() => _isLoading = true);
 
-    try {
-      // Determine password
-      final password = widget.isGoogle
-          ? _generateSecurePassword()
-          : _passwordController.text;
-
-      final addDetailsUseCase = serviceLocator<UserAddDetails>();
-      final updateAcademicUseCase = serviceLocator<ProfileUpdateAcademicInfo>();
-
-      final basicResult = await addDetailsUseCase(
+    context.read<AuthBloc>().add(
+      AuthAddDetails(
         username: _usernameController.text.trim(),
         firstName: widget.isGoogle ? _firstNameController.text.trim() : null,
         lastName: widget.isGoogle ? _lastNameController.text.trim() : null,
         password: password,
-      );
-
-      final basicFailure = basicResult.fold((failure) => failure, (_) => null);
-      if (basicFailure != null) {
-        if (mounted) {
-          AppToast.showError(context, basicFailure.message);
-          setState(() => _isLoading = false);
-        }
-        return;
-      }
-
-      final academicResult = await updateAcademicUseCase(
-        collegeName: _selectedCollege!,
-        degree: _selectedDegree!,
-        course: _selectedCourse!,
-      );
-
-      final academicFailure = academicResult.fold(
-        (failure) => failure,
-        (_) => null,
-      );
-
-      if (academicFailure != null) {
-        if (mounted) {
-          AppToast.showError(context, academicFailure.message);
-          setState(() => _isLoading = false);
-        }
-        return;
-      }
-
-      if (mounted) {
-        context.read<AuthBloc>().add(AuthIsUserLoggedIn());
-        context.go('/home');
-      }
-    } catch (e) {
-      if (mounted) {
-        AppToast.showError(context, 'Failed to save: ${e.toString()}');
-        setState(() => _isLoading = false);
-      }
-    }
+        collegeName: college,
+        degree: degree,
+        course: course,
+        startYear: startYear,
+        endYear: endYear,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    final semantic = context.semanticColors;
+    final title = _currentStep == 0 ? 'Almost there!' : 'Academic Details';
+    final subtitle = _currentStep == 0
+        ? 'Confirm your details to get started'
+        : 'Helps show relevant posts and events';
 
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: size.width * 0.07),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthLoading) {
+          if (mounted) {
+            setState(() => _isLoading = true);
+          }
+          return;
+        }
+
+        if (state is AuthFailure) {
+          if (mounted) {
+            AppToast.showError(context, state.message);
+            setState(() => _isLoading = false);
+          }
+          return;
+        }
+
+        if (state is AuthSuccess) {
+          if (mounted) {
+            setState(() => _isLoading = false);
+            context.go('/home');
+          }
+        }
+      },
+      child: Scaffold(
+        backgroundColor: semantic.backgroundSecondary,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: semantic.backgroundSecondary,
+          titleSpacing: AppSpace.s16,
+          title: Row(
             children: [
-              const SizedBox(height: 16),
-              AddDetailsHeader(
-                isGoogle: widget.isGoogle,
-                title: _currentStep == 0
-                    ? 'Complete Your Profile'
-                    : 'Welcome to Conet!',
-                subtitle: _currentStep == 0
-                    ? (widget.isGoogle
-                          ? 'Add your name and choose a username'
-                          : 'Set up your password and username')
-                    : "Let's personalize your experience",
-                onBack: () {
-                  if (_currentStep == 1) {
-                    setState(() => _currentStep = 0);
-                    return;
-                  }
-                  context.read<AuthBloc>().add(AuthLogout());
-                },
+              SizedBox(
+                width: 44,
+                height: 44,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    backgroundColor: Colors.transparent,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppRadius.fullAll,
+                    ),
+                  ),
+                  onPressed: () {
+                    if (_currentStep == 1) {
+                      setState(() => _currentStep = 0);
+                      return;
+                    }
+                    context.read<AuthBloc>().add(AuthLogout());
+                  },
+                  child: FaIcon(
+                    FontAwesomeIcons.arrowLeft,
+                    size: AppTypographyTokens.size16,
+                    color: semantic.iconOnBrand,
+                  ),
+                ),
               ),
-              const SizedBox(height: 20),
-              IndexedStack(
-                index: _currentStep,
-                children: [
-                  _buildBasicDetailsSection(),
-                  _buildAcademicSection(),
-                ],
-              ),
+
+              const Text('Back', style: AppTextStyles.button),
             ],
+          ),
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppTextStyles.headingH1),
+                const SizedBox(height: AppSpace.s8),
+                Text(subtitle, style: AppTextStyles.caption),
+                const SizedBox(height: AppSpace.s24),
+                SingleChildScrollView(
+                  child: _currentStep == 0
+                      ? _buildBasicDetailsSection()
+                      : _buildAcademicSection(),
+                ),
+                const SizedBox(height: AppSpace.s20),
+                _buildContinueButton(context),
+                const SizedBox(height: AppSpace.s24),
+              ],
+            ),
           ),
         ),
       ),
@@ -439,7 +472,7 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
               textInputAction: TextInputAction.next,
               onChanged: (_) => _generateUniqueUsername(),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.s20),
             AuthTextField.lastName(
               controller: _lastNameController,
               textInputAction: TextInputAction.next,
@@ -450,34 +483,35 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
               controller: _passwordController,
               textInputAction: TextInputAction.next,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpace.s20),
             AuthPasswordField.confirm(
               controller: _confirmPasswordController,
               passwordController: _passwordController,
               textInputAction: TextInputAction.next,
             ),
           ],
-          const SizedBox(height: 16),
-          Stack(
-            alignment: Alignment.centerRight,
-            children: [
-              AuthTextField.username(
-                controller: _usernameController,
-                textInputAction: TextInputAction.done,
-                onRefresh: _generateUniqueUsername,
-                onSubmitted: (_) => _onContinueToAcademic(),
-              ),
-              if (_isGeneratingUsername)
-                const Positioned(
-                  right: 48,
-                  child: Loader(size: 16, strokeWidth: 2),
-                ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          AuthSubmitButton.continue_(
-            isLoading: _isLoading,
-            onPressed: _onContinueToAcademic,
+          const SizedBox(height: AppSpace.s20),
+          AuthTextField(
+            label: 'Username',
+            hintText: '',
+            helperText: "Username is unique and can't be changed later",
+            controller: _usernameController,
+            suffixIcon: _isGeneratingUsername
+                ? const Padding(
+                    padding: EdgeInsets.all(AppSpace.s12),
+                    child: Loader(size: 16, strokeWidth: 2),
+                  )
+                : IconButton(
+                    onPressed: _generateUniqueUsername,
+                    icon: FaIcon(
+                      FontAwesomeIcons.arrowsRotate,
+                      size: AppTypographyTokens.size16,
+                      color: context.semanticColors.iconSecondary,
+                    ),
+                  ),
+            validator: _validateUsername,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _onContinueToAcademic(),
           ),
         ],
       ),
@@ -485,35 +519,57 @@ class _AddDetailsPageState extends State<AddDetailsPage> {
   }
 
   Widget _buildAcademicSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AcademicInfoForm(
-          key: ValueKey(_academicFormKey),
-          formKey: _academicFormKey,
-          initialCollege: _selectedCollege,
-          initialDegree: _selectedDegree,
-          initialCourse: _selectedCourse,
-          isCreationMode: true,
-          isLoading: _isLoading,
-          onChanged:
-              ({
-                required college,
-                required degree,
-                required course,
-                required startYear,
-                required endYear,
-              }) {
-                setState(() {
-                  _selectedCollege = college;
-                  _selectedDegree = degree;
-                  _selectedCourse = course;
-                });
-              },
-        ),
-        const SizedBox(height: 24),
-        AuthSubmitButton.finish(isLoading: _isLoading, onPressed: _onFinish),
-      ],
+    return AcademicInfoForm(
+      key: ValueKey(_academicFormKey),
+      formKey: _academicFormKey,
+      initialCollege: _selectedCollege,
+      initialDegree: _selectedDegree,
+      initialCourse: _selectedCourse,
+      initialStartYear: _selectedStartYear,
+      initialEndYear: _selectedEndYear,
+      isCreationMode: false,
+      isLoading: _isLoading,
+      showErrors: true,
+      onChanged:
+          ({
+            required college,
+            required degree,
+            required course,
+            required startYear,
+            required endYear,
+          }) {
+            setState(() {
+              _selectedCollege = college;
+              _selectedDegree = degree;
+              _selectedCourse = course;
+              _selectedStartYear = startYear;
+              _selectedEndYear = endYear;
+            });
+          },
     );
+  }
+
+  Widget _buildContinueButton(BuildContext context) {
+    return AuthSubmitButton.continue_(
+      isLoading: _isLoading,
+      onPressed: _currentStep == 0 ? _onContinueToAcademic : _onFinish,
+    );
+  }
+
+  String? _validateUsername(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Username is required';
+    }
+    if (value.length < 3) {
+      return 'Username must be at least 3 characters';
+    }
+    if (value.length > 20) {
+      return 'Username must be 20 characters or less';
+    }
+    final usernameRegex = RegExp(r'^[a-zA-Z0-9_]+$');
+    if (!usernameRegex.hasMatch(value)) {
+      return 'Username can only contain letters, numbers, and underscores';
+    }
+    return null;
   }
 }

@@ -46,6 +46,7 @@ void _initAuth() {
         userVerifyOtp: serviceLocator<UserVerifyOtp>(),
         userCurrent: serviceLocator<UserCurrent>(),
         userAddDetails: serviceLocator<UserAddDetails>(),
+        updateAcademicInfo: serviceLocator<ProfileUpdateAcademicInfo>(),
         userLogout: serviceLocator<UserLogout>(),
         appUserCubit: serviceLocator<AppUserCubit>(),
         presenceService: serviceLocator<PresenceService>(),

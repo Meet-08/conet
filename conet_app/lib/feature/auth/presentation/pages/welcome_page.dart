@@ -21,17 +21,17 @@ class _WelcomePageState extends State<WelcomePage> {
 
   static const List<_WelcomeSlide> _slides = [
     _WelcomeSlide(
-      imagePath: 'assets/onboarding_images/post_illustration.png',
+      imagePath: 'assets/onboarding_images/Post_illustration.png',
       title: 'Campus Buzz',
       description: 'Catch real updates, discussions, memes and moments.',
     ),
     _WelcomeSlide(
-      imagePath: 'assets/onboarding_images/event_illustration.png',
+      imagePath: 'assets/onboarding_images/Event_illustration.png',
       title: 'Happenings Nearby',
       description: 'See what is going on or just see who is around.',
     ),
     _WelcomeSlide(
-      imagePath: 'assets/onboarding_images/chat_illustration.png',
+      imagePath: 'assets/onboarding_images/Chat_illustration.png',
       title: 'Your Circle',
       description: 'Talk to friends, join groups, and share thoughts.',
     ),
@@ -79,100 +79,90 @@ class _WelcomePageState extends State<WelcomePage> {
         body: Stack(
           children: [
             SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpace.s20,
-                  AppSpace.s24,
-                  AppSpace.s20,
-                  AppSpace.s16,
-                ),
-                child: Column(
-                  children: [
-                    Text(
+              child: Column(
+                children: [
+                  const SizedBox(height: AppSpace.s40),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: AppSpace.s16),
+                    child: Text(
                       'Welcome to Conet',
-                      style: textTheme.displayMedium?.copyWith(
-                        color: semantic.textPrimary,
-                        fontWeight: AppTypographyTokens.weightBold,
-                        fontSize: AppTypographyTokens.size30,
-                        height: 3.8,
-                      ),
+                      style: AppTextStyles.display,
                     ),
-                    const SizedBox(height: AppSpace.s16),
-                    Expanded(
-                      child: PageView.builder(
-                        controller: _pageController,
-                        itemCount: _slides.length,
-                        onPageChanged: (index) {
-                          setState(() {
-                            _currentPage = index;
-                          });
-                        },
-                        itemBuilder: (context, index) {
-                          final slide = _slides[index];
-                          return Column(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(AppSpace.s16),
-                                  decoration: BoxDecoration(
-                                    color: semantic.backgroundSecondary,
-                                    borderRadius: AppRadius.lgAll,
-                                    border: Border.all(
-                                      color: semantic.borderSubtle,
-                                    ),
-                                  ),
-                                  child: Image.asset(
-                                    slide.imagePath,
-                                    fit: BoxFit.contain,
-                                  ),
+                  ),
+                  const SizedBox(height: AppSpace.s16),
+                  Expanded(
+                    child: PageView.builder(
+                      controller: _pageController,
+                      itemCount: _slides.length,
+                      onPageChanged: (index) {
+                        setState(() {
+                          _currentPage = index;
+                        });
+                      },
+                      itemBuilder: (context, index) {
+                        final slide = _slides[index];
+                        return Column(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: AppSpace.s16,
+                                ),
+                                child: Image.asset(
+                                  slide.imagePath,
+                                  fit: BoxFit.contain,
                                 ),
                               ),
-                              const SizedBox(height: AppSpace.s12),
-                              Text(
-                                slide.title,
-                                style: textTheme.titleMedium?.copyWith(
-                                  color: semantic.textPrimary,
-                                ),
+                            ),
+                            const SizedBox(height: AppSpace.s12),
+                            Text(
+                              slide.title,
+                              style: textTheme.titleMedium?.copyWith(
+                                color: semantic.textPrimary,
                               ),
-                              const SizedBox(height: AppSpace.s8),
-                              Text(
-                                slide.description,
-                                textAlign: TextAlign.center,
-                                style: textTheme.bodySmall?.copyWith(
-                                  color: semantic.textSecondary,
-                                ),
+                            ),
+                            const SizedBox(height: AppSpace.s8),
+                            Text(
+                              slide.description,
+                              textAlign: TextAlign.center,
+                              style: textTheme.bodySmall?.copyWith(
+                                color: semantic.textSecondary,
                               ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: AppSpace.s12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(_slides.length, (index) {
-                        final isActive = _currentPage == index;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: AppSpace.s4,
-                          ),
-                          width: isActive ? AppSpace.s16 : AppSpace.s6,
-                          height: AppSpace.s6,
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? NeutralPaletteLight.c300
-                                : semantic.backgroundDisabled,
-                            borderRadius: AppRadius.fullAll,
-                          ),
+                            ),
+                          ],
                         );
-                      }),
+                      },
                     ),
-                    const SizedBox(height: AppSpace.s32),
-                    const WelcomeActions(),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: AppSpace.s12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(_slides.length, (index) {
+                      final isActive = _currentPage == index;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: AppSpace.s4,
+                        ),
+                        width: isActive ? AppSpace.s16 : AppSpace.s6,
+                        height: AppSpace.s6,
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? NeutralPaletteLight.c300
+                              : semantic.backgroundDisabled,
+                          borderRadius: AppRadius.fullAll,
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: AppSpace.s32),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: AppSpace.s16),
+                    child: WelcomeActions(),
+                  ),
+                  const SizedBox(height: AppSpace.s40),
+                ],
               ),
             ),
             BlocBuilder<AuthBloc, AuthState>(

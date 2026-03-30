@@ -29,12 +29,22 @@ final class AuthSigninWithGoogle extends AuthEvent {}
 
 final class AuthAddDetails extends AuthEvent {
   final String username;
+  final String collegeName;
+  final String degree;
+  final String course;
+  final int? startYear;
+  final int? endYear;
   final String? firstName;
   final String? lastName;
   final String? password;
 
   AuthAddDetails({
     required this.username,
+    required this.collegeName,
+    required this.degree,
+    required this.course,
+    this.startYear,
+    this.endYear,
     this.firstName,
     this.lastName,
     this.password,

@@ -1,33 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 class LoginHeader extends StatelessWidget {
   const LoginHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return const Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        InkWell(
-          onTap: () => context.pop(),
-          child: const Row(
-            children: [
-              Icon(Icons.arrow_back, size: 20),
-              SizedBox(width: 6),
-              Text('Back'),
-            ],
-          ),
+        Text(
+          'Welcome Back!',
+          style: TextStyle(fontSize: 34, fontWeight: FontWeight.w700),
         ),
-        const SizedBox(height: 24),
-        const Text(
-          'Sign in to Conet',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 6),
-        const Text(
-          "Welcome back! Choose how you'd like to continue",
-          style: TextStyle(fontSize: 14, color: Colors.grey),
+        SizedBox(height: 6),
+        Text(
+          'Log in to continue.',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
         ),
       ],
     );

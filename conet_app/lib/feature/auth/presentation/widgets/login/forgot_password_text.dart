@@ -9,7 +9,11 @@ class ForgotPasswordText extends StatelessWidget {
       alignment: Alignment.centerRight,
       child: Text(
         'Forgot password?',
-        style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.blue.shade700,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

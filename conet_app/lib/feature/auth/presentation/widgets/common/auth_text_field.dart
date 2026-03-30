@@ -1,4 +1,6 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AuthTextField extends StatelessWidget {
@@ -88,10 +90,12 @@ class AuthTextField extends StatelessWidget {
     return AuthTextField(
       key: key,
       label: isRequired ? 'Last Name' : 'Last Name (optional)',
-      hintText: 'Enter your last name (optional)',
+      hintText: 'Enter your last name',
       controller: controller,
       isRequired: isRequired,
-      validator: validator ?? (isRequired ? _defaultLastNameValidator : null),
+      validator:
+          validator ??
+          (isRequired ? _defaultLastNameValidator : _optionalLastNameValidator),
       onChanged: onChanged,
       textInputAction: textInputAction,
       onSubmitted: onSubmitted,
@@ -115,7 +119,10 @@ class AuthTextField extends StatelessWidget {
       hintText: 'johndoe4171',
       suffixIcon: onRefresh != null
           ? IconButton(
-              icon: const FaIcon(FontAwesomeIcons.arrowsRotate),
+              icon: const FaIcon(
+                FontAwesomeIcons.arrowsRotate,
+                size: AppTypographyTokens.size16,
+              ),
               onPressed: onRefresh,
             )
           : null,
@@ -157,10 +164,20 @@ class AuthTextField extends StatelessWidget {
     if (value == null || value.trim().isEmpty) {
       return 'Last name is required';
     }
+    if (value.trim().length < 2) {
+      return 'Last name must be at least 2 characters';
+    }
     if (!RegExp(r"^[a-zA-Z\s'-]+$").hasMatch(value)) {
       return 'Last name can only contain letters';
     }
     return null;
+  }
+
+  static String? _optionalLastNameValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+    return _defaultLastNameValidator(value);
   }
 
   static String? _defaultUsernameValidator(String? value) {
@@ -182,15 +199,19 @@ class AuthTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
-        const SizedBox(height: 6),
+        Text(label, style: AppTextStyles.label),
+        const SizedBox(height: AppSpace.s8),
         TextFormField(
           controller: controller,
           keyboardType: keyboardType,
+          textCapitalization: TextCapitalization.sentences,
           textInputAction: textInputAction,
+          inputFormatters: [FilteringTextInputFormatter.deny(RegExp(r'\s'))],
           onFieldSubmitted: onSubmitted,
           onChanged: onChanged,
           validator: validator,
@@ -198,44 +219,45 @@ class AuthTextField extends StatelessWidget {
           decoration: InputDecoration(
             hintText: hintText,
             suffixIcon: suffixIcon,
+            hintStyle: AppTextStyles.bodyDefault.copyWith(
+              color: semantic.textSecondary,
+            ),
+            labelStyle: AppTextStyles.bodyDefault,
             filled: true,
-            fillColor: Colors.grey.shade100,
+            fillColor: semantic.backgroundSecondary,
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
+              horizontal: AppSpace.s16,
+              vertical: AppSpace.s12,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
+              borderRadius: AppRadius.mdAll,
+              borderSide: BorderSide(
+                color: context.semanticColors.borderDefault,
+                style: BorderStyle.solid,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide.none,
+              borderRadius: AppRadius.mdAll,
+              borderSide: BorderSide(
+                color: context.semanticColors.borderDefault,
+                style: BorderStyle.solid,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.black, width: 1.5),
+              borderRadius: AppRadius.mdAll,
+              borderSide: BorderSide(
+                color: semantic.borderFocus,
+                style: BorderStyle.solid,
+              ),
             ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
-            ),
-            focusedErrorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
-            ),
-            errorStyle: const TextStyle(
-              color: Colors.redAccent,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
+            errorStyle: AppTextStyles.micro.copyWith(color: semantic.textError),
           ),
         ),
         if (helperText != null) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpace.s8),
           Text(
             helperText!,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
+            style: AppTextStyles.micro.copyWith(color: semantic.textTertiary),
           ),
         ],
       ],

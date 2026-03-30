@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/common/auth_password_field.dart';
@@ -7,9 +8,9 @@ import 'package:conet_app/feature/auth/presentation/widgets/common/google_auth_b
 import 'package:conet_app/feature/auth/presentation/widgets/login/divider_with_text.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/login/forgot_password_text.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/login/login_header.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class LoginPage extends StatefulWidget {
@@ -46,7 +47,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    final semantic = context.semanticColors;
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
@@ -60,23 +61,58 @@ class _LoginPageState extends State<LoginPage> {
         }
       },
       child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          titleSpacing: AppSpace.s16,
+          title: Row(
+            children: [
+              SizedBox(
+                width: 44,
+                height: 44,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    backgroundColor: Colors.transparent,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppRadius.fullAll,
+                    ),
+                  ),
+                  onPressed: () => context.pop(),
+                  child: FaIcon(
+                    FontAwesomeIcons.arrowLeft,
+                    size: AppTypographyTokens.size16,
+                    color: semantic.iconPrimary,
+                  ),
+                ),
+              ),
+              const Text('Back', style: AppTextStyles.button),
+            ],
+          ),
+        ),
         body: SafeArea(
           child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: size.width * 0.07),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpace.s12),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 16),
                   const LoginHeader(),
-                  const SizedBox(height: 24),
-                  const GoogleAuthButton(),
+                  const SizedBox(height: 28),
+                  const GoogleAuthButton.secondary(),
                   const SizedBox(height: 24),
                   const DividerWithText(text: 'Or continue with email'),
                   const SizedBox(height: 24),
-                  AuthTextField.email(
+                  AuthTextField(
+                    label: 'Email or Username',
+                    hintText: 'Email or username',
                     controller: _emailController,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Email or username is required';
+                      }
+                      return null;
+                    },
                     textInputAction: TextInputAction.next,
                   ),
                   const SizedBox(height: 16),
@@ -85,33 +121,14 @@ class _LoginPageState extends State<LoginPage> {
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => _onLogin(),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   const ForgotPasswordText(),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 34),
                   AuthSubmitButton.login(
                     isLoading: _isLoading,
                     onPressed: _onLogin,
                   ),
                   const SizedBox(height: 24),
-                  Center(
-                    child: Text.rich(
-                      TextSpan(
-                        text: "Don't have an account? ",
-                        style: const TextStyle(fontSize: 14),
-                        children: [
-                          TextSpan(
-                            text: 'Sign up',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              decoration: TextDecoration.underline,
-                            ),
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () => context.push('/email-signup'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

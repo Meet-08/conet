@@ -12,6 +12,7 @@ import 'package:conet_app/feature/auth/domain/usecases/user_send_otp.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_signin_with_google.dart';
 import 'package:conet_app/feature/auth/domain/usecases/user_verify_otp.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_update_academic_info.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
@@ -30,6 +31,9 @@ class MockUserAddDetails extends Mock implements UserAddDetails {}
 
 class MockUserLogout extends Mock implements UserLogout {}
 
+class MockProfileUpdateAcademicInfo extends Mock
+    implements ProfileUpdateAcademicInfo {}
+
 class MockAppUserCubit extends Mock implements AppUserCubit {}
 
 class MockPresenceService extends Mock implements PresenceService {}
@@ -45,6 +49,7 @@ void main() {
   late MockUserCurrent mockUserCurrent;
   late MockUserAddDetails mockUserAddDetails;
   late MockUserLogout mockUserLogout;
+  late MockProfileUpdateAcademicInfo mockProfileUpdateAcademicInfo;
   late MockAppUserCubit mockAppUserCubit;
   late MockPresenceService mockPresenceService;
   late MockDeviceService mockDeviceService;
@@ -77,6 +82,7 @@ void main() {
     mockUserCurrent = MockUserCurrent();
     mockUserAddDetails = MockUserAddDetails();
     mockUserLogout = MockUserLogout();
+    mockProfileUpdateAcademicInfo = MockProfileUpdateAcademicInfo();
     mockAppUserCubit = MockAppUserCubit();
     mockPresenceService = MockPresenceService();
     mockDeviceService = MockDeviceService();
@@ -95,6 +101,7 @@ void main() {
       userVerifyOtp: mockUserVerifyOtp,
       userCurrent: mockUserCurrent,
       userAddDetails: mockUserAddDetails,
+      updateAcademicInfo: mockProfileUpdateAcademicInfo,
       userLogout: mockUserLogout,
       appUserCubit: mockAppUserCubit,
       presenceService: mockPresenceService,
@@ -326,6 +333,11 @@ void main() {
     const tFirstName = 'Updated';
     const tLastName = 'Name';
     const tPassword = 'newpass123';
+    const tCollege = 'Harvard University';
+    const tDegree = 'Bachelor';
+    const tCourse = 'Computer Science';
+    const tStartYear = 2022;
+    const tEndYear = 2026;
 
     blocTest<AuthBloc, AuthState>(
       'emits [AuthLoading, AuthSuccess] when add details succeeds',
@@ -338,11 +350,25 @@ void main() {
             password: any(named: 'password'),
           ),
         ).thenAnswer((_) async => const Right(tUser));
+        when(
+          () => mockProfileUpdateAcademicInfo(
+            collegeName: any(named: 'collegeName'),
+            degree: any(named: 'degree'),
+            course: any(named: 'course'),
+            startYear: any(named: 'startYear'),
+            endYear: any(named: 'endYear'),
+          ),
+        ).thenAnswer((_) async => const Right(unit));
         return authBloc;
       },
       act: (bloc) => bloc.add(
         AuthAddDetails(
           username: tUsername,
+          collegeName: tCollege,
+          degree: tDegree,
+          course: tCourse,
+          startYear: tStartYear,
+          endYear: tEndYear,
           firstName: tFirstName,
           lastName: tLastName,
           password: tPassword,
@@ -359,6 +385,15 @@ void main() {
             firstName: tFirstName,
             lastName: tLastName,
             password: tPassword,
+          ),
+        ).called(1);
+        verify(
+          () => mockProfileUpdateAcademicInfo(
+            collegeName: tCollege,
+            degree: tDegree,
+            course: tCourse,
+            startYear: tStartYear,
+            endYear: tEndYear,
           ),
         ).called(1);
         verify(() => mockAppUserCubit.updateUser(tUser)).called(1);
@@ -378,7 +413,14 @@ void main() {
         ).thenAnswer((_) async => Left(AppFailure('Username already taken')));
         return authBloc;
       },
-      act: (bloc) => bloc.add(AuthAddDetails(username: tUsername)),
+      act: (bloc) => bloc.add(
+        AuthAddDetails(
+          username: tUsername,
+          collegeName: tCollege,
+          degree: tDegree,
+          course: tCourse,
+        ),
+      ),
       expect: () => [
         isA<AuthLoading>(),
         isA<AuthFailure>().having(
@@ -387,6 +429,17 @@ void main() {
           'Username already taken',
         ),
       ],
+      verify: (_) {
+        verifyNever(
+          () => mockProfileUpdateAcademicInfo(
+            collegeName: any(named: 'collegeName'),
+            degree: any(named: 'degree'),
+            course: any(named: 'course'),
+            startYear: any(named: 'startYear'),
+            endYear: any(named: 'endYear'),
+          ),
+        );
+      },
     );
   });
 

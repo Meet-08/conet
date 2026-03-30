@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/feature/auth/constants/constant.dart';
 import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
@@ -127,6 +128,49 @@ class _AcademicInfoFormState extends State<AcademicInfoForm> {
     );
   }
 
+  Future<void> _pickYear({
+    required TextEditingController controller,
+    required String title,
+  }) async {
+    if (widget.isLoading) return;
+
+    final currentYear = DateTime.now().year;
+    final minYear = 1950;
+    final maxYear = currentYear + 10;
+    final parsedYear = int.tryParse(controller.text.trim());
+    final selectedYear = parsedYear == null
+        ? currentYear
+        : parsedYear.clamp(minYear, maxYear);
+
+    final pickedYear = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: Text(title),
+          content: SizedBox(
+            width: 320,
+            height: 280,
+            child: YearPicker(
+              firstDate: DateTime(minYear),
+              lastDate: DateTime(maxYear),
+              selectedDate: DateTime(selectedYear),
+              onChanged: (pickedDate) {
+                Navigator.of(dialogContext).pop(pickedDate.year);
+              },
+            ),
+          ),
+        );
+      },
+    );
+
+    if (pickedYear == null) return;
+
+    setState(() {
+      controller.text = pickedYear.toString();
+    });
+    _notifyChange();
+  }
+
   bool validate() {
     if (widget.formKey?.currentState != null) {
       return widget.formKey!.currentState!.validate();
@@ -183,6 +227,7 @@ class _AcademicInfoFormState extends State<AcademicInfoForm> {
             value: _selectedCollege,
             items: AuthConstants.collegeOptions,
             hint: 'Select your college',
+            searchHint: 'Search College',
             onChanged: (value) {
               setState(() => _selectedCollege = value);
               _notifyChange();
@@ -196,6 +241,7 @@ class _AcademicInfoFormState extends State<AcademicInfoForm> {
             value: _selectedDegree,
             items: AuthConstants.degreeOptions,
             hint: 'Select your degree',
+            searchHint: 'Search Degree',
             onChanged: (value) {
               setState(() => _selectedDegree = value);
               _notifyChange();
@@ -209,6 +255,7 @@ class _AcademicInfoFormState extends State<AcademicInfoForm> {
             value: _selectedCourse,
             items: AuthConstants.courseOptions,
             hint: 'Select your course/major',
+            searchHint: 'Search Course',
             onChanged: (value) {
               setState(() => _selectedCourse = value);
               _notifyChange();
@@ -222,18 +269,12 @@ class _AcademicInfoFormState extends State<AcademicInfoForm> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Start Year',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      const Text('Start Year', style: AppTextStyles.label),
                       const SizedBox(height: 8),
-                      _buildTextField(
+                      _buildYearPickerField(
                         controller: _startYearController,
                         hint: '2023',
-                        keyboardType: TextInputType.number,
+                        title: 'Select start year',
                       ),
                     ],
                   ),
@@ -243,18 +284,12 @@ class _AcademicInfoFormState extends State<AcademicInfoForm> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'End Year',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      const Text('End Year', style: AppTextStyles.label),
                       const SizedBox(height: 8),
-                      _buildTextField(
+                      _buildYearPickerField(
                         controller: _endYearController,
                         hint: '2027',
-                        keyboardType: TextInputType.number,
+                        title: 'Select end year',
                       ),
                     ],
                   ),
@@ -271,13 +306,23 @@ class _AcademicInfoFormState extends State<AcademicInfoForm> {
     required String? value,
     required List<String> items,
     required String hint,
+    required String searchHint,
     required void Function(String?) onChanged,
   }) {
+    final textTheme = Theme.of(context).textTheme;
+    final semantic = context.semanticColors;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
+        Text(
+          label,
+          style: textTheme.titleMedium?.copyWith(
+            color: semantic.textPrimary,
+            fontWeight: AppTypographyTokens.weightMedium,
+          ),
+        ),
+        const SizedBox(height: AppSpace.s8),
         DropdownSearch<String>(
           selectedItem: value,
           items: (filter, _) => items,
@@ -289,38 +334,77 @@ class _AcademicInfoFormState extends State<AcademicInfoForm> {
             }
             return null;
           },
-          popupProps: PopupProps.menu(
+          popupProps: PopupProps.modalBottomSheet(
             showSearchBox: true,
             fit: FlexFit.loose,
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.68,
+            ),
+            modalBottomSheetProps: ModalBottomSheetProps(
+              barrierColor: semantic.backgroundBackdrop,
+              backgroundColor: semantic.backgroundPrimary,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.vertical(top: AppRadius.lg),
+              ),
+            ),
+            itemBuilder: (context, item, isDisabled, isSelected) {
+              final itemTextStyle = textTheme.bodyLarge?.copyWith(
+                color: isDisabled
+                    ? semantic.textTertiary
+                    : isSelected
+                    ? semantic.textSelected
+                    : semantic.textPrimary,
+                fontWeight: isSelected
+                    ? AppTypographyTokens.weightMedium
+                    : AppTypographyTokens.weightRegular,
+              );
+
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: semantic.borderSubtle),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: AppSpace.s12),
+                    child: Text(item, style: itemTextStyle),
+                  ),
+                ),
+              );
+            },
             searchFieldProps: TextFieldProps(
               decoration: InputDecoration(
-                hintText: 'Search...',
+                hintText: searchHint,
+                prefixIcon: Icon(Icons.search, color: semantic.iconSecondary),
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 12,
+                  horizontal: AppSpace.s12,
+                  vertical: AppSpace.s12,
                 ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                border: const OutlineInputBorder(borderRadius: AppRadius.mdAll),
               ),
             ),
           ),
           decoratorProps: DropDownDecoratorProps(
             decoration: InputDecoration(
               hintText: hint,
+              hintStyle: textTheme.bodyMedium?.copyWith(
+                color: semantic.textSecondary,
+              ),
               filled: true,
-              fillColor: Colors.grey.shade100,
+              fillColor: semantic.backgroundSecondary,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+                borderRadius: AppRadius.mdAll,
+                borderSide: BorderSide(color: semantic.borderDefault),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
+                borderRadius: AppRadius.mdAll,
+                borderSide: BorderSide(color: semantic.borderDefault),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.black, width: 1.2),
+                borderRadius: AppRadius.mdAll,
+                borderSide: BorderSide(color: semantic.borderFocus, width: 1.2),
               ),
             ),
           ),
@@ -329,33 +413,39 @@ class _AcademicInfoFormState extends State<AcademicInfoForm> {
     );
   }
 
-  Widget _buildTextField({
+  Widget _buildYearPickerField({
     required TextEditingController controller,
     required String hint,
-    TextInputType keyboardType = TextInputType.text,
+    required String title,
   }) {
+    final textTheme = Theme.of(context).textTheme;
+    final semantic = context.semanticColors;
+
     return TextField(
       controller: controller,
-      keyboardType: keyboardType,
-      onChanged: (_) => _notifyChange(),
+      readOnly: true,
+      onTap: () => _pickYear(controller: controller, title: title),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey.shade400),
+        hintStyle: textTheme.bodyMedium?.copyWith(
+          color: semantic.textSecondary,
+        ),
+        suffixIcon: const Icon(Icons.keyboard_arrow_down),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: AppRadius.mdAll,
+          borderSide: BorderSide(color: semantic.borderDefault),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: AppRadius.mdAll,
+          borderSide: BorderSide(color: semantic.borderDefault),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.black),
+          borderRadius: AppRadius.mdAll,
+          borderSide: BorderSide(color: semantic.borderFocus),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 14,
+          horizontal: AppSpace.s16,
+          vertical: AppSpace.s12,
         ),
       ),
     );
