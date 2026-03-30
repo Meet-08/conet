@@ -182,6 +182,15 @@
 
 ---
 
+### Design Token Theme System
+
+> Background/infrastructure — no UI required by design.
+
+- **Core Token Palette** — Brand, neutral (light/dark), accent, status, and backdrop palettes defined under `lib/core/theme`
+- **Semantic Color Layer** — Text, icon, border, background, surface, state, brand, inverse, and on-\* token mappings with light/dark variants
+- **Typography + Layout Tokens** — Font, type styles, spacing, radius, and elevation scales centralized for reuse
+- **App Theme Wiring** — `MaterialApp` now uses shared token-driven `light` and `dark` themes with system mode support
+
 ## 2. Functionality Only (No UI)
 
 > Backend routes, domain use cases, and/or data layer are implemented — but the Flutter UI screens have **not been built yet**.

@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/common/google_auth_button.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/welcome/email_signin_button.dart';
 import 'package:flutter/gestures.dart';
@@ -9,22 +10,25 @@ class WelcomeActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final semantic = context.semanticColors;
+
     return Column(
       children: [
         const GoogleAuthButton(label: "Sign up with Google"),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSpace.s16),
         const EmailSignInButton(),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpace.s20),
         Text.rich(
           TextSpan(
             text: "Already have an account? ",
-            style: const TextStyle(fontSize: 14),
+            style: textTheme.bodySmall?.copyWith(color: semantic.textSecondary),
             children: [
               TextSpan(
                 text: 'Log in',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  decoration: TextDecoration.underline,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: NeutralPaletteLight.c500,
+                  fontWeight: FontWeight.bold,
                 ),
                 recognizer: TapGestureRecognizer()
                   ..onTap = () => context.push('/login'),
@@ -32,16 +36,28 @@ class WelcomeActions extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpace.s20),
         const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Text(
-            'By continuing, you agree to our Terms of Service and acknowledge our Privacy Policy.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: Colors.grey),
-          ),
+          padding: EdgeInsets.symmetric(horizontal: AppSpace.s20),
+          child: _TermsText(),
         ),
       ],
+    );
+  }
+}
+
+class _TermsText extends StatelessWidget {
+  const _TermsText();
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final semantic = context.semanticColors;
+
+    return Text(
+      'By continuing, you agree to our Terms of Service and acknowledge our Privacy Policy.',
+      textAlign: TextAlign.center,
+      style: textTheme.labelSmall?.copyWith(color: semantic.textTertiary),
     );
   }
 }

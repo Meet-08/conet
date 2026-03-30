@@ -2,6 +2,7 @@ import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/common/cubit/presence_cubit.dart';
 import 'package:conet_app/core/router/app_router.dart';
 import 'package:conet_app/core/services/presence_service.dart';
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_registration_bloc.dart';
@@ -110,10 +111,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       child: MaterialApp.router(
         title: 'Conet App',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: .fromSeed(seedColor: Colors.teal),
-          useMaterial3: true,
-        ),
+        theme: AppTheme.light,
+        darkTheme: AppTheme.dark,
+        themeMode: ThemeMode.system,
         routerConfig: AppRouter.router,
       ),
     );

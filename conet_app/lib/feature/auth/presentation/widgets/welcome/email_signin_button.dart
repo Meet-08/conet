@@ -1,4 +1,6 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class EmailSignInButton extends StatelessWidget {
@@ -11,17 +13,13 @@ class EmailSignInButton extends StatelessWidget {
       height: 52,
       child: OutlinedButton.icon(
         style: OutlinedButton.styleFrom(
-          foregroundColor: Colors.black,
-          side: const BorderSide(color: Colors.black, width: 1.5),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.fullAll),
         ),
         onPressed: () => context.push('/email-signup'),
-        icon: const Icon(Icons.email_outlined, size: 20),
-        label: const Text(
+        icon: const Icon(FontAwesomeIcons.envelope, size: 18),
+        label: Text(
           'Sign up with Email',
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+          style: Theme.of(context).textTheme.labelLarge,
         ),
       ),
     );

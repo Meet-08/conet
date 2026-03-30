@@ -1,38 +1,176 @@
+import 'dart:async';
+
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/welcome/welcome_actions.dart';
-import 'package:conet_app/feature/auth/presentation/widgets/welcome/welcome_logo.dart';
-import 'package:conet_app/feature/auth/presentation/widgets/welcome/welcome_title.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-class WelcomePage extends StatelessWidget {
+class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
 
   @override
+  State<WelcomePage> createState() => _WelcomePageState();
+}
+
+class _WelcomePageState extends State<WelcomePage> {
+  late final PageController _pageController;
+  Timer? _autoSlideTimer;
+  int _currentPage = 0;
+
+  static const List<_WelcomeSlide> _slides = [
+    _WelcomeSlide(
+      imagePath: 'assets/onboarding_images/post_illustration.png',
+      title: 'Campus Buzz',
+      description: 'Catch real updates, discussions, memes and moments.',
+    ),
+    _WelcomeSlide(
+      imagePath: 'assets/onboarding_images/event_illustration.png',
+      title: 'Happenings Nearby',
+      description: 'See what is going on or just see who is around.',
+    ),
+    _WelcomeSlide(
+      imagePath: 'assets/onboarding_images/chat_illustration.png',
+      title: 'Your Circle',
+      description: 'Talk to friends, join groups, and share thoughts.',
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _startAutoSlide();
+  }
+
+  void _startAutoSlide() {
+    _autoSlideTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted || !_pageController.hasClients) {
+        return;
+      }
+
+      final nextPage = (_currentPage + 1) % _slides.length;
+      _pageController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoSlideTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        // The if condition was removed as per instruction.
+        // Intentionally no-op: auth side effects are handled by route guards.
       },
       child: Scaffold(
         body: Stack(
           children: [
             SafeArea(
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: size.width * 0.08),
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpace.s20,
+                  AppSpace.s24,
+                  AppSpace.s20,
+                  AppSpace.s16,
+                ),
+                child: Column(
                   children: [
-                    Spacer(flex: 2),
-                    WelcomeLogo(),
-                    Spacer(),
-                    WelcomeTitle(),
-                    Spacer(flex: 2),
-                    WelcomeActions(),
-                    Spacer(),
+                    Text(
+                      'Welcome to Conet',
+                      style: textTheme.displayMedium?.copyWith(
+                        color: semantic.textPrimary,
+                        fontWeight: AppTypographyTokens.weightBold,
+                        fontSize: AppTypographyTokens.size30,
+                        height: 3.8,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpace.s16),
+                    Expanded(
+                      child: PageView.builder(
+                        controller: _pageController,
+                        itemCount: _slides.length,
+                        onPageChanged: (index) {
+                          setState(() {
+                            _currentPage = index;
+                          });
+                        },
+                        itemBuilder: (context, index) {
+                          final slide = _slides[index];
+                          return Column(
+                            children: [
+                              Expanded(
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(AppSpace.s16),
+                                  decoration: BoxDecoration(
+                                    color: semantic.backgroundSecondary,
+                                    borderRadius: AppRadius.lgAll,
+                                    border: Border.all(
+                                      color: semantic.borderSubtle,
+                                    ),
+                                  ),
+                                  child: Image.asset(
+                                    slide.imagePath,
+                                    fit: BoxFit.contain,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: AppSpace.s12),
+                              Text(
+                                slide.title,
+                                style: textTheme.titleMedium?.copyWith(
+                                  color: semantic.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpace.s8),
+                              Text(
+                                slide.description,
+                                textAlign: TextAlign.center,
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: semantic.textSecondary,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: AppSpace.s12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(_slides.length, (index) {
+                        final isActive = _currentPage == index;
+                        return AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          margin: const EdgeInsets.symmetric(
+                            horizontal: AppSpace.s4,
+                          ),
+                          width: isActive ? AppSpace.s16 : AppSpace.s6,
+                          height: AppSpace.s6,
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? NeutralPaletteLight.c300
+                                : semantic.backgroundDisabled,
+                            borderRadius: AppRadius.fullAll,
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: AppSpace.s32),
+                    const WelcomeActions(),
                   ],
                 ),
               ),
@@ -50,4 +188,16 @@ class WelcomePage extends StatelessWidget {
       ),
     );
   }
+}
+
+class _WelcomeSlide {
+  final String imagePath;
+  final String title;
+  final String description;
+
+  const _WelcomeSlide({
+    required this.imagePath,
+    required this.title,
+    required this.description,
+  });
 }

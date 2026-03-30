@@ -129,6 +129,7 @@ Presentation layer responsibilities:
 - Dispatch events
 - Render states
 - Zero business decisions
+- Always use theme present at lib/core/theme
 
 Bloc rules:
 

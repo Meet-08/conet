@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -14,12 +15,7 @@ class GoogleAuthButton extends StatelessWidget {
       height: 52,
       child: ElevatedButton.icon(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.black,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
-          ),
-          elevation: 0,
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.fullAll),
         ),
         onPressed: () {
           context.read<AuthBloc>().add(AuthSigninWithGoogle());
@@ -27,7 +23,7 @@ class GoogleAuthButton extends StatelessWidget {
         icon: const Icon(FontAwesomeIcons.google),
         label: Text(
           label ?? 'Continue with Google',
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+          style: Theme.of(context).textTheme.labelLarge,
         ),
       ),
     );
