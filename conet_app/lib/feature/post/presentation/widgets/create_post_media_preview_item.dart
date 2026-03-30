@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/media_type_utils.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -28,12 +29,14 @@ class CreatePostMediaPreviewItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+
     return SizedBox(
       width: _previewSize,
       height: _previewSize,
       child: Stack(
         children: [
-          Positioned.fill(child: _buildMediaBody()),
+          Positioned.fill(child: _buildMediaBody(context)),
           Positioned(
             top: 4,
             right: 4,
@@ -41,14 +44,14 @@ class CreatePostMediaPreviewItem extends StatelessWidget {
               onTap: onRemove,
               child: Container(
                 padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
-                  color: Colors.black54,
+                decoration: BoxDecoration(
+                  color: semantic.backgroundBackdrop,
                   shape: BoxShape.circle,
                 ),
-                child: const FaIcon(
+                child: FaIcon(
                   FontAwesomeIcons.xmark,
                   size: 16,
-                  color: Colors.white,
+                  color: semantic.iconInverse,
                 ),
               ),
             ),
@@ -58,12 +61,15 @@ class CreatePostMediaPreviewItem extends StatelessWidget {
     );
   }
 
-  Widget _buildMediaBody() {
+  Widget _buildMediaBody(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
     final mediaType = getMediaTypeFromFileName(file.name);
 
     if (mediaType == MediaType.image) {
       if (file.bytes != null) {
         return _mediaContainer(
+          context,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.memory(file.bytes!, fit: BoxFit.cover),
@@ -73,6 +79,7 @@ class CreatePostMediaPreviewItem extends StatelessWidget {
 
       if (file.path != null && file.path!.isNotEmpty) {
         return _mediaContainer(
+          context,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Image.file(File(file.path!), fit: BoxFit.cover),
@@ -82,6 +89,7 @@ class CreatePostMediaPreviewItem extends StatelessWidget {
     }
 
     return _mediaContainer(
+      context,
       child: Padding(
         padding: const EdgeInsets.all(8),
         child: Column(
@@ -90,7 +98,7 @@ class CreatePostMediaPreviewItem extends StatelessWidget {
             FaIcon(
               _iconForMediaType(mediaType),
               size: 24,
-              color: Colors.grey.shade700,
+              color: semantic.iconSecondary,
             ),
             const SizedBox(height: 6),
             Text(
@@ -98,7 +106,7 @@ class CreatePostMediaPreviewItem extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 11, color: Colors.grey.shade800),
+              style: textTheme.bodySmall?.copyWith(color: semantic.textPrimary),
             ),
           ],
         ),
@@ -106,10 +114,12 @@ class CreatePostMediaPreviewItem extends StatelessWidget {
     );
   }
 
-  Widget _mediaContainer({required Widget child}) {
+  Widget _mediaContainer(BuildContext context, {required Widget child}) {
+    final semantic = context.semanticColors;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
+        color: semantic.backgroundTertiary,
         borderRadius: BorderRadius.circular(8),
       ),
       clipBehavior: Clip.antiAlias,

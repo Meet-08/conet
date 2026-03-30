@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 class CreatePostAddTagsSection extends StatelessWidget {
@@ -16,10 +17,16 @@ class CreatePostAddTagsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Add Tags', style: TextStyle(fontWeight: FontWeight.w600)),
+        Text(
+          'Add Tags',
+          style: textTheme.titleSmall?.copyWith(color: semantic.textPrimary),
+        ),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -28,9 +35,9 @@ class CreatePostAddTagsSection extends StatelessWidget {
                 controller: controller,
                 decoration: InputDecoration(
                   hintText: 'Add hashtag...',
-                  prefixIcon: const Icon(Icons.tag),
+                  prefixIcon: Icon(Icons.tag, color: semantic.iconSecondary),
                   filled: true,
-                  fillColor: Colors.grey.shade100,
+                  fillColor: semantic.backgroundSecondary,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -56,10 +63,10 @@ class CreatePostAddTagsSection extends StatelessWidget {
                 height: 48,
                 width: 48,
                 decoration: BoxDecoration(
-                  color: Colors.black,
+                  color: semantic.backgroundInverse,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.add, color: Colors.white),
+                child: Icon(Icons.add, color: semantic.iconInverse),
               ),
             ),
           ],
@@ -73,7 +80,7 @@ class CreatePostAddTagsSection extends StatelessWidget {
                 .map(
                   (tag) => Chip(
                     label: Text('#$tag'),
-                    backgroundColor: Colors.blue.shade50,
+                    backgroundColor: semantic.backgroundSelected,
                     deleteIcon: const Icon(Icons.close, size: 18),
                     onDeleted: () => onRemoveTag(tag),
                   ),

@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/widgets/notification_badge.dart';
 import 'package:conet_app/feature/notification/presentation/bloc/notification_bloc.dart';
 import 'package:flutter/material.dart';
@@ -10,9 +11,12 @@ class PostAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return AppBar(
       elevation: 0,
-      backgroundColor: Colors.white,
+      backgroundColor: semantic.surfaceBase,
       title: Row(
         children: [
           ClipRRect(
@@ -25,9 +29,9 @@ class PostAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
           ),
           const SizedBox(width: 8),
-          const Text(
+          Text(
             'Conet',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+            style: textTheme.titleMedium?.copyWith(color: semantic.textPrimary),
           ),
         ],
       ),
@@ -39,9 +43,9 @@ class PostAppBar extends StatelessWidget implements PreferredSizeWidget {
               clipBehavior: Clip.none,
               children: [
                 IconButton(
-                  icon: const FaIcon(
+                  icon: FaIcon(
                     FontAwesomeIcons.bell,
-                    color: Colors.black,
+                    color: semantic.iconPrimary,
                   ),
                   onPressed: () => context.push('/notifications'),
                 ),

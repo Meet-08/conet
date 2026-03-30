@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/post_share_helper.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,9 @@ class PostPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Post'),
@@ -31,11 +35,16 @@ class PostPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(post.content, style: const TextStyle(fontSize: 16)),
+            Text(
+              post.content,
+              style: textTheme.bodyLarge?.copyWith(color: semantic.textPrimary),
+            ),
             const SizedBox(height: 16),
             Text(
               'By ${post.user.username}',
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              style: textTheme.labelMedium?.copyWith(
+                color: semantic.textSecondary,
+              ),
             ),
           ],
         ),

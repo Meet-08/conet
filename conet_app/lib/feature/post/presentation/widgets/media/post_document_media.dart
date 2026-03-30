@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/feature/post/presentation/widgets/media/post_media_download_button.dart';
 import 'package:flutter/material.dart';
 
@@ -14,25 +15,34 @@ class PostDocumentMedia extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
-      color: Colors.grey.shade100,
+      color: semantic.backgroundSecondary,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       child: Row(
         children: [
-          const Icon(Icons.insert_drive_file_outlined, size: 24),
+          Icon(
+            Icons.insert_drive_file_outlined,
+            size: 24,
+            color: semantic.iconSecondary,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               _fileLabel(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: textTheme.titleSmall?.copyWith(
+                color: semantic.textPrimary,
+              ),
             ),
           ),
           PostMediaDownloadButton(
             mediaUrl: fileUrl,
-            iconColor: Colors.black87,
-            backgroundColor: Colors.white,
+            iconColor: semantic.iconPrimary,
+            backgroundColor: semantic.surfaceBase,
           ),
         ],
       ),

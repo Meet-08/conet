@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 class CreatePostPopularTags extends StatelessWidget {
@@ -7,6 +8,9 @@ class CreatePostPopularTags extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     final tags = [
       'programming',
       'webdev',
@@ -21,9 +25,9 @@ class CreatePostPopularTags extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Popular hashtags (Type to search for more):',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+          style: textTheme.labelSmall?.copyWith(color: semantic.textSecondary),
         ),
         const SizedBox(height: 8),
         Wrap(
@@ -33,7 +37,7 @@ class CreatePostPopularTags extends StatelessWidget {
               .map(
                 (tag) => ActionChip(
                   label: Text('#$tag'),
-                  backgroundColor: Colors.grey.shade100,
+                  backgroundColor: semantic.backgroundSecondary,
                   onPressed: () => onTagSelected(tag),
                 ),
               )

@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/feature/post/presentation/pages/post_image_viewer_page.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -28,6 +29,8 @@ class PostImageMedia extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+
     return GestureDetector(
       onTap: () => _openViewer(context),
       child: Stack(
@@ -37,14 +40,14 @@ class PostImageMedia extends StatelessWidget {
             imageUrl: imageUrl,
             fit: BoxFit.cover,
             placeholder: (context, url) =>
-                Container(color: Colors.grey.shade200),
+                Container(color: semantic.backgroundTertiary),
             errorWidget: (context, url, error) => Container(
-              color: Colors.grey.shade200,
-              child: const Center(
+              color: semantic.backgroundTertiary,
+              child: Center(
                 child: FaIcon(
                   FontAwesomeIcons.triangleExclamation,
                   size: 48,
-                  color: Colors.grey,
+                  color: semantic.iconSecondary,
                 ),
               ),
             ),

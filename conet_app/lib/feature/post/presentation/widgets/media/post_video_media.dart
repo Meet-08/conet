@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -80,13 +81,15 @@ class _PostVideoMediaState extends State<PostVideoMedia> {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+
     if (_hasError) {
       return const _MediaErrorCard();
     }
 
     if (!_isReady || _controller == null) {
       return Container(
-        color: Colors.black12,
+        color: semantic.backgroundTertiary,
         child: const Center(child: Loader()),
       );
     }
@@ -98,7 +101,7 @@ class _PostVideoMediaState extends State<PostVideoMedia> {
         fit: StackFit.expand,
         children: [
           ColoredBox(
-            color: Colors.black,
+            color: semantic.backgroundInverse,
             child: ClipRect(
               child: FittedBox(
                 fit: BoxFit.cover,
@@ -111,10 +114,10 @@ class _PostVideoMediaState extends State<PostVideoMedia> {
             ),
           ),
           if (_isMuted)
-            const Center(
+            Center(
               child: Icon(
                 Icons.volume_off_rounded,
-                color: Colors.white,
+                color: semantic.iconInverse,
                 size: 44,
               ),
             ),
@@ -131,10 +134,10 @@ class _PostVideoMediaState extends State<PostVideoMedia> {
                   VideoProgressIndicator(
                     controller,
                     allowScrubbing: true,
-                    colors: const VideoProgressColors(
-                      playedColor: Colors.white,
-                      bufferedColor: Color(0x99FFFFFF),
-                      backgroundColor: Color(0x55FFFFFF),
+                    colors: VideoProgressColors(
+                      playedColor: semantic.iconInverse,
+                      bufferedColor: const Color(0x99FFFFFF),
+                      backgroundColor: const Color(0x55FFFFFF),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -149,7 +152,7 @@ class _PostVideoMediaState extends State<PostVideoMedia> {
                           controller.value.isPlaying
                               ? Icons.pause_rounded
                               : Icons.play_arrow_rounded,
-                          color: Colors.white,
+                          color: semantic.iconInverse,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -159,7 +162,7 @@ class _PostVideoMediaState extends State<PostVideoMedia> {
                           _isMuted
                               ? Icons.volume_off_rounded
                               : Icons.volume_up_rounded,
-                          color: Colors.white,
+                          color: semantic.iconInverse,
                         ),
                       ),
                     ],
@@ -179,10 +182,16 @@ class _MediaErrorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+
     return Container(
-      color: Colors.grey.shade200,
-      child: const Center(
-        child: Icon(Icons.broken_image_outlined, color: Colors.grey, size: 44),
+      color: semantic.backgroundTertiary,
+      child: Center(
+        child: Icon(
+          Icons.broken_image_outlined,
+          color: semantic.iconSecondary,
+          size: 44,
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -23,11 +24,13 @@ class AppBottomNav extends StatelessWidget {
         return 0;
       },
       builder: (context, unseenCount) {
+        final semantic = context.semanticColors;
+
         return BottomNavigationBar(
           currentIndex: currentIndex,
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.black,
-          unselectedItemColor: Colors.grey,
+          selectedItemColor: semantic.iconPrimary,
+          unselectedItemColor: semantic.iconSecondary,
           items: [
             const BottomNavigationBarItem(
               icon: FaIcon(FontAwesomeIcons.house),

@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -36,8 +37,11 @@ class _PostImageViewerPageState extends State<PostImageViewerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: semantic.backgroundInverse,
       body: Stack(
         children: [
           PageView.builder(
@@ -60,7 +64,7 @@ class _PostImageViewerPageState extends State<PostImageViewerPage> {
                       if (loadingProgress == null) return child;
                       return Center(
                         child: Loader(
-                          color: Colors.white,
+                          color: semantic.iconInverse,
                           value: loadingProgress.expectedTotalBytes != null
                               ? loadingProgress.cumulativeBytesLoaded /
                                     loadingProgress.expectedTotalBytes!
@@ -69,19 +73,25 @@ class _PostImageViewerPageState extends State<PostImageViewerPage> {
                       );
                     },
                     errorBuilder: (context, error, stackTrace) {
-                      return const Center(
+                      return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             FaIcon(
                               FontAwesomeIcons.image,
                               size: 72,
-                              color: Colors.white54,
+                              color: semantic.iconInverse.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
-                            SizedBox(height: 12),
+                            const SizedBox(height: 12),
                             Text(
                               'Failed to load image',
-                              style: TextStyle(color: Colors.white54),
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: semantic.textInverse.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -100,9 +110,9 @@ class _PostImageViewerPageState extends State<PostImageViewerPage> {
                 children: [
                   IconButton(
                     onPressed: () => context.pop(),
-                    icon: const FaIcon(
+                    icon: FaIcon(
                       FontAwesomeIcons.xmark,
-                      color: Colors.white,
+                      color: semantic.iconInverse,
                     ),
                   ),
                   if (widget.imageUrls.length > 1)
@@ -112,12 +122,14 @@ class _PostImageViewerPageState extends State<PostImageViewerPage> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black54,
+                        color: semantic.backgroundBackdrop,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
                         '${_currentIndex + 1} of ${widget.imageUrls.length}',
-                        style: const TextStyle(color: Colors.white),
+                        style: textTheme.bodySmall?.copyWith(
+                          color: semantic.textInverse,
+                        ),
                       ),
                     ),
                 ],

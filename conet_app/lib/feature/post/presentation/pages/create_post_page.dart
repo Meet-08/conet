@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/utils/pick_files.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
@@ -81,15 +82,15 @@ class _CreatePostPageState extends State<CreatePostPage> {
   }
 
   Widget _selectedMediaHeader() {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           'Attached media (${_selectedFiles.length}/$_maxMediaCount)',
-          style: TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Colors.grey.shade800,
-          ),
+          style: textTheme.labelLarge?.copyWith(color: semantic.textPrimary),
         ),
         TextButton(onPressed: _clearAllFiles, child: const Text('Clear all')),
       ],

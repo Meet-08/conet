@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -14,14 +15,17 @@ class CreatePostAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return AppBar(
       leading: IconButton(
         icon: const FaIcon(FontAwesomeIcons.arrowLeft),
         onPressed: () => Navigator.pop(context),
       ),
-      title: const Text(
+      title: Text(
         'Create Post',
-        style: TextStyle(fontWeight: FontWeight.w600),
+        style: textTheme.titleMedium?.copyWith(color: semantic.textPrimary),
       ),
       centerTitle: true,
       actions: [
@@ -29,8 +33,8 @@ class CreatePostAppBar extends StatelessWidget implements PreferredSizeWidget {
           padding: const EdgeInsets.only(right: 12),
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey.shade300,
-              foregroundColor: Colors.black,
+              backgroundColor: semantic.backgroundDisabled,
+              foregroundColor: semantic.textPrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),

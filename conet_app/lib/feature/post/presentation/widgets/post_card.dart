@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/date_formatter.dart';
 import 'package:conet_app/core/utils/media_type_utils.dart';
 import 'package:conet_app/core/utils/post_share_helper.dart';
@@ -69,6 +70,9 @@ class _PostCardState extends State<PostCard> {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     final user = widget.post.user;
     final displayName = _buildDisplayName();
     final handle = _buildHandle();
@@ -103,7 +107,7 @@ class _PostCardState extends State<PostCard> {
             },
       borderRadius: BorderRadius.zero,
       child: Container(
-        color: Colors.white,
+        color: semantic.surfaceBase,
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,10 +132,8 @@ class _PostCardState extends State<PostCard> {
                             user.profilePicUrl!.isEmpty
                         ? Text(
                             _getInitials(),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                              color: Colors.grey.shade800,
+                            style: textTheme.labelMedium?.copyWith(
+                              color: semantic.textPrimary,
                             ),
                           )
                         : null,
@@ -148,10 +150,10 @@ class _PostCardState extends State<PostCard> {
                           displayName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            fontSize: 15,
                             letterSpacing: -0.2,
+                            color: semantic.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -159,9 +161,9 @@ class _PostCardState extends State<PostCard> {
                           '$handle · ${DateFormatter.format(widget.post.createdAt)}',
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: textTheme.bodySmall?.copyWith(
                             fontSize: 12.5,
-                            color: Colors.grey.shade600,
+                            color: semantic.textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -176,7 +178,7 @@ class _PostCardState extends State<PostCard> {
                     padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
                     child: Icon(
                       FontAwesomeIcons.ellipsisVertical,
-                      color: Colors.grey.shade600,
+                      color: semantic.iconSecondary,
                       size: 16,
                     ),
                   ),
@@ -188,10 +190,9 @@ class _PostCardState extends State<PostCard> {
               const SizedBox(height: 11),
               Text(
                 displayedContent,
-                style: TextStyle(
-                  fontSize: 15,
+                style: textTheme.bodyMedium?.copyWith(
                   height: 1.42,
-                  color: Colors.grey.shade900,
+                  color: semantic.textPrimary,
                   letterSpacing: -0.05,
                 ),
               ),
@@ -231,7 +232,7 @@ class _PostCardState extends State<PostCard> {
                             vertical: 6,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.5),
+                            color: semantic.backgroundBackdrop,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Row(
@@ -247,8 +248,10 @@ class _PostCardState extends State<PostCard> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: _currentImageIndex == index
-                                      ? Colors.white
-                                      : Colors.white.withValues(alpha: 0.5),
+                                      ? semantic.iconInverse
+                                      : semantic.iconInverse.withValues(
+                                          alpha: 0.5,
+                                        ),
                                 ),
                               ),
                             ),
@@ -298,7 +301,7 @@ class _PostCardState extends State<PostCard> {
                       label: '$_likeCount',
                       color: _isLiked
                           ? const Color(0xFFE53935)
-                          : Colors.grey.shade700,
+                          : semantic.iconSecondary,
                     ),
                   ),
                 ),
@@ -321,7 +324,7 @@ class _PostCardState extends State<PostCard> {
                     child: _ActionItem(
                       icon: FontAwesomeIcons.comment,
                       label: '${widget.post.commentCount}',
-                      color: Colors.grey.shade700,
+                      color: semantic.iconSecondary,
                     ),
                   ),
                 ),
@@ -341,7 +344,7 @@ class _PostCardState extends State<PostCard> {
                       CupertinoIcons.arrowshape_turn_up_right,
                       fontWeight: const FontWeight(500),
                       size: 20,
-                      color: Colors.grey.shade700,
+                      color: semantic.iconSecondary,
                     ),
                   ),
                 ),
@@ -388,7 +391,7 @@ class _PostCardState extends State<PostCard> {
                           size: 18,
                           color: isBookmarked
                               ? Theme.of(context).colorScheme.primary
-                              : Colors.grey.shade700,
+                              : semantic.iconSecondary,
                         ),
                       ),
                     );
@@ -399,11 +402,7 @@ class _PostCardState extends State<PostCard> {
 
             if (!widget.isDetailView) ...[
               const SizedBox(height: 12),
-              const Divider(
-                height: 1,
-                thickness: 0.7,
-                color: Color(0xFFE6E8EB),
-              ),
+              Divider(height: 1, thickness: 0.7, color: semantic.borderSubtle),
             ],
           ],
         ),
@@ -478,20 +477,19 @@ class _TagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F5F6),
+        color: semantic.backgroundSecondary,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE4E6E8)),
+        border: Border.all(color: semantic.borderSubtle),
       ),
       child: Text(
         text,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF44505F),
-        ),
+        style: textTheme.labelSmall?.copyWith(color: semantic.textSecondary),
       ),
     );
   }
@@ -506,17 +504,20 @@ class _ActionItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        FaIcon(icon, size: 17, color: color ?? Colors.grey.shade700),
+        FaIcon(icon, size: 17, color: color ?? semantic.iconSecondary),
         const SizedBox(width: 6),
         Text(
           label,
-          style: TextStyle(
+          style: textTheme.bodySmall?.copyWith(
             fontSize: 12.5,
             fontWeight: FontWeight.w500,
-            color: color ?? Colors.grey.shade700,
+            color: color ?? semantic.textSecondary,
           ),
         ),
       ],

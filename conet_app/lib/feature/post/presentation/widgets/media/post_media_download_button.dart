@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:conet_app/core/api/dio_client.dart';
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:dio/dio.dart';
@@ -11,14 +12,14 @@ import 'package:path_provider/path_provider.dart';
 
 class PostMediaDownloadButton extends StatefulWidget {
   final String mediaUrl;
-  final Color iconColor;
-  final Color backgroundColor;
+  final Color? iconColor;
+  final Color? backgroundColor;
 
   const PostMediaDownloadButton({
     super.key,
     required this.mediaUrl,
-    this.iconColor = Colors.white,
-    this.backgroundColor = const Color(0x70000000),
+    this.iconColor,
+    this.backgroundColor,
   });
 
   @override
@@ -211,8 +212,13 @@ class _PostMediaDownloadButtonState extends State<PostMediaDownloadButton> {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final iconColor = widget.iconColor ?? semantic.iconInverse;
+    final backgroundColor =
+        widget.backgroundColor ?? semantic.backgroundBackdrop;
+
     return Material(
-      color: widget.backgroundColor,
+      color: backgroundColor,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
@@ -226,14 +232,10 @@ class _PostMediaDownloadButtonState extends State<PostMediaDownloadButton> {
                   child: CircularProgressIndicator(
                     value: _progress,
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(widget.iconColor),
+                    valueColor: AlwaysStoppedAnimation<Color>(iconColor),
                   ),
                 )
-              : FaIcon(
-                  FontAwesomeIcons.download,
-                  size: 14,
-                  color: widget.iconColor,
-                ),
+              : FaIcon(FontAwesomeIcons.download, size: 14, color: iconColor),
         ),
       ),
     );

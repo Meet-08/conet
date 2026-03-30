@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/feature/post/presentation/widgets/media/post_media_download_button.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
@@ -81,36 +82,45 @@ class _PostAudioMediaState extends State<PostAudioMedia> {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return Container(
-      color: Colors.grey.shade100,
+      color: semantic.backgroundSecondary,
       padding: const EdgeInsets.all(12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.audiotrack_rounded, size: 22),
+              Icon(
+                Icons.audiotrack_rounded,
+                size: 22,
+                color: semantic.iconSecondary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   _fileLabel(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: textTheme.titleSmall?.copyWith(
+                    color: semantic.textPrimary,
+                  ),
                 ),
               ),
               PostMediaDownloadButton(
                 mediaUrl: widget.audioUrl,
-                iconColor: Colors.black87,
-                backgroundColor: Colors.white,
+                iconColor: semantic.iconPrimary,
+                backgroundColor: semantic.surfaceBase,
               ),
             ],
           ),
           if (_hasError) ...[
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Unable to load audio.',
-              style: TextStyle(color: Colors.redAccent),
+              style: textTheme.bodySmall?.copyWith(color: semantic.textError),
             ),
           ] else ...[
             const SizedBox(height: 10),
@@ -137,16 +147,14 @@ class _PostAudioMediaState extends State<PostAudioMedia> {
                       children: [
                         Text(
                           _format(Duration(milliseconds: safeMs.toInt())),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade700,
+                          style: textTheme.labelSmall?.copyWith(
+                            color: semantic.textSecondary,
                           ),
                         ),
                         Text(
                           _format(_duration),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade700,
+                          style: textTheme.labelSmall?.copyWith(
+                            color: semantic.textSecondary,
                           ),
                         ),
                       ],

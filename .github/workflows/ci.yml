@@ -71,7 +71,7 @@ jobs:
         uses: flutter-actions/setup-flutter@v4
         with:
           channel: stable
-          version: 3.38.3
+          version: 3.41.6
           cache: true
 
       - name: Cache pub dependencies

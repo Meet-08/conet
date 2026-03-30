@@ -1,4 +1,5 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/core/widgets/responsive_center_scrollable.dart';
 import 'package:conet_app/feature/post/domain/entities/comment.dart';
@@ -45,6 +46,9 @@ class _PostDetailPageFetchWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return BlocBuilder<PostDetailBloc, PostDetailState>(
       buildWhen: (previous, current) =>
           current is PostDetailPostLoaded ||
@@ -57,14 +61,14 @@ class _PostDetailPageFetchWrapper extends StatelessWidget {
 
         if (state is PostDetailPostFailure) {
           return Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: semantic.surfaceBase,
             appBar: AppBar(
-              backgroundColor: Colors.white,
+              backgroundColor: semantic.surfaceBase,
               elevation: 0,
               leading: IconButton(
-                icon: const FaIcon(
+                icon: FaIcon(
                   FontAwesomeIcons.arrowLeft,
-                  color: Colors.black,
+                  color: semantic.iconPrimary,
                 ),
                 onPressed: () => Navigator.pop(context),
               ),
@@ -76,12 +80,14 @@ class _PostDetailPageFetchWrapper extends StatelessWidget {
                   FaIcon(
                     FontAwesomeIcons.circleExclamation,
                     size: 48,
-                    color: Colors.red.shade300,
+                    color: semantic.iconError,
                   ),
                   const SizedBox(height: 12),
                   Text(
                     state.message,
-                    style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+                    style: textTheme.labelMedium?.copyWith(
+                      color: semantic.textSecondary,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
@@ -95,9 +101,9 @@ class _PostDetailPageFetchWrapper extends StatelessWidget {
           );
         }
 
-        return const Scaffold(
-          backgroundColor: Colors.white,
-          body: Center(child: Loader()),
+        return Scaffold(
+          backgroundColor: semantic.surfaceBase,
+          body: const Center(child: Loader()),
         );
       },
     );
@@ -168,6 +174,9 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return BlocListener<PostDetailBloc, PostDetailState>(
       listener: (context, state) {
         if (state is PostDetailLoaded) {
@@ -187,17 +196,20 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: semantic.surfaceBase,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: semantic.surfaceBase,
           elevation: 0,
           leading: IconButton(
-            icon: const FaIcon(FontAwesomeIcons.arrowLeft, color: Colors.black),
+            icon: FaIcon(
+              FontAwesomeIcons.arrowLeft,
+              color: semantic.iconPrimary,
+            ),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
+          title: Text(
             'Post',
-            style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+            style: textTheme.titleMedium?.copyWith(color: semantic.textPrimary),
           ),
         ),
         body: ResponsiveCenterScrollable(
@@ -218,10 +230,9 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
                         padding: const EdgeInsets.all(16),
                         child: Text(
                           'Comments',
-                          style: TextStyle(
-                            fontSize: 16,
+                          style: textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: Colors.grey.shade900,
+                            color: semantic.textPrimary,
                           ),
                         ),
                       ),
@@ -246,22 +257,20 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
                                       FaIcon(
                                         FontAwesomeIcons.commentDots,
                                         size: 48,
-                                        color: Colors.grey.shade300,
+                                        color: semantic.iconTertiary,
                                       ),
                                       const SizedBox(height: 12),
                                       Text(
                                         'No comments yet',
-                                        style: TextStyle(
-                                          color: Colors.grey.shade600,
-                                          fontSize: 14,
+                                        style: textTheme.labelMedium?.copyWith(
+                                          color: semantic.textSecondary,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         'Be the first to comment!',
-                                        style: TextStyle(
-                                          color: Colors.grey.shade500,
-                                          fontSize: 12,
+                                        style: textTheme.labelSmall?.copyWith(
+                                          color: semantic.textTertiary,
                                         ),
                                       ),
                                     ],
@@ -295,14 +304,13 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
                                     FaIcon(
                                       FontAwesomeIcons.circleExclamation,
                                       size: 48,
-                                      color: Colors.red.shade300,
+                                      color: semantic.iconError,
                                     ),
                                     const SizedBox(height: 12),
                                     Text(
                                       'Failed to load comments',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade700,
-                                        fontSize: 14,
+                                      style: textTheme.labelMedium?.copyWith(
+                                        color: semantic.textSecondary,
                                       ),
                                     ),
                                     const SizedBox(height: 8),
@@ -335,10 +343,10 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
               // Comment Input (Fixed at bottom)
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: semantic.surfaceBase,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
+                      color: Theme.of(context).colorScheme.shadow,
                       blurRadius: 10,
                       offset: const Offset(0, -2),
                     ),
@@ -357,7 +365,7 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
                           child: Container(
                             constraints: const BoxConstraints(maxHeight: 120),
                             decoration: BoxDecoration(
-                              color: Colors.grey.shade100,
+                              color: semantic.backgroundSecondary,
                               borderRadius: BorderRadius.circular(24),
                             ),
                             child: TextField(
@@ -367,9 +375,8 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
                               textInputAction: TextInputAction.newline,
                               decoration: InputDecoration(
                                 hintText: 'Add a comment...',
-                                hintStyle: TextStyle(
-                                  color: Colors.grey.shade500,
-                                  fontSize: 14,
+                                hintStyle: textTheme.labelMedium?.copyWith(
+                                  color: semantic.textTertiary,
                                 ),
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(
@@ -383,13 +390,13 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
                         const SizedBox(width: 8),
                         Container(
                           decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor,
+                            color: Theme.of(context).colorScheme.primary,
                             shape: BoxShape.circle,
                           ),
                           child: IconButton(
-                            icon: const FaIcon(
+                            icon: FaIcon(
                               FontAwesomeIcons.paperPlane,
-                              color: Colors.white,
+                              color: semantic.iconOnBrand,
                               size: 20,
                             ),
                             onPressed: _submitComment,
@@ -417,13 +424,16 @@ class _CommentItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Avatar
         CircleAvatar(
           radius: 18,
-          backgroundColor: Colors.grey.shade300,
+          backgroundColor: semantic.backgroundDisabled,
           backgroundImage:
               comment.profilePicUrl != null && comment.profilePicUrl!.isNotEmpty
               ? NetworkImage(comment.profilePicUrl!)
@@ -433,9 +443,8 @@ class _CommentItem extends StatelessWidget {
                   comment.username.isNotEmpty
                       ? comment.username[0].toUpperCase()
                       : '?',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                  style: textTheme.labelMedium?.copyWith(
+                    color: semantic.textPrimary,
                   ),
                 )
               : null,
@@ -450,9 +459,8 @@ class _CommentItem extends StatelessWidget {
               // Username
               Text(
                 comment.username,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
+                style: textTheme.labelMedium?.copyWith(
+                  color: semantic.textPrimary,
                 ),
               ),
               const SizedBox(height: 4),
@@ -460,9 +468,8 @@ class _CommentItem extends StatelessWidget {
               // Comment Text
               Text(
                 comment.content,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade800,
+                style: textTheme.labelMedium?.copyWith(
+                  color: semantic.textPrimary,
                   height: 1.4,
                 ),
               ),
