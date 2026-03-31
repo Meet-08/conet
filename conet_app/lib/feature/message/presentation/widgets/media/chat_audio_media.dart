@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/feature/message/presentation/widgets/media/chat_media_download_button.dart';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
@@ -81,9 +83,11 @@ class _ChatAudioMediaState extends State<ChatAudioMedia> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: colors.backgroundTertiary,
         borderRadius: BorderRadius.circular(8),
       ),
       padding: const EdgeInsets.all(12),
@@ -92,28 +96,34 @@ class _ChatAudioMediaState extends State<ChatAudioMedia> {
         children: [
           Row(
             children: [
-              const Icon(Icons.audiotrack_rounded, size: 22),
+              Icon(
+                Icons.audiotrack_rounded,
+                size: 22,
+                color: colors.iconPrimary,
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   _fileLabel(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                  style: AppTextStyles.label.copyWith(
+                    color: colors.textPrimary,
+                  ),
                 ),
               ),
               ChatMediaDownloadButton(
                 mediaUrl: widget.audioUrl,
-                iconColor: Colors.black87,
-                backgroundColor: Colors.white,
+                iconColor: colors.textPrimary,
+                backgroundColor: colors.backgroundPrimary,
               ),
             ],
           ),
           if (_hasError) ...[
             const SizedBox(height: 12),
-            const Text(
+            Text(
               'Unable to load audio.',
-              style: TextStyle(color: Colors.redAccent),
+              style: AppTextStyles.caption.copyWith(color: colors.textError),
             ),
           ] else ...[
             const SizedBox(height: 10),
@@ -140,16 +150,14 @@ class _ChatAudioMediaState extends State<ChatAudioMedia> {
                       children: [
                         Text(
                           _format(Duration(milliseconds: safeMs.toInt())),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade700,
+                          style: AppTextStyles.caption.copyWith(
+                            color: colors.textSecondary,
                           ),
                         ),
                         Text(
                           _format(_duration),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade700,
+                          style: AppTextStyles.caption.copyWith(
+                            color: colors.textSecondary,
                           ),
                         ),
                       ],
@@ -167,8 +175,11 @@ class _ChatAudioMediaState extends State<ChatAudioMedia> {
                             margin: const EdgeInsets.only(top: 4),
                             height: 40,
                             alignment: Alignment.center,
-                            child: const CircularProgressIndicator(
+                            child: CircularProgressIndicator(
                               strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                colors.iconBrand,
+                              ),
                             ),
                           );
                         } else if (processingState ==
@@ -181,7 +192,10 @@ class _ChatAudioMediaState extends State<ChatAudioMedia> {
                                 _player.seek(Duration.zero);
                                 _player.play();
                               },
-                              icon: const Icon(Icons.replay_rounded),
+                              icon: Icon(
+                                Icons.replay_rounded,
+                                color: colors.iconPrimary,
+                              ),
                             ),
                           );
                         } else {
@@ -198,6 +212,7 @@ class _ChatAudioMediaState extends State<ChatAudioMedia> {
                                     ? Icons.pause_circle_rounded
                                     : Icons.play_circle_rounded,
                                 size: 40,
+                                color: colors.iconBrand,
                               ),
                             ),
                           );

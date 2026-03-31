@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 /// Circular avatar that shows the actor's profile picture or initials.
@@ -15,23 +16,25 @@ class NotificationAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+
     if (imageUrl != null && imageUrl!.isNotEmpty) {
       return CircleAvatar(
         radius: radius,
         backgroundImage: NetworkImage(imageUrl!),
-        backgroundColor: Colors.grey.shade200,
+        backgroundColor: semantic.backgroundSecondary,
       );
     }
 
     return CircleAvatar(
       radius: radius,
-      backgroundColor: Colors.grey.shade300,
+      backgroundColor: semantic.backgroundTertiary,
       child: Text(
         _initials,
-        style: TextStyle(
+        style: AppTextStyles.label.copyWith(
           fontSize: radius * 0.7,
-          fontWeight: FontWeight.w600,
-          color: Colors.grey.shade700,
+          fontWeight: AppTypographyTokens.weightSemibold,
+          color: semantic.textSecondary,
         ),
       ),
     );

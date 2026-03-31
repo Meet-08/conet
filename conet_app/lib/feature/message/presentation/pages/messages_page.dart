@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
@@ -76,6 +78,9 @@ class _MessagesPageState extends State<MessagesPage> {
                   }
 
                   if (state.conversations.isEmpty) {
+                    final colors = Theme.of(
+                      context,
+                    ).extension<AppSemanticColors>()!;
                     return Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -83,23 +88,21 @@ class _MessagesPageState extends State<MessagesPage> {
                           FaIcon(
                             FontAwesomeIcons.commentDots,
                             size: 64,
-                            color: Colors.grey.shade300,
+                            color: colors.iconTertiary,
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'No conversations yet',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey.shade500,
-                              fontWeight: FontWeight.w500,
+                            style: AppTextStyles.bodyDefault.copyWith(
+                              color: colors.textSecondary,
+                              fontWeight: AppTypographyTokens.weightMedium,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'Tap + to start a new conversation',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey.shade400,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: colors.textTertiary,
                             ),
                           ),
                         ],

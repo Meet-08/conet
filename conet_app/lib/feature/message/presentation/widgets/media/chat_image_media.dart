@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/feature/message/presentation/pages/image_viewer_page.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -28,6 +29,8 @@ class ChatImageMedia extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
+
     return GestureDetector(
       onTap: () => _openViewer(context),
       child: ClipRRect(
@@ -37,14 +40,15 @@ class ChatImageMedia extends StatelessWidget {
           fit: BoxFit.cover,
           maxHeightDiskCache: 400,
           maxWidthDiskCache: 400,
-          placeholder: (context, url) => Container(color: Colors.grey.shade200),
+          placeholder: (context, url) =>
+              Container(color: colors.backgroundTertiary),
           errorWidget: (context, url, error) => Container(
-            color: Colors.grey.shade200,
-            child: const Center(
+            color: colors.backgroundTertiary,
+            child: Center(
               child: FaIcon(
                 FontAwesomeIcons.triangleExclamation,
                 size: 32,
-                color: Colors.grey,
+                color: colors.iconTertiary,
               ),
             ),
           ),

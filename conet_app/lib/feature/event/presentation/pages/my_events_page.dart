@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_tokens.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
@@ -75,9 +77,11 @@ class _MyEventsPageState extends State<MyEventsPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final semantic =
+        theme.extension<AppSemanticColors>() ?? AppSemanticColors.light;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F7),
+      backgroundColor: semantic.backgroundSecondary,
       body: SafeArea(
         child: BlocConsumer<EventBloc, EventState>(
           listenWhen: (_, current) =>
@@ -127,7 +131,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                             'My Events',
                             style: theme.textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.w800,
-                              color: const Color(0xFF111827),
+                              color: semantic.textPrimary,
                             ),
                           ),
                         ],
@@ -142,7 +146,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                           return Padding(
                             padding: const EdgeInsets.only(right: 8),
                             child: InkWell(
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: AppRadius.smAll,
                               onTap: () {
                                 if (_selectedType == type) return;
                                 setState(() {
@@ -160,8 +164,8 @@ class _MyEventsPageState extends State<MyEventsPage> {
                                           ?.copyWith(
                                             fontWeight: FontWeight.w700,
                                             color: selected
-                                                ? const Color(0xFF111827)
-                                                : const Color(0xFF8A93A1),
+                                                ? semantic.textPrimary
+                                                : semantic.textSecondary,
                                           ),
                                     ),
                                     const SizedBox(height: 8),
@@ -171,7 +175,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
                                       ),
                                       height: 2.5,
                                       width: selected ? 62 : 0,
-                                      color: const Color(0xFF111827),
+                                      color: semantic.textPrimary,
                                     ),
                                   ],
                                 ),

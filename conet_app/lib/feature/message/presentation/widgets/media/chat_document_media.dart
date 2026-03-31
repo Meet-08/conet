@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/feature/message/presentation/widgets/media/chat_media_download_button.dart';
 import 'package:flutter/material.dart';
 
@@ -14,28 +16,34 @@ class ChatDocumentMedia extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: colors.backgroundTertiary,
         borderRadius: BorderRadius.circular(8),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       child: Row(
         children: [
-          const Icon(Icons.insert_drive_file_outlined, size: 24),
+          Icon(
+            Icons.insert_drive_file_outlined,
+            size: 24,
+            color: colors.iconPrimary,
+          ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               _fileLabel(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontWeight: FontWeight.w600),
+              style: AppTextStyles.label.copyWith(color: colors.textPrimary),
             ),
           ),
           ChatMediaDownloadButton(
             mediaUrl: fileUrl,
-            iconColor: Colors.black87,
-            backgroundColor: Colors.white,
+            iconColor: colors.textPrimary,
+            backgroundColor: colors.backgroundPrimary,
           ),
         ],
       ),

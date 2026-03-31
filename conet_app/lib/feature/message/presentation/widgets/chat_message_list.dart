@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
@@ -22,12 +24,21 @@ class ChatMessageList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
+
     if (messageStatus == MessageStatus.loading) {
       return const Center(child: Loader());
     }
 
     if (messageStatus == MessageStatus.success && messages.isEmpty) {
-      return const Center(child: Text('No messages yet'));
+      return Center(
+        child: Text(
+          'No messages yet',
+          style: AppTextStyles.bodyDefault.copyWith(
+            color: colors.textSecondary,
+          ),
+        ),
+      );
     }
 
     final sorted = [...messages]

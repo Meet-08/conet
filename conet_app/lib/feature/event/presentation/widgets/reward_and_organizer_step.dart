@@ -1,5 +1,6 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/common/entities/user.dart';
+import 'package:conet_app/core/theme/app_tokens.dart';
 import 'package:conet_app/core/widgets/user_selector_bottom_sheet.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/init_dependencies.dart';
@@ -197,19 +198,16 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
           controller: otpController,
           autofocus: true,
           keyboardType: TextInputType.number,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             hintText: 'Enter 6-digit OTP',
-            prefixIcon: const Padding(
+            prefixIcon: Padding(
               padding: EdgeInsets.only(left: 12, right: 8),
               child: FaIcon(FontAwesomeIcons.key, size: 15),
             ),
-            prefixIconConstraints: const BoxConstraints(
-              minWidth: 0,
-              minHeight: 0,
-            ),
+            prefixIconConstraints: BoxConstraints(minWidth: 0, minHeight: 0),
             filled: true,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.mdAll,
               borderSide: BorderSide.none,
             ),
           ),
@@ -307,7 +305,7 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: AppRadius.mdAll,
                   ),
                   child: Row(
                     children: [
@@ -376,7 +374,7 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: AppRadius.lgAll,
             ),
             child: Row(
               children: [
@@ -491,7 +489,7 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: AppRadius.mdAll,
                   ),
                   child: Row(
                     children: [
@@ -548,7 +546,7 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: AppRadius.mdAll,
                   ),
                   child: Row(
                     children: [
@@ -610,7 +608,7 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: AppRadius.mdAll,
                   ),
                   child: Column(
                     children: [
@@ -676,8 +674,8 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
         child: FaIcon(icon, size: 14),
       ),
       prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+      border: const OutlineInputBorder(
+        borderRadius: AppRadius.mdAll,
         borderSide: BorderSide.none,
       ),
     );
@@ -741,7 +739,7 @@ class _EmptyBox extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 24),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: AppRadius.mdAll,
       ),
       child: Column(
         children: [

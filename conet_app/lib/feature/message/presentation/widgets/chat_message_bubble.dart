@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/presentation/widgets/media/chat_media_item.dart';
@@ -23,6 +25,15 @@ class ChatMessageBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasText = text.trim().isNotEmpty;
     final hasMedia = mediaUrls.isNotEmpty;
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
+
+    final bubbleColor = status == MessageDeliveryStatus.error
+        ? colors.backgroundError
+        : (isMe ? colors.backgroundInverse : colors.backgroundTertiary);
+
+    final textColor = status == MessageDeliveryStatus.error
+        ? colors.textError
+        : (isMe ? colors.textInverse : colors.textPrimary);
 
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -41,12 +52,10 @@ class ChatMessageBubble extends StatelessWidget {
                 ),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: status == MessageDeliveryStatus.error
-                      ? Colors.red.shade100
-                      : (isMe ? Colors.black : Colors.grey.shade200),
+                  color: bubbleColor,
                   borderRadius: BorderRadius.circular(16),
                   border: status == MessageDeliveryStatus.error
-                      ? Border.all(color: Colors.red)
+                      ? Border.all(color: colors.borderError)
                       : null,
                 ),
                 child: Column(
@@ -56,10 +65,8 @@ class ChatMessageBubble extends StatelessWidget {
                     if (hasText)
                       Text(
                         text,
-                        style: TextStyle(
-                          color: status == MessageDeliveryStatus.error
-                              ? Colors.red
-                              : (isMe ? Colors.white : Colors.black),
+                        style: AppTextStyles.bodyDefault.copyWith(
+                          color: textColor,
                         ),
                       ),
 
@@ -71,18 +78,20 @@ class ChatMessageBubble extends StatelessWidget {
 
                     if (status == MessageDeliveryStatus.error) ...[
                       const SizedBox(height: 4),
-                      const Row(
+                      Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.error_outline,
                             size: 14,
-                            color: Colors.red,
+                            color: colors.iconError,
                           ),
-                          SizedBox(width: 4),
+                          const SizedBox(width: 4),
                           Text(
                             "Failed to send",
-                            style: TextStyle(fontSize: 10, color: Colors.red),
+                            style: AppTextStyles.caption.copyWith(
+                              color: colors.textError,
+                            ),
                           ),
                         ],
                       ),
@@ -97,7 +106,9 @@ class ChatMessageBubble extends StatelessWidget {
               children: [
                 Text(
                   time,
-                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  style: AppTextStyles.micro.copyWith(
+                    color: colors.textTertiary,
+                  ),
                 ),
                 if (status == MessageDeliveryStatus.pending) ...[
                   const SizedBox(width: 4),

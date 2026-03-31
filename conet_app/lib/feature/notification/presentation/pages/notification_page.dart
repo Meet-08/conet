@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/notification/presentation/bloc/notification_bloc.dart';
@@ -47,14 +48,16 @@ class _NotificationPageState extends State<NotificationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+
     return Scaffold(
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        title: const Text(
+        backgroundColor: semantic.surfaceBase,
+        foregroundColor: semantic.textPrimary,
+        title: Text(
           'Notifications',
-          style: TextStyle(fontWeight: FontWeight.w600),
+          style: AppTextStyles.headingH3.copyWith(color: semantic.textPrimary),
         ),
         actions: [
           BlocSelector<NotificationBloc, NotificationState, int>(
@@ -62,10 +65,10 @@ class _NotificationPageState extends State<NotificationPage> {
             builder: (context, unseenCount) {
               if (unseenCount <= 0) return const SizedBox.shrink();
               return IconButton(
-                icon: const FaIcon(
+                icon: FaIcon(
                   FontAwesomeIcons.checkDouble,
                   size: 18,
-                  color: Colors.black54,
+                  color: semantic.iconSecondary,
                 ),
                 tooltip: 'Mark all as read',
                 onPressed: () {
@@ -114,7 +117,7 @@ class _NotificationPageState extends State<NotificationPage> {
               itemCount:
                   state.notifications.length + (state.isFetchingMore ? 1 : 0),
               separatorBuilder: (_, _) =>
-                  Divider(height: 1, color: Colors.grey.shade200),
+                  Divider(height: 1, color: semantic.borderSubtle),
               itemBuilder: (context, index) {
                 // Loading indicator at the end
                 if (index >= state.notifications.length) {

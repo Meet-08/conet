@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/presentation/widgets/conversation_tile.dart';
 import 'package:flutter/material.dart';
@@ -9,13 +10,15 @@ class ConversationList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
+
     return ListView.separated(
       itemCount: conversations.length,
       separatorBuilder: (_, _) => Divider(
         height: 1,
         thickness: 0.5,
         indent: 70,
-        color: Colors.grey.shade200,
+        color: colors.borderSubtle,
       ),
       itemBuilder: (context, index) {
         final conversation = conversations[index];

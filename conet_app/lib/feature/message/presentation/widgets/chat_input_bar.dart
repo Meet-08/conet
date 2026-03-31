@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -17,6 +19,8 @@ class ChatInputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
@@ -34,8 +38,8 @@ class ChatInputBar extends StatelessWidget {
                     top: 6,
                     child: Container(
                       padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
+                      decoration: BoxDecoration(
+                        color: colors.backgroundError,
                         shape: BoxShape.circle,
                       ),
                       constraints: const BoxConstraints(
@@ -45,10 +49,9 @@ class ChatInputBar extends StatelessWidget {
                       child: Center(
                         child: Text(
                           '$selectedFilesCount',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                          style: AppTextStyles.caption.copyWith(
+                            color: colors.textOnError,
+                            fontWeight: AppTypographyTokens.weightBold,
                           ),
                         ),
                       ),
@@ -62,7 +65,7 @@ class ChatInputBar extends StatelessWidget {
                 decoration: InputDecoration(
                   hintText: 'Type a message...',
                   filled: true,
-                  fillColor: Colors.grey.shade200,
+                  fillColor: colors.backgroundSecondary,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
@@ -73,11 +76,11 @@ class ChatInputBar extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             CircleAvatar(
-              backgroundColor: Colors.black,
+              backgroundColor: colors.backgroundInverse,
               child: IconButton(
-                icon: const FaIcon(
+                icon: FaIcon(
                   FontAwesomeIcons.paperPlane,
-                  color: Colors.white,
+                  color: colors.textInverse,
                   size: 20,
                 ),
                 onPressed: onSend,

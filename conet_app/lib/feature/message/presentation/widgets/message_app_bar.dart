@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -10,9 +11,11 @@ class MessageAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: const Text(
+      title: Text(
         'Messages',
-        style: TextStyle(fontWeight: FontWeight.w600),
+        style: AppTextStyles.headingH3.copyWith(
+          fontWeight: AppTypographyTokens.weightSemibold,
+        ),
       ),
       actions: [
         IconButton(

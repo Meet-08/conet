@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -27,12 +29,13 @@ class ConversationTile extends StatelessWidget {
     return '${(diff.inDays / 7).floor()}w';
   }
 
-  Widget _buildLastMessagePreview() {
+  Widget _buildLastMessagePreview(AppSemanticColors colors) {
     final hasUnread = conversation.unreadCount > 0;
-    final textStyle = TextStyle(
-      fontSize: 13.5,
-      color: Colors.grey.shade600,
-      fontWeight: hasUnread ? FontWeight.w500 : FontWeight.normal,
+    final textStyle = AppTextStyles.bodySmall.copyWith(
+      color: colors.textSecondary,
+      fontWeight: hasUnread
+          ? AppTypographyTokens.weightMedium
+          : AppTypographyTokens.weightRegular,
     );
 
     // 1. Prioritize text content if available
@@ -51,7 +54,7 @@ class ConversationTile extends StatelessWidget {
       final count = conversation.lastMessageMediaUrls.length;
       return Row(
         children: [
-          Icon(Icons.photo_camera, size: 16, color: Colors.grey.shade600),
+          Icon(Icons.photo_camera, size: 16, color: colors.iconSecondary),
           const SizedBox(width: 4),
           Text(count > 1 ? '$count Photos' : 'Photo', style: textStyle),
         ],
@@ -73,6 +76,7 @@ class ConversationTile extends StatelessWidget {
     final imageUrl = conversation.displayImageUrl;
     final initials = _getInitials(displayName);
     final hasUnread = conversation.unreadCount > 0;
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
 
     return InkWell(
       onTap: () {
@@ -108,7 +112,7 @@ class ConversationTile extends StatelessWidget {
                                   .primaries[displayName.hashCode %
                                       Colors.primaries.length]
                                   .shade800,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: AppTypographyTokens.weightBold,
                               fontSize: 15,
                             ),
                           )
@@ -120,7 +124,7 @@ class ConversationTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name + timestamp row
+                  // Name +  timestamp row
                   Row(
                     children: [
                       Expanded(
@@ -128,20 +132,19 @@ class ConversationTile extends StatelessWidget {
                           displayName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
+                          style: AppTextStyles.bodyDefault.copyWith(
                             fontWeight: hasUnread
-                                ? FontWeight.w700
-                                : FontWeight.w600,
-                            fontSize: 15.5,
+                                ? AppTypographyTokens.weightBold
+                                : AppTypographyTokens.weightSemibold,
+                            color: colors.textPrimary,
                           ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         _formatRelativeTime(conversation.updatedAt),
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: Colors.grey.shade500,
+                        style: AppTextStyles.caption.copyWith(
+                          color: colors.textSecondary,
                         ),
                       ),
                     ],
@@ -150,7 +153,7 @@ class ConversationTile extends StatelessWidget {
                   // Last message + unread badge row
                   Row(
                     children: [
-                      Expanded(child: _buildLastMessagePreview()),
+                      Expanded(child: _buildLastMessagePreview(colors)),
                       if (hasUnread) ...[
                         const SizedBox(width: 8),
                         Container(
@@ -159,15 +162,14 @@ class ConversationTile extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: Colors.black87,
+                            color: colors.backgroundInverse,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             '${conversation.unreadCount}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: colors.textOnBrand,
+                              fontWeight: AppTypographyTokens.weightBold,
                             ),
                           ),
                         ),

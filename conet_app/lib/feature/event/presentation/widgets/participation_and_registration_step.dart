@@ -1,4 +1,5 @@
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -108,7 +109,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: AppRadius.mdAll,
               ),
               child: Row(
                 children: [
@@ -264,7 +265,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                           : (isSelected
                                 ? colorScheme.onSurface
                                 : colorScheme.surfaceContainerHigh),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppRadius.mdAll,
                     ),
                     child: Center(
                       child: Text(
@@ -339,7 +340,7 @@ class _ToggleRow extends StatelessWidget {
                 color: isSelected
                     ? colorScheme.onSurface
                     : colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: AppRadius.mdAll,
               ),
               child: Center(
                 child: Text(
@@ -371,8 +372,8 @@ InputDecoration _inputDecoration({required String hint, Widget? prefixIcon}) {
         : null,
     prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
     filled: true,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
+    border: const OutlineInputBorder(
+      borderRadius: AppRadius.mdAll,
       borderSide: BorderSide.none,
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

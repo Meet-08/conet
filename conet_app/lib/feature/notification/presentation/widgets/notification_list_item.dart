@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/date_formatter.dart';
 import 'package:conet_app/feature/notification/domain/entities/notification.dart';
 import 'package:conet_app/feature/notification/presentation/widgets/notification_avatar.dart';
@@ -18,9 +19,13 @@ class NotificationListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
     final title = NotificationTypeResolver.title(notification);
     final typeIcon = NotificationTypeResolver.icon(notification.type);
-    final typeColor = NotificationTypeResolver.iconColor(notification.type);
+    final typeColor = NotificationTypeResolver.iconColor(
+      notification.type,
+      semantic,
+    );
     final timeAgo = DateFormatter.format(notification.createdAt);
 
     return InkWell(
@@ -28,7 +33,7 @@ class NotificationListItem extends StatelessWidget {
       child: Container(
         color: notification.isSeen
             ? Colors.transparent
-            : Colors.blue.withValues(alpha: 0.04),
+            : semantic.backgroundSelected.withValues(alpha: 0.3),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,11 +52,13 @@ class NotificationListItem extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: semantic.surfaceBase,
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
+                          color: semantic.backgroundBackdrop.withValues(
+                            alpha: 0.16,
+                          ),
                           blurRadius: 2,
                         ),
                       ],
@@ -71,12 +78,11 @@ class NotificationListItem extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: AppTextStyles.label.copyWith(
                       fontWeight: notification.isSeen
-                          ? FontWeight.w400
-                          : FontWeight.w600,
-                      color: Colors.black87,
+                          ? AppTypographyTokens.weightRegular
+                          : AppTypographyTokens.weightSemibold,
+                      color: semantic.textPrimary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -86,9 +92,8 @@ class NotificationListItem extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       notification.content!,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade600,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: semantic.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -97,7 +102,9 @@ class NotificationListItem extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     timeAgo,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                    style: AppTextStyles.caption.copyWith(
+                      color: semantic.textTertiary,
+                    ),
                   ),
                 ],
               ),
@@ -110,8 +117,8 @@ class NotificationListItem extends StatelessWidget {
                 child: Container(
                   width: 8,
                   height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
+                  decoration: BoxDecoration(
+                    color: semantic.iconSelected,
                     shape: BoxShape.circle,
                   ),
                 ),

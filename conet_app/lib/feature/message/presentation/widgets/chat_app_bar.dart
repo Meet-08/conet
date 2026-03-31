@@ -1,4 +1,6 @@
 import 'package:conet_app/core/common/cubit/presence_cubit.dart';
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/widgets/online_indicator.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:flutter/material.dart';
@@ -39,6 +41,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   ) {
     final memberCount = conversation.members.length;
     final subtitle = memberCount > 0 ? '$memberCount members' : 'Group';
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
 
     return AppBar(
       leadingWidth: 40,
@@ -73,14 +76,13 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             children: [
               Text(
                 displayName,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTextStyles.label.copyWith(color: colors.textPrimary),
               ),
               Text(
                 subtitle,
-                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                style: AppTextStyles.micro.copyWith(
+                  color: colors.textSecondary,
+                ),
               ),
             ],
           ),
@@ -102,6 +104,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     String initials,
   ) {
     final otherUser = conversation.otherUser;
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
 
     return AppBar(
       leadingWidth: 40,
@@ -140,7 +143,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                                       .primaries[displayName.hashCode %
                                           Colors.primaries.length]
                                       .shade800,
-                                  fontWeight: .w700,
+                                  fontWeight: AppTypographyTokens.weightBold,
                                   fontSize: 15,
                                 ),
                               )
@@ -168,7 +171,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   color: Colors
                       .primaries[displayName.hashCode % Colors.primaries.length]
                       .shade800,
-                  fontWeight: .w700,
+                  fontWeight: AppTypographyTokens.weightBold,
                   fontSize: 15,
                 ),
               ),
@@ -180,17 +183,20 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               selector: (onlineIds) => onlineIds.contains(otherUser.id),
               builder: (context, isOnline) {
                 return Column(
-                  crossAxisAlignment: .start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       displayName,
-                      style: const TextStyle(fontSize: 14, fontWeight: .w600),
+                      style: AppTextStyles.label.copyWith(
+                        color: colors.textPrimary,
+                      ),
                     ),
                     Text(
                       isOnline ? 'Online' : 'Offline',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: isOnline ? Colors.green : Colors.grey,
+                      style: AppTextStyles.micro.copyWith(
+                        color: isOnline
+                            ? colors.textSuccess
+                            : colors.textSecondary,
                       ),
                     ),
                   ],
@@ -200,7 +206,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
           else
             Text(
               displayName,
-              style: const TextStyle(fontSize: 14, fontWeight: .w600),
+              style: AppTextStyles.label.copyWith(color: colors.textPrimary),
             ),
         ],
       ),

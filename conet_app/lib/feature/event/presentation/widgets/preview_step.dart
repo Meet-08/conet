@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/theme/app_tokens.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -170,7 +171,7 @@ class _PreviewStepState extends State<PreviewStep> {
           Container(
             decoration: BoxDecoration(
               color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: AppRadius.lgAll,
               border: Border.all(
                 color: colorScheme.outlineVariant.withValues(alpha: 0.5),
               ),
@@ -183,7 +184,7 @@ class _PreviewStepState extends State<PreviewStep> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: AppRadius.mdAll,
                       child: SizedBox(
                         width: 78,
                         height: 78,
@@ -221,7 +222,7 @@ class _PreviewStepState extends State<PreviewStep> {
                             ),
                             decoration: BoxDecoration(
                               color: colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(999),
+                              borderRadius: AppRadius.fullAll,
                             ),
                             child: Text(
                               _categoryLabel(category).toUpperCase(),
@@ -468,7 +469,7 @@ class _PreviewStepState extends State<PreviewStep> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: colorScheme.surfaceContainerLow,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: AppRadius.mdAll,
                         border: Border.all(
                           color: colorScheme.outlineVariant.withValues(
                             alpha: 0.35,
@@ -549,7 +550,7 @@ class _PreviewStepState extends State<PreviewStep> {
                               ),
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(999),
+                                borderRadius: AppRadius.fullAll,
                               ),
                               child: Text(
                                 displayName,
@@ -567,7 +568,7 @@ class _PreviewStepState extends State<PreviewStep> {
                               ),
                               decoration: BoxDecoration(
                                 color: colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(999),
+                                borderRadius: AppRadius.fullAll,
                               ),
                               child: Text(
                                 '@$u',
@@ -597,7 +598,7 @@ class _PreviewStepState extends State<PreviewStep> {
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.surface,
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: AppRadius.smAll,
                     border: Border.all(
                       color: colorScheme.primary.withValues(alpha: 0.45),
                     ),
@@ -641,7 +642,7 @@ class _PreviewStepState extends State<PreviewStep> {
                     ),
                     decoration: BoxDecoration(
                       color: colorScheme.surface,
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: AppRadius.smAll,
                       border: Border.all(
                         color: colorScheme.primary.withValues(alpha: 0.45),
                       ),
@@ -671,7 +672,7 @@ class _PreviewStepState extends State<PreviewStep> {
                       child: Container(
                         decoration: BoxDecoration(
                           color: colorScheme.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: AppRadius.smAll,
                           border: Border.all(
                             color: colorScheme.outlineVariant.withValues(
                               alpha: 0.35,
@@ -681,7 +682,7 @@ class _PreviewStepState extends State<PreviewStep> {
                         child: Column(
                           children: [
                             InkWell(
-                              borderRadius: BorderRadius.circular(10),
+                              borderRadius: AppRadius.smAll,
                               onTap: () {
                                 setState(() {
                                   _expandedFaqs[i] = !expanded;
@@ -756,7 +757,7 @@ class _PreviewStepState extends State<PreviewStep> {
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: AppRadius.mdAll,
                   ),
                   child: Row(
                     children: [
@@ -921,7 +922,7 @@ class _PrizeTile extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: AppRadius.smAll,
       ),
       child: Row(
         children: [

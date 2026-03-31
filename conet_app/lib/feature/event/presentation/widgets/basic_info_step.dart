@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:conet_app/core/theme/app_tokens.dart';
 import 'package:conet_app/feature/event/presentation/constants/event_constants.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -238,7 +239,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
           const SizedBox(height: 12),
           Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.mdAll,
               border: Border.all(color: colorScheme.outlineVariant),
             ),
             child: Column(
@@ -573,18 +574,18 @@ class _UploadImageCard extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: AppRadius.mdAll,
       child: Container(
         width: 110,
         height: 110,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: AppRadius.mdAll,
           color: colorScheme.surfaceContainerHigh,
           border: Border.all(color: colorScheme.outlineVariant),
         ),
         child: image != null
             ? ClipRRect(
-                borderRadius: BorderRadius.circular(13),
+                borderRadius: AppRadius.mdAll,
                 child: kIsWeb && image!.bytes != null
                     ? Image.memory(image!.bytes!, fit: BoxFit.cover)
                     : Image.file(File(image!.path!), fit: BoxFit.cover),
@@ -625,7 +626,7 @@ class _ToolbarAction extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: AppRadius.xsAll,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Text(label, style: style),
@@ -670,12 +671,12 @@ class _ModeToggle extends StatelessWidget {
       return Expanded(
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: AppRadius.smAll,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
             padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: AppRadius.smAll,
               color: selected ? colorScheme.surface : Colors.transparent,
             ),
             child: Center(
@@ -698,7 +699,7 @@ class _ModeToggle extends StatelessWidget {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: AppRadius.mdAll,
       ),
       child: Row(
         children: [
@@ -732,15 +733,15 @@ InputDecoration _inputDecoration({required String hint, Widget? prefixIcon}) {
         : null,
     prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.mdAll,
       borderSide: BorderSide(color: Colors.grey.shade300),
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.mdAll,
       borderSide: BorderSide(color: Colors.grey.shade300),
     ),
     focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.mdAll,
       borderSide: BorderSide(color: Colors.grey.shade500),
     ),
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -760,7 +761,7 @@ class _DatePickerField extends StatelessWidget {
         : '${value!.day.toString().padLeft(2, '0')}/${value!.month.toString().padLeft(2, '0')}/${value!.year}';
 
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.mdAll,
       onTap: () async {
         final now = DateTime.now();
         final picked = await showDatePicker(
@@ -793,7 +794,7 @@ class _TimePickerField extends StatelessWidget {
     final display = value?.format(context) ?? '--:--';
 
     return InkWell(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: AppRadius.mdAll,
       onTap: () async {
         final picked = await showTimePicker(
           context: context,

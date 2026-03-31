@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/feature/notification/domain/entities/notification.dart';
 import 'package:flutter/material.dart' hide Notification;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -34,18 +35,18 @@ class NotificationTypeResolver {
     }
   }
 
-  static Color iconColor(String type) {
+  static Color iconColor(String type, AppSemanticColors semantic) {
     switch (type) {
       case 'POST_LIKE':
-        return Colors.red;
+        return semantic.iconError;
       case 'POST_COMMENT':
-        return Colors.blue;
+        return semantic.iconInfo;
       case 'NEW_MESSAGE':
-        return Colors.green;
+        return semantic.iconSuccess;
       case 'FOLLOW':
-        return Colors.purple;
+        return semantic.iconBrand;
       default:
-        return Colors.grey;
+        return semantic.iconSecondary;
     }
   }
 }

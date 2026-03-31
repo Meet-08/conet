@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -113,7 +114,7 @@ class _FaqsStepState extends State<FaqsStep> {
               padding: const EdgeInsets.symmetric(vertical: 40),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHigh.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: AppRadius.mdAll,
               ),
               child: Column(
                 children: [
@@ -141,8 +142,8 @@ class _FaqsStepState extends State<FaqsStep> {
               padding: const EdgeInsets.only(bottom: 12),
               child: Card(
                 elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: AppRadius.mdAll,
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(14),
@@ -178,23 +179,23 @@ class _FaqsStepState extends State<FaqsStep> {
                       const SizedBox(height: 10),
                       TextFormField(
                         initialValue: faq['question'] as String? ?? '',
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           hintText: 'Question',
                           filled: true,
                           isDense: true,
-                          prefixIcon: const Padding(
+                          prefixIcon: Padding(
                             padding: EdgeInsets.only(left: 12, right: 8),
                             child: FaIcon(
                               FontAwesomeIcons.circleQuestion,
                               size: 14,
                             ),
                           ),
-                          prefixIconConstraints: const BoxConstraints(
+                          prefixIconConstraints: BoxConstraints(
                             minWidth: 0,
                             minHeight: 0,
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: AppRadius.mdAll,
                             borderSide: BorderSide.none,
                           ),
                         ),
@@ -205,20 +206,20 @@ class _FaqsStepState extends State<FaqsStep> {
                         initialValue: faq['answer'] as String? ?? '',
                         maxLines: 3,
                         minLines: 2,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           hintText: 'Answer',
                           filled: true,
                           isDense: true,
-                          prefixIcon: const Padding(
+                          prefixIcon: Padding(
                             padding: EdgeInsets.only(left: 12, right: 8),
                             child: FaIcon(FontAwesomeIcons.comment, size: 14),
                           ),
-                          prefixIconConstraints: const BoxConstraints(
+                          prefixIconConstraints: BoxConstraints(
                             minWidth: 0,
                             minHeight: 0,
                           ),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: AppRadius.mdAll,
                             borderSide: BorderSide.none,
                           ),
                         ),

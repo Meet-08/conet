@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:flutter/material.dart';
@@ -16,10 +17,12 @@ class EventCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final semantic =
+        theme.extension<AppSemanticColors>() ?? AppSemanticColors.light;
     final dateLabel = DateFormat('MMM d - h:mm a').format(event.eventStartDate);
     final locationLabel = event.venue ?? event.location ?? 'Location TBA';
     final ticketLabel = _ticketLabel(event);
-    final indicator = _EventUrgencyIndicator.fromEvent(event);
+    final indicator = _EventUrgencyIndicator.fromEvent(event, semantic);
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -140,8 +143,8 @@ class EventCard extends StatelessWidget {
                       onPressed: () =>
                           context.push('/event-detail/${event.id}'),
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF1D2939),
-                        foregroundColor: Colors.white,
+                        backgroundColor: colorScheme.primary,
+                        foregroundColor: colorScheme.onPrimary,
                         minimumSize: const Size(96, 40),
                         shape: const StadiumBorder(),
                         textStyle: theme.textTheme.labelLarge?.copyWith(
@@ -294,11 +297,10 @@ class _EventUrgencyIndicator {
     required this.color,
   });
 
-  static const Color _timeUrgencyColor = Color(0xFFF97316);
-  static const Color _spotsUrgencyColor = Color(0xFF344054);
-  static const Color _attendanceColor = Color(0xFF98A2B3);
-
-  factory _EventUrgencyIndicator.fromEvent(EventListItem event) {
+  factory _EventUrgencyIndicator.fromEvent(
+    EventListItem event,
+    AppSemanticColors semantic,
+  ) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final eventDay = DateTime(
@@ -308,12 +310,12 @@ class _EventUrgencyIndicator {
     );
     final daysLeft = eventDay.difference(today).inDays;
 
-    // Priority 1: time urgency
+    // Priority 1: time urgency - use warning color for time-sensitive events
     if (daysLeft >= 0 && daysLeft <= 3) {
       return _EventUrgencyIndicator(
         icon: FontAwesomeIcons.circleExclamation,
         text: 'Only $daysLeft days left',
-        color: _timeUrgencyColor,
+        color: semantic.textWarning,
       );
     }
 
@@ -322,21 +324,21 @@ class _EventUrgencyIndicator {
     if (canComputeSpots) {
       final spotsLeft = maxParticipant - event.registrationCount;
 
-      // Priority 2: spots urgency
+      // Priority 2: spots urgency - use info/primary color
       if (spotsLeft >= 0 && spotsLeft < 50) {
         return _EventUrgencyIndicator(
           icon: FontAwesomeIcons.users,
           text: '$spotsLeft spots left',
-          color: _spotsUrgencyColor,
+          color: semantic.textInfo,
         );
       }
     }
 
-    // Priority 3: default attendance
+    // Priority 3: default attendance - use secondary color
     return _EventUrgencyIndicator(
       icon: FontAwesomeIcons.users,
       text: '${event.registrationCount}+ attending',
-      color: _attendanceColor,
+      color: semantic.iconSecondary,
     );
   }
 }

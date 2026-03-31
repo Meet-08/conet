@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -131,12 +132,12 @@ class _ActivityStepState extends State<ActivityStep> {
                   Expanded(
                     child: TextFormField(
                       initialValue: a['activity_title'] as String? ?? '',
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Activity title',
                         filled: true,
                         isDense: true,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: AppRadius.mdAll,
                           borderSide: BorderSide.none,
                         ),
                       ),
@@ -211,12 +212,12 @@ class _ActivityStepState extends State<ActivityStep> {
                     width: 90,
                     child: TextFormField(
                       initialValue: p['position'] as String? ?? '',
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'e.g. 1st',
                         filled: true,
                         isDense: true,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: AppRadius.mdAll,
                           borderSide: BorderSide.none,
                         ),
                       ),
@@ -227,12 +228,12 @@ class _ActivityStepState extends State<ActivityStep> {
                   Expanded(
                     child: TextFormField(
                       initialValue: p['prize'] as String? ?? '',
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Prize description',
                         filled: true,
                         isDense: true,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: AppRadius.mdAll,
                           borderSide: BorderSide.none,
                         ),
                       ),
@@ -309,7 +310,7 @@ class _DismissibleCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: Card(
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: child,
@@ -334,7 +335,7 @@ class _EmptyHint extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 28),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHigh.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: AppRadius.mdAll,
       ),
       child: Column(
         children: [

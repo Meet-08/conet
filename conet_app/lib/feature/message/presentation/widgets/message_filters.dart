@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -49,25 +51,28 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
+
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: GestureDetector(
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: isActive ? Colors.black : Colors.transparent,
+            color: isActive ? colors.backgroundBrand : colors.backgroundPrimary,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: isActive ? Colors.black : Colors.grey.shade300,
+              color: isActive ? colors.borderBrand : colors.borderDefault,
             ),
           ),
           child: Text(
             label,
-            style: TextStyle(
-              color: isActive ? Colors.white : Colors.black,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-              fontSize: 13,
+            style: AppTextStyles.caption.copyWith(
+              color: isActive ? colors.textOnBrand : colors.textPrimary,
+              fontWeight: isActive
+                  ? AppTypographyTokens.weightSemibold
+                  : AppTypographyTokens.weightRegular,
             ),
           ),
         ),

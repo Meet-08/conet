@@ -1,4 +1,5 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/theme/app_tokens.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -49,19 +50,16 @@ class _OrganizerStepState extends State<OrganizerStep> {
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             hintText: '@username',
-            prefixIcon: const Padding(
+            prefixIcon: Padding(
               padding: EdgeInsets.only(left: 12, right: 8),
               child: FaIcon(FontAwesomeIcons.at, size: 15),
             ),
-            prefixIconConstraints: const BoxConstraints(
-              minWidth: 0,
-              minHeight: 0,
-            ),
+            prefixIconConstraints: BoxConstraints(minWidth: 0, minHeight: 0),
             filled: true,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.mdAll,
               borderSide: BorderSide.none,
             ),
           ),
@@ -131,7 +129,7 @@ class _OrganizerStepState extends State<OrganizerStep> {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
               color: colorScheme.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: AppRadius.lgAll,
             ),
             child: Row(
               children: [
@@ -267,7 +265,7 @@ class _OrganizerStepState extends State<OrganizerStep> {
                   ),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHigh,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: AppRadius.mdAll,
                   ),
                   child: Row(
                     children: [
@@ -323,19 +321,16 @@ class _OrganizerStepState extends State<OrganizerStep> {
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.phone,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             hintText: '+91 00000 00000',
-            prefixIcon: const Padding(
+            prefixIcon: Padding(
               padding: EdgeInsets.only(left: 12, right: 8),
               child: FaIcon(FontAwesomeIcons.phone, size: 15),
             ),
-            prefixIconConstraints: const BoxConstraints(
-              minWidth: 0,
-              minHeight: 0,
-            ),
+            prefixIconConstraints: BoxConstraints(minWidth: 0, minHeight: 0),
             filled: true,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: AppRadius.mdAll,
               borderSide: BorderSide.none,
             ),
           ),

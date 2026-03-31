@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -36,8 +38,10 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: colors.backgroundInverse,
       body: Stack(
         children: [
           // Image viewer with swipe
@@ -61,7 +65,7 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                       if (loadingProgress == null) return child;
                       return Center(
                         child: Loader(
-                          color: Colors.white,
+                          color: colors.textInverse,
                           value: loadingProgress.expectedTotalBytes != null
                               ? loadingProgress.cumulativeBytesLoaded /
                                     loadingProgress.expectedTotalBytes!
@@ -70,19 +74,25 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                       );
                     },
                     errorBuilder: (context, error, stackTrace) {
-                      return const Center(
+                      return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             FaIcon(
                               FontAwesomeIcons.image,
                               size: 80,
-                              color: Colors.white54,
+                              color: colors.textSecondary.withValues(
+                                alpha: 0.4,
+                              ),
                             ),
-                            SizedBox(height: 16),
+                            const SizedBox(height: 16),
                             Text(
                               'Failed to load image',
-                              style: TextStyle(color: Colors.white54),
+                              style: AppTextStyles.bodyDefault.copyWith(
+                                color: colors.textSecondary.withValues(
+                                  alpha: 0.4,
+                                ),
+                              ),
                             ),
                           ],
                         ),
@@ -102,9 +112,9 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   IconButton(
-                    icon: const FaIcon(
+                    icon: FaIcon(
                       FontAwesomeIcons.xmark,
-                      color: Colors.white,
+                      color: colors.textInverse,
                     ),
                     onPressed: () => context.pop(),
                   ),
@@ -116,14 +126,13 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black54,
+                        color: colors.backgroundInverse.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
                         '${_currentIndex + 1} of ${widget.imageUrls.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: colors.textInverse,
                         ),
                       ),
                     ),

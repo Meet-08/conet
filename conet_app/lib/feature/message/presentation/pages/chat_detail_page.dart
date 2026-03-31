@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/media_type_utils.dart';
 import 'package:conet_app/core/utils/pick_files.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
@@ -96,7 +98,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     });
   }
 
-  Widget _buildFilePreviewWidget(PlatformFile file) {
+  Widget _buildFilePreviewWidget(PlatformFile file, AppSemanticColors colors) {
     final fileName = file.name;
     final mediaType = getMediaTypeFromFileName(fileName);
 
@@ -122,11 +124,11 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     return Container(
       width: 80,
       height: 80,
-      color: Colors.grey.shade300,
+      color: colors.backgroundTertiary,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          FaIcon(icon, size: 24, color: Colors.grey.shade600),
+          FaIcon(icon, size: 24, color: colors.iconSecondary),
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -134,7 +136,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               fileName.split('.').last.toUpperCase(),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+              style: AppTextStyles.micro.copyWith(color: colors.textSecondary),
             ),
           ),
         ],
@@ -154,6 +156,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
+
     return Scaffold(
       appBar: ChatAppBar(conversation: widget.conversation),
       body: Column(
@@ -182,15 +186,15 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
           if (_selectedFiles.isNotEmpty)
             Container(
-              padding: const .symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                border: Border(top: BorderSide(color: Colors.grey.shade300)),
+                color: colors.backgroundSecondary,
+                border: Border(top: BorderSide(color: colors.borderDefault)),
               ),
               child: SizedBox(
                 height: 80,
                 child: ListView.builder(
-                  scrollDirection: .horizontal,
+                  scrollDirection: Axis.horizontal,
                   itemCount: _selectedFiles.length,
                   itemBuilder: (context, index) {
                     final file = _selectedFiles[index];
@@ -200,7 +204,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
-                            child: _buildFilePreviewWidget(file),
+                            child: _buildFilePreviewWidget(file, colors),
                           ),
                           Positioned(
                             top: 4,
@@ -208,14 +212,16 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                             child: GestureDetector(
                               onTap: () => _removeFile(index),
                               child: Container(
-                                decoration: const BoxDecoration(
-                                  color: Colors.black54,
+                                decoration: BoxDecoration(
+                                  color: colors.backgroundInverse.withValues(
+                                    alpha: 0.5,
+                                  ),
                                   shape: BoxShape.circle,
                                 ),
                                 padding: const EdgeInsets.all(4),
-                                child: const FaIcon(
+                                child: FaIcon(
                                   FontAwesomeIcons.xmark,
-                                  color: Colors.white,
+                                  color: colors.textInverse,
                                   size: 16,
                                 ),
                               ),

@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -7,6 +8,8 @@ class NotificationEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -16,22 +19,22 @@ class NotificationEmptyState extends StatelessWidget {
             FaIcon(
               FontAwesomeIcons.bellSlash,
               size: 48,
-              color: Colors.grey.shade400,
+              color: semantic.iconTertiary,
             ),
             const SizedBox(height: 16),
             Text(
               'No notifications yet',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey.shade600,
+              style: AppTextStyles.headingH3.copyWith(
+                color: semantic.textSecondary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               "When someone interacts with your posts or profile, you'll see it here.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: semantic.textTertiary,
+              ),
             ),
           ],
         ),

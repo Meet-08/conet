@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
@@ -80,13 +81,15 @@ class _ChatVideoMediaState extends State<ChatVideoMedia> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppSemanticColors>()!;
+
     if (_hasError) {
-      return const _MediaErrorCard();
+      return _MediaErrorCard(colors: colors);
     }
 
     if (!_isReady || _controller == null) {
       return Container(
-        color: Colors.black12,
+        color: colors.backgroundSecondary,
         child: const Center(child: Loader()),
       );
     }
@@ -100,7 +103,7 @@ class _ChatVideoMediaState extends State<ChatVideoMedia> {
           fit: StackFit.expand,
           children: [
             ColoredBox(
-              color: Colors.black,
+              color: colors.backgroundInverse,
               child: ClipRect(
                 child: FittedBox(
                   fit: BoxFit.cover,
@@ -113,10 +116,10 @@ class _ChatVideoMediaState extends State<ChatVideoMedia> {
               ),
             ),
             if (_isMuted)
-              const Center(
+              Center(
                 child: Icon(
                   Icons.volume_off_rounded,
-                  color: Colors.white,
+                  color: colors.textInverse,
                   size: 40,
                 ),
               ),
@@ -125,7 +128,7 @@ class _ChatVideoMediaState extends State<ChatVideoMedia> {
               right: 0,
               bottom: 0,
               child: Container(
-                color: const Color(0x66000000),
+                color: colors.backgroundInverse.withValues(alpha: 0.4),
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -133,10 +136,14 @@ class _ChatVideoMediaState extends State<ChatVideoMedia> {
                     VideoProgressIndicator(
                       controller,
                       allowScrubbing: true,
-                      colors: const VideoProgressColors(
-                        playedColor: Colors.white,
-                        bufferedColor: Color(0x99FFFFFF),
-                        backgroundColor: Color(0x55FFFFFF),
+                      colors: VideoProgressColors(
+                        playedColor: colors.textInverse,
+                        bufferedColor: colors.textInverse.withValues(
+                          alpha: 0.6,
+                        ),
+                        backgroundColor: colors.textInverse.withValues(
+                          alpha: 0.33,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -151,7 +158,7 @@ class _ChatVideoMediaState extends State<ChatVideoMedia> {
                             controller.value.isPlaying
                                 ? Icons.pause_rounded
                                 : Icons.play_arrow_rounded,
-                            color: Colors.white,
+                            color: colors.textInverse,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -161,7 +168,7 @@ class _ChatVideoMediaState extends State<ChatVideoMedia> {
                             _isMuted
                                 ? Icons.volume_off_rounded
                                 : Icons.volume_up_rounded,
-                            color: Colors.white,
+                            color: colors.textInverse,
                           ),
                         ),
                       ],
@@ -178,18 +185,20 @@ class _ChatVideoMediaState extends State<ChatVideoMedia> {
 }
 
 class _MediaErrorCard extends StatelessWidget {
-  const _MediaErrorCard();
+  final AppSemanticColors colors;
+
+  const _MediaErrorCard({required this.colors});
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
       child: Container(
-        color: Colors.grey.shade200,
-        child: const Center(
+        color: colors.backgroundTertiary,
+        child: Center(
           child: Icon(
             Icons.broken_image_outlined,
-            color: Colors.grey,
+            color: colors.iconTertiary,
             size: 40,
           ),
         ),

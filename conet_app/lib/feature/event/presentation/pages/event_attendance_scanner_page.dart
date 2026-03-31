@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_tokens.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_registration_bloc.dart';
 import 'package:flutter/material.dart';
@@ -141,10 +144,20 @@ class _EventAttendanceScannerPageState
           fit: StackFit.expand,
           children: [
             MobileScanner(controller: _scannerController, onDetect: _onDetect),
-            _ScannerOverlay(eventTitle: widget.eventTitle),
+            _ScannerOverlay(
+              eventTitle: widget.eventTitle,
+              semantic:
+                  Theme.of(context).extension<AppSemanticColors>() ??
+                  AppSemanticColors.light,
+            ),
             if (_isProcessingScan)
               Container(
-                color: const Color(0x66000000),
+                color:
+                    (Theme.of(context)
+                                .extension<AppSemanticColors>()
+                                ?.backgroundInverse ??
+                            AppSemanticColors.light.backgroundInverse)
+                        .withValues(alpha: 0.4),
                 child: const Center(child: CircularProgressIndicator()),
               ),
           ],
@@ -156,8 +169,9 @@ class _EventAttendanceScannerPageState
 
 class _ScannerOverlay extends StatelessWidget {
   final String? eventTitle;
+  final AppSemanticColors semantic;
 
-  const _ScannerOverlay({this.eventTitle});
+  const _ScannerOverlay({this.eventTitle, required this.semantic});
 
   @override
   Widget build(BuildContext context) {
@@ -170,8 +184,8 @@ class _ScannerOverlay extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
-                color: const Color(0xAA111827),
-                borderRadius: BorderRadius.circular(12),
+                color: semantic.backgroundInverse.withValues(alpha: 0.67),
+                borderRadius: AppRadius.mdAll,
               ),
               child: Column(
                 children: [
@@ -179,16 +193,18 @@ class _ScannerOverlay extends StatelessWidget {
                     eventTitle?.isNotEmpty == true
                         ? 'Scanning for ${eventTitle!}'
                         : 'Scan attendee ticket QR',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+                    style: AppTextStyles.button.copyWith(
+                      color: semantic.textInverse,
+                      fontWeight: AppTypographyTokens.weightBold,
                     ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     'Align QR inside the frame to mark attendance',
-                    style: TextStyle(color: Color(0xFFD1D5DB), fontSize: 12),
+                    style: AppTextStyles.caption.copyWith(
+                      color: semantic.textInverse.withValues(alpha: 0.7),
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -200,16 +216,18 @@ class _ScannerOverlay extends StatelessWidget {
             width: 260,
             height: 260,
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.white, width: 2),
-              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: semantic.textInverse, width: 2),
+              borderRadius: AppRadius.xlAll,
             ),
           ),
           const Spacer(),
-          const Padding(
-            padding: EdgeInsets.only(bottom: 28),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 28),
             child: Text(
               'Only event organizer/co-host can mark attendance',
-              style: TextStyle(color: Color(0xFFE5E7EB), fontSize: 12),
+              style: AppTextStyles.caption.copyWith(
+                color: semantic.textInverse.withValues(alpha: 0.8),
+              ),
             ),
           ),
         ],
