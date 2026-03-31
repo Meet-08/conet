@@ -246,8 +246,9 @@ class ProfileHeaderCard extends StatelessWidget {
     if (academic.startYear != null || academic.endYear != null) {
       buffer.write(' • ');
       if (academic.startYear != null) buffer.write('${academic.startYear}');
-      if (academic.startYear != null && academic.endYear != null)
+      if (academic.startYear != null && academic.endYear != null) {
         buffer.write('-');
+      }
       if (academic.endYear != null) buffer.write('${academic.endYear}');
     }
     return buffer.toString();
