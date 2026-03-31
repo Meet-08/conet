@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 
 class InterestsSection extends StatefulWidget {
@@ -27,10 +29,7 @@ class _InterestsSectionState extends State<InterestsSection> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Interests',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-            ),
+            const Text('Interests', style: AppTextStyles.headingH3),
             if (showMore)
               GestureDetector(
                 onTap: () {
@@ -40,9 +39,11 @@ class _InterestsSectionState extends State<InterestsSection> {
                 },
                 child: Text(
                   _isExpanded ? 'Show less' : 'See all',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey,
+                    color: Theme.of(
+                      context,
+                    ).extension<AppSemanticColors>()!.textLink,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -61,12 +62,19 @@ class _InterestsSectionState extends State<InterestsSection> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: Theme.of(
+                      context,
+                    ).extension<AppSemanticColors>()!.backgroundTertiary,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     item,
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade800),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.textPrimary,
+                    ),
                   ),
                 ),
               )

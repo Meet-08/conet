@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/post/presentation/bloc/liked_posts_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/post_card.dart';
@@ -23,15 +25,16 @@ class _LikedPostsPageState extends State<LikedPostsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Liked Posts',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
+        title: const Text('Liked Posts', style: AppTextStyles.headingH1),
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(
+          context,
+        ).extension<AppSemanticColors>()!.textPrimary,
       ),
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(
+        context,
+      ).extension<AppSemanticColors>()!.backgroundSecondary,
       body: BlocBuilder<LikedPostsBloc, LikedPostsState>(
         builder: (context, state) {
           if (state is LikedPostsLoading) {
@@ -52,7 +55,11 @@ class _LikedPostsPageState extends State<LikedPostsPage> {
                   Text(
                     state.message,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.textError,
+                    ),
                   ),
                 ],
               ),
@@ -68,14 +75,18 @@ class _LikedPostsPageState extends State<LikedPostsPage> {
                     FaIcon(
                       FontAwesomeIcons.heart,
                       size: 48,
-                      color: Colors.grey.shade400,
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.iconTertiary,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'No liked posts yet',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -85,7 +96,9 @@ class _LikedPostsPageState extends State<LikedPostsPage> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade500,
+                        color: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.textSecondary,
                       ),
                     ),
                   ],

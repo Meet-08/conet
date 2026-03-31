@@ -1,4 +1,5 @@
 import 'package:conet_app/core/common/entities/social_links.dart';
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -72,7 +73,9 @@ class SocialLinksSection extends StatelessWidget {
             child: Icon(
               _getIconForLink(link.name),
               size: 20,
-              color: Colors.grey.shade700,
+              color: Theme.of(
+                context,
+              ).extension<AppSemanticColors>()!.iconSecondary,
             ),
           ),
         );

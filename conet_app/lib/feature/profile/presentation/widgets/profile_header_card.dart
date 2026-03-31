@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_academics.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:flutter/material.dart';
@@ -47,7 +49,9 @@ class ProfileHeaderCard extends StatelessWidget {
               height: 120,
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: Theme.of(
+                  context,
+                ).extension<AppSemanticColors>()!.backgroundTertiary,
                 image: userProfile.bannerImageUrl != null
                     ? DecorationImage(
                         image: NetworkImage(userProfile.bannerImageUrl!),
@@ -62,8 +66,8 @@ class ProfileHeaderCard extends StatelessWidget {
               bottom: -40,
               child: Container(
                 padding: const EdgeInsets.all(3),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
                   shape: BoxShape.circle,
                 ),
                 child: userProfile.profilePicUrl != null
@@ -75,13 +79,13 @@ class ProfileHeaderCard extends StatelessWidget {
                       )
                     : CircleAvatar(
                         radius: 42,
-                        backgroundColor: Colors.grey.shade400,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.backgroundTertiary,
                         child: Text(
                           _initials,
-                          style: const TextStyle(
-                            fontSize: 28,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                          style: AppTextStyles.display.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ),
@@ -96,21 +100,29 @@ class ProfileHeaderCard extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              OutlinedButton.icon(
-                onPressed: () => context.push('/edit-profile'),
-                icon: const FaIcon(FontAwesomeIcons.penToSquare, size: 14),
-                label: const Text('Edit profile'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.black87,
-                  side: BorderSide(color: Colors.grey.shade400),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
+              Builder(
+                builder: (context) => OutlinedButton.icon(
+                  onPressed: () => context.push('/edit-profile'),
+                  icon: const FaIcon(FontAwesomeIcons.penToSquare, size: 14),
+                  label: const Text('Edit profile'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Theme.of(
+                      context,
+                    ).extension<AppSemanticColors>()!.textPrimary,
+                    side: BorderSide(
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.borderDefault,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    textStyle: AppTextStyles.caption,
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  textStyle: const TextStyle(fontSize: 13),
                 ),
               ),
             ],
@@ -138,7 +150,11 @@ class ProfileHeaderCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               '@${userProfile.username}',
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              style: AppTextStyles.bodySmall.copyWith(
+                color: Theme.of(
+                  context,
+                ).extension<AppSemanticColors>()!.textSecondary,
+              ),
             ),
           ),
         ],
@@ -149,10 +165,11 @@ class ProfileHeaderCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               userProfile.aboutMe!,
-              style: TextStyle(
-                fontSize: 14,
+              style: AppTextStyles.bodySmall.copyWith(
                 height: 1.5,
-                color: Colors.teal.shade700,
+                color: Theme.of(
+                  context,
+                ).extension<AppSemanticColors>()!.textBrand,
               ),
             ),
           ),
@@ -171,15 +188,18 @@ class ProfileHeaderCard extends StatelessWidget {
                       FaIcon(
                         FontAwesomeIcons.buildingColumns,
                         size: 14,
-                        color: Colors.grey.shade700,
+                        color: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.iconSecondary,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           academic.collegeName,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade800,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).extension<AppSemanticColors>()!.textPrimary,
                           ),
                         ),
                       ),
@@ -191,15 +211,18 @@ class ProfileHeaderCard extends StatelessWidget {
                       FaIcon(
                         FontAwesomeIcons.graduationCap,
                         size: 14,
-                        color: Colors.grey.shade700,
+                        color: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.iconSecondary,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _buildCourseText(academic),
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade800,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).extension<AppSemanticColors>()!.textPrimary,
                           ),
                         ),
                       ),
@@ -223,7 +246,8 @@ class ProfileHeaderCard extends StatelessWidget {
     if (academic.startYear != null || academic.endYear != null) {
       buffer.write(' • ');
       if (academic.startYear != null) buffer.write('${academic.startYear}');
-      if (academic.startYear != null && academic.endYear != null) buffer.write('-');
+      if (academic.startYear != null && academic.endYear != null)
+        buffer.write('-');
       if (academic.endYear != null) buffer.write('${academic.endYear}');
     }
     return buffer.toString();

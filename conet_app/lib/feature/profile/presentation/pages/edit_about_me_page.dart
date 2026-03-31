@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
@@ -101,7 +103,7 @@ class _EditAboutMePageState extends State<EditAboutMePage> {
                 children: [
                   const Text(
                     'Tell us about yourself',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    style: AppTextStyles.label,
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -120,18 +122,32 @@ class _EditAboutMePageState extends State<EditAboutMePage> {
                     decoration: InputDecoration(
                       hintText:
                           'Passionate student interested in technology, innovation, and making a positive impact...',
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      hintStyle: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.textTertiary,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(
+                          color: Theme.of(
+                            context,
+                          ).extension<AppSemanticColors>()!.borderDefault,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(
+                          color: Theme.of(
+                            context,
+                          ).extension<AppSemanticColors>()!.borderDefault,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.black),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                       contentPadding: const EdgeInsets.all(16),
                     ),
@@ -139,7 +155,12 @@ class _EditAboutMePageState extends State<EditAboutMePage> {
                   const SizedBox(height: 8),
                   Text(
                     '${_aboutMeController.text.length} / $_maxLength characters',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.textTertiary,
+                    ),
                   ),
                 ],
               ),

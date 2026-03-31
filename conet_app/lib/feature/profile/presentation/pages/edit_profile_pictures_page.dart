@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
@@ -106,7 +108,7 @@ class _EditProfilePicturesPageState extends State<EditProfilePicturesPage> {
                 children: [
                   const Text(
                     'Profile Picture',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: AppTextStyles.bodyDefault,
                   ),
                   const SizedBox(height: 12),
                   Center(
@@ -116,7 +118,9 @@ class _EditProfilePicturesPageState extends State<EditProfilePicturesPage> {
                         children: [
                           CircleAvatar(
                             radius: 60,
-                            backgroundColor: Colors.grey.shade200,
+                            backgroundColor: Theme.of(context)
+                                .extension<AppSemanticColors>()!
+                                .backgroundTertiary,
                             backgroundImage: _profileImage != null
                                 ? (kIsWeb
                                       ? MemoryImage(_profileImage!.bytes!)
@@ -130,10 +134,12 @@ class _EditProfilePicturesPageState extends State<EditProfilePicturesPage> {
                             child:
                                 (_profileImage == null &&
                                     widget.userProfile.profilePicUrl == null)
-                                ? const Icon(
+                                ? Icon(
                                     Icons.person,
                                     size: 60,
-                                    color: Colors.grey,
+                                    color: Theme.of(context)
+                                        .extension<AppSemanticColors>()!
+                                        .iconTertiary,
                                   )
                                 : null,
                           ),
@@ -142,8 +148,8 @@ class _EditProfilePicturesPageState extends State<EditProfilePicturesPage> {
                             right: 0,
                             child: Container(
                               padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.blue,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
@@ -158,10 +164,7 @@ class _EditProfilePicturesPageState extends State<EditProfilePicturesPage> {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  const Text(
-                    'Banner Image',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  const Text('Banner Image', style: AppTextStyles.bodyDefault),
                   const SizedBox(height: 12),
                   GestureDetector(
                     onTap: () => _pickImage(false),
@@ -169,7 +172,9 @@ class _EditProfilePicturesPageState extends State<EditProfilePicturesPage> {
                       height: 150,
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
+                        color: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.backgroundTertiary,
                         borderRadius: BorderRadius.circular(12),
                         image: _bannerImage != null
                             ? DecorationImage(

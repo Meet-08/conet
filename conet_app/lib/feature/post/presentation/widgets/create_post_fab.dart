@@ -1,4 +1,5 @@
 import 'package:conet_app/core/theme/theme.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,10 +11,14 @@ class CreatePostFab extends StatelessWidget {
     final semantic = context.semanticColors;
 
     return FloatingActionButton(
-      shape: RoundedSuperellipseBorder(borderRadius: .circular(60)),
+      shape: const RoundedSuperellipseBorder(borderRadius: AppRadius.fullAll),
       backgroundColor: semantic.backgroundBrand,
       onPressed: () => context.push('/create-post'),
-      child: Icon(Icons.edit_outlined, size: 20, color: semantic.iconPrimary),
+      child: Icon(
+        CupertinoIcons.pencil_outline,
+        size: 30,
+        color: semantic.iconPrimary,
+      ),
     );
   }
 }

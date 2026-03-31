@@ -1,4 +1,6 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
@@ -41,7 +43,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             child: FilledButton(
               onPressed: () => context.pop(),
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.black,
+                backgroundColor: context.semanticColors.backgroundBrand,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -70,7 +72,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   padding: const EdgeInsets.only(bottom: 20, top: 8),
                   child: Text(
                     'Add more details to help others connect with you',
-                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.textSecondary,
+                    ),
                   ),
                 ),
                 _ProfileSectionTile(
@@ -215,19 +222,31 @@ class _ProfileSectionTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(
+            color: Theme.of(
+              context,
+            ).extension<AppSemanticColors>()!.borderSubtle,
+          ),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.grey.shade100,
+                color: Theme.of(
+                  context,
+                ).extension<AppSemanticColors>()!.backgroundTertiary,
                 shape: BoxShape.circle,
               ),
-              child: FaIcon(icon, size: 22, color: Colors.grey.shade700),
+              child: FaIcon(
+                icon,
+                size: 22,
+                color: Theme.of(
+                  context,
+                ).extension<AppSemanticColors>()!.iconSecondary,
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -236,16 +255,22 @@ class _ProfileSectionTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: TextStyle(
-                      fontSize: 15,
+                    style: AppTextStyles.label.copyWith(
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.textPrimary,
                       fontWeight: FontWeight.w600,
-                      color: Colors.grey.shade800,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade500),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -255,11 +280,18 @@ class _ProfileSectionTile extends StatelessWidget {
                 padding: const EdgeInsets.only(right: 8),
                 child: FaIcon(
                   FontAwesomeIcons.solidCircleCheck,
-                  color: Colors.green.shade400,
+                  color: Theme.of(
+                    context,
+                  ).extension<AppSemanticColors>()!.textSuccess,
                   size: 22,
                 ),
               ),
-            FaIcon(FontAwesomeIcons.chevronRight, color: Colors.grey.shade400),
+            FaIcon(
+              FontAwesomeIcons.chevronRight,
+              color: Theme.of(
+                context,
+              ).extension<AppSemanticColors>()!.iconTertiary,
+            ),
           ],
         ),
       ),

@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/post_card.dart';
 import 'package:flutter/material.dart';
@@ -30,15 +32,16 @@ class _SavedPostsPageState extends State<SavedPostsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Saved Posts',
-          style: TextStyle(fontWeight: FontWeight.w700),
-        ),
+        title: const Text('Saved Posts', style: AppTextStyles.headingH1),
         elevation: 0,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(
+          context,
+        ).extension<AppSemanticColors>()!.textPrimary,
       ),
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: Theme.of(
+        context,
+      ).extension<AppSemanticColors>()!.backgroundSecondary,
       body: BlocBuilder<PostBloc, PostState>(
         builder: (context, state) {
           if (state is PostLoading) {
@@ -59,7 +62,11 @@ class _SavedPostsPageState extends State<SavedPostsPage> {
                   Text(
                     state.message,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.red),
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.textError,
+                    ),
                   ),
                 ],
               ),
@@ -75,14 +82,18 @@ class _SavedPostsPageState extends State<SavedPostsPage> {
                     FaIcon(
                       FontAwesomeIcons.bookmark,
                       size: 48,
-                      color: Colors.grey.shade400,
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.iconTertiary,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       'No saved posts yet',
                       style: TextStyle(
                         fontSize: 16,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.textPrimary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -92,7 +103,9 @@ class _SavedPostsPageState extends State<SavedPostsPage> {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade500,
+                        color: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.textSecondary,
                       ),
                     ),
                   ],

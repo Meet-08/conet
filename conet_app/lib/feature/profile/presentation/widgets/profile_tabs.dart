@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:flutter/material.dart';
 
 class ProfileTabs extends StatelessWidget {
@@ -8,7 +10,9 @@ class ProfileTabs extends StatelessWidget {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: Theme.of(
+          context,
+        ).extension<AppSemanticColors>()!.backgroundTertiary,
         borderRadius: BorderRadius.circular(22),
       ),
       padding: const EdgeInsets.all(4),
@@ -33,11 +37,13 @@ class _TabItem extends StatelessWidget {
     return Container(
       decoration: isActive
           ? BoxDecoration(
-              color: Colors.black,
+              color: Theme.of(context).colorScheme.primary,
               borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -47,10 +53,11 @@ class _TabItem extends StatelessWidget {
       alignment: Alignment.center,
       child: Text(
         text,
-        style: TextStyle(
+        style: AppTextStyles.label.copyWith(
           fontWeight: FontWeight.w600,
-          color: isActive ? Colors.white : Colors.grey.shade600,
-          fontSize: 13,
+          color: isActive
+              ? Theme.of(context).colorScheme.onPrimary
+              : Theme.of(context).extension<AppSemanticColors>()!.textSecondary,
         ),
       ),
     );

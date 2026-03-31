@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
@@ -87,7 +88,7 @@ class _EditInterestsPageState extends State<EditInterestsPage> {
                   child: FilledButton(
                     onPressed: isLoading ? null : () => _save(context),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.black,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -112,7 +113,9 @@ class _EditInterestsPageState extends State<EditInterestsPage> {
                     'Select topics you\'re interested in',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey.shade600,
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.textSecondary,
                       fontStyle: FontStyle.italic,
                     ),
                   ),
@@ -144,13 +147,15 @@ class _EditInterestsPageState extends State<EditInterestsPage> {
                               ),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? Colors.black
+                                    ? Theme.of(context).colorScheme.primary
                                     : Colors.transparent,
                                 borderRadius: BorderRadius.circular(24),
                                 border: Border.all(
                                   color: isSelected
-                                      ? Colors.black
-                                      : Colors.grey.shade300,
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context)
+                                            .extension<AppSemanticColors>()!
+                                            .borderDefault,
                                 ),
                               ),
                               child: Text(
@@ -159,8 +164,10 @@ class _EditInterestsPageState extends State<EditInterestsPage> {
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                   color: isSelected
-                                      ? Colors.white
-                                      : Colors.black87,
+                                      ? Theme.of(context).colorScheme.onPrimary
+                                      : Theme.of(context)
+                                            .extension<AppSemanticColors>()!
+                                            .textPrimary,
                                 ),
                               ),
                             ),

@@ -1,4 +1,6 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/post_card.dart';
@@ -64,7 +66,14 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(state.error, style: const TextStyle(color: Colors.red)),
+                  Text(
+                    state.error,
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.textError,
+                    ),
+                  ),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _loadProfile,
@@ -105,13 +114,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Text(
                       'Posts',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+                      style: AppTextStyles.headingH3.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.textPrimary,
                       ),
                     ),
                   ),
@@ -130,19 +140,27 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: Center(
                             child: Text(
                               postState.message,
-                              style: const TextStyle(color: Colors.red),
+                              style: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).extension<AppSemanticColors>()!.textError,
+                              ),
                             ),
                           ),
                         );
                       }
                       if (postState is PostLoaded) {
                         if (postState.posts.isEmpty) {
-                          return const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 40),
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 40),
                             child: Center(
                               child: Text(
                                 'No posts yet',
-                                style: TextStyle(color: Colors.grey),
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .extension<AppSemanticColors>()!
+                                      .textSecondary,
+                                ),
                               ),
                             ),
                           );

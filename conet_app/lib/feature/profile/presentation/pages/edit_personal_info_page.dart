@@ -1,3 +1,5 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
@@ -114,7 +116,7 @@ class _EditPersonalInfoPageState extends State<EditPersonalInfoPage> {
                   child: FilledButton(
                     onPressed: isLoading ? null : () => _save(context),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.black,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -143,10 +145,7 @@ class _EditPersonalInfoPageState extends State<EditPersonalInfoPage> {
                           children: [
                             const Text(
                               'First Name',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
+                              style: AppTextStyles.label,
                             ),
                             const SizedBox(height: 8),
                             TextField(
@@ -154,24 +153,32 @@ class _EditPersonalInfoPageState extends State<EditPersonalInfoPage> {
                               decoration: InputDecoration(
                                 hintText: 'John',
                                 hintStyle: TextStyle(
-                                  color: Colors.grey.shade400,
+                                  color: Theme.of(context)
+                                      .extension<AppSemanticColors>()!
+                                      .textTertiary,
                                 ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
+                                    color: Theme.of(context)
+                                        .extension<AppSemanticColors>()!
+                                        .borderDefault,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
+                                    color: Theme.of(context)
+                                        .extension<AppSemanticColors>()!
+                                        .borderDefault,
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Colors.black,
+                                  borderSide: BorderSide(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
@@ -188,37 +195,39 @@ class _EditPersonalInfoPageState extends State<EditPersonalInfoPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Last Name',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            const Text('Last Name', style: AppTextStyles.label),
                             const SizedBox(height: 8),
                             TextField(
                               controller: _lastNameController,
                               decoration: InputDecoration(
                                 hintText: 'Doe',
                                 hintStyle: TextStyle(
-                                  color: Colors.grey.shade400,
+                                  color: Theme.of(context)
+                                      .extension<AppSemanticColors>()!
+                                      .textTertiary,
                                 ),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
+                                    color: Theme.of(context)
+                                        .extension<AppSemanticColors>()!
+                                        .borderDefault,
                                   ),
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                   borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
+                                    color: Theme.of(context)
+                                        .extension<AppSemanticColors>()!
+                                        .borderDefault,
                                   ),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(
-                                    color: Colors.black,
+                                  borderSide: BorderSide(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
                                   ),
                                 ),
                                 contentPadding: const EdgeInsets.symmetric(
@@ -233,20 +242,27 @@ class _EditPersonalInfoPageState extends State<EditPersonalInfoPage> {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Username',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
+                  const Text('Username', style: AppTextStyles.label),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _usernameController,
                     readOnly: true,
-                    style: TextStyle(color: Colors.grey.shade600),
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.textTertiary,
+                    ),
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: Colors.grey.shade100,
+                      fillColor: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.backgroundTertiary,
                       hintText: 'username',
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      hintStyle: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.textTertiary,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -258,10 +274,7 @@ class _EditPersonalInfoPageState extends State<EditPersonalInfoPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Text(
-                    'Date of Birth',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                  ),
+                  const Text('Date of Birth', style: AppTextStyles.label),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _dobController,
@@ -269,18 +282,32 @@ class _EditPersonalInfoPageState extends State<EditPersonalInfoPage> {
                     onTap: _pickDate,
                     decoration: InputDecoration(
                       hintText: 'dd-mm-yyyy',
-                      hintStyle: TextStyle(color: Colors.grey.shade400),
+                      hintStyle: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.textTertiary,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(
+                          color: Theme.of(
+                            context,
+                          ).extension<AppSemanticColors>()!.borderDefault,
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
+                        borderSide: BorderSide(
+                          color: Theme.of(
+                            context,
+                          ).extension<AppSemanticColors>()!.borderDefault,
+                        ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Colors.black),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -288,7 +315,9 @@ class _EditPersonalInfoPageState extends State<EditPersonalInfoPage> {
                       ),
                       suffixIcon: Icon(
                         Icons.calendar_today_outlined,
-                        color: Colors.grey.shade400,
+                        color: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.iconTertiary,
                         size: 20,
                       ),
                     ),

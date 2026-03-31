@@ -1,4 +1,6 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
@@ -89,7 +91,8 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
     final seen = <String>{};
     return list
         .where(
-          (a) => seen.add('${a.collegeName}|${a.degree}|${a.course}|${a.major}'),
+          (a) =>
+              seen.add('${a.collegeName}|${a.degree}|${a.course}|${a.major}'),
         )
         .toList();
   }
@@ -140,7 +143,7 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         body: BlocConsumer<ProfileBloc, ProfileState>(
           listenWhen: (_, current) => current is ProfileFollowFailure,
           listener: (context, state) {
@@ -160,7 +163,11 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                   children: [
                     Text(
                       state.error,
-                      style: const TextStyle(color: Colors.red),
+                      style: AppTextStyles.bodyDefault.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).extension<AppSemanticColors>()!.textError,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton(
@@ -199,15 +206,21 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                                 gradient: profile.bannerImageUrl == null
                                     ? LinearGradient(
                                         colors: [
-                                          Colors.blueGrey.shade700,
-                                          Colors.blueGrey.shade400,
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.primaryContainer,
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.secondary,
                                         ],
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                       )
                                     : null,
                                 color: profile.bannerImageUrl != null
-                                    ? Colors.grey.shade300
+                                    ? Theme.of(context)
+                                          .extension<AppSemanticColors>()!
+                                          .backgroundTertiary
                                     : null,
                                 image: profile.bannerImageUrl != null
                                     ? DecorationImage(
@@ -226,7 +239,7 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                                     end: Alignment.bottomCenter,
                                     colors: [
                                       Colors.transparent,
-                                      Colors.black.withValues(alpha: 0.25),
+                                      Theme.of(context).colorScheme.scrim,
                                     ],
                                     stops: const [0.55, 1.0],
                                   ),
@@ -243,13 +256,15 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                                   width: 36,
                                   height: 36,
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.35),
+                                    color: Theme.of(context).colorScheme.shadow,
                                     shape: BoxShape.circle,
                                   ),
-                                  child: const Center(
+                                  child: Center(
                                     child: FaIcon(
                                       FontAwesomeIcons.arrowLeft,
-                                      color: Colors.white,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
                                       size: 18,
                                     ),
                                   ),
@@ -263,8 +278,8 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                               left: 16,
                               child: Container(
                                 padding: const EdgeInsets.all(3),
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surface,
                                   shape: BoxShape.circle,
                                 ),
                                 child: profile.profilePicUrl?.isNotEmpty == true
@@ -276,13 +291,15 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                                       )
                                     : CircleAvatar(
                                         radius: 42,
-                                        backgroundColor: Colors.grey.shade400,
+                                        backgroundColor: Theme.of(context)
+                                            .extension<AppSemanticColors>()!
+                                            .backgroundTertiary,
                                         child: Text(
                                           initials,
-                                          style: const TextStyle(
-                                            fontSize: 28,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
+                                          style: AppTextStyles.display.copyWith(
+                                            color: Theme.of(
+                                              context,
+                                            ).colorScheme.onSurface,
                                           ),
                                         ),
                                       ),
@@ -308,15 +325,23 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                                 style: OutlinedButton.styleFrom(
                                   shape: const CircleBorder(),
                                   padding: const EdgeInsets.all(10),
-                                  side: BorderSide(color: Colors.grey.shade400),
-                                  foregroundColor: Colors.black87,
+                                  side: BorderSide(
+                                    color: Theme.of(context)
+                                        .extension<AppSemanticColors>()!
+                                        .borderDefault,
+                                  ),
+                                  foregroundColor: Theme.of(
+                                    context,
+                                  ).extension<AppSemanticColors>()!.textPrimary,
                                   minimumSize: Size.zero,
                                 ),
                                 child: _isCreatingConversation
-                                    ? const Loader(
+                                    ? Loader(
                                         size: 18,
                                         strokeWidth: 2,
-                                        color: Colors.black87,
+                                        color: Theme.of(context)
+                                            .extension<AppSemanticColors>()!
+                                            .textPrimary,
                                       )
                                     : const FaIcon(
                                         FontAwesomeIcons.comment,
@@ -343,13 +368,19 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: profile.isFollowing
-                                      ? Colors.white
-                                      : Colors.black,
+                                      ? Theme.of(context).colorScheme.surface
+                                      : Theme.of(context).colorScheme.primary,
                                   foregroundColor: profile.isFollowing
-                                      ? Colors.black
-                                      : Colors.white,
+                                      ? Theme.of(context)
+                                            .extension<AppSemanticColors>()!
+                                            .textPrimary
+                                      : Theme.of(context).colorScheme.onPrimary,
                                   side: profile.isFollowing
-                                      ? BorderSide(color: Colors.grey.shade400)
+                                      ? BorderSide(
+                                          color: Theme.of(context)
+                                              .extension<AppSemanticColors>()!
+                                              .borderDefault,
+                                        )
                                       : null,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(20),
@@ -358,10 +389,7 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                                     horizontal: 24,
                                     vertical: 10,
                                   ),
-                                  textStyle: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  textStyle: AppTextStyles.label,
                                 ),
                                 child: Text(
                                   profile.isFollowing ? 'Following' : 'Follow',
@@ -380,10 +408,10 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
                               fullName,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: -0.3,
+                              style: AppTextStyles.headingH1.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).extension<AppSemanticColors>()!.textPrimary,
                               ),
                             ),
                           ),
@@ -395,9 +423,10 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
                               '@${profile.username}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey.shade600,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).extension<AppSemanticColors>()!.textSecondary,
                               ),
                             ),
                           ),
@@ -410,10 +439,11 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
                               profile.aboutMe!,
-                              style: TextStyle(
-                                fontSize: 14,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).extension<AppSemanticColors>()!.textBrand,
                                 height: 1.5,
-                                color: Colors.teal.shade700,
                               ),
                             ),
                           ),
@@ -436,16 +466,22 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                                       FaIcon(
                                         FontAwesomeIcons.buildingColumns,
                                         size: 14,
-                                        color: Colors.grey.shade700,
+                                        color: Theme.of(context)
+                                            .extension<AppSemanticColors>()!
+                                            .iconSecondary,
                                       ),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           a.collegeName,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey.shade800,
-                                          ),
+                                          style: AppTextStyles.bodySmall
+                                              .copyWith(
+                                                color: Theme.of(context)
+                                                    .extension<
+                                                      AppSemanticColors
+                                                    >()!
+                                                    .textPrimary,
+                                              ),
                                         ),
                                       ),
                                     ],
@@ -456,16 +492,22 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                                       FaIcon(
                                         FontAwesomeIcons.graduationCap,
                                         size: 14,
-                                        color: Colors.grey.shade700,
+                                        color: Theme.of(context)
+                                            .extension<AppSemanticColors>()!
+                                            .iconSecondary,
                                       ),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           _courseText(a),
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey.shade800,
-                                          ),
+                                          style: AppTextStyles.bodySmall
+                                              .copyWith(
+                                                color: Theme.of(context)
+                                                    .extension<
+                                                      AppSemanticColors
+                                                    >()!
+                                                    .textPrimary,
+                                              ),
                                         ),
                                       ),
                                     ],
@@ -484,33 +526,39 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                             children: [
                               Text(
                                 '${profile.followingCount}',
-                                style: const TextStyle(
-                                  fontSize: 15,
+                                style: AppTextStyles.bodyDefault.copyWith(
                                   fontWeight: FontWeight.w700,
+                                  color: Theme.of(
+                                    context,
+                                  ).extension<AppSemanticColors>()!.textPrimary,
                                 ),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 'Following',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.grey.shade600,
+                                style: AppTextStyles.bodyDefault.copyWith(
+                                  color: Theme.of(context)
+                                      .extension<AppSemanticColors>()!
+                                      .textSecondary,
                                 ),
                               ),
                               const SizedBox(width: 20),
                               Text(
                                 '${profile.followerCount}',
-                                style: const TextStyle(
-                                  fontSize: 15,
+                                style: AppTextStyles.bodyDefault.copyWith(
                                   fontWeight: FontWeight.w700,
+                                  color: Theme.of(
+                                    context,
+                                  ).extension<AppSemanticColors>()!.textPrimary,
                                 ),
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 'Followers',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.grey.shade600,
+                                style: AppTextStyles.bodyDefault.copyWith(
+                                  color: Theme.of(context)
+                                      .extension<AppSemanticColors>()!
+                                      .textSecondary,
                                 ),
                               ),
                             ],
@@ -541,20 +589,23 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
 
                         // ── Posts heading ─────────────────────────────
                         const SizedBox(height: 20),
-                        const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
                             'Posts',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
+                            style: AppTextStyles.headingH3.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).extension<AppSemanticColors>()!.textPrimary,
                             ),
                           ),
                         ),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Divider(
-                            color: Colors.grey.shade500,
+                            color: Theme.of(
+                              context,
+                            ).extension<AppSemanticColors>()!.borderSubtle,
                             thickness: 0.4,
                           ),
                         ),
@@ -580,7 +631,11 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                             child: Center(
                               child: Text(
                                 postState.message,
-                                style: const TextStyle(color: Colors.red),
+                                style: AppTextStyles.bodyDefault.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).extension<AppSemanticColors>()!.textError,
+                                ),
                               ),
                             ),
                           ),
@@ -588,13 +643,17 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                       }
                       if (postState is PostLoaded) {
                         if (postState.posts.isEmpty) {
-                          return const SliverToBoxAdapter(
+                          return SliverToBoxAdapter(
                             child: Padding(
-                              padding: EdgeInsets.symmetric(vertical: 40),
+                              padding: const EdgeInsets.symmetric(vertical: 40),
                               child: Center(
                                 child: Text(
                                   'No posts yet',
-                                  style: TextStyle(color: Colors.grey),
+                                  style: AppTextStyles.bodyDefault.copyWith(
+                                    color: Theme.of(context)
+                                        .extension<AppSemanticColors>()!
+                                        .textTertiary,
+                                  ),
                                 ),
                               ),
                             ),
