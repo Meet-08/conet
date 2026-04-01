@@ -115,6 +115,50 @@ describe("createNotification", () => {
     });
   });
 
+  it("does not enqueue push jobs for NEW_MESSAGE", async () => {
+    prismaMock.notifications.create.mockResolvedValue({
+      id: NOTIFICATION_ID,
+      receiver_id: TEST_USER.id,
+      actor_id: TEST_USER_B.id,
+      type: "NEW_MESSAGE",
+      reference_id: "conv-1",
+      content: "hello",
+    });
+
+    await notificationService.createNotification({
+      receiverId: TEST_USER.id,
+      actorId: TEST_USER_B.id,
+      type: "NEW_MESSAGE",
+      referenceId: "conv-1",
+      content: "hello",
+    });
+
+    expect(queueAddMock).not.toHaveBeenCalled();
+  });
+
+  it("returns notification even when queue enqueue fails", async () => {
+    prismaMock.notifications.create.mockResolvedValue({
+      id: NOTIFICATION_ID,
+      receiver_id: TEST_USER.id,
+      actor_id: TEST_USER_B.id,
+      type: "POST_COMMENT",
+      reference_id: "post-2",
+      content: "Bob commented: Nice!",
+    });
+    queueAddMock.mockRejectedValueOnce(new Error("redis unavailable"));
+
+    const result = await notificationService.createNotification({
+      receiverId: TEST_USER.id,
+      actorId: TEST_USER_B.id,
+      type: "POST_COMMENT",
+      referenceId: "post-2",
+      content: "Bob commented: Nice!",
+    });
+
+    expect(result.id).toBe(NOTIFICATION_ID);
+    expect(loggerErrorMock).toHaveBeenCalled();
+  });
+
   it("rethrows prisma errors and logs failure", async () => {
     const dbError = new Error("db down");
     prismaMock.notifications.create.mockRejectedValue(dbError);

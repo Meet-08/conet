@@ -19,12 +19,12 @@ class NotificationService {
     referenceId,
     content,
   }) {
-    try {
-      // Do not notify self-actions
-      if (actorId && receiverId === actorId) {
-        return null;
-      }
+    // Do not notify self-actions
+    if (actorId && receiverId === actorId) {
+      return null;
+    }
 
+    try {
       const notification = await prisma.notifications.create({
         data: {
           receiver_id: receiverId,
@@ -35,16 +35,20 @@ class NotificationService {
         },
       });
 
-      // Push job to BullMQ queue only if it's not a NEW_MESSAGE
-      // Messages rely on realtime updates (Supabase stream)
-
-      await notificationQueue.add("sendPushNotification", {
-        receiverId,
-        title: this.getNotificationTitle(type),
-        body: content || this.getNotificationBody(type),
-        type,
-        referenceId,
-      });
+      // NEW_MESSAGE relies on Supabase realtime and should not depend on Redis.
+      if (type !== "NEW_MESSAGE") {
+        try {
+          await notificationQueue.add("sendPushNotification", {
+            receiverId,
+            title: this.getNotificationTitle(type),
+            body: content || this.getNotificationBody(type),
+            type,
+            referenceId,
+          });
+        } catch (queueError) {
+          logger.error("Failed to enqueue notification push job:", queueError);
+        }
+      }
 
       return notification;
     } catch (error) {

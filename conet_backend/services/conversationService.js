@@ -1,4 +1,5 @@
 import { USER_SELECT_FIELDS, UUID_REGEX } from "../config/constants.js";
+import logger from "../config/logger.js";
 import prisma from "../config/prisma.js";
 import notificationService from "./notificationService.js";
 
@@ -363,7 +364,7 @@ export const sendMessageService = async (
     .filter((m) => m.user_id !== senderId)
     .map((m) => m.user_id);
 
-  await Promise.all(
+  const notificationResults = await Promise.allSettled(
     receivers.map((receiverId) =>
       notificationService.createNotification({
         receiverId,
@@ -374,6 +375,14 @@ export const sendMessageService = async (
       }),
     ),
   );
+
+  notificationResults.forEach((result, index) => {
+    if (result.status === "rejected") {
+      logger.error(
+        `Failed to create NEW_MESSAGE notification for receiver ${receivers[index]} in conversation ${conversationId}: ${result.reason?.message ?? result.reason}`,
+      );
+    }
+  });
 
   return {
     id: message.id,
