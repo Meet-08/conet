@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/utils/media_cache_manager.dart';
 import 'package:conet_app/feature/message/presentation/pages/image_viewer_page.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -37,6 +38,7 @@ class ChatImageMedia extends StatelessWidget {
         borderRadius: BorderRadius.circular(8),
         child: CachedNetworkImage(
           imageUrl: imageUrl,
+          cacheManager: MediaCacheManager.instance,
           fit: BoxFit.cover,
           maxHeightDiskCache: 400,
           maxWidthDiskCache: 400,

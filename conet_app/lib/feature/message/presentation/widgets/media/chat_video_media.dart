@@ -2,6 +2,7 @@ import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 
 class ChatVideoMedia extends StatefulWidget {
   final String videoUrl;
@@ -17,28 +18,32 @@ class _ChatVideoMediaState extends State<ChatVideoMedia> {
   bool _isReady = false;
   bool _isMuted = true;
   bool _hasError = false;
+  bool _isInitializing = false;
+  bool _isVisible = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _init();
-  }
+  Future<void> _initIfNeeded() async {
+    if (_controller != null || _isInitializing || _hasError || !_isVisible) {
+      return;
+    }
 
-  Future<void> _init() async {
+    _isInitializing = true;
     final uri = Uri.tryParse(widget.videoUrl);
     if (uri == null) {
-      setState(() => _hasError = true);
+      if (mounted) {
+        setState(() => _hasError = true);
+      }
+      _isInitializing = false;
       return;
     }
 
     final controller = VideoPlayerController.networkUrl(uri);
+
     _controller = controller;
 
     try {
       await controller.initialize();
       await controller.setLooping(true);
       await controller.setVolume(0);
-      await controller.play();
       if (!mounted) return;
       setState(() {
         _isReady = true;
@@ -47,6 +52,28 @@ class _ChatVideoMediaState extends State<ChatVideoMedia> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _hasError = true);
+    } finally {
+      _isInitializing = false;
+    }
+  }
+
+  void _onVisibilityChanged(VisibilityInfo info) {
+    final isVisibleNow = info.visibleFraction > 0.05;
+    if (isVisibleNow == _isVisible) return;
+
+    _isVisible = isVisibleNow;
+
+    if (_isVisible) {
+      _initIfNeeded();
+      return;
+    }
+
+    final controller = _controller;
+    if (controller != null && controller.value.isPlaying) {
+      controller.pause();
+      if (mounted) {
+        setState(() {});
+      }
     }
   }
 
@@ -83,6 +110,14 @@ class _ChatVideoMediaState extends State<ChatVideoMedia> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppSemanticColors>()!;
 
+    return VisibilityDetector(
+      key: Key('chat-video-${widget.videoUrl}'),
+      onVisibilityChanged: _onVisibilityChanged,
+      child: _buildContent(colors),
+    );
+  }
+
+  Widget _buildContent(AppSemanticColors colors) {
     if (_hasError) {
       return _MediaErrorCard(colors: colors);
     }
@@ -96,7 +131,7 @@ class _ChatVideoMediaState extends State<ChatVideoMedia> {
 
     final controller = _controller!;
     return GestureDetector(
-      onTap: _toggleMute,
+      onTap: _togglePlayPause,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Stack(
@@ -104,23 +139,31 @@ class _ChatVideoMediaState extends State<ChatVideoMedia> {
           children: [
             ColoredBox(
               color: colors.backgroundInverse,
-              child: ClipRect(
-                child: FittedBox(
-                  fit: BoxFit.cover,
-                  child: SizedBox(
-                    width: controller.value.size.width,
-                    height: controller.value.size.height,
-                    child: VideoPlayer(controller),
-                  ),
+              child: Center(
+                child: AspectRatio(
+                  aspectRatio: controller.value.aspectRatio > 0
+                      ? controller.value.aspectRatio
+                      : 16 / 9,
+                  child: VideoPlayer(controller),
                 ),
               ),
             ),
-            if (_isMuted)
+            if (!controller.value.isPlaying)
               Center(
+                child: Icon(
+                  Icons.play_circle_filled_rounded,
+                  color: colors.textInverse,
+                  size: 56,
+                ),
+              ),
+            if (_isMuted && controller.value.isPlaying)
+              Positioned(
+                top: 12,
+                right: 12,
                 child: Icon(
                   Icons.volume_off_rounded,
                   color: colors.textInverse,
-                  size: 40,
+                  size: 24,
                 ),
               ),
             Positioned(

@@ -26,6 +26,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
   final TextEditingController _tagController = TextEditingController();
   List<PlatformFile> _selectedFiles = [];
   final List<String> _selectedTags = [];
+  bool _isSubmittingPost = false;
 
   @override
   void dispose() {
@@ -35,6 +36,8 @@ class _CreatePostPageState extends State<CreatePostPage> {
   }
 
   void _onPost() {
+    if (_isSubmittingPost) return;
+
     if (_contentController.text.trim().isEmpty && _selectedFiles.isEmpty) {
       AppToast.showWarning(context, 'Please enter some content or add media');
       return;
@@ -44,6 +47,10 @@ class _CreatePostPageState extends State<CreatePostPage> {
     final fullContent = _selectedTags.isEmpty
         ? content
         : '$content\n\n${_selectedTags.map((t) => '#$t').join(' ')}';
+
+    setState(() {
+      _isSubmittingPost = true;
+    });
 
     context.read<PostBloc>().add(
       PostCreatePostEvent(content: fullContent, media: _selectedFiles),
@@ -122,11 +129,16 @@ class _CreatePostPageState extends State<CreatePostPage> {
           AppToast.showSuccess(context, 'Post created successfully!');
           context.pop();
         } else if (state is PostFailure) {
+          if (_isSubmittingPost && mounted) {
+            setState(() {
+              _isSubmittingPost = false;
+            });
+          }
           AppToast.showError(context, state.message);
         }
       },
       builder: (context, state) {
-        final isLoading = state is PostLoading;
+        final isLoading = state is PostLoading || _isSubmittingPost;
 
         return Scaffold(
           appBar: CreatePostAppBar(onPost: _onPost, isLoading: isLoading),

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:conet_app/core/theme/theme.dart';
+import 'package:conet_app/core/utils/media_cache_manager.dart';
 import 'package:conet_app/feature/post/presentation/pages/post_image_viewer_page.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -38,7 +39,10 @@ class PostImageMedia extends StatelessWidget {
         children: [
           CachedNetworkImage(
             imageUrl: imageUrl,
+            cacheManager: MediaCacheManager.instance,
             fit: BoxFit.cover,
+            maxWidthDiskCache: 1200,
+            maxHeightDiskCache: 1200,
             placeholder: (context, url) =>
                 Container(color: semantic.backgroundTertiary),
             errorWidget: (context, url, error) => Container(

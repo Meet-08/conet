@@ -142,17 +142,46 @@ class PostBloc extends Bloc<PostEvent, PostState> {
       media: event.media,
     );
 
-    result.fold((failure) => emit(PostFailure(failure.message)), (post) {
-      final currentState = state is PostLoaded ? state as PostLoaded : null;
-      final currentPosts = currentState?.posts ?? <Post>[];
-      emit(
-        PostLoaded(
-          [post, ...currentPosts],
-          recentlyCreated: true,
-          bookmarkedPostIds: currentState?.bookmarkedPostIds ?? const {},
-        ),
-      );
+    String? failureMessage;
+    Post? createdPost;
+    result.fold(
+      (failure) => failureMessage = failure.message,
+      (post) => createdPost = post,
+    );
+
+    if (failureMessage != null) {
+      emit(PostFailure(failureMessage!));
+      return;
+    }
+
+    if (createdPost == null) return;
+
+    final currentState = state is PostLoaded ? state as PostLoaded : null;
+    final currentPosts = currentState?.posts ?? const <Post>[];
+
+    final feedResult = await _getPosts(page: 1, limit: 20);
+    List<Post> mergedPosts = [
+      createdPost!,
+      ...currentPosts.where((post) => post.id != createdPost!.id),
+    ];
+
+    feedResult.fold((_) {}, (posts) {
+      mergedPosts = [
+        createdPost!,
+        ...posts.where((post) => post.id != createdPost!.id),
+      ];
     });
+
+    final bookmarkedIds =
+        currentState?.bookmarkedPostIds ?? await _loadBookmarkedIds();
+
+    emit(
+      PostLoaded(
+        mergedPosts,
+        recentlyCreated: true,
+        bookmarkedPostIds: bookmarkedIds,
+      ),
+    );
   }
 
   Future<void> _onDeletePost(
