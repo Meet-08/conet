@@ -64,6 +64,7 @@ class _FeedPageState extends State<FeedPage> {
               },
               child: ListView.builder(
                 controller: _scrollController,
+                cacheExtent: 400,
                 itemCount: posts.length,
                 itemBuilder: (context, index) {
                   return PostCard(post: posts[index]);

@@ -1,5 +1,7 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/theme/app_typography.dart';
+import 'package:conet_app/core/utils/media_cache_manager.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -58,22 +60,22 @@ class _ImageViewerPageState extends State<ImageViewerPage> {
                 child: InteractiveViewer(
                   minScale: 0.5,
                   maxScale: 4.0,
-                  child: Image.network(
-                    widget.imageUrls[index],
+                  child: CachedNetworkImage(
+                    imageUrl: widget.imageUrls[index],
+                    cacheManager: MediaCacheManager.instance,
                     fit: BoxFit.contain,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
+                    progressIndicatorBuilder: (context, _, downloadProgress) {
                       return Center(
                         child: Loader(
                           color: colors.textInverse,
-                          value: loadingProgress.expectedTotalBytes != null
-                              ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
+                          value: downloadProgress.totalSize != null
+                              ? downloadProgress.downloaded /
+                                    downloadProgress.totalSize!
                               : null,
                         ),
                       );
                     },
-                    errorBuilder: (context, error, stackTrace) {
+                    errorWidget: (context, _, error) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
