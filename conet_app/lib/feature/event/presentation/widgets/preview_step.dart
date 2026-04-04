@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/theme/app_tokens.dart';
+import 'package:conet_app/core/utils/quill_content_utils.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -118,7 +119,9 @@ class _PreviewStepState extends State<PreviewStep> {
     final isPaid = widget.formData['ticket_price_type'] == 'PAID';
     final price = widget.formData['price'];
     final imageFile = widget.formData['event_image_file'] as PlatformFile?;
-    final about = widget.formData['about'] as String? ?? '';
+    final about = quillPlainTextFromString(
+      widget.formData['about'] as String? ?? '',
+    );
     final eligibility = widget.formData['eligibility'] as String? ?? '';
     final additionalNote = widget.formData['additional_note'] as String? ?? '';
     final maxParticipant = widget.formData['max_participant'];

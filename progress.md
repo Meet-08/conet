@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-03-30
+> Last updated: 2026-04-05
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -50,6 +50,7 @@
 - **Liked Posts** — View all posts liked by the current user
 - **Typed Media Rendering** — Post card renders image (tap-to-view), muted autoplay video (tap to unmute), audio banner controls, and per-media download option
 - **Create Post Mixed Media Picker** — Post creation accepts mixed media attachments (image/video/audio/doc), shows typed previews, and supports per-item removal
+- **Create Post Rich Text Controls** — Composer formatting buttons now apply Quill styles (bold, italic, bullet list) while preserving existing layout
 
 **Use Cases:** `PostCreate`, `PostDelete`, `PostGetPosts`, `PostGetUserPosts`, `PostGetPost`, `PostGetPostComments`, `PostWatchPostComments`, `PostToggleLike`, `PostComment`, `PostBookmark`, `PostRemoveBookmark`, `PostGetBookmarks`, `PostGetLikedPosts`, `PostIsBookmarked`
 **Backend Endpoints:** `GET/POST /posts`, `GET/PUT/DELETE /posts/:id`, `GET /posts/liked`, `GET /posts/user/:userId`, `GET /posts/:id/comments`, `PUT /posts/like/:id`, `POST /posts/comment/:id`, `PUT/DELETE /posts/:postId/comment/:commentId`
@@ -198,6 +199,7 @@
 ### Events
 
 - **Create Event** — Organizer can create a new event as draft or publish it immediately, with optional activity timeline and prizes
+- **Create Event About Rich Text Controls** — About editor toolbar now applies Quill styles (bold, italic, underline, ordered/unordered list, links)
 - **Create Event Co-host Picker** — Organizer can search users and attach co-hosts during create flow, then app syncs co-hosts after draft creation
 - **Update Event** — Organizer can edit all event fields, activity, and prizes (wholesale replace)
 - **Publish Event** — Organizer promotes a draft event to published status

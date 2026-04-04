@@ -2,6 +2,19 @@ import prisma from "../config/prisma.js";
 
 // ─── Shared mappers ──────────────────────────────────────────────────────────
 
+export const EMPTY_QUILL_DELTA_JSON = '{"ops":[]}';
+
+export const jsonFieldToString = (value, fallback = "") => {
+  if (value == null) return fallback;
+  if (typeof value === "string") return value;
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return fallback;
+  }
+};
+
 export const mapCohost = (c) => ({
   id: c.id,
   user_id: c.user_id,
@@ -17,7 +30,7 @@ export const mapEvent = (event, viewerId = null) => ({
   organizer: event.users ?? null,
   title: event.title,
   category: event.category,
-  about: event.about ?? null,
+  about: jsonFieldToString(event.about, EMPTY_QUILL_DELTA_JSON),
   event_date: event.event_date,
   start_time: event.start_time,
   end_time: event.end_time,

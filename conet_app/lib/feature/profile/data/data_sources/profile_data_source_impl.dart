@@ -1,9 +1,9 @@
 import 'package:conet_app/core/api/dio_client.dart';
+import 'package:conet_app/core/common/data_sources/file_upload_data_source.dart';
 import 'package:conet_app/core/common/entities/social_links.dart';
 import 'package:conet_app/core/error/error_handler.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/auth/data/model/user_model.dart';
-import 'package:conet_app/feature/post/data/data_sources/file_data_source.dart';
 import 'package:conet_app/feature/profile/data/data_sources/profile_data_source.dart';
 import 'package:conet_app/feature/profile/data/models/user_profile_model.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
@@ -12,11 +12,11 @@ import 'package:file_picker/file_picker.dart';
 import 'package:uuid/uuid.dart';
 
 class ProfileDataSourceImpl implements ProfileDataSource {
-  final FileDataSource fileDataSource;
+  final FileUploadDataSource fileUploadDataSource;
   final DioClient dioClient;
 
   ProfileDataSourceImpl({
-    required this.fileDataSource,
+    required this.fileUploadDataSource,
     required this.dioClient,
   });
 
@@ -144,17 +144,19 @@ class ProfileDataSourceImpl implements ProfileDataSource {
 
       await Future.wait([
         if (profilePic != null)
-          fileDataSource
+          fileUploadDataSource
               .uploadFiles(
                 files: [profilePic],
-                postId: "profile_${const Uuid().v4()}",
+                bucket: 'profile',
+                folder: 'profile_${const Uuid().v4()}',
               )
               .then((urls) => profilePicUrl = urls.first),
         if (bannerImage != null)
-          fileDataSource
+          fileUploadDataSource
               .uploadFiles(
                 files: [bannerImage],
-                postId: "banner_${const Uuid().v4()}",
+                bucket: 'profile',
+                folder: 'banner_${const Uuid().v4()}',
               )
               .then((urls) => bannerUrl = urls.first),
       ]);

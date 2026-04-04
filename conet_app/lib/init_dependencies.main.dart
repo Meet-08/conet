@@ -269,7 +269,7 @@ void _initProfile() {
     // )
     ..registerLazySingleton<ProfileDataSource>(
       () => ProfileDataSourceImpl(
-        fileDataSource: serviceLocator(),
+        fileUploadDataSource: serviceLocator(),
         dioClient: serviceLocator(),
       ),
     )

@@ -692,7 +692,6 @@ export const listPublishedEventsService = async ({
     ...(search && {
       OR: [
         { title: { contains: search, mode: "insensitive" } },
-        { about: { contains: search, mode: "insensitive" } },
         { category: { contains: search, mode: "insensitive" } },
       ],
     }),

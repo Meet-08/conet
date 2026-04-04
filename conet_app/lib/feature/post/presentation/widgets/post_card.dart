@@ -2,6 +2,8 @@ import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/date_formatter.dart';
 import 'package:conet_app/core/utils/media_type_utils.dart';
 import 'package:conet_app/core/utils/post_share_helper.dart';
+import 'package:conet_app/core/utils/quill_content_utils.dart';
+import 'package:conet_app/core/widgets/quill_read_only_view.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/media/post_media_item.dart';
@@ -76,8 +78,8 @@ class _PostCardState extends State<PostCard> {
     final user = widget.post.user;
     final displayName = _buildDisplayName();
     final handle = _buildHandle();
-    final tags = _extractTags(widget.post.content);
-    final displayedContent = _removeTags(widget.post.content);
+    final renderedContent = quillPlainTextFromString(widget.post.content);
+    final tags = quillTagsFromString(widget.post.content);
     final imageUrlsForViewer = widget.post.mediaUrls
         .where((url) => getMediaType(url) == MediaType.image)
         .toList();
@@ -93,7 +95,8 @@ class _PostCardState extends State<PostCard> {
     final mediaAspectRatio = switch (currentMediaType) {
       MediaType.image || MediaType.video => 4 / 3,
       MediaType.audio => 16 / 7,
-      MediaType.document || MediaType.unknown => 16 / 4,
+      MediaType.document => 16 / 4,
+      MediaType.unknown => 4 / 3,
     };
 
     return InkWell(
@@ -186,16 +189,9 @@ class _PostCardState extends State<PostCard> {
               ],
             ),
 
-            if (displayedContent.isNotEmpty) ...[
+            if (renderedContent.isNotEmpty) ...[
               const SizedBox(height: 11),
-              Text(
-                displayedContent,
-                style: textTheme.bodyMedium?.copyWith(
-                  height: 1.42,
-                  color: semantic.textPrimary,
-                  letterSpacing: -0.05,
-                ),
-              ),
+              QuillReadOnlyView(deltaJson: widget.post.content),
             ],
 
             if (widget.post.mediaUrls.isNotEmpty) ...[
@@ -335,7 +331,7 @@ class _PostCardState extends State<PostCard> {
                     await PostShareHelper.sharePost(
                       postId: widget.post.id,
                       username: widget.post.user.username,
-                      content: widget.post.content,
+                      content: renderedContent,
                     );
                   },
                   child: Padding(
@@ -457,16 +453,6 @@ class _PostCardState extends State<PostCard> {
         .replaceAll(RegExp(r'[^a-z0-9_]'), '');
 
     return fallback.isEmpty ? '@user' : '@$fallback';
-  }
-
-  List<String> _extractTags(String content) {
-    final regex = RegExp(r'\B#\w\w+');
-    final matches = regex.allMatches(content);
-    return matches.map((match) => match.group(0)!).toList();
-  }
-
-  String _removeTags(String content) {
-    return content.replaceAll(RegExp(r'\B#\w\w+'), '').trim();
   }
 }
 

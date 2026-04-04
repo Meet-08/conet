@@ -112,8 +112,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         title: 'Conet App',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.system,
+        // darkTheme: AppTheme.dark,
+        // themeMode: ThemeMode.system,
         routerConfig: AppRouter.router,
       ),
     );

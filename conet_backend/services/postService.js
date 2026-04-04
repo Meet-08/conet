@@ -1,12 +1,13 @@
 import prisma from "../config/prisma.js";
 import notificationService from "./notificationService.js";
+import { EMPTY_QUILL_DELTA_JSON, jsonFieldToString } from "./utils.js";
 
 // ─── Shared response mappings ─────────────────────────────────────────────
 
 const mapPost = (post, viewerId = null) => ({
   id: post.id,
   user: post.user,
-  content: post.content ?? "",
+  content: jsonFieldToString(post.content, EMPTY_QUILL_DELTA_JSON),
   media_urls: post.media_urls ?? [],
   like_count: post._count?.post_likes ?? post.like_count ?? 0,
   comment_count: post._count?.post_comments ?? post.comment_count ?? 0,
@@ -40,7 +41,7 @@ export const createPostService = async (
     include: { user: true },
   });
 
-  return post;
+  return mapPost(post, userId);
 };
 
 // ─── Get all posts (paginated feed) ──────────────────────────────────────
@@ -208,7 +209,7 @@ export const updatePostService = async (
     include: { user: true },
   });
 
-  return post;
+  return mapPost(post, userId);
 };
 
 // ─── Delete post ─────────────────────────────────────────────────────────

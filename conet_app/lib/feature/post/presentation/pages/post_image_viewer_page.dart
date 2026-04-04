@@ -24,6 +24,12 @@ class _PostImageViewerPageState extends State<PostImageViewerPage> {
   late final PageController _pageController;
   late int _currentIndex;
 
+  String _normalizedUrl(String rawUrl) {
+    final uri = Uri.tryParse(rawUrl.trim());
+    if (uri != null) return uri.toString();
+    return Uri.encodeFull(rawUrl.trim());
+  }
+
   @override
   void initState() {
     super.initState();
@@ -60,7 +66,7 @@ class _PostImageViewerPageState extends State<PostImageViewerPage> {
                   minScale: 0.5,
                   maxScale: 4,
                   child: CachedNetworkImage(
-                    imageUrl: widget.imageUrls[index],
+                    imageUrl: _normalizedUrl(widget.imageUrls[index]),
                     cacheManager: MediaCacheManager.instance,
                     fit: BoxFit.contain,
                     progressIndicatorBuilder: (context, _, downloadProgress) {

@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:conet_app/core/theme/app_tokens.dart';
+import 'package:conet_app/core/utils/quill_content_utils.dart';
 import 'package:conet_app/feature/event/presentation/constants/event_constants.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
@@ -28,6 +31,119 @@ class BasicInfoStep extends StatefulWidget {
 
 class _BasicInfoStepState extends State<BasicInfoStep> {
   PlatformFile? _pickedImage;
+  late QuillController _aboutController;
+  String _lastSerializedAbout = '';
+
+  String _serializedAbout() {
+    return jsonEncode({'ops': _aboutController.document.toDelta().toJson()});
+  }
+
+  QuillController _buildAboutController(String raw) {
+    final document = () {
+      try {
+        return quillDocumentFromString(raw);
+      } catch (_) {
+        return Document();
+      }
+    }();
+    return QuillController(
+      document: document,
+      selection: const TextSelection.collapsed(offset: 0),
+    );
+  }
+
+  void _onAboutChanged() {
+    final serialized = _serializedAbout();
+    if (serialized == _lastSerializedAbout) return;
+    _lastSerializedAbout = serialized;
+    _update({'about': serialized});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _aboutController = _buildAboutController(
+      widget.formData['about'] as String? ?? '',
+    );
+    _lastSerializedAbout = _serializedAbout();
+    _aboutController.addListener(_onAboutChanged);
+
+    if ((widget.formData['about'] as String? ?? '').isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _update({'about': _serializedAbout()});
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant BasicInfoStep oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final incoming = widget.formData['about'] as String? ?? '';
+    final current = _serializedAbout();
+    if (incoming.isEmpty || incoming == current) return;
+
+    _aboutController
+      ..removeListener(_onAboutChanged)
+      ..dispose();
+    _aboutController = _buildAboutController(incoming);
+    _lastSerializedAbout = _serializedAbout();
+    _aboutController.addListener(_onAboutChanged);
+  }
+
+  @override
+  void dispose() {
+    _aboutController
+      ..removeListener(_onAboutChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _toggleInlineStyle(Attribute attribute) {
+    final style = _aboutController.getSelectionStyle();
+    if (style.attributes.containsKey(attribute.key)) {
+      _aboutController.formatSelection(Attribute.clone(attribute, null));
+      return;
+    }
+    _aboutController.formatSelection(attribute);
+  }
+
+  void _toggleList(Attribute listAttribute) {
+    final style = _aboutController.getSelectionStyle();
+    final currentList = style.attributes[Attribute.list.key];
+    if (currentList?.value == listAttribute.value) {
+      _aboutController.formatSelection(Attribute.clone(listAttribute, null));
+      return;
+    }
+    _aboutController.formatSelection(listAttribute);
+  }
+
+  Future<void> _setLink() async {
+    final linkController = TextEditingController();
+    final url = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add Link'),
+        content: TextField(
+          controller: linkController,
+          keyboardType: TextInputType.url,
+          autofocus: true,
+          decoration: _inputDecoration(hint: 'https://example.com'),
+        ),
+        actions: [
+          TextButton(onPressed: () => ctx.pop(), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => ctx.pop(linkController.text.trim()),
+            child: const Text('Apply'),
+          ),
+        ],
+      ),
+    );
+    linkController.dispose();
+
+    if (url == null || url.isEmpty) return;
+    _aboutController.formatSelection(LinkAttribute(url));
+  }
 
   void _update(Map<String, dynamic> updates) {
     widget.onFormDataChange({...widget.formData, ...updates});
@@ -254,36 +370,68 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
                       bottom: BorderSide(color: colorScheme.outlineVariant),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      _ToolbarAction(label: 'B', onTap: () {}, isStrong: true),
-                      _ToolbarAction(label: 'I', onTap: () {}, isItalic: true),
-                      _ToolbarAction(
-                        label: 'U',
-                        onTap: () {},
-                        isUnderlined: true,
-                      ),
-                      _ToolbarIcon(icon: FontAwesomeIcons.listUl, onTap: () {}),
-                      _ToolbarIcon(icon: FontAwesomeIcons.listOl, onTap: () {}),
-                      _ToolbarIcon(icon: FontAwesomeIcons.link, onTap: () {}),
-                    ],
+                  child: AnimatedBuilder(
+                    animation: _aboutController,
+                    builder: (context, _) {
+                      final style = _aboutController.getSelectionStyle();
+                      final listAttr = style.attributes[Attribute.list.key];
+                      return Row(
+                        children: [
+                          _ToolbarAction(
+                            label: 'B',
+                            onTap: () => _toggleInlineStyle(Attribute.bold),
+                            isStrong: true,
+                            isActive: style.attributes.containsKey(
+                              Attribute.bold.key,
+                            ),
+                          ),
+                          _ToolbarAction(
+                            label: 'I',
+                            onTap: () => _toggleInlineStyle(Attribute.italic),
+                            isItalic: true,
+                            isActive: style.attributes.containsKey(
+                              Attribute.italic.key,
+                            ),
+                          ),
+                          _ToolbarAction(
+                            label: 'U',
+                            onTap: () =>
+                                _toggleInlineStyle(Attribute.underline),
+                            isUnderlined: true,
+                            isActive: style.attributes.containsKey(
+                              Attribute.underline.key,
+                            ),
+                          ),
+                          _ToolbarIcon(
+                            icon: FontAwesomeIcons.listUl,
+                            onTap: () => _toggleList(Attribute.ul),
+                            isActive: listAttr?.value == Attribute.ul.value,
+                          ),
+                          _ToolbarIcon(
+                            icon: FontAwesomeIcons.listOl,
+                            onTap: () => _toggleList(Attribute.ol),
+                            isActive: listAttr?.value == Attribute.ol.value,
+                          ),
+                          _ToolbarIcon(
+                            icon: FontAwesomeIcons.link,
+                            onTap: _setLink,
+                            isActive: style.attributes.containsKey(
+                              Attribute.link.key,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ),
-                TextFormField(
-                  initialValue: widget.formData['about'] as String? ?? '',
-                  onChanged: (v) => _update({'about': v}),
-                  maxLength: 1200,
-                  minLines: 6,
-                  maxLines: 8,
-                  decoration: const InputDecoration(
-                    hintText:
+                QuillEditor.basic(
+                  controller: _aboutController,
+                  config: const QuillEditorConfig(
+                    minHeight: 140,
+                    maxHeight: 220,
+                    placeholder:
                         'What is this event about? Mention key highlights...',
-                    border: InputBorder.none,
-                    counterText: '',
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 12,
-                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   ),
                 ),
               ],
@@ -607,6 +755,7 @@ class _ToolbarAction extends StatelessWidget {
   final bool isStrong;
   final bool isItalic;
   final bool isUnderlined;
+  final bool isActive;
 
   const _ToolbarAction({
     required this.label,
@@ -614,21 +763,29 @@ class _ToolbarAction extends StatelessWidget {
     this.isStrong = false,
     this.isItalic = false,
     this.isUnderlined = false,
+    this.isActive = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final style = Theme.of(context).textTheme.labelLarge?.copyWith(
       fontWeight: isStrong ? FontWeight.w800 : FontWeight.w600,
       fontStyle: isItalic ? FontStyle.italic : FontStyle.normal,
       decoration: isUnderlined ? TextDecoration.underline : TextDecoration.none,
+      color: isActive ? colors.onPrimaryContainer : colors.onSurface,
     );
 
     return InkWell(
       onTap: onTap,
       borderRadius: AppRadius.xsAll,
-      child: Padding(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.xsAll,
+          color: isActive ? colors.primaryContainer : Colors.transparent,
+        ),
         child: Text(label, style: style),
       ),
     );
@@ -638,16 +795,33 @@ class _ToolbarAction extends StatelessWidget {
 class _ToolbarIcon extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
+  final bool isActive;
 
-  const _ToolbarIcon({required this.icon, required this.onTap});
+  const _ToolbarIcon({
+    required this.icon,
+    required this.onTap,
+    this.isActive = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: onTap,
-      icon: FaIcon(icon, size: 13),
-      visualDensity: VisualDensity.compact,
-      splashRadius: 16,
+    final colors = Theme.of(context).colorScheme;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 140),
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.xsAll,
+        color: isActive ? colors.primaryContainer : Colors.transparent,
+      ),
+      child: IconButton(
+        onPressed: onTap,
+        icon: FaIcon(
+          icon,
+          size: 13,
+          color: isActive ? colors.onPrimaryContainer : colors.onSurface,
+        ),
+        visualDensity: VisualDensity.compact,
+        splashRadius: 16,
+      ),
     );
   }
 }

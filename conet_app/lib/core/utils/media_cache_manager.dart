@@ -6,8 +6,8 @@ class MediaCacheManager {
   static final CacheManager instance = CacheManager(
     Config(
       _cacheKey,
-      stalePeriod: const Duration(days: 30),
-      maxNrOfCacheObjects: 800,
+      stalePeriod: const Duration(days: 14),
+      maxNrOfCacheObjects: 300,
     ),
   );
 }

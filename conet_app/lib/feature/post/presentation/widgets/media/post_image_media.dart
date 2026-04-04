@@ -28,9 +28,16 @@ class PostImageMedia extends StatelessWidget {
     );
   }
 
+  String _normalizedUrl(String rawUrl) {
+    final uri = Uri.tryParse(rawUrl.trim());
+    if (uri != null) return uri.toString();
+    return Uri.encodeFull(rawUrl.trim());
+  }
+
   @override
   Widget build(BuildContext context) {
     final semantic = context.semanticColors;
+    final normalizedImageUrl = _normalizedUrl(imageUrl);
 
     return GestureDetector(
       onTap: () => _openViewer(context),
@@ -38,11 +45,9 @@ class PostImageMedia extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           CachedNetworkImage(
-            imageUrl: imageUrl,
+            imageUrl: normalizedImageUrl,
             cacheManager: MediaCacheManager.instance,
             fit: BoxFit.cover,
-            maxWidthDiskCache: 1200,
-            maxHeightDiskCache: 1200,
             placeholder: (context, url) =>
                 Container(color: semantic.backgroundTertiary),
             errorWidget: (context, url, error) => Container(

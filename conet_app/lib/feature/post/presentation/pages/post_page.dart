@@ -1,5 +1,7 @@
 import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/post_share_helper.dart';
+import 'package:conet_app/core/utils/quill_content_utils.dart';
+import 'package:conet_app/core/widgets/quill_read_only_view.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -23,7 +25,7 @@ class PostPage extends StatelessWidget {
               await PostShareHelper.sharePost(
                 postId: post.id,
                 username: post.user.username,
-                content: post.content,
+                content: quillPlainTextFromString(post.content),
               );
             },
             icon: const FaIcon(FontAwesomeIcons.shareNodes, size: 18),
@@ -36,9 +38,11 @@ class PostPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              post.content,
-              style: textTheme.bodyLarge?.copyWith(color: semantic.textPrimary),
+              'Post content',
+              style: textTheme.labelMedium?.copyWith(color: semantic.textSecondary),
             ),
+            const SizedBox(height: 8),
+            QuillReadOnlyView(deltaJson: post.content),
             const SizedBox(height: 16),
             Text(
               'By ${post.user.username}',

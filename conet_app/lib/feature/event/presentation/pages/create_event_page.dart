@@ -1,4 +1,5 @@
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/utils/quill_content_utils.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/event/domain/entities/event_activity.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
@@ -91,7 +92,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
         if (!isOnline && (_formData['location'] as String).trim().isEmpty) {
           return 'Please provide a location';
         }
-        if ((_formData['about'] as String).trim().isEmpty) {
+        if (quillPlainTextFromString(
+          _formData['about'] as String? ?? '',
+        ).isEmpty) {
           return 'Please add an event description';
         }
         return null;
@@ -215,7 +218,11 @@ class _CreateEventPageState extends State<CreateEventPage> {
       category: _formData['category'] as String,
       about: (_formData['about'] as String?)?.trim().isEmpty == true
           ? null
-          : _formData['about'] as String?,
+          : (quillPlainTextFromString(
+                  _formData['about'] as String? ?? '',
+                ).isEmpty
+                ? null
+                : _formData['about'] as String?),
       eventDate: date,
       startTime: todToDateTime(startTod),
       endTime: todToDateTime(endTod),

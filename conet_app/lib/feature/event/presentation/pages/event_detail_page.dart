@@ -1,5 +1,7 @@
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/utils/quill_content_utils.dart';
 import 'package:conet_app/core/widgets/loader.dart';
+import 'package:conet_app/core/widgets/quill_read_only_view.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_activity.dart';
 import 'package:conet_app/feature/event/domain/entities/event_faq.dart';
@@ -21,7 +23,6 @@ class EventDetailPage extends StatefulWidget {
 
 class _EventDetailPageState extends State<EventDetailPage> {
   Event? _event;
-  bool _aboutExpanded = false;
   int? _expandedFaqIndex;
 
   @override
@@ -141,15 +142,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
               children: [
                 _HeaderCard(event: event),
                 const SizedBox(height: 16),
-                _AboutSection(
-                  event: event,
-                  expanded: _aboutExpanded,
-                  onToggleExpanded: () {
-                    setState(() {
-                      _aboutExpanded = !_aboutExpanded;
-                    });
-                  },
-                ),
+                _AboutSection(event: event),
                 if (event.activities.isNotEmpty) ...[
                   const SizedBox(height: 20),
                   _ScheduleSection(activities: event.activities),
@@ -415,19 +408,14 @@ class _InfoTile extends StatelessWidget {
 
 class _AboutSection extends StatelessWidget {
   final Event event;
-  final bool expanded;
-  final VoidCallback onToggleExpanded;
 
-  const _AboutSection({
-    required this.event,
-    required this.expanded,
-    required this.onToggleExpanded,
-  });
+  const _AboutSection({required this.event});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final aboutText = (event.about ?? '').trim();
+    final aboutDelta = event.about ?? '';
+    final aboutText = quillPlainTextFromString(aboutDelta);
 
     if (aboutText.isEmpty) return const SizedBox.shrink();
 
@@ -441,16 +429,7 @@ class _AboutSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          expanded ? aboutText : _truncate(aboutText, 180),
-          style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
-        ),
-        if (aboutText.length > 180)
-          TextButton(
-            onPressed: onToggleExpanded,
-            style: TextButton.styleFrom(padding: EdgeInsets.zero),
-            child: Text(expanded ? 'Read less' : 'Read more'),
-          ),
+        QuillReadOnlyView(deltaJson: aboutDelta),
       ],
     );
   }
@@ -856,11 +835,6 @@ String? _teamSizeLabel(Event event) {
   if (min != null && max != null) return '$min-$max members';
   if (min != null) return 'Minimum $min members';
   return 'Up to $max members';
-}
-
-String _truncate(String text, int maxChars) {
-  if (text.length <= maxChars) return text;
-  return '${text.substring(0, maxChars).trim()}...';
 }
 
 String _initials(String name) {

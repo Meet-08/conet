@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/utils/pick_files.dart';
@@ -11,6 +13,7 @@ import 'package:conet_app/feature/post/presentation/widgets/create_post_text_fie
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:go_router/go_router.dart';
 
 class CreatePostPage extends StatefulWidget {
@@ -22,7 +25,7 @@ class CreatePostPage extends StatefulWidget {
 
 class _CreatePostPageState extends State<CreatePostPage> {
   static const int _maxMediaCount = 10;
-  final TextEditingController _contentController = TextEditingController();
+  final QuillController _contentController = QuillController.basic();
   final TextEditingController _tagController = TextEditingController();
   List<PlatformFile> _selectedFiles = [];
   final List<String> _selectedTags = [];
@@ -38,15 +41,16 @@ class _CreatePostPageState extends State<CreatePostPage> {
   void _onPost() {
     if (_isSubmittingPost) return;
 
-    if (_contentController.text.trim().isEmpty && _selectedFiles.isEmpty) {
+    if (_contentController.document.toPlainText().trim().isEmpty &&
+        _selectedFiles.isEmpty) {
       AppToast.showWarning(context, 'Please enter some content or add media');
       return;
     }
 
-    final content = _contentController.text;
-    final fullContent = _selectedTags.isEmpty
-        ? content
-        : '$content\n\n${_selectedTags.map((t) => '#$t').join(' ')}';
+    final fullContent = jsonEncode({
+      'ops': _contentController.document.toDelta().toJson(),
+      'tags': _selectedTags,
+    });
 
     setState(() {
       _isSubmittingPost = true;
@@ -55,6 +59,25 @@ class _CreatePostPageState extends State<CreatePostPage> {
     context.read<PostBloc>().add(
       PostCreatePostEvent(content: fullContent, media: _selectedFiles),
     );
+  }
+
+  void _toggleInlineStyle(Attribute attribute) {
+    final style = _contentController.getSelectionStyle();
+    if (style.attributes.containsKey(attribute.key)) {
+      _contentController.formatSelection(Attribute.clone(attribute, null));
+      return;
+    }
+    _contentController.formatSelection(attribute);
+  }
+
+  void _toggleBulletList() {
+    final style = _contentController.getSelectionStyle();
+    final currentList = style.attributes[Attribute.list.key];
+    if (currentList?.value == Attribute.ul.value) {
+      _contentController.formatSelection(Attribute.clone(Attribute.ul, null));
+      return;
+    }
+    _contentController.formatSelection(Attribute.ul);
   }
 
   Future<void> _pickFiles() async {
@@ -150,7 +173,26 @@ class _CreatePostPageState extends State<CreatePostPage> {
                 CreatePostTextField(controller: _contentController),
                 const SizedBox(height: 12),
                 _selectedMediaSection(),
-                CreatePostActionsRow(onMediaTap: _pickFiles),
+                AnimatedBuilder(
+                  animation: _contentController,
+                  builder: (context, _) {
+                    final style = _contentController.getSelectionStyle();
+                    final currentList = style.attributes[Attribute.list.key];
+                    return CreatePostActionsRow(
+                      onMediaTap: _pickFiles,
+                      onBoldTap: () => _toggleInlineStyle(Attribute.bold),
+                      onItalicTap: () => _toggleInlineStyle(Attribute.italic),
+                      onListTap: _toggleBulletList,
+                      isBoldActive: style.attributes.containsKey(
+                        Attribute.bold.key,
+                      ),
+                      isItalicActive: style.attributes.containsKey(
+                        Attribute.italic.key,
+                      ),
+                      isListActive: currentList?.value == Attribute.ul.value,
+                    );
+                  },
+                ),
                 const SizedBox(height: 20),
                 CreatePostAddTagsSection(
                   tags: _selectedTags,

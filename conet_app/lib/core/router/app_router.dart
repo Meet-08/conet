@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/common/entities/social_links.dart';
 import 'package:conet_app/core/widgets/main_scaffold.dart';
 import 'package:conet_app/core/widgets/splash_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/add_details_page.dart';
@@ -27,6 +28,7 @@ import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/pages/create_post_page.dart';
 import 'package:conet_app/feature/post/presentation/pages/feed_page.dart';
 import 'package:conet_app/feature/post/presentation/pages/post_detail_page.dart';
+import 'package:conet_app/feature/profile/domain/entities/user_academics.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:conet_app/feature/profile/presentation/pages/edit_about_me_page.dart';
 import 'package:conet_app/feature/profile/presentation/pages/edit_academic_info_page.dart';
@@ -297,14 +299,10 @@ class AppRouter {
             path: ':section',
             builder: (_, state) {
               final section = state.pathParameters['section'];
-              final userProfile = state.extra as UserProfile?;
+              final userProfile = _decodeUserProfileExtra(state.extra);
 
               if (userProfile == null) {
-                return const Scaffold(
-                  body: Center(
-                    child: Text("Error: No user profile data provided"),
-                  ),
-                );
+                return const EditProfilePage();
               }
 
               return switch (section) {
@@ -396,6 +394,114 @@ class AppRouter {
         ],
       ),
     ],
+  );
+}
+
+UserProfile? _decodeUserProfileExtra(Object? extra) {
+  if (extra is UserProfile) return extra;
+  if (extra is! Map<String, dynamic>) return null;
+
+  final id = extra['id'];
+  final email = extra['email'];
+  if (id is! String || id.isEmpty || email is! String || email.isEmpty) {
+    return null;
+  }
+
+  DateTime? parseDate(dynamic value) {
+    if (value is String && value.isNotEmpty) {
+      return DateTime.tryParse(value);
+    }
+    return null;
+  }
+
+  int? parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '');
+  }
+
+  final rawAcademics = extra['academics'];
+  final academics = <UserAcademics>[];
+  if (rawAcademics is List) {
+    for (final item in rawAcademics) {
+      if (item is! Map<String, dynamic>) continue;
+      final academicId = item['id']?.toString() ?? '';
+      final userId = item['userId']?.toString() ?? item['user_id']?.toString();
+      final collegeName =
+          item['collegeName']?.toString() ?? item['college_name']?.toString();
+      final course = item['course']?.toString();
+      final createdAt = parseDate(item['createdAt'] ?? item['created_at']);
+
+      if (academicId.isEmpty ||
+          userId == null ||
+          userId.isEmpty ||
+          collegeName == null ||
+          collegeName.isEmpty ||
+          course == null ||
+          course.isEmpty ||
+          createdAt == null) {
+        continue;
+      }
+
+      academics.add(
+        UserAcademics(
+          id: academicId,
+          userId: userId,
+          collegeName: collegeName,
+          degree: item['degree']?.toString(),
+          course: course,
+          major: item['major']?.toString(),
+          startYear: parseInt(item['startYear'] ?? item['start_year']),
+          endYear: parseInt(item['endYear'] ?? item['end_year']),
+          createdAt: createdAt,
+        ),
+      );
+    }
+  }
+
+  final rawSocialLinks = extra['socialLinks'];
+  final socialLinks = <SocialLinks>[];
+  if (rawSocialLinks is List) {
+    for (final item in rawSocialLinks) {
+      if (item is! Map<String, dynamic>) continue;
+      final name = item['name']?.toString();
+      final link = item['link']?.toString();
+      if (name == null || name.isEmpty || link == null || link.isEmpty) {
+        continue;
+      }
+      socialLinks.add(SocialLinks(name: name, link: link));
+    }
+  }
+
+  final rawInterests = extra['interests'];
+  final interests = rawInterests is List
+      ? rawInterests.map((item) => item.toString()).toList(growable: false)
+      : const <String>[];
+
+  return UserProfile(
+    id: id,
+    email: email,
+    firstName:
+        extra['firstName']?.toString() ?? extra['first_name']?.toString(),
+    lastName: extra['lastName']?.toString() ?? extra['last_name']?.toString(),
+    username: extra['username']?.toString(),
+    aboutMe: extra['aboutMe']?.toString() ?? extra['about_me']?.toString(),
+    profilePicUrl:
+        extra['profilePicUrl']?.toString() ??
+        extra['profile_pic_url']?.toString(),
+    bannerImageUrl:
+        extra['bannerImageUrl']?.toString() ??
+        extra['banner_image_url']?.toString(),
+    interests: interests,
+    isVerified: extra['isVerified'] == true || extra['is_verified'] == true,
+    socialLinks: socialLinks,
+    academics: academics,
+    dateOfBirth: parseDate(extra['dateOfBirth'] ?? extra['date_of_birth']),
+    followerCount:
+        parseInt(extra['followerCount'] ?? extra['follower_count']) ?? 0,
+    followingCount:
+        parseInt(extra['followingCount'] ?? extra['following_count']) ?? 0,
+    isFollowing: extra['isFollowing'] == true || extra['is_following'] == true,
   );
 }
 

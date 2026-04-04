@@ -33,28 +33,35 @@ class SupabaseFileUploadDataSource implements FileUploadDataSource {
 
   SupabaseFileUploadDataSource({required this.supabaseClient});
 
-  bool _isImageFileName(String fileName) {
-    final dotIndex = fileName.lastIndexOf('.');
-    if (dotIndex < 0) return false;
+  String? _extensionFromFile(PlatformFile file) {
+    final fromField = file.extension?.trim().toLowerCase();
+    if (fromField != null && fromField.isNotEmpty) return fromField;
 
-    final ext = fileName.substring(dotIndex + 1).toLowerCase();
-    return _imageExtensions.contains(ext);
+    final dotIndex = file.name.lastIndexOf('.');
+    if (dotIndex < 0 || dotIndex == file.name.length - 1) return null;
+    return file.name.substring(dotIndex + 1).toLowerCase();
   }
 
-  bool _isVideoFileName(String fileName) {
-    final dotIndex = fileName.lastIndexOf('.');
-    if (dotIndex < 0) return false;
-
-    final ext = fileName.substring(dotIndex + 1).toLowerCase();
-    return _videoExtensions.contains(ext);
+  bool _isImageExtension(String? extension) {
+    if (extension == null || extension.isEmpty) return false;
+    return _imageExtensions.contains(extension);
   }
 
-  CompressFormat _compressFormatFromFileName(String fileName) {
-    final dotIndex = fileName.lastIndexOf('.');
-    if (dotIndex < 0) return CompressFormat.jpeg;
+  bool _isVideoExtension(String? extension) {
+    if (extension == null || extension.isEmpty) return false;
+    return _videoExtensions.contains(extension);
+  }
 
-    final ext = fileName.substring(dotIndex + 1).toLowerCase();
-    return ext == 'png' ? CompressFormat.png : CompressFormat.jpeg;
+  CompressFormat _compressFormatFromExtension(String? extension) {
+    return extension == 'png' ? CompressFormat.png : CompressFormat.jpeg;
+  }
+
+  String _buildStorageFileName(int index, String? extension) {
+    final timestamp = DateTime.now().microsecondsSinceEpoch;
+    if (extension == null || extension.isEmpty) {
+      return 'upload_${timestamp}_$index';
+    }
+    return 'upload_${timestamp}_$index.$extension';
   }
 
   Future<Uint8List?> _readFileBytes(PlatformFile file) async {
@@ -73,12 +80,14 @@ class SupabaseFileUploadDataSource implements FileUploadDataSource {
       return null;
     }
 
+    final extension = _extensionFromFile(file);
+
     final compressed = await FlutterImageCompress.compressWithList(
       inputBytes,
       minWidth: 1920,
       minHeight: 1920,
       quality: 75,
-      format: _compressFormatFromFileName(file.name),
+      format: _compressFormatFromExtension(extension),
       keepExif: true,
     );
 
@@ -139,12 +148,15 @@ class SupabaseFileUploadDataSource implements FileUploadDataSource {
   }) async {
     try {
       final urls = <String>[];
+      var fileIndex = 0;
 
       for (final file in files) {
-        final fileName = file.name;
+        final extension = _extensionFromFile(file);
+        final fileName = _buildStorageFileName(fileIndex, extension);
         final path = '$folder/$fileName';
-        final isImage = _isImageFileName(fileName);
-        final isVideo = _isVideoFileName(fileName);
+        final isImage = _isImageExtension(extension);
+        final isVideo = _isVideoExtension(extension);
+        fileIndex++;
 
         if (isImage) {
           final compressedBytes = await _compressImageBytes(file);

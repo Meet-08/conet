@@ -103,6 +103,14 @@ void main() {
       () => mockGetBookmarks(),
     ).thenAnswer((_) async => const Right(<Post>[]));
 
+    // Default stub for create-post refresh path.
+    when(
+      () => mockGetPosts(
+        page: any(named: 'page'),
+        limit: any(named: 'limit'),
+      ),
+    ).thenAnswer((_) async => const Right(<Post>[]));
+
     postBloc = PostBloc(
       getPosts: mockGetPosts,
       getUserPosts: mockGetUserPosts,
@@ -271,6 +279,12 @@ void main() {
             media: any(named: 'media'),
           ),
         ).thenAnswer((_) async => Right(tPost));
+        when(
+          () => mockGetPosts(
+            page: any(named: 'page'),
+            limit: any(named: 'limit'),
+          ),
+        ).thenAnswer((_) async => Right([tExistingPost]));
         return postBloc;
       },
       seed: () => PostLoaded([tExistingPost]),
