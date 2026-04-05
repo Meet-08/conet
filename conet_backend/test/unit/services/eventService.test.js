@@ -140,7 +140,7 @@ describe("createEventService", () => {
     await expect(createEventService(ORGANIZER_ID, {})).rejects.toMatchObject({
       statusCode: 400,
       message:
-        "title, category, event_date, start_time, end_time, and location_type are required",
+        "title, category, event_date, start_time, end_time, location_type, and event_image_url are required",
     });
   });
 
@@ -153,6 +153,7 @@ describe("createEventService", () => {
         start_time: "10:00",
         end_time: "11:00",
         location_type: "OFFLINE",
+        event_image_url: "https://cdn.example.com/events/offline-banner.jpg",
       }),
     ).rejects.toMatchObject({
       statusCode: 400,
@@ -173,6 +174,7 @@ describe("createEventService", () => {
       end_time: "11:30",
       location_type: "ONLINE",
       meeting_link: "https://meet.example/launch",
+      event_image_url: "https://cdn.example.com/events/launch-banner.jpg",
       publish: true,
       activity: [
         { activity_time: "2026-06-01T09:45:00.000Z", activity_title: "Intro" },

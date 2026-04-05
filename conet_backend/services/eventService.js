@@ -449,11 +449,22 @@ export const createEventService = async (organizerId, body) => {
     !event_date ||
     !start_time ||
     !end_time ||
-    !location_type
+    !location_type ||
+    !event_image_url
   ) {
     const err = new Error(
-      "title, category, event_date, start_time, end_time, and location_type are required",
+      "title, category, event_date, start_time, end_time, location_type, and event_image_url are required",
     );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const normalizedEventImageUrl = normalizeOptionalString(
+    event_image_url,
+    "event_image_url",
+  );
+  if (!normalizedEventImageUrl) {
+    const err = new Error("event_image_url is required");
     err.statusCode = 400;
     throw err;
   }
@@ -517,7 +528,7 @@ export const createEventService = async (organizerId, body) => {
       max_participant,
       event_status: publish ? "published" : "draft",
       eligibility,
-      event_image_url,
+      event_image_url: normalizedEventImageUrl,
       venue,
       registration_deadline:
         registration_deadline ? new Date(registration_deadline) : null,

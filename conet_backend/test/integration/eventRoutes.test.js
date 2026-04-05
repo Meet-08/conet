@@ -258,6 +258,7 @@ describe("Event lifecycle routes", () => {
         end_time: "11:00",
         location_type: "ONLINE",
         meeting_link: "https://meet.example/hackathon",
+        event_image_url: "https://cdn.example.com/events/hackathon-banner.jpg",
       });
 
     expect(res.status).toBe(201);

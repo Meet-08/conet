@@ -17,9 +17,7 @@ class EventAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: false,
       actions: [
         IconButton(
-          onPressed: () {
-            //TODO: Implement search functionality
-          },
+          onPressed: () => context.push('/event-search'),
           icon: FaIcon(
             FontAwesomeIcons.magnifyingGlass,
             size: 17,

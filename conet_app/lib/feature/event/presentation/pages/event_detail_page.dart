@@ -25,6 +25,8 @@ class EventDetailPage extends StatefulWidget {
 class _EventDetailPageState extends State<EventDetailPage> {
   Event? _event;
   int? _expandedFaqIndex;
+  bool _isSaveInFlight = false;
+  bool? _bookmarkBeforeSave;
 
   Future<void> _onRegisterPressed(Event event) async {
     final payload = await showEventRegistrationSheet(
@@ -70,7 +72,23 @@ class _EventDetailPageState extends State<EventDetailPage> {
         }
 
         if (state is EventSaveFailure) {
-          AppToast.showError(context, state.message);
+          if (state.eventId == widget.eventId) {
+            setState(() {
+              _isSaveInFlight = false;
+              if (_event != null && _bookmarkBeforeSave != null) {
+                _event = _event!.copyWith(isBookmarked: _bookmarkBeforeSave);
+              }
+              _bookmarkBeforeSave = null;
+            });
+            AppToast.showError(context, state.message);
+          }
+        }
+
+        if (state is EventSaveSuccess && state.eventId == widget.eventId) {
+          setState(() {
+            _isSaveInFlight = false;
+            _bookmarkBeforeSave = null;
+          });
         }
 
         if (state is EventDetailFailure) {
@@ -126,17 +144,40 @@ class _EventDetailPageState extends State<EventDetailPage> {
                 icon: const FaIcon(FontAwesomeIcons.shareNodes, size: 18),
               ),
               IconButton(
-                onPressed: event.isBookmarked
+                onPressed: _isSaveInFlight
                     ? null
                     : () {
-                        context.read<EventBloc>().add(EventSaveEvent(event.id));
+                        final currentEvent = _event;
+                        if (currentEvent == null) return;
+
+                        setState(() {
+                          _bookmarkBeforeSave = currentEvent.isBookmarked;
+                          _event = currentEvent.copyWith(
+                            isBookmarked: !currentEvent.isBookmarked,
+                          );
+                          _isSaveInFlight = true;
+                        });
+                        context.read<EventBloc>().add(
+                          EventSaveEvent(currentEvent.id),
+                        );
                       },
-                icon: FaIcon(
-                  event.isBookmarked
-                      ? FontAwesomeIcons.solidBookmark
-                      : FontAwesomeIcons.bookmark,
-                  size: 18,
-                ),
+                icon: _isSaveInFlight
+                    ? SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.onSurface,
+                          ),
+                        ),
+                      )
+                    : FaIcon(
+                        event.isBookmarked
+                            ? FontAwesomeIcons.solidBookmark
+                            : FontAwesomeIcons.bookmark,
+                        size: 18,
+                      ),
               ),
             ],
           ),

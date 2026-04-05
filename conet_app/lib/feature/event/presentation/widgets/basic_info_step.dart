@@ -177,7 +177,8 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
     final trimmed = value.trim();
     if (trimmed.isEmpty) return trimmed;
 
-    final hasScheme = trimmed.startsWith('http://') ||
+    final hasScheme =
+        trimmed.startsWith('http://') ||
         trimmed.startsWith('https://') ||
         trimmed.startsWith('mailto:') ||
         trimmed.startsWith('tel:');
@@ -339,7 +340,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Upload an event logo',
+                        'Upload event banner image *',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),

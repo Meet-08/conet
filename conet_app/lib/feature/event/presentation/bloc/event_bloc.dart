@@ -41,11 +41,11 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     required EventGetPublishedEvents getPublishedEvents,
     required EventGetMyEvents getMyEvents,
     required EventGetMyOrganizedEvents getMyOrganizedEvents,
-     required EventPublishById publishDraftById,
+    required EventPublishById publishDraftById,
     required EventRegister registerEvent,
     required EventSave saveEvent,
     required EventSaveDraft saveDraft,
-     required EventUpdateConversation updateEventConversation,
+    required EventUpdateConversation updateEventConversation,
     required MessageCreateGroup createGroup,
   }) : _getById = getById,
        _getPublishedEvents = getPublishedEvents,
@@ -390,16 +390,13 @@ class EventBloc extends Bloc<EventEvent, EventState> {
 
     result.fold(
       (failure) {
-        emit(EventSaveFailure(failure.message));
+        emit(EventSaveFailure(failure.message, event.eventId));
         if (optimisticState != null) {
           emit(previousState);
         }
       },
       (response) {
-        emit(EventSaveSuccess(response.message));
-        if (optimisticState != null) {
-          emit(optimisticState);
-        }
+        emit(EventSaveSuccess(response.message, event.eventId));
       },
     );
   }
@@ -482,7 +479,10 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     }
 
     final title = payload.title.trim();
-    final createGroupResult = await _createGroup(name: title, memberIds: cohostIds);
+    final createGroupResult = await _createGroup(
+      name: title,
+      memberIds: cohostIds,
+    );
 
     createGroupResult.fold(
       (failure) => debugPrint(

@@ -333,16 +333,18 @@ class EventDataSourceImpl implements EventDataSource {
 
   /// Creates the event as a draft and returns the persisted [EventModel].
   Future<EventModel> _createDraft(EventCreatePayload payload) async {
-    String? imageUrl;
-    if (payload.eventImage != null) {
-      final eventId = const Uuid().v4();
-      final urls = await _fileUploadDataSource.uploadFiles(
-        files: [payload.eventImage!],
-        bucket: 'event',
-        folder: eventId,
-      );
-      imageUrl = urls.isNotEmpty ? urls.first : null;
+    if (payload.eventImage == null) {
+      throw ServerException('Event banner image is required');
     }
+
+    String? imageUrl;
+    final eventId = const Uuid().v4();
+    final urls = await _fileUploadDataSource.uploadFiles(
+      files: [payload.eventImage!],
+      bucket: 'event',
+      folder: eventId,
+    );
+    imageUrl = urls.isNotEmpty ? urls.first : null;
 
     final requestBody = EventCreatePayloadModel.fromEntity(
       payload,

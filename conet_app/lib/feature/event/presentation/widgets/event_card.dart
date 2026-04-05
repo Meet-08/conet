@@ -7,11 +7,43 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-class EventCard extends StatelessWidget {
+class EventCard extends StatefulWidget {
   final EventListItem event;
   final bool showActionRow;
 
   const EventCard({super.key, required this.event, this.showActionRow = false});
+
+  @override
+  State<EventCard> createState() => _EventCardState();
+}
+
+class _EventCardState extends State<EventCard> {
+  bool _isSaving = false;
+  bool? _optimisticIsBookmarked;
+  bool? _bookmarkBeforeSave;
+
+  bool get _displayIsBookmarked =>
+      _optimisticIsBookmarked ?? widget.event.isBookmarked;
+
+  @override
+  void didUpdateWidget(covariant EventCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_isSaving &&
+        oldWidget.event.isBookmarked != widget.event.isBookmarked) {
+      _optimisticIsBookmarked = null;
+      _bookmarkBeforeSave = null;
+    }
+  }
+
+  void _onSavePressed() {
+    if (_isSaving) return;
+    setState(() {
+      _bookmarkBeforeSave = _displayIsBookmarked;
+      _optimisticIsBookmarked = !_displayIsBookmarked;
+      _isSaving = true;
+    });
+    context.read<EventBloc>().add(EventSaveEvent(widget.event.id));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,178 +51,203 @@ class EventCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final semantic =
         theme.extension<AppSemanticColors>() ?? AppSemanticColors.light;
-    final dateLabel = DateFormat('MMM d - h:mm a').format(event.eventStartDate);
-    final locationLabel = event.venue ?? event.location ?? 'Location TBA';
-    final ticketLabel = _ticketLabel(event);
-    final indicator = _EventUrgencyIndicator.fromEvent(event, semantic);
+    final dateLabel = DateFormat(
+      'MMM d - h:mm a',
+    ).format(widget.event.eventStartDate);
+    final locationLabel =
+        widget.event.venue ?? widget.event.location ?? 'Location TBA';
+    final ticketLabel = _ticketLabel(widget.event);
+    final indicator = _EventUrgencyIndicator.fromEvent(widget.event, semantic);
 
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(
-          color: colorScheme.outlineVariant.withValues(alpha: .5),
+    return BlocListener<EventBloc, EventState>(
+      listenWhen: (_, current) {
+        if (current is EventSaveSuccess) {
+          return current.eventId == widget.event.id;
+        }
+        if (current is EventSaveFailure) {
+          return current.eventId == widget.event.id;
+        }
+        return false;
+      },
+      listener: (_, state) {
+        if (!_isSaving || !mounted) return;
+
+        setState(() {
+          _isSaving = false;
+
+          if (state is EventSaveFailure) {
+            _optimisticIsBookmarked = _bookmarkBeforeSave;
+          }
+
+          _bookmarkBeforeSave = null;
+        });
+      },
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: .5),
+          ),
         ),
-      ),
-      child: InkWell(
-        onTap: () {
-          context.push('/event-detail/${event.id}');
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _coverImage(colorScheme),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 3,
+        child: InkWell(
+          onTap: () {
+            context.push('/event-detail/${widget.event.id}');
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _coverImage(colorScheme),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  widget.event.category,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: .2,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                              decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                event.category,
-                                style: theme.textTheme.labelSmall?.copyWith(
+                              const Spacer(),
+                              Text(
+                                ticketLabel,
+                                style: theme.textTheme.labelMedium?.copyWith(
                                   color: colorScheme.onSurfaceVariant,
                                   fontWeight: FontWeight.w700,
-                                  letterSpacing: .2,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                            const Spacer(),
-                            Text(
-                              ticketLabel,
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          event.title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            height: 1.18,
+                            ],
                           ),
-                          maxLines: 2,
+                          const SizedBox(height: 8),
+                          Text(
+                            widget.event.title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              height: 1.18,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 7),
+                          _metaLine(
+                            theme: theme,
+                            colorScheme: colorScheme,
+                            icon: FontAwesomeIcons.calendarDay,
+                            text: dateLabel,
+                          ),
+                          const SizedBox(height: 3),
+                          _metaLine(
+                            theme: theme,
+                            colorScheme: colorScheme,
+                            icon: FontAwesomeIcons.locationDot,
+                            text: locationLabel,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (widget.showActionRow) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      FaIcon(indicator.icon, size: 12, color: indicator.color),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          indicator.text,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: indicator.color,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 7),
-                        _metaLine(
-                          theme: theme,
-                          colorScheme: colorScheme,
-                          icon: FontAwesomeIcons.calendarDay,
-                          text: dateLabel,
+                      ),
+                      _iconActionButton(
+                        colorScheme: colorScheme,
+                        icon: _displayIsBookmarked
+                            ? FontAwesomeIcons.solidBookmark
+                            : FontAwesomeIcons.bookmark,
+                        onTap: _isSaving ? null : _onSavePressed,
+                        isLoading: _isSaving,
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        onPressed: () =>
+                            context.push('/event-detail/${widget.event.id}'),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: colorScheme.onPrimary,
+                          minimumSize: const Size(96, 40),
+                          shape: const StadiumBorder(),
+                          textStyle: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        const SizedBox(height: 3),
-                        _metaLine(
-                          theme: theme,
-                          colorScheme: colorScheme,
-                          icon: FontAwesomeIcons.locationDot,
-                          text: locationLabel,
+                        child: const Text('Register'),
+                      ),
+                    ],
+                  ),
+                ] else ...[
+                  const SizedBox(height: 10),
+                  Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: colorScheme.outlineVariant.withValues(alpha: .45),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      FaIcon(indicator.icon, size: 12, color: indicator.color),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          indicator.text,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: indicator.color,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
+                      ),
+                      _iconActionButton(
+                        colorScheme: colorScheme,
+                        icon: _displayIsBookmarked
+                            ? FontAwesomeIcons.solidBookmark
+                            : FontAwesomeIcons.bookmark,
+                        onTap: _isSaving ? null : _onSavePressed,
+                        isLoading: _isSaving,
+                      ),
+                    ],
                   ),
                 ],
-              ),
-              if (showActionRow) ...[
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    FaIcon(indicator.icon, size: 12, color: indicator.color),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        indicator.text,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: indicator.color,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    _iconActionButton(
-                      colorScheme: colorScheme,
-                      icon: event.isBookmarked
-                          ? FontAwesomeIcons.solidBookmark
-                          : FontAwesomeIcons.bookmark,
-                      onTap: () {
-                        context.read<EventBloc>().add(EventSaveEvent(event.id));
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    FilledButton(
-                      onPressed: () =>
-                          context.push('/event-detail/${event.id}'),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: colorScheme.primary,
-                        foregroundColor: colorScheme.onPrimary,
-                        minimumSize: const Size(96, 40),
-                        shape: const StadiumBorder(),
-                        textStyle: theme.textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      child: const Text('Register'),
-                    ),
-                  ],
-                ),
-              ] else ...[
-                const SizedBox(height: 10),
-                Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: colorScheme.outlineVariant.withValues(alpha: .45),
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    FaIcon(indicator.icon, size: 12, color: indicator.color),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        indicator.text,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: indicator.color,
-                          fontWeight: FontWeight.w700,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    _iconActionButton(
-                      colorScheme: colorScheme,
-                      icon: event.isBookmarked
-                          ? FontAwesomeIcons.solidBookmark
-                          : FontAwesomeIcons.bookmark,
-                      onTap: () {
-                        context.read<EventBloc>().add(EventSaveEvent(event.id));
-                      },
-                    ),
-                  ],
-                ),
               ],
-            ],
+            ),
           ),
         ),
       ),
@@ -202,9 +259,9 @@ class EventCard extends StatelessWidget {
     child: SizedBox(
       width: 82,
       height: 82,
-      child: event.eventImageUrl != null
+      child: widget.event.eventImageUrl != null
           ? Image.network(
-              event.eventImageUrl!,
+              widget.event.eventImageUrl!,
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => _coverPlaceholder(colorScheme),
             )
@@ -250,6 +307,7 @@ class EventCard extends StatelessWidget {
   Widget _iconActionButton({
     required ColorScheme colorScheme,
     required IconData icon,
+    required bool isLoading,
     VoidCallback? onTap,
   }) {
     return Material(
@@ -267,7 +325,18 @@ class EventCard extends StatelessWidget {
             color: colorScheme.surface,
           ),
           child: Center(
-            child: FaIcon(icon, size: 14, color: colorScheme.onSurfaceVariant),
+            child: isLoading
+                ? SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  )
+                : FaIcon(icon, size: 14, color: colorScheme.onSurfaceVariant),
           ),
         ),
       ),

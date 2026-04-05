@@ -4,11 +4,9 @@ import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/event/presentation/widgets/event_app_bar.dart';
 import 'package:conet_app/feature/event/presentation/widgets/event_card.dart';
-import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:go_router/go_router.dart';
 
 class EventPage extends StatefulWidget {
   const EventPage({super.key});
@@ -123,8 +121,6 @@ class _EventBodyState extends State<_EventBody> {
         controller: _scrollController,
         padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
         children: [
-          _CampusSection(events: widget.events),
-          const SizedBox(height: 28),
           _DiscoverSection(events: widget.events),
           if (widget.hasMore)
             const Padding(
@@ -145,134 +141,12 @@ class _EventEmptyBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
       children: const [
-        _CampusSection(events: []),
         SizedBox(height: 28),
         _DiscoverSection(events: []),
       ],
     );
   }
 }
-
-class _CampusSection extends StatelessWidget {
-  final List<EventListItem> events;
-
-  const _CampusSection({required this.events});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: GestureDetector(
-            onTap: () {
-              // TODO: navigate to campus events list
-            },
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'From Your Campus',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                FaIcon(
-                  FontAwesomeIcons.chevronRight,
-                  size: 13,
-                  color: colorScheme.onSurface,
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        if (events.isNotEmpty)
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: events.length > 2 ? 2 : events.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 12),
-            itemBuilder: (_, i) =>
-                EventCard(event: events[i], showActionRow: true),
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: DottedBorder(
-              options: RoundedRectDottedBorderOptions(
-                radius: const Radius.circular(16),
-                color: colorScheme.outlineVariant,
-                strokeWidth: 1.5,
-                dashPattern: const [6, 4],
-              ),
-              child: SizedBox(
-                width: double.infinity,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 36,
-                    horizontal: 24,
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: FaIcon(
-                            FontAwesomeIcons.graduationCap,
-                            size: 26,
-                            color: colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No upcoming campus events yet!',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 20),
-                      OutlinedButton.icon(
-                        onPressed: () => context.push('/create-event'),
-                        icon: const FaIcon(
-                          FontAwesomeIcons.circlePlus,
-                          size: 15,
-                        ),
-                        label: const Text('Host Event'),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 22,
-                            vertical: 10,
-                          ),
-                          shape: const StadiumBorder(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-// ─── Discover Section ─────────────────────────────────────────────────────────
 
 class _DiscoverSection extends StatelessWidget {
   final List<EventListItem> events;
@@ -288,33 +162,6 @@ class _DiscoverSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Header row
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Discover',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              IconButton(
-                onPressed: () {
-                  // TODO: open filter sheet
-                },
-                icon: FaIcon(
-                  FontAwesomeIcons.sliders,
-                  size: 18,
-                  color: colorScheme.onSurface,
-                ),
-                tooltip: 'Filter events',
-                visualDensity: VisualDensity.compact,
-                padding: EdgeInsets.zero,
-              ),
-            ],
-          ),
-        ),
         const SizedBox(height: 12),
         if (events.isNotEmpty)
           _buildList(context, theme, colorScheme)
@@ -425,7 +272,8 @@ class _DiscoverSection extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       itemCount: events.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (_, i) => EventCard(event: events[i]),
+      itemBuilder: (_, i) =>
+          EventCard(key: ValueKey(events[i].id), event: events[i]),
     );
   }
 }

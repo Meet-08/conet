@@ -79,6 +79,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
   String? _validateStep(int step) {
     switch (step) {
       case 0:
+        if (_formData['event_image_file'] == null) {
+          return 'Please upload a banner image';
+        }
         if ((_formData['title'] as String).trim().isEmpty) {
           return 'Please enter an event title';
         }

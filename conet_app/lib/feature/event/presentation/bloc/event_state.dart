@@ -149,14 +149,16 @@ final class EventRegistrationFailure extends EventState {
 
 final class EventSaveSuccess extends EventState {
   final String message;
+  final String eventId;
 
-  const EventSaveSuccess(this.message);
+  const EventSaveSuccess(this.message, this.eventId);
 }
 
 final class EventSaveFailure extends EventState {
   final String message;
+  final String eventId;
 
-  const EventSaveFailure(this.message);
+  const EventSaveFailure(this.message, this.eventId);
 }
 
 // ── Create / Draft states ────────────────────────────────────────────────────

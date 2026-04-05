@@ -14,6 +14,7 @@ import 'package:conet_app/feature/event/presentation/pages/event_attendance_scan
 import 'package:conet_app/feature/event/presentation/pages/event_dashboard_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_detail_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_page.dart';
+import 'package:conet_app/feature/event/presentation/pages/event_search_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/my_events_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/view_ticket.dart';
 import 'package:conet_app/feature/message/data/models/conversation_model.dart';
@@ -202,6 +203,11 @@ class AppRouter {
 
           return EventDetailPage(eventId: eventId);
         },
+      ),
+
+      GoRoute(
+        path: '/event-search',
+        builder: (_, _) => const EventSearchPage(),
       ),
 
       GoRoute(
