@@ -67,8 +67,9 @@ final class EventFetchByIdEvent extends EventEvent {
 
 final class EventRegisterEvent extends EventEvent {
   final String eventId;
+  final EventRegistrationPayload payload;
 
-  const EventRegisterEvent(this.eventId);
+  const EventRegisterEvent(this.eventId, this.payload);
 }
 
 final class EventSaveEvent extends EventEvent {
@@ -79,10 +80,20 @@ final class EventSaveEvent extends EventEvent {
 
 final class EventPublishEvent extends EventEvent {
   final EventCreatePayload payload;
-  const EventPublishEvent(this.payload);
+  final bool shouldCreateOrganizerConversation;
+
+  const EventPublishEvent(
+    this.payload, {
+    this.shouldCreateOrganizerConversation = false,
+  });
 }
 
 final class EventSaveDraftEvent extends EventEvent {
   final EventCreatePayload payload;
-  const EventSaveDraftEvent(this.payload);
+  final bool shouldCreateOrganizerConversation;
+
+  const EventSaveDraftEvent(
+    this.payload, {
+    this.shouldCreateOrganizerConversation = false,
+  });
 }

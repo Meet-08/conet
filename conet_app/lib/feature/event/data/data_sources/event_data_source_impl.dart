@@ -10,6 +10,7 @@ import 'package:conet_app/feature/event/data/models/event_page_model.dart';
 import 'package:conet_app/feature/event/data/models/event_registration_ticket_model.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
+import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/main.dart';
 import 'package:uuid/uuid.dart';
 
@@ -130,9 +131,12 @@ class EventDataSourceImpl implements EventDataSource {
   }
 
   @override
-  Future<Event> registerEvent(String eventId) async {
+  Future<Event> registerEvent(String eventId, EventRegistrationPayload payload) async {
     try {
-      final response = await _dioClient.dio.post('/events/$eventId/register');
+      final response = await _dioClient.dio.post(
+        '/events/$eventId/register',
+        data: payload.toJson(),
+      );
 
       if (response.statusCode != 200) {
         throw ServerException('Failed to register event');
@@ -232,6 +236,44 @@ class EventDataSourceImpl implements EventDataSource {
     } catch (e) {
       logger.e('publishEvent failed', error: e);
       if (e is ServerException) rethrow;
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<Event> publishDraftById(String eventId) async {
+    try {
+      final response = await _dioClient.dio.patch('/events/$eventId/publish');
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to publish event');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      return EventModel.fromJson(data['event'] as Map<String, dynamic>);
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<Event> updateEventConversationId({
+    required String eventId,
+    required String conversationId,
+  }) async {
+    try {
+      final response = await _dioClient.dio.put(
+        '/events/$eventId',
+        data: {'conversation_id': conversationId},
+      );
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to update event conversation');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      return EventModel.fromJson(data['event'] as Map<String, dynamic>);
+    } catch (e) {
       throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }

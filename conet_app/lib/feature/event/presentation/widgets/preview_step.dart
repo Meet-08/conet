@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/theme/app_tokens.dart';
-import 'package:conet_app/core/utils/quill_content_utils.dart';
+import 'package:conet_app/core/widgets/quill_read_only_view.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +28,6 @@ class PreviewStep extends StatefulWidget {
 
 class _PreviewStepState extends State<PreviewStep> {
   final Map<int, bool> _expandedFaqs = {};
-  bool _showFullAbout = false;
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -119,9 +118,7 @@ class _PreviewStepState extends State<PreviewStep> {
     final isPaid = widget.formData['ticket_price_type'] == 'PAID';
     final price = widget.formData['price'];
     final imageFile = widget.formData['event_image_file'] as PlatformFile?;
-    final about = quillPlainTextFromString(
-      widget.formData['about'] as String? ?? '',
-    );
+    final aboutDelta = widget.formData['about'] as String? ?? '';
     final eligibility = widget.formData['eligibility'] as String? ?? '';
     final additionalNote = widget.formData['additional_note'] as String? ?? '';
     final maxParticipant = widget.formData['max_participant'];
@@ -149,13 +146,7 @@ class _PreviewStepState extends State<PreviewStep> {
         ? (maxParticipant * 0.6).round().clamp(1, maxParticipant)
         : 1847;
 
-    final aboutTrimmed = about.trim();
-    final canExpandAbout = aboutTrimmed.length > 180;
-    final aboutPreview = canExpandAbout
-        ? '${aboutTrimmed.substring(0, 180)}...'
-        : (aboutTrimmed.isEmpty
-              ? 'No event description provided yet.'
-              : aboutTrimmed);
+    final hasAboutContent = aboutDelta.trim().isNotEmpty;
 
     final instructionPoints = _instructionPoints(additionalNote);
 
@@ -309,29 +300,13 @@ class _PreviewStepState extends State<PreviewStep> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(
-                  _showFullAbout
-                      ? (aboutTrimmed.isEmpty
-                            ? 'No event description provided yet.'
-                            : aboutTrimmed)
-                      : aboutPreview,
-                  style: theme.textTheme.bodyLarge?.copyWith(height: 1.55),
-                ),
-                if (canExpandAbout)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: GestureDetector(
-                      onTap: () =>
-                          setState(() => _showFullAbout = !_showFullAbout),
-                      child: Text(
-                        _showFullAbout ? 'Read less' : 'Read more',
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
+                if (!hasAboutContent)
+                  Text(
+                    'No event description provided yet.',
+                    style: theme.textTheme.bodyLarge?.copyWith(height: 1.55),
+                  )
+                else
+                  QuillReadOnlyView(deltaJson: aboutDelta),
 
                 if (activities.isNotEmpty) ...[
                   const SizedBox(height: 18),

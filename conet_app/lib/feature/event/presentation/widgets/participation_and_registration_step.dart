@@ -1,5 +1,5 @@
-import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/theme/app_tokens.dart';
+import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -27,14 +27,50 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
     widget.onFormDataChange({...widget.formData, ...updates});
   }
 
+  List<Map<String, dynamic>> get _customFields =>
+      List<Map<String, dynamic>>.from(
+        widget.formData['custom_fields'] as List? ??
+            const <Map<String, dynamic>>[],
+      );
+
   Future<void> _selectRegistrationDeadline() async {
     final currentDeadline =
         widget.formData['registration_deadline'] as DateTime?;
+
+    final eventDate = widget.formData['event_date'] as DateTime?;
+    final eventStartTime = widget.formData['start_time'] as TimeOfDay?;
+    final eventStartDateTime =
+        eventDate != null && eventStartTime != null
+            ? DateTime(
+                eventDate.year,
+                eventDate.month,
+                eventDate.day,
+                eventStartTime.hour,
+                eventStartTime.minute,
+              )
+            : null;
+
+    final now = DateTime.now();
+    final firstDate = DateTime(now.year, now.month, now.day);
+    final maxDate =
+        eventStartDateTime != null
+            ? DateTime(
+                eventStartDateTime.year,
+                eventStartDateTime.month,
+                eventStartDateTime.day,
+              )
+            : DateTime.now().add(const Duration(days: 365));
+
+    final initialDateCandidate = currentDeadline ?? firstDate;
+    final initialDate = initialDateCandidate.isBefore(firstDate)
+        ? firstDate
+        : (initialDateCandidate.isAfter(maxDate) ? maxDate : initialDateCandidate);
+
     final selectedDate = await showDatePicker(
       context: context,
-      initialDate: currentDeadline ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initialDate,
+      firstDate: firstDate,
+      lastDate: maxDate,
     );
 
     if (selectedDate == null) return;
@@ -56,6 +92,14 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
       selectedTime.minute,
     );
 
+    if (eventStartDateTime != null && !deadline.isBefore(eventStartDateTime)) {
+      AppToast.showWarning(
+        context,
+        'Registration deadline must be before event start time',
+      );
+      return;
+    }
+
     _update({'registration_deadline': deadline});
   }
 
@@ -71,14 +115,48 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
     return '$date -- $time';
   }
 
+  void _addCustomField() {
+    final list = _customFields
+      ..add({
+        'label': '',
+        'key': '',
+        'type': 'text',
+        'required': false,
+        'options': <String>[],
+      });
+    _update({'custom_fields': list});
+  }
+
+  void _removeCustomField(int index) {
+    final list = _customFields..removeAt(index);
+    _update({'custom_fields': list});
+  }
+
+  void _updateCustomField(int index, Map<String, dynamic> patch) {
+    final list = _customFields;
+    list[index] = {...list[index], ...patch};
+    _update({'custom_fields': list});
+  }
+
+  String _normalizeKeyFromLabel(String label) {
+    return label
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isPaid = widget.formData['ticket_price_type'] == 'PAID';
+    final isPaid =
+        (widget.formData['ticket_price_type'] as String? ?? 'FREE') == 'PAID';
     final participationType =
-        widget.formData['participation_type'] as String? ?? 'INDIVIDUAL';
-    final isTeam = participationType == 'TEAM';
+        (widget.formData['participation_type'] as String? ?? 'individual')
+            .toLowerCase();
+    final isTeam = participationType == 'team';
+    final customFields = _customFields;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -99,8 +177,6 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
             ),
           ),
           const SizedBox(height: 24),
-
-          // ═══ Registration Deadline ═══
           const _FieldLabel('Registration Deadline'),
           const SizedBox(height: 10),
           GestureDetector(
@@ -135,21 +211,22 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
             ),
           ),
           const SizedBox(height: 24),
-
-          // ═══ Participation Type ═══
           const _FieldLabel('Participation Type'),
           const SizedBox(height: 10),
           _ToggleRow(
             options: const ['Individual', 'Team'],
             selected: isTeam ? 'Team' : 'Individual',
             onChanged: (v) {
+              final nextType = v == 'Team' ? 'team' : 'individual';
               _update({
-                'participation_type': v == 'Team' ? 'TEAM' : 'INDIVIDUAL',
+                'participation_type': nextType,
+                if (nextType == 'individual') ...{
+                  'min_team_size': null,
+                  'max_team_size': null,
+                },
               });
             },
           ),
-
-          // ═══ Team Size Fields (if Team selected) ═══
           if (isTeam) ...[
             const SizedBox(height: 24),
             Row(
@@ -212,10 +289,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
               ],
             ),
           ],
-
           const SizedBox(height: 24),
-
-          // ═══ Max Participants ═══
           const _FieldLabel('Max Participants'),
           const SizedBox(height: 8),
           TextFormField(
@@ -230,62 +304,225 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
               'max_participant': v.isEmpty ? null : int.tryParse(v),
             }),
           ),
-
           const SizedBox(height: 24),
-
-          // ═══ Event Price ═══
           const _FieldLabel('Event Price'),
           const SizedBox(height: 10),
+          _ToggleRow(
+            options: const ['Free', 'Paid'],
+            selected: isPaid ? 'Paid' : 'Free',
+            onChanged: (value) {
+              final isPaidValue = value == 'Paid';
+              _update({
+                'ticket_price_type': isPaidValue ? 'PAID' : 'FREE',
+                if (!isPaidValue) ...{'price': null, 'upi_id': null},
+              });
+            },
+          ),
+          if (isPaid) ...[
+            const SizedBox(height: 12),
+            TextFormField(
+              initialValue: widget.formData['price']?.toString(),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}$')),
+              ],
+              decoration: _inputDecoration(
+                hint: 'Price per member in INR',
+                prefixIcon: const FaIcon(
+                  FontAwesomeIcons.indianRupeeSign,
+                  size: 15,
+                ),
+              ),
+              onChanged: (value) => _update({
+                'price': value.trim().isEmpty ? null : double.tryParse(value),
+              }),
+            ),
+            const SizedBox(height: 10),
+            TextFormField(
+              initialValue: widget.formData['upi_id'] as String? ?? '',
+              decoration: _inputDecoration(
+                hint: 'UPI ID (e.g. name@bank)',
+                prefixIcon: const FaIcon(FontAwesomeIcons.qrcode, size: 15),
+              ),
+              onChanged: (value) => _update({'upi_id': value.trim()}),
+            ),
+          ],
+          const SizedBox(height: 24),
           Row(
-            children: ['Free', 'Paid'].map((opt) {
-              final isSelected = (isPaid ? 'Paid' : 'Free') == opt;
-              final isFirst = opt == 'Free';
-              final isPaidOption = opt == 'Paid';
-              return Expanded(
-                child: GestureDetector(
-                  onTap: isPaidOption
-                      ? () {
-                          AppToast.showInfo(
-                            context,
-                            'This feature is coming in future',
-                          );
-                        }
-                      : () {
-                          _update({'ticket_price_type': 'FREE', 'price': null});
-                        },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    margin: EdgeInsets.only(right: isFirst ? 8 : 0),
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    decoration: BoxDecoration(
-                      color: isPaidOption
-                          ? colorScheme.surfaceContainerHigh.withValues(
-                              alpha: 0.5,
-                            )
-                          : (isSelected
-                                ? colorScheme.onSurface
-                                : colorScheme.surfaceContainerHigh),
-                      borderRadius: AppRadius.mdAll,
+            children: [
+              const Expanded(child: _FieldLabel('Custom Registration Fields')),
+              TextButton(
+                onPressed: _addCustomField,
+                child: const Text('+ Add'),
+              ),
+            ],
+          ),
+          if (customFields.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHigh,
+                borderRadius: AppRadius.mdAll,
+              ),
+              child: Text(
+                'No custom fields yet. Add only what participants must fill.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            )
+          else
+            ...List.generate(customFields.length, (index) {
+              final field = customFields[index];
+              final fieldType = (field['type'] as String? ?? 'text')
+                  .toLowerCase();
+              final options =
+                  (field['options'] as List?)
+                      ?.map((value) => value.toString().trim())
+                      .where((value) => value.isNotEmpty)
+                      .toList(growable: false) ??
+                  const <String>[];
+
+              return Container(
+                margin: const EdgeInsets.only(top: 10),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHigh,
+                  borderRadius: AppRadius.mdAll,
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Field ${index + 1}',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => _removeCustomField(index),
+                          icon: FaIcon(
+                            FontAwesomeIcons.trashCan,
+                            size: 14,
+                            color: colorScheme.error,
+                          ),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                      ],
                     ),
-                    child: Center(
-                      child: Text(
-                        opt,
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: isPaidOption
-                              ? colorScheme.onSurfaceVariant
-                              : (isSelected
-                                    ? colorScheme.surface
-                                    : colorScheme.onSurface),
-                          fontWeight: FontWeight.w500,
+                    TextFormField(
+                      initialValue: field['label'] as String? ?? '',
+                      decoration: _inputDecoration(
+                        hint: 'Field label (e.g. College ID)',
+                        prefixIcon: const FaIcon(
+                          FontAwesomeIcons.tag,
+                          size: 15,
                         ),
                       ),
+                      onChanged: (value) {
+                        final nextLabel = value.trim();
+                        final currentKey = (field['key'] as String? ?? '')
+                            .trim();
+                        _updateCustomField(index, {
+                          'label': value,
+                          if (currentKey.isEmpty)
+                            'key': _normalizeKeyFromLabel(nextLabel),
+                        });
+                      },
                     ),
-                  ),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      initialValue: field['key'] as String? ?? '',
+                      decoration: _inputDecoration(
+                        hint: 'Field key (e.g. college_id)',
+                        prefixIcon: const FaIcon(
+                          FontAwesomeIcons.key,
+                          size: 15,
+                        ),
+                      ),
+                      onChanged: (value) => _updateCustomField(index, {
+                        'key': _normalizeKeyFromLabel(value),
+                      }),
+                    ),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      initialValue: fieldType,
+                      decoration: _inputDecoration(
+                        hint: 'Field type',
+                        prefixIcon: const FaIcon(
+                          FontAwesomeIcons.listCheck,
+                          size: 15,
+                        ),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: 'text', child: Text('Text')),
+                        DropdownMenuItem(
+                          value: 'textarea',
+                          child: Text('Long Text'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'number',
+                          child: Text('Number'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'select',
+                          child: Text('Single Select'),
+                        ),
+                        DropdownMenuItem(
+                          value: 'multi_select',
+                          child: Text('Multi Select'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        final nextType = value ?? 'text';
+                        _updateCustomField(index, {
+                          'type': nextType,
+                          if (nextType != 'select' && nextType != 'multi_select')
+                            'options': <String>[],
+                        });
+                      },
+                    ),
+                    if (fieldType == 'select' || fieldType == 'multi_select') ...[
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        initialValue: options.join(', '),
+                        decoration: _inputDecoration(
+                          hint: fieldType == 'multi_select'
+                              ? 'Multi-select options (comma separated)'
+                              : 'Single-select options (comma separated)',
+                          prefixIcon: const FaIcon(
+                            FontAwesomeIcons.list,
+                            size: 15,
+                          ),
+                        ),
+                        onChanged: (value) {
+                          final parsed = value
+                              .split(',')
+                              .map((item) => item.trim())
+                              .where((item) => item.isNotEmpty)
+                              .toList(growable: false);
+                          _updateCustomField(index, {'options': parsed});
+                        },
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Required field'),
+                      value: field['required'] == true,
+                      onChanged: (value) =>
+                          _updateCustomField(index, {'required': value}),
+                    ),
+                  ],
                 ),
               );
-            }).toList(),
-          ),
-
+            }),
           const SizedBox(height: 32),
         ],
       ),

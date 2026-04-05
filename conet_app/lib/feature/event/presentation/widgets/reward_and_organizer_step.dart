@@ -128,6 +128,7 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
             },
           )
           .toList(growable: false),
+      'event_conversation_id': null,
     });
   }
 
@@ -138,7 +139,7 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
 
   void _removeLegacyCoOrganizer(int index) {
     final list = _coOrganizers..removeAt(index);
-    _update({'co_organizers': list});
+    _update({'co_organizers': list, 'event_conversation_id': null});
   }
 
   Future<void> _showAddCoOrganizerSheet() async {
@@ -243,7 +244,15 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
     final faqs = _faqs;
     final coOrganizerUsers = _coOrganizerUsers;
     final coOrganizers = _coOrganizers;
+    final coOrganizerIds = List<String>.from(
+      widget.formData['co_organizer_ids'] as List? ?? const <String>[],
+    );
     final mobileNumber = widget.formData['mobile_number'] as String? ?? '';
+    final createEventConversation =
+        widget.formData['create_event_conversation'] as bool? ?? false;
+    final linkedConversationId =
+        (widget.formData['event_conversation_id'] as String? ?? '').trim();
+    final hasCohostIds = coOrganizerIds.any((id) => id.trim().isNotEmpty);
 
     final appUserState = context.read<AppUserCubit>().state;
     final appUser = appUserState is AppUserAuthenticated
@@ -583,6 +592,76 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
                 ),
               );
             }),
+
+          const SizedBox(height: 14),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceContainerHigh,
+              borderRadius: AppRadius.mdAll,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Create Organizer Conversation',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Create a new group chat with you and selected co-hosts when the event is submitted.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Switch.adaptive(
+                      value: createEventConversation,
+                      onChanged: (value) => _update({
+                        'create_event_conversation': value,
+                        if (!value) 'event_conversation_id': null,
+                      }),
+                    ),
+                  ],
+                ),
+                if (createEventConversation && !hasCohostIds)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      'Add at least one searchable co-host to create this conversation.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                if (linkedConversationId.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      'Conversation linked: $linkedConversationId',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
 
           const SizedBox(height: 18),
           _SectionHeader(

@@ -6,6 +6,7 @@ import 'package:conet_app/feature/event/data/models/event_prize_model.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_activity.dart';
 import 'package:conet_app/feature/event/domain/entities/event_cohost.dart';
+import 'package:conet_app/feature/event/domain/entities/event_custom_field.dart';
 import 'package:conet_app/feature/event/domain/entities/event_faq.dart';
 import 'package:conet_app/feature/event/domain/entities/event_prize.dart';
 import 'package:json_annotation/json_annotation.dart';
@@ -24,6 +25,18 @@ class EventModel extends Event {
   @EventPrizeListConverter()
   final List<EventPrize> prizes;
 
+  @override
+  @JsonKey(name: 'upi_id')
+  final String? upiId;
+
+  @override
+  @JsonKey(name: 'conversation_id')
+  final String? conversationId;
+
+  @override
+  @JsonKey(name: 'custom_fields', defaultValue: [])
+  @EventCustomFieldListConverter()
+  final List<EventCustomField> customFields;
   @override
   @JsonKey(defaultValue: [])
   @EventFaqListConverter()
@@ -70,6 +83,9 @@ class EventModel extends Event {
     super.participationType,
     super.minTeamSize,
     super.maxTeamSize,
+    this.upiId,
+    this.conversationId,
+    this.customFields = const [],
     super.createdAt,
     this.activities = const [],
     this.prizes = const [],
@@ -83,6 +99,9 @@ class EventModel extends Event {
          prizes: prizes,
          faqs: faqs,
          cohosts: cohosts,
+         upiId: upiId,
+         conversationId: conversationId,
+         customFields: customFields,
          registrationCount: registrationCount,
          isRegistered: isRegistered,
          isBookmarked: isBookmarked,
@@ -118,6 +137,9 @@ class EventModel extends Event {
       participationType: entity.participationType,
       minTeamSize: entity.minTeamSize,
       maxTeamSize: entity.maxTeamSize,
+      upiId: entity.upiId,
+      conversationId: entity.conversationId,
+      customFields: entity.customFields,
       createdAt: entity.createdAt,
       activities: entity.activities,
       prizes: entity.prizes,
@@ -205,5 +227,24 @@ class EventCohostListConverter
     return object
         .map((item) => EventCohostModel.fromEntity(item).toJson())
         .toList();
+  }
+}
+
+class EventCustomFieldListConverter
+    implements JsonConverter<List<EventCustomField>, List<dynamic>> {
+  const EventCustomFieldListConverter();
+
+  @override
+  List<EventCustomField> fromJson(List<dynamic> json) {
+    return json
+        .whereType<Map<String, dynamic>>()
+        .map(EventCustomField.fromJson)
+        .where((field) => field.key.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  @override
+  List<dynamic> toJson(List<EventCustomField> object) {
+    return object.map((field) => field.toJson()).toList(growable: false);
   }
 }

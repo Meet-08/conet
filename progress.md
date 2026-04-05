@@ -141,6 +141,20 @@
 
 ---
 
+### Event Creation & Registration
+
+- **Create Event Wizard** — Organizer creates draft/published events with timeline, prizes, FAQs, co-hosts, and validation
+- **Registration Configuration Builder** — Organizer configures registration deadline, team participation constraints, paid/free mode, UPI ID, and dynamic custom registration fields
+- **Organizer Conversation Linking** — Organizer can auto-create and attach a new organizer/co-host group conversation during event submission
+- **Registration Form Sheet** — Event detail registration opens a dynamic form with required custom field validation and payload mapping
+- **Team Registration UI** — Team events collect captain enrollment/semester/branch, enforce team-size limits, and allow searchable optional team member selection
+- **Paid Registration QR Flow** — Paid events generate UPI QR with per-member amount and team-size-based total, plus transaction ID and payment proof upload support
+
+**Use Cases:** `EventPublish`, `EventSaveDraft`, `EventRegister`, `MessageCreateGroup`, `MessageSearchUsers`
+**Backend Endpoints:** `POST /events`, `PATCH /events/:id/publish`, `POST /events/:id/register`, `POST /groups`
+
+---
+
 ### Device Management (FCM Token)
 
 > Background/infrastructure — no UI required by design.
@@ -198,14 +212,9 @@
 
 ### Events
 
-- **Create Event** — Organizer can create a new event as draft or publish it immediately, with optional activity timeline and prizes
-- **Create Event About Rich Text Controls** — About editor toolbar now applies Quill styles (bold, italic, underline, ordered/unordered list, links)
-- **Create Event Co-host Picker** — Organizer can search users and attach co-hosts during create flow, then app syncs co-hosts after draft creation
 - **Update Event** — Organizer can edit all event fields, activity, and prizes (wholesale replace)
-- **Publish Event** — Organizer promotes a draft event to published status
 - **Cancel Event** — Organizer cancels a published or draft event
 - **Get Event** — Fetch a single event; non-organizers can only see published events
-- **Register Event** — Authenticated user registers for a published event and receives the latest full event view
 - **Registration Ticket Info** — Registered user fetches ticket payload data for QR generation
 - **Attend Event (Scan Ticket)** — Organizer/co-host scans ticket payload and marks attendee as attended with live attendance summary
 - **Discover Events** — Paginated list of published events with category, location type, date range, and text search filters
@@ -214,7 +223,7 @@
 - **Remove Co-host** — Organizer removes a co-host
 - **List Co-hosts** — Retrieve all co-hosts for an event
 
-**Use Cases:** `EventGetById`, `EventRegister`, `EventPublish`, `EventSaveDraft`, `EventGetPublishedEvents`, `EventGetMyEvents`, `EventGetRegistrationInfo`, `EventMarkAttendance`
+**Use Cases:** `EventGetById`, `EventGetPublishedEvents`, `EventGetMyEvents`, `EventGetRegistrationInfo`, `EventMarkAttendance`
 **Backend Endpoints:** `GET /events`, `GET /events/my`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `POST /events/:id/register`, `GET /events/:id/registration-info`, `POST /events/:id/attend`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
 
 ---

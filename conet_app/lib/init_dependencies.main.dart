@@ -358,6 +358,12 @@ void _initEvent() {
     () => EventSaveDraft(repository: serviceLocator<EventRepository>()),
   );
   serviceLocator.registerFactory(
+    () => EventPublishById(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
+    () => EventUpdateConversation(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
     () => EventGetById(repository: serviceLocator<EventRepository>()),
   );
   serviceLocator.registerFactory(
@@ -392,10 +398,12 @@ void _initEvent() {
       getPublishedEvents: serviceLocator(),
       getMyEvents: serviceLocator(),
       getMyOrganizedEvents: serviceLocator(),
-      publishEvent: serviceLocator(),
+      publishDraftById: serviceLocator(),
       registerEvent: serviceLocator(),
       saveEvent: serviceLocator(),
       saveDraft: serviceLocator(),
+      updateEventConversation: serviceLocator(),
+      createGroup: serviceLocator(),
     ),
   );
 

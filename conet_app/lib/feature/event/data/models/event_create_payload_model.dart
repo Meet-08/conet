@@ -1,6 +1,7 @@
 import 'package:conet_app/feature/event/data/models/event_model.dart';
 import 'package:conet_app/feature/event/domain/entities/event_activity.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
+import 'package:conet_app/feature/event/domain/entities/event_custom_field.dart';
 import 'package:conet_app/feature/event/domain/entities/event_faq.dart';
 import 'package:conet_app/feature/event/domain/entities/event_prize.dart';
 import 'package:file_picker/file_picker.dart';
@@ -37,6 +38,31 @@ class EventCreatePayloadModel extends EventCreatePayload {
   @EventFaqListConverter()
   final List<EventFaq> faqs;
 
+  @override
+  @JsonKey(name: 'registration_deadline')
+  final DateTime? registrationDeadline;
+
+  @override
+  @JsonKey(name: 'participation_type')
+  final String? participationType;
+
+  @override
+  @JsonKey(name: 'min_team_size')
+  final int? minTeamSize;
+
+  @override
+  @JsonKey(name: 'max_team_size')
+  final int? maxTeamSize;
+
+  @override
+  @JsonKey(name: 'upi_id')
+  final String? upiId;
+
+  @override
+  @JsonKey(name: 'custom_fields', defaultValue: [])
+  @EventRequestCustomFieldListConverter()
+  final List<EventCustomField> customFields;
+
   final bool publish;
 
   @override
@@ -56,11 +82,18 @@ class EventCreatePayloadModel extends EventCreatePayload {
     super.ticketPriceType = 'FREE',
     super.price,
     super.maxParticipant,
+    this.registrationDeadline,
+    this.participationType,
+    this.minTeamSize,
+    this.maxTeamSize,
+    this.upiId,
+    this.customFields = const [],
     super.eligibility,
     this.eventImage,
     this.activities = const [],
     this.prizes = const [],
     this.faqs = const [],
+    super.conversationId,
     required this.publish,
   }) : super(
          startTime: startTime,
@@ -68,6 +101,12 @@ class EventCreatePayloadModel extends EventCreatePayload {
          activities: activities,
          prizes: prizes,
          faqs: faqs,
+         registrationDeadline: registrationDeadline,
+         participationType: participationType,
+         minTeamSize: minTeamSize,
+         maxTeamSize: maxTeamSize,
+         upiId: upiId,
+         customFields: customFields,
          eventImage: eventImage,
        );
 
@@ -91,11 +130,20 @@ class EventCreatePayloadModel extends EventCreatePayload {
       ticketPriceType: payload.ticketPriceType,
       price: payload.price,
       maxParticipant: payload.maxParticipant,
+      registrationDeadline: payload.registrationDeadline,
+      participationType: _nullableText(
+        payload.participationType,
+      )?.toLowerCase(),
+      minTeamSize: payload.minTeamSize,
+      maxTeamSize: payload.maxTeamSize,
+      upiId: _nullableText(payload.upiId),
+      customFields: payload.customFields,
       eligibility: _nullableText(payload.eligibility),
       eventImage: payload.eventImage,
       activities: payload.activities,
       prizes: payload.prizes,
       faqs: payload.faqs,
+      conversationId: payload.conversationId,
       publish: publish,
     );
   }
@@ -106,6 +154,25 @@ class EventCreatePayloadModel extends EventCreatePayload {
     if (value == null) return null;
     final trimmed = value.trim();
     return trimmed.isEmpty ? null : trimmed;
+  }
+}
+
+class EventRequestCustomFieldListConverter
+    implements JsonConverter<List<EventCustomField>, List<dynamic>> {
+  const EventRequestCustomFieldListConverter();
+
+  @override
+  List<EventCustomField> fromJson(List<dynamic> json) {
+    return json
+        .whereType<Map<String, dynamic>>()
+        .map(EventCustomField.fromJson)
+        .where((field) => field.key.isNotEmpty)
+        .toList(growable: false);
+  }
+
+  @override
+  List<dynamic> toJson(List<EventCustomField> object) {
+    return object.map((field) => field.toJson()).toList(growable: false);
   }
 }
 

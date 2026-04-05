@@ -7,6 +7,7 @@ import 'package:conet_app/feature/event/domain/entities/event_activity.dart';
 import 'package:conet_app/feature/event/domain/entities/event_faq.dart';
 import 'package:conet_app/feature/event/domain/entities/event_prize.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
+import 'package:conet_app/feature/event/presentation/widgets/event_registration_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -24,6 +25,17 @@ class EventDetailPage extends StatefulWidget {
 class _EventDetailPageState extends State<EventDetailPage> {
   Event? _event;
   int? _expandedFaqIndex;
+
+  Future<void> _onRegisterPressed(Event event) async {
+    final payload = await showEventRegistrationSheet(
+      context: context,
+      event: event,
+    );
+
+    if (!mounted || payload == null) return;
+
+    context.read<EventBloc>().add(EventRegisterEvent(event.id, payload));
+  }
 
   @override
   void initState() {
@@ -132,7 +144,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
             event: event,
             loading: isRegistering,
             onRegister: () {
-              context.read<EventBloc>().add(EventRegisterEvent(event.id));
+              _onRegisterPressed(event);
             },
           ),
           body: SingleChildScrollView(

@@ -106,6 +106,186 @@ const parseOrganizedEventsCursor = (cursor) => {
   }
 };
 
+const isPlainObject = (value) =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+
+const normalizeParticipationType = (value) => {
+  if (value === undefined) return undefined;
+
+  const normalized = String(value).trim().toLowerCase();
+  if (!normalized) return undefined;
+
+  if (normalized !== "individual" && normalized !== "team") {
+    const err = new Error(
+      "participation_type must be either individual or team",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  return normalized;
+};
+
+const normalizeOptionalPositiveInteger = (value, fieldName) => {
+  if (value === undefined) return undefined;
+  if (value === null || value === "") return null;
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    const err = new Error(`${fieldName} must be a positive integer`);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  return parsed;
+};
+
+const normalizeOptionalString = (value, fieldName) => {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+
+  if (typeof value !== "string") {
+    const err = new Error(`${fieldName} must be a string`);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : null;
+};
+
+const validateTeamSizeConfig = ({
+  participationType,
+  minTeamSize,
+  maxTeamSize,
+}) => {
+  if (
+    minTeamSize != null &&
+    maxTeamSize != null &&
+    Number(minTeamSize) > Number(maxTeamSize)
+  ) {
+    const err = new Error("min_team_size cannot be greater than max_team_size");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (participationType === "team" && maxTeamSize == null) {
+    const err = new Error("max_team_size is required for team events");
+    err.statusCode = 400;
+    throw err;
+  }
+};
+
+const normalizeCustomFieldDefinitions = (customFields) => {
+  if (customFields === undefined) return undefined;
+  if (customFields === null) return [];
+
+  if (!Array.isArray(customFields)) {
+    const err = new Error("custom_fields must be an array");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const seenKeys = new Set();
+
+  return customFields.map((field, index) => {
+    if (!isPlainObject(field)) {
+      const err = new Error(`custom_fields[${index}] must be an object`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const keyRaw =
+      field.key ?? field.field_key ?? field.id ?? field.name ?? field.label;
+    const key = String(keyRaw ?? "").trim();
+
+    if (!key) {
+      const err = new Error(
+        `custom_fields[${index}] must have a non-empty key, id, name, or label`,
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (seenKeys.has(key)) {
+      const err = new Error(`Duplicate custom field key: ${key}`);
+      err.statusCode = 400;
+      throw err;
+    }
+    seenKeys.add(key);
+
+    const label = String(field.label ?? field.name ?? field.title ?? key)
+      .trim()
+      .slice(0, 100);
+    const type = String(field.type ?? field.field_type ?? "text")
+      .trim()
+      .toLowerCase();
+    const options =
+      Array.isArray(field.options) ?
+        field.options.map((option) => String(option).trim()).filter(Boolean)
+      : undefined;
+
+    return {
+      ...field,
+      key,
+      label: label || key,
+      type: type || "text",
+      required: Boolean(field.required),
+      ...(options ? { options } : {}),
+    };
+  });
+};
+
+const parseEventCustomFields = (customFields) => {
+  if (Array.isArray(customFields)) return customFields;
+  if (typeof customFields === "string") {
+    try {
+      const parsed = JSON.parse(customFields);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
+
+const hasValue = (value) => {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "number" || typeof value === "boolean") return true;
+  if (isPlainObject(value)) return Object.keys(value).length > 0;
+  return true;
+};
+
+const getRequiredCustomFields = (customFields) => {
+  const definitions = parseEventCustomFields(customFields);
+
+  return definitions
+    .filter((field) => isPlainObject(field) && Boolean(field.required))
+    .map((field) => {
+      const key = String(
+        field.key ?? field.field_key ?? field.id ?? field.name ?? field.label,
+      ).trim();
+      const label = String(field.label ?? field.name ?? key ?? "Field").trim();
+      return { key, label: label || key || "Field" };
+    })
+    .filter((field) => field.key.length > 0);
+};
+
+const findCustomFieldResponseValue = (responses, field) => {
+  if (!isPlainObject(responses)) return undefined;
+
+  const candidates = [field.key, field.label].filter(Boolean);
+  for (const candidate of candidates) {
+    if (Object.hasOwn(responses, candidate)) {
+      return responses[candidate];
+    }
+  }
+
+  return undefined;
+};
+
 // ─── Create event (draft or publish) ─────────────────────────────────────────
 
 export const createEventService = async (organizerId, body) => {
@@ -129,11 +309,22 @@ export const createEventService = async (organizerId, body) => {
     participation_type,
     min_team_size,
     max_team_size,
+    upi_id,
+    custom_fields,
     publish = false,
     activity = [],
     prizes = [],
     faqs = [],
   } = body;
+
+  const hasConversationIdField =
+    Object.prototype.hasOwnProperty.call(body, "conversation_id") ||
+    Object.prototype.hasOwnProperty.call(body, "conversationId") ||
+    Object.prototype.hasOwnProperty.call(body, "conversionId");
+  const rawConversationId =
+    hasConversationIdField ?
+      (body.conversation_id ?? body.conversationId ?? body.conversionId ?? null)
+    : undefined;
 
   if (
     !title ||
@@ -162,6 +353,36 @@ export const createEventService = async (organizerId, body) => {
   const parsedEndTime = parseTimeString(end_time, "end_time");
   assertEndAfterStart(parsedStartTime, parsedEndTime);
 
+  const normalizedParticipationType =
+    normalizeParticipationType(participation_type) ?? "individual";
+  const normalizedMinTeamSize = normalizeOptionalPositiveInteger(
+    min_team_size,
+    "min_team_size",
+  );
+  const normalizedMaxTeamSize = normalizeOptionalPositiveInteger(
+    max_team_size,
+    "max_team_size",
+  );
+  validateTeamSizeConfig({
+    participationType: normalizedParticipationType,
+    minTeamSize: normalizedMinTeamSize,
+    maxTeamSize: normalizedMaxTeamSize,
+  });
+
+  const normalizedCustomFields = normalizeCustomFieldDefinitions(custom_fields);
+  const normalizedUpiId = normalizeOptionalString(upi_id, "upi_id");
+  const normalizedConversationId =
+    hasConversationIdField ?
+      normalizeOptionalString(rawConversationId, "conversation_id")
+    : undefined;
+
+  const resolvedMinTeamSize =
+    normalizedParticipationType === "team" ?
+      (normalizedMinTeamSize ?? null)
+    : 1;
+  const resolvedMaxTeamSize =
+    normalizedParticipationType === "team" ? normalizedMaxTeamSize : 1;
+
   const event = await prisma.events.create({
     data: {
       organizer_id: organizerId,
@@ -183,9 +404,14 @@ export const createEventService = async (organizerId, body) => {
       venue,
       registration_deadline:
         registration_deadline ? new Date(registration_deadline) : null,
-      participation_type,
-      min_team_size,
-      max_team_size,
+      participation_type: normalizedParticipationType,
+      min_team_size: resolvedMinTeamSize,
+      max_team_size: resolvedMaxTeamSize,
+      upi_id: normalizedUpiId ?? null,
+      custom_fields: normalizedCustomFields ?? [],
+      ...(normalizedConversationId !== undefined && {
+        conversation_id: normalizedConversationId,
+      }),
       event_activity:
         activity.length ?
           {
@@ -242,10 +468,21 @@ export const updateEventService = async (eventId, organizerId, body) => {
     participation_type,
     min_team_size,
     max_team_size,
+    upi_id,
+    custom_fields,
     activity,
     prizes,
     faqs,
   } = body;
+
+  const hasConversationIdField =
+    Object.prototype.hasOwnProperty.call(body, "conversation_id") ||
+    Object.prototype.hasOwnProperty.call(body, "conversationId") ||
+    Object.prototype.hasOwnProperty.call(body, "conversionId");
+  const rawConversationId =
+    hasConversationIdField ?
+      (body.conversation_id ?? body.conversationId ?? body.conversionId ?? null)
+    : undefined;
 
   if (
     location_type !== undefined ||
@@ -276,6 +513,56 @@ export const updateEventService = async (eventId, organizerId, body) => {
     assertEndAfterStart(effectiveStart, effectiveEnd);
   }
 
+  const normalizedParticipationType =
+    participation_type !== undefined ?
+      normalizeParticipationType(participation_type)
+    : undefined;
+  const normalizedMinTeamSize =
+    min_team_size !== undefined ?
+      normalizeOptionalPositiveInteger(min_team_size, "min_team_size")
+    : undefined;
+  const normalizedMaxTeamSize =
+    max_team_size !== undefined ?
+      normalizeOptionalPositiveInteger(max_team_size, "max_team_size")
+    : undefined;
+
+  const effectiveParticipationType =
+    normalizedParticipationType ??
+    normalizeParticipationType(existing.participation_type) ??
+    "individual";
+  const effectiveMinTeamSize =
+    normalizedMinTeamSize !== undefined ?
+      normalizedMinTeamSize
+    : existing.min_team_size;
+  const effectiveMaxTeamSize =
+    normalizedMaxTeamSize !== undefined ?
+      normalizedMaxTeamSize
+    : existing.max_team_size;
+
+  validateTeamSizeConfig({
+    participationType: effectiveParticipationType,
+    minTeamSize: effectiveMinTeamSize,
+    maxTeamSize: effectiveMaxTeamSize,
+  });
+
+  const normalizedCustomFields =
+    custom_fields !== undefined ?
+      normalizeCustomFieldDefinitions(custom_fields)
+    : undefined;
+  const normalizedUpiId =
+    upi_id !== undefined ?
+      normalizeOptionalString(upi_id, "upi_id")
+    : undefined;
+  const normalizedConversationId =
+    hasConversationIdField ?
+      normalizeOptionalString(rawConversationId, "conversation_id")
+    : undefined;
+
+  const resetTeamSizesForIndividual =
+    normalizedParticipationType === "individual" &&
+    min_team_size === undefined &&
+    max_team_size === undefined;
+
   const updateData = {
     ...(title !== undefined && { title }),
     ...(category !== undefined && { category }),
@@ -296,9 +583,26 @@ export const updateEventService = async (eventId, organizerId, body) => {
       registration_deadline:
         registration_deadline ? new Date(registration_deadline) : null,
     }),
-    ...(participation_type !== undefined && { participation_type }),
-    ...(min_team_size !== undefined && { min_team_size }),
-    ...(max_team_size !== undefined && { max_team_size }),
+    ...(normalizedParticipationType !== undefined && {
+      participation_type: normalizedParticipationType,
+    }),
+    ...(normalizedMinTeamSize !== undefined && {
+      min_team_size: normalizedMinTeamSize,
+    }),
+    ...(normalizedMaxTeamSize !== undefined && {
+      max_team_size: normalizedMaxTeamSize,
+    }),
+    ...(resetTeamSizesForIndividual && {
+      min_team_size: 1,
+      max_team_size: 1,
+    }),
+    ...(normalizedUpiId !== undefined && { upi_id: normalizedUpiId }),
+    ...(normalizedCustomFields !== undefined && {
+      custom_fields: normalizedCustomFields,
+    }),
+    ...(normalizedConversationId !== undefined && {
+      conversation_id: normalizedConversationId,
+    }),
   };
 
   const updated = await prisma.$transaction(async (tx) => {
@@ -422,7 +726,7 @@ export const getEventService = async (eventId, viewerId) => {
   return mapEvent(event, viewerId);
 };
 
-export const registerEventService = async (eventId, userId) => {
+export const registerEventService = async (eventId, userId, body = {}) => {
   const event = await prisma.events.findUnique({ where: { id: eventId } });
 
   if (!event) {
@@ -467,25 +771,218 @@ export const registerEventService = async (eventId, userId) => {
     }
   }
 
-  await prisma.event_registrations.upsert({
-    where: { event_id_user_id: { event_id: eventId, user_id: userId } },
-    create: {
-      event_id: eventId,
-      user_id: userId,
-      registration_status: "registered",
-    },
-    update: {
-      registration_status: "registered",
-      registered_at: new Date(),
-    },
-  });
+  if (body != null && !isPlainObject(body)) {
+    const err = new Error("Registration payload must be an object");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const payload = body ?? {};
+  const participationType =
+    normalizeParticipationType(event.participation_type) ?? "individual";
+
+  const teamId = normalizeOptionalString(payload.team_id, "team_id");
+  const enrollmentNumber = normalizeOptionalString(
+    payload.enrollment_number,
+    "enrollment_number",
+  );
+  const contactNumber = normalizeOptionalString(
+    payload.contact_number,
+    "contact_number",
+  );
+  const semester = normalizeOptionalPositiveInteger(
+    payload.semester,
+    "semester",
+  );
+  const branch = normalizeOptionalString(payload.branch, "branch");
+  const paymentProofUrl = normalizeOptionalString(
+    payload.payment_proof_url,
+    "payment_proof_url",
+  );
+  const transactionId = normalizeOptionalString(
+    payload.transaction_id,
+    "transaction_id",
+  );
+  const teamSize = normalizeOptionalPositiveInteger(
+    payload.team_size,
+    "team_size",
+  );
+
+  let customFieldResponses;
+  if (payload.custom_field_responses !== undefined) {
+    if (
+      payload.custom_field_responses !== null &&
+      !isPlainObject(payload.custom_field_responses)
+    ) {
+      const err = new Error("custom_field_responses must be an object");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    customFieldResponses = payload.custom_field_responses ?? {};
+  }
+
+  if (participationType === "team") {
+    if (teamSize == null) {
+      const err = new Error("team_size is required for team events");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (event.min_team_size != null && teamSize < event.min_team_size) {
+      const err = new Error(
+        `team_size must be at least ${event.min_team_size} for this event`,
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (event.max_team_size != null && teamSize > event.max_team_size) {
+      const err = new Error(
+        `team_size cannot exceed ${event.max_team_size} for this event`,
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const missingTeamFields = [];
+    if (!hasValue(enrollmentNumber))
+      missingTeamFields.push("enrollment_number");
+    if (!hasValue(branch)) missingTeamFields.push("branch");
+
+    if (missingTeamFields.length) {
+      const err = new Error(
+        `${missingTeamFields.join(", ")} are required for team event registration`,
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+  }
+
+  const requiredCustomFields = getRequiredCustomFields(event.custom_fields);
+  if (requiredCustomFields.length) {
+    const responses = customFieldResponses ?? {};
+    if (!isPlainObject(responses)) {
+      const err = new Error("custom_field_responses must be an object");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const missingRequiredFields = requiredCustomFields
+      .filter(
+        (field) => !hasValue(findCustomFieldResponseValue(responses, field)),
+      )
+      .map((field) => field.label || field.key);
+
+    if (missingRequiredFields.length) {
+      const err = new Error(
+        `Required custom form fields are missing: ${missingRequiredFields.join(", ")}`,
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+  }
+
+  let payment = null;
+  if (event.ticket_price_type === "PAID") {
+    const missingPaymentFields = [];
+    if (!hasValue(transactionId)) missingPaymentFields.push("transaction_id");
+    if (!hasValue(paymentProofUrl))
+      missingPaymentFields.push("payment_proof_url");
+
+    if (missingPaymentFields.length) {
+      const err = new Error(
+        `${missingPaymentFields.join(", ")} are required for paid event registration`,
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const perMemberAmount = Number(event.price ?? 0);
+    if (!Number.isFinite(perMemberAmount) || perMemberAmount <= 0) {
+      const err = new Error("Invalid paid event price configuration");
+      err.statusCode = 409;
+      throw err;
+    }
+
+    const memberCount = participationType === "team" ? (teamSize ?? 1) : 1;
+    const totalAmount = Number((perMemberAmount * memberCount).toFixed(2));
+
+    payment = {
+      currency: "INR",
+      amount_per_member: perMemberAmount,
+      member_count: memberCount,
+      total_amount: totalAmount,
+    };
+  }
+
+  const mergedCustomFieldResponses = {
+    ...(customFieldResponses ?? {}),
+    ...(teamSize != null ? { team_size: teamSize } : {}),
+  };
+
+  const registrationCreateData = {
+    event_id: eventId,
+    user_id: userId,
+    registration_status: "registered",
+    team_id: teamId ?? null,
+    enrollment_number: enrollmentNumber ?? null,
+    contact_number: contactNumber ?? null,
+    semester: semester ?? null,
+    branch: branch ?? null,
+    payment_proof_url: paymentProofUrl ?? null,
+    transaction_id: transactionId ?? null,
+    custom_field_responses: mergedCustomFieldResponses,
+  };
+
+  const registrationUpdateData = {
+    registration_status: "registered",
+    registered_at: new Date(),
+    ...(teamId !== undefined && { team_id: teamId }),
+    ...(enrollmentNumber !== undefined && {
+      enrollment_number: enrollmentNumber,
+    }),
+    ...(contactNumber !== undefined && { contact_number: contactNumber }),
+    ...(semester !== undefined && { semester }),
+    ...(branch !== undefined && { branch }),
+    ...(paymentProofUrl !== undefined && {
+      payment_proof_url: paymentProofUrl,
+    }),
+    ...(transactionId !== undefined && { transaction_id: transactionId }),
+    ...(payload.custom_field_responses !== undefined || teamSize != null ?
+      { custom_field_responses: mergedCustomFieldResponses }
+    : {}),
+  };
+
+  try {
+    await prisma.event_registrations.upsert({
+      where: { event_id_user_id: { event_id: eventId, user_id: userId } },
+      create: registrationCreateData,
+      update: registrationUpdateData,
+    });
+  } catch (error) {
+    if (error?.code === "P2002") {
+      const err = new Error(
+        "Enrollment number is already registered for this event",
+      );
+      err.statusCode = 409;
+      throw err;
+    }
+    throw error;
+  }
 
   const updatedEvent = await prisma.events.findUnique({
     where: { id: eventId },
     include: eventInclude(userId),
   });
 
-  return mapEvent(updatedEvent, userId);
+  return {
+    event: mapEvent(updatedEvent, userId),
+    registration: {
+      team_size: participationType === "team" ? teamSize : 1,
+      ...(payment ? { payment } : {}),
+    },
+  };
 };
 
 export const getRegistrationInfoService = async (eventId, userId) => {

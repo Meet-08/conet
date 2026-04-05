@@ -1,5 +1,6 @@
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
+import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/domain/repositories/event_repository.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -9,7 +10,10 @@ class EventRegister {
   EventRegister({required EventRepository repository})
     : _repository = repository;
 
-  Future<Either<AppFailure, Event>> call(String eventId) {
-    return _repository.registerEvent(eventId);
+  Future<Either<AppFailure, Event>> call(
+    String eventId,
+    EventRegistrationPayload payload,
+  ) {
+    return _repository.registerEvent(eventId, payload);
   }
 }
