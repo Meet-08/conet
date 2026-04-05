@@ -236,9 +236,6 @@ export const getConversationsService = async (currentUserId, type = "all") => {
       conversation_members: {
         some: { user_id: currentUserId },
       },
-      last_message_id: {
-        not: null,
-      },
       ...typeFilter,
     },
     include: {

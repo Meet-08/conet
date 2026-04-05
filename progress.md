@@ -97,6 +97,11 @@
 **Use Cases:** `MessageCreateConversation`, `MessageGetConversations`, `MessageGetMessages`, `MessageSendMessage`, `MessageMarkAsRead`, `MessageWatchMessages`, `MessageWatchConversationUpdates`, `MessageSearchUsers`, `MessageCreateGroup`, `MessageUpdateGroup`, `MessageDeleteGroup`, `MessageGetGroupMembers`, `MessageAddGroupMember`, `MessageRemoveGroupMember`
 **Backend Endpoints:** `POST/GET /conversations`, `GET/POST /conversations/:id/messages`, `POST /conversations/:id/mark_as_read`, `GET /conversations/search_users`, `POST/PATCH/DELETE /groups/:id`, `GET/POST /groups/:id/members`, `DELETE /groups/:id/members/:userId`
 
+**Implementation Notes:**
+
+- **Conversation Fetching** — Removed `last_message_id IS NOT NULL` restriction from `getConversationsService` so empty group conversations (no messages yet) are now fetchable. Mapping functions already handle null messages gracefully with optional chaining.
+- **Test Coverage** — Added unit test for conversations without messages to ensure empty groups appear in conversation list.
+
 ---
 
 ### Notifications

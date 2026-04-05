@@ -232,6 +232,45 @@ describe("getConversationsService", () => {
 
     expect(result[0].unread_count).toBe(0);
   });
+
+  it("returns conversations without messages (empty groups or new conversations)", async () => {
+    const emptyConversationRow = {
+      id: CONV_ID,
+      type: "group",
+      name: "New Group",
+      group_image_url: null,
+      created_by: TEST_USER.id,
+      user_one: null,
+      user_two: null,
+      created_at: new Date("2025-01-01"),
+      updated_at: new Date("2025-01-01"),
+      messages_conversations_last_message_idTomessages: null, // No messages yet
+      conversation_members: [
+        {
+          user_id: TEST_USER.id,
+          users: {
+            id: TEST_USER.id,
+            username: "alice",
+          },
+          role: "admin",
+        },
+      ],
+      _count: { unreadMessages: 0 },
+    };
+
+    prismaMock.conversations.findMany.mockResolvedValue([emptyConversationRow]);
+    prismaMock.messages.groupBy.mockResolvedValue([]);
+
+    const result = await getConversationsService(TEST_USER.id);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe(CONV_ID);
+    expect(result[0].type).toBe("group");
+    expect(result[0].name).toBe("New Group");
+    expect(result[0].last_message).toBeNull();
+    expect(result[0].last_message_media_urls).toEqual([]);
+    expect(result[0].unread_count).toBe(0);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
