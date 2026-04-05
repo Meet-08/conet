@@ -358,6 +358,33 @@ describe("registerEventService", () => {
     });
   });
 
+  it("throws 400 when custom_field_responses includes unknown keys", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({
+        event_status: "published",
+        custom_fields: [
+          {
+            key: "college_id",
+            label: "College ID",
+            required: false,
+            type: "text",
+          },
+        ],
+      }),
+    );
+
+    await expect(
+      registerEventService(EVENT_ID, ATTENDEE_ID, {
+        custom_field_responses: {
+          random_key: "value",
+        },
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: "Unknown custom form fields in response: random_key",
+    });
+  });
+
   it("returns per-member payment summary for paid team events", async () => {
     prismaMock.events.findUnique
       .mockResolvedValueOnce(
@@ -388,9 +415,6 @@ describe("registerEventService", () => {
       payment_proof_url: "https://cdn.example/proof.png",
       transaction_id: "TXN-123",
       member_user_ids: ["member-1"],
-      custom_field_responses: {
-        captain_name: "Bob Jones",
-      },
     });
 
     expect(result.registration.payment).toEqual({
@@ -408,11 +432,7 @@ describe("registerEventService", () => {
           branch: "CSE",
           transaction_id: "TXN-123",
           payment_proof_url: "https://cdn.example/proof.png",
-          custom_field_responses: expect.objectContaining({
-            captain_name: "Bob Jones",
-            team_size: 2,
-            member_user_ids: ["member-1"],
-          }),
+          custom_field_responses: {},
         }),
       }),
     );

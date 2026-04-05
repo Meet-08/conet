@@ -315,6 +315,94 @@ const findCustomFieldResponseValue = (responses, field) => {
   return undefined;
 };
 
+const normalizeCustomFieldResponseValue = (value) => {
+  if (value === null || value === undefined) return undefined;
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length ? trimmed : undefined;
+  }
+
+  if (Array.isArray(value)) {
+    const normalized = value
+      .map((entry) => (typeof entry === "string" ? entry.trim() : entry))
+      .filter((entry) => hasValue(entry));
+    return normalized.length ? normalized : undefined;
+  }
+
+  if (isPlainObject(value)) {
+    return Object.keys(value).length ? value : undefined;
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+
+  return undefined;
+};
+
+const getEventCustomFieldDescriptors = (customFields) => {
+  const definitions = parseEventCustomFields(customFields);
+
+  return definitions
+    .filter((field) => isPlainObject(field))
+    .map((field) => {
+      const key = String(
+        field.key ?? field.field_key ?? field.id ?? field.name ?? field.label,
+      ).trim();
+      const label = String(field.label ?? field.name ?? key).trim();
+      return { key, label };
+    })
+    .filter((field) => field.key.length > 0);
+};
+
+const normalizeCustomFieldResponsesForEvent = (customFields, responses) => {
+  const safeResponses = isPlainObject(responses) ? responses : {};
+  const descriptors = getEventCustomFieldDescriptors(customFields);
+
+  if (!descriptors.length) {
+    if (Object.keys(safeResponses).length) {
+      const err = new Error(
+        "This event does not accept custom_field_responses",
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+    return {};
+  }
+
+  const allowedKeys = new Set();
+  for (const descriptor of descriptors) {
+    allowedKeys.add(descriptor.key);
+    if (descriptor.label) {
+      allowedKeys.add(descriptor.label);
+    }
+  }
+
+  const unknownKeys = Object.keys(safeResponses).filter(
+    (key) => !allowedKeys.has(key),
+  );
+
+  if (unknownKeys.length) {
+    const err = new Error(
+      `Unknown custom form fields in response: ${unknownKeys.join(", ")}`,
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const normalized = {};
+  for (const descriptor of descriptors) {
+    const rawValue = findCustomFieldResponseValue(safeResponses, descriptor);
+    const value = normalizeCustomFieldResponseValue(rawValue);
+    if (value !== undefined) {
+      normalized[descriptor.key] = value;
+    }
+  }
+
+  return normalized;
+};
+
 // ─── Create event (draft or publish) ─────────────────────────────────────────
 
 export const createEventService = async (organizerId, body) => {
@@ -909,19 +997,15 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     }
   }
 
+  const normalizedCustomFieldResponses = normalizeCustomFieldResponsesForEvent(
+    event.custom_fields,
+    customFieldResponses ?? {},
+  );
+
   const requiredCustomFields = getRequiredCustomFields(event.custom_fields);
   if (requiredCustomFields.length) {
-    const responses = customFieldResponses ?? {};
-    if (!isPlainObject(responses)) {
-      const err = new Error("custom_field_responses must be an object");
-      err.statusCode = 400;
-      throw err;
-    }
-
     const missingRequiredFields = requiredCustomFields
-      .filter(
-        (field) => !hasValue(findCustomFieldResponseValue(responses, field)),
-      )
+      .filter((field) => !hasValue(normalizedCustomFieldResponses[field.key]))
       .map((field) => field.label || field.key);
 
     if (missingRequiredFields.length) {
@@ -965,12 +1049,6 @@ export const registerEventService = async (eventId, userId, body = {}) => {
       total_amount: totalAmount,
     };
   }
-
-  const mergedCustomFieldResponses = {
-    ...(customFieldResponses ?? {}),
-    ...(teamSize != null ? { team_size: teamSize } : {}),
-    ...(memberUserIds !== undefined ? { member_user_ids: memberUserIds } : {}),
-  };
 
   let resolvedTeamId = teamId;
 
@@ -1049,7 +1127,7 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     branch: branch ?? null,
     payment_proof_url: paymentProofUrl ?? null,
     transaction_id: transactionId ?? null,
-    custom_field_responses: mergedCustomFieldResponses,
+    custom_field_responses: normalizedCustomFieldResponses,
   };
 
   const registrationUpdateData = {
@@ -1066,8 +1144,8 @@ export const registerEventService = async (eventId, userId, body = {}) => {
       payment_proof_url: paymentProofUrl,
     }),
     ...(transactionId !== undefined && { transaction_id: transactionId }),
-    ...(payload.custom_field_responses !== undefined || teamSize != null ?
-      { custom_field_responses: mergedCustomFieldResponses }
+    ...(payload.custom_field_responses !== undefined ?
+      { custom_field_responses: normalizedCustomFieldResponses }
     : {}),
   };
 
