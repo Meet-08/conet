@@ -47,6 +47,8 @@ const makeEventRow = (override = {}) => ({
   participation_type: "individual",
   min_team_size: 1,
   max_team_size: 1,
+  upi_id: null,
+  custom_fields: [],
   created_at: new Date("2026-03-28T00:00:00.000Z"),
   users: {
     id: ORGANIZER_ID,
@@ -270,8 +272,109 @@ describe("registerEventService", () => {
         },
       }),
     );
-    expect(result.is_registered).toBe(true);
-    expect(result.registration_count).toBe(1);
+    expect(result.event.is_registered).toBe(true);
+    expect(result.event.registration_count).toBe(1);
+    expect(result.registration.team_size).toBe(1);
+  });
+
+  it("throws 400 when team registration omits required team fields", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({
+        event_status: "published",
+        participation_type: "team",
+        min_team_size: 11,
+        max_team_size: 15,
+      }),
+    );
+
+    await expect(
+      registerEventService(EVENT_ID, ATTENDEE_ID, { team_size: 11 }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message:
+        "enrollment_number, branch are required for team event registration",
+    });
+  });
+
+  it("throws 400 when required custom form fields are missing", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({
+        event_status: "published",
+        custom_fields: [
+          {
+            key: "college_id",
+            label: "College ID",
+            required: true,
+            type: "text",
+          },
+        ],
+      }),
+    );
+
+    await expect(
+      registerEventService(EVENT_ID, ATTENDEE_ID, {
+        custom_field_responses: {},
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: "Required custom form fields are missing: College ID",
+    });
+  });
+
+  it("returns per-member payment summary for paid team events", async () => {
+    prismaMock.events.findUnique
+      .mockResolvedValueOnce(
+        makeEventRow({
+          event_status: "published",
+          participation_type: "team",
+          min_team_size: 11,
+          max_team_size: 15,
+          ticket_price_type: "PAID",
+          price: 20,
+        }),
+      )
+      .mockResolvedValueOnce(
+        makeEventRow({
+          event_status: "published",
+          participation_type: "team",
+          min_team_size: 11,
+          max_team_size: 15,
+          ticket_price_type: "PAID",
+          price: 20,
+        }),
+      );
+
+    const result = await registerEventService(EVENT_ID, ATTENDEE_ID, {
+      team_size: 11,
+      enrollment_number: "ENR-001",
+      branch: "CSE",
+      payment_proof_url: "https://cdn.example/proof.png",
+      transaction_id: "TXN-123",
+      custom_field_responses: {
+        captain_name: "Bob Jones",
+      },
+    });
+
+    expect(result.registration.payment).toEqual({
+      currency: "INR",
+      amount_per_member: 20,
+      member_count: 11,
+      total_amount: 220,
+    });
+    expect(prismaMock.event_registrations.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          enrollment_number: "ENR-001",
+          branch: "CSE",
+          transaction_id: "TXN-123",
+          payment_proof_url: "https://cdn.example/proof.png",
+          custom_field_responses: expect.objectContaining({
+            captain_name: "Bob Jones",
+            team_size: 11,
+          }),
+        }),
+      }),
+    );
   });
 });
 

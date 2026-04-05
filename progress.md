@@ -206,6 +206,10 @@
 - **Cancel Event** — Organizer cancels a published or draft event
 - **Get Event** — Fetch a single event; non-organizers can only see published events
 - **Register Event** — Authenticated user registers for a published event and receives the latest full event view
+- **Custom Registration Form Builder** — Organizer can save event-level `custom_fields` definitions and optional `upi_id` in create/update payloads
+- **Team Registration Constraints** — Team events now enforce max team size with optional min size validation, plus required enrollment/branch fields at registration
+- **Required Field Enforcement** — Registration rejects submissions that omit required custom form responses defined by the organizer
+- **Per-member Team Payment Summary** — Paid team registrations compute total payable amount as `price × team_size` and return payment breakdown metadata
 - **Registration Ticket Info** — Registered user fetches ticket payload data for QR generation
 - **Attend Event (Scan Ticket)** — Organizer/co-host scans ticket payload and marks attendee as attended with live attendance summary
 - **Discover Events** — Paginated list of published events with category, location type, date range, and text search filters

@@ -48,6 +48,10 @@ export const mapEvent = (event, viewerId = null) => ({
   participation_type: event.participation_type ?? null,
   min_team_size: event.min_team_size ?? null,
   max_team_size: event.max_team_size ?? null,
+  upi_id: event.upi_id ?? null,
+  conversation_id: event.conversation_id ?? null,
+  custom_fields:
+    Array.isArray(event.custom_fields) ? event.custom_fields : [],
   created_at: event.created_at,
   cohosts: event.event_cohosts?.map(mapCohost) ?? [],
   activity: event.event_activity ?? [],
