@@ -4,15 +4,18 @@ import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
 import 'package:conet_app/feature/event/domain/entities/event_page.dart';
+import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_organized_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
-import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_publish_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_update_conversation.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_create_group.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mocktail/mocktail.dart';
@@ -27,7 +30,7 @@ class MockEventGetMyEvents extends Mock implements EventGetMyEvents {}
 class MockEventGetMyOrganizedEvents extends Mock
     implements EventGetMyOrganizedEvents {}
 
-class MockEventPublish extends Mock implements EventPublish {}
+class MockEventPublishById extends Mock implements EventPublishById {}
 
 class MockEventRegister extends Mock implements EventRegister {}
 
@@ -35,16 +38,23 @@ class MockEventSave extends Mock implements EventSave {}
 
 class MockEventSaveDraft extends Mock implements EventSaveDraft {}
 
+class MockEventUpdateConversation extends Mock
+    implements EventUpdateConversation {}
+
+class MockMessageCreateGroup extends Mock implements MessageCreateGroup {}
+
 void main() {
   late EventBloc bloc;
   late MockEventGetById mockGetById;
   late MockEventGetPublishedEvents mockGetPublishedEvents;
   late MockEventGetMyEvents mockGetMyEvents;
   late MockEventGetMyOrganizedEvents mockGetMyOrganizedEvents;
-  late MockEventPublish mockPublish;
+  late MockEventPublishById mockPublishById;
   late MockEventRegister mockRegister;
   late MockEventSave mockSave;
   late MockEventSaveDraft mockSaveDraft;
+  late MockEventUpdateConversation mockUpdateConversation;
+  late MockMessageCreateGroup mockCreateGroup;
 
   final tEventListItem1 = EventListItem(
     id: 'event-1',
@@ -92,6 +102,8 @@ void main() {
     maxParticipant: 100,
   );
 
+  const tRegistrationPayload = EventRegistrationPayload();
+
   final tFirstPage = EventPage(
     events: [tEventListItem1],
     nextCursor: 'cursor-2',
@@ -111,20 +123,24 @@ void main() {
     mockGetPublishedEvents = MockEventGetPublishedEvents();
     mockGetMyEvents = MockEventGetMyEvents();
     mockGetMyOrganizedEvents = MockEventGetMyOrganizedEvents();
-    mockPublish = MockEventPublish();
+    mockPublishById = MockEventPublishById();
     mockRegister = MockEventRegister();
     mockSave = MockEventSave();
     mockSaveDraft = MockEventSaveDraft();
+    mockUpdateConversation = MockEventUpdateConversation();
+    mockCreateGroup = MockMessageCreateGroup();
 
     bloc = EventBloc(
       getById: mockGetById,
       getPublishedEvents: mockGetPublishedEvents,
       getMyEvents: mockGetMyEvents,
       getMyOrganizedEvents: mockGetMyOrganizedEvents,
-      publishEvent: mockPublish,
+      publishDraftById: mockPublishById,
       registerEvent: mockRegister,
       saveEvent: mockSave,
       saveDraft: mockSaveDraft,
+      updateEventConversation: mockUpdateConversation,
+      createGroup: mockCreateGroup,
     );
   });
 
@@ -358,7 +374,10 @@ void main() {
       'emits [EventCreateLoading, EventCreateSuccess(isDraft: false)] on success',
       build: () {
         when(
-          () => mockPublish(tPayload),
+          () => mockSaveDraft(tPayload),
+        ).thenAnswer((_) async => Right(tEvent));
+        when(
+          () => mockPublishById('event-1'),
         ).thenAnswer((_) async => Right(tEvent));
         return bloc;
       },
@@ -370,7 +389,8 @@ void main() {
             .having((s) => s.isDraft, 'isDraft', false),
       ],
       verify: (_) {
-        verify(() => mockPublish(tPayload)).called(1);
+        verify(() => mockSaveDraft(tPayload)).called(1);
+        verify(() => mockPublishById('event-1')).called(1);
       },
     );
 
@@ -378,7 +398,10 @@ void main() {
       'emits [EventCreateLoading, EventCreateFailure] on failure',
       build: () {
         when(
-          () => mockPublish(tPayload),
+          () => mockSaveDraft(tPayload),
+        ).thenAnswer((_) async => Right(tEvent));
+        when(
+          () => mockPublishById('event-1'),
         ).thenAnswer((_) async => Left(AppFailure('Publish failed')));
         return bloc;
       },
@@ -421,11 +444,12 @@ void main() {
       'emits [EventRegistrationLoading, EventRegistrationSuccess] on success',
       build: () {
         when(
-          () => mockRegister('event-1'),
+          () => mockRegister('event-1', tRegistrationPayload),
         ).thenAnswer((_) async => Right(tEvent));
         return bloc;
       },
-      act: (bloc) => bloc.add(const EventRegisterEvent('event-1')),
+      act: (bloc) =>
+          bloc.add(const EventRegisterEvent('event-1', tRegistrationPayload)),
       expect: () => [
         isA<EventRegistrationLoading>(),
         isA<EventRegistrationSuccess>().having(
@@ -435,7 +459,7 @@ void main() {
         ),
       ],
       verify: (_) {
-        verify(() => mockRegister('event-1')).called(1);
+        verify(() => mockRegister('event-1', tRegistrationPayload)).called(1);
       },
     );
 
@@ -443,11 +467,12 @@ void main() {
       'emits [EventRegistrationLoading, EventRegistrationFailure] on failure',
       build: () {
         when(
-          () => mockRegister('event-1'),
+          () => mockRegister('event-1', tRegistrationPayload),
         ).thenAnswer((_) async => Left(AppFailure('Registration failed')));
         return bloc;
       },
-      act: (bloc) => bloc.add(const EventRegisterEvent('event-1')),
+      act: (bloc) =>
+          bloc.add(const EventRegisterEvent('event-1', tRegistrationPayload)),
       expect: () => [
         isA<EventRegistrationLoading>(),
         isA<EventRegistrationFailure>().having(
