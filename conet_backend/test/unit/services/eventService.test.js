@@ -99,6 +99,14 @@ beforeEach(() => {
     id: REGISTRATION_ID,
   });
 
+  prismaMock.event_teams.create.mockResolvedValue({
+    id: "team-generated-1",
+    event_id: EVENT_ID,
+    leader_id: ATTENDEE_ID,
+  });
+  prismaMock.event_teams.findUnique.mockResolvedValue(null);
+  prismaMock.event_team_members.createMany.mockResolvedValue({ count: 0 });
+
   prismaMock.event_bookmarks.findUnique.mockResolvedValue(null);
   prismaMock.event_bookmarks.create.mockResolvedValue({
     id: "bookmark-1",
@@ -122,6 +130,9 @@ beforeEach(() => {
   });
 
   prismaMock.users.findUnique.mockResolvedValue({ id: ATTENDEE_ID });
+  prismaMock.users.count.mockImplementation(({ where }) =>
+    Promise.resolve(where?.id?.in?.length ?? 0),
+  );
 });
 
 describe("createEventService", () => {
@@ -282,17 +293,43 @@ describe("registerEventService", () => {
       makeEventRow({
         event_status: "published",
         participation_type: "team",
-        min_team_size: 11,
-        max_team_size: 15,
+        min_team_size: 2,
+        max_team_size: 5,
       }),
     );
 
     await expect(
-      registerEventService(EVENT_ID, ATTENDEE_ID, { team_size: 11 }),
+      registerEventService(EVENT_ID, ATTENDEE_ID, {
+        team_size: 2,
+        member_user_ids: ["member-1"],
+      }),
     ).rejects.toMatchObject({
       statusCode: 400,
       message:
         "enrollment_number, branch are required for team event registration",
+    });
+  });
+
+  it("throws 400 when required team members are not added", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({
+        event_status: "published",
+        participation_type: "team",
+        min_team_size: 4,
+        max_team_size: 6,
+      }),
+    );
+
+    await expect(
+      registerEventService(EVENT_ID, ATTENDEE_ID, {
+        team_size: 4,
+        enrollment_number: "ENR-001",
+        branch: "CSE",
+        member_user_ids: ["member-1", "member-2"],
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: "Add exactly 3 team members before registration",
     });
   });
 
@@ -327,8 +364,8 @@ describe("registerEventService", () => {
         makeEventRow({
           event_status: "published",
           participation_type: "team",
-          min_team_size: 11,
-          max_team_size: 15,
+          min_team_size: 2,
+          max_team_size: 5,
           ticket_price_type: "PAID",
           price: 20,
         }),
@@ -337,19 +374,20 @@ describe("registerEventService", () => {
         makeEventRow({
           event_status: "published",
           participation_type: "team",
-          min_team_size: 11,
-          max_team_size: 15,
+          min_team_size: 2,
+          max_team_size: 5,
           ticket_price_type: "PAID",
           price: 20,
         }),
       );
 
     const result = await registerEventService(EVENT_ID, ATTENDEE_ID, {
-      team_size: 11,
+      team_size: 2,
       enrollment_number: "ENR-001",
       branch: "CSE",
       payment_proof_url: "https://cdn.example/proof.png",
       transaction_id: "TXN-123",
+      member_user_ids: ["member-1"],
       custom_field_responses: {
         captain_name: "Bob Jones",
       },
@@ -358,21 +396,41 @@ describe("registerEventService", () => {
     expect(result.registration.payment).toEqual({
       currency: "INR",
       amount_per_member: 20,
-      member_count: 11,
-      total_amount: 220,
+      member_count: 2,
+      total_amount: 40,
     });
+    expect(result.registration.team_id).toBe("team-generated-1");
     expect(prismaMock.event_registrations.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         create: expect.objectContaining({
+          team_id: "team-generated-1",
           enrollment_number: "ENR-001",
           branch: "CSE",
           transaction_id: "TXN-123",
           payment_proof_url: "https://cdn.example/proof.png",
           custom_field_responses: expect.objectContaining({
             captain_name: "Bob Jones",
-            team_size: 11,
+            team_size: 2,
+            member_user_ids: ["member-1"],
           }),
         }),
+      }),
+    );
+    expect(prismaMock.event_team_members.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            user_id: ATTENDEE_ID,
+            role: "leader",
+            team_id: "team-generated-1",
+          }),
+          expect.objectContaining({
+            user_id: "member-1",
+            role: "member",
+            team_id: "team-generated-1",
+          }),
+        ]),
+        skipDuplicates: true,
       }),
     );
   });

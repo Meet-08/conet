@@ -207,6 +207,10 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
       if (_teamSize < _selectedMembers.length + 1) {
         return 'Team size must include captain and selected members';
       }
+      final requiredMembers = _teamSize - 1;
+      if (_selectedMembers.length != requiredMembers) {
+        return 'Add exactly $requiredMembers team members to continue';
+      }
       if (_enrollmentController.text.trim().isEmpty) {
         return 'Enrollment number is required for team events';
       }
@@ -429,6 +433,18 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 6),
+                Text(
+                  _selectedMembers.length == (_teamSize - 1)
+                      ? 'Team is complete. You can submit now.'
+                      : 'Add ${(_teamSize - 1) - _selectedMembers.length} more member(s) to continue',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: _selectedMembers.length == (_teamSize - 1)
+                        ? colorScheme.primary
+                        : colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 _InputField(
                   controller: _enrollmentController,
@@ -457,7 +473,7 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
                   children: [
                     Expanded(
                       child: Text(
-                        'Optional Team Members (${_selectedMembers.length})',
+                        'Team Members (${_selectedMembers.length})',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
@@ -490,7 +506,7 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
                   )
                 else
                   Text(
-                    'No optional members added',
+                    'Add members to match selected team size',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),

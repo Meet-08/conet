@@ -103,6 +103,14 @@ beforeEach(() => {
     id: REGISTRATION_ID,
   });
 
+  prismaMock.event_teams.create.mockResolvedValue({
+    id: "team-generated-1",
+    event_id: EVENT_ID,
+    leader_id: TEST_USER_B.id,
+  });
+  prismaMock.event_teams.findUnique.mockResolvedValue(null);
+  prismaMock.event_team_members.createMany.mockResolvedValue({ count: 0 });
+
   prismaMock.event_cohosts.findUnique.mockResolvedValue(null);
   prismaMock.event_cohosts.findMany.mockResolvedValue([]);
   prismaMock.event_cohosts.delete.mockResolvedValue({ id: "cohost-1" });
@@ -114,6 +122,9 @@ beforeEach(() => {
     last_name: "Jones",
     profile_pic_url: null,
   });
+  prismaMock.users.count.mockImplementation(({ where }) =>
+    Promise.resolve(where?.id?.in?.length ?? 0),
+  );
 });
 
 describe("Event routes auth", () => {
@@ -299,21 +310,56 @@ describe("Registration and attendance routes", () => {
       makeEventRow({
         event_status: "published",
         participation_type: "team",
-        min_team_size: 11,
-        max_team_size: 15,
+        min_team_size: 2,
+        max_team_size: 5,
       }),
     );
 
     const res = await request(app)
       .post(`/api/events/${EVENT_ID}/register`)
       .set("Authorization", makeAuthHeader(TEST_USER_B))
-      .send({ team_size: 11 });
+      .send({ team_size: 2, member_user_ids: ["member-1"] });
 
     expect(res.status).toBe(400);
     expect(res.body.message).toBe(
       "enrollment_number, branch are required for team event registration",
     );
     expect(prismaMock.event_registrations.upsert).not.toHaveBeenCalled();
+  });
+
+  it("200 - generates team_id for team registrations", async () => {
+    prismaMock.events.findUnique
+      .mockResolvedValueOnce(
+        makeEventRow({
+          event_status: "published",
+          participation_type: "team",
+          min_team_size: 2,
+          max_team_size: 5,
+        }),
+      )
+      .mockResolvedValueOnce(
+        makeEventRow({
+          event_status: "published",
+          participation_type: "team",
+          min_team_size: 2,
+          max_team_size: 5,
+        }),
+      );
+
+    const res = await request(app)
+      .post(`/api/events/${EVENT_ID}/register`)
+      .set("Authorization", makeAuthHeader(TEST_USER_B))
+      .send({
+        team_size: 2,
+        enrollment_number: "ENR-001",
+        branch: "CSE",
+        member_user_ids: ["member-1"],
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.registration.team_id).toBe("team-generated-1");
+    expect(prismaMock.event_teams.create).toHaveBeenCalled();
+    expect(prismaMock.event_team_members.createMany).toHaveBeenCalled();
   });
 
   it("200 - returns registration info", async () => {

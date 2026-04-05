@@ -154,6 +154,35 @@ const normalizeOptionalString = (value, fieldName) => {
   return trimmed.length ? trimmed : null;
 };
 
+const normalizeOptionalStringArray = (value, fieldName) => {
+  if (value === undefined) return undefined;
+  if (value === null) return [];
+
+  if (!Array.isArray(value)) {
+    const err = new Error(`${fieldName} must be an array of strings`);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const normalized = [];
+
+  for (let index = 0; index < value.length; index += 1) {
+    const entry = value[index];
+    if (typeof entry !== "string") {
+      const err = new Error(`${fieldName}[${index}] must be a string`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const trimmed = entry.trim();
+    if (trimmed.length) {
+      normalized.push(trimmed);
+    }
+  }
+
+  return [...new Set(normalized)];
+};
+
 const validateTeamSizeConfig = ({
   participationType,
   minTeamSize,
@@ -807,6 +836,10 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     payload.team_size,
     "team_size",
   );
+  const memberUserIds = normalizeOptionalStringArray(
+    payload.member_user_ids,
+    "member_user_ids",
+  );
 
   let customFieldResponses;
   if (payload.custom_field_responses !== undefined) {
@@ -840,6 +873,23 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     if (event.max_team_size != null && teamSize > event.max_team_size) {
       const err = new Error(
         `team_size cannot exceed ${event.max_team_size} for this event`,
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const requiredAdditionalMembers = Math.max((teamSize ?? 1) - 1, 0);
+    const selectedAdditionalMembers = memberUserIds ?? [];
+
+    if (selectedAdditionalMembers.some((memberId) => memberId === userId)) {
+      const err = new Error("member_user_ids must not include the captain");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (selectedAdditionalMembers.length !== requiredAdditionalMembers) {
+      const err = new Error(
+        `Add exactly ${requiredAdditionalMembers} team members before registration`,
       );
       err.statusCode = 400;
       throw err;
@@ -919,13 +969,80 @@ export const registerEventService = async (eventId, userId, body = {}) => {
   const mergedCustomFieldResponses = {
     ...(customFieldResponses ?? {}),
     ...(teamSize != null ? { team_size: teamSize } : {}),
+    ...(memberUserIds !== undefined ? { member_user_ids: memberUserIds } : {}),
   };
+
+  let resolvedTeamId = teamId;
+
+  if (participationType === "team") {
+    const requestedMemberIds = memberUserIds ?? [];
+    const allTeamMemberIds = [userId, ...requestedMemberIds];
+
+    const usersCount = await prisma.users.count({
+      where: {
+        id: { in: allTeamMemberIds },
+      },
+    });
+
+    if (usersCount !== allTeamMemberIds.length) {
+      const err = new Error("One or more team members are invalid");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    if (resolvedTeamId) {
+      const existingTeam = await prisma.event_teams.findUnique({
+        where: { id: resolvedTeamId },
+      });
+
+      if (!existingTeam || existingTeam.event_id !== eventId) {
+        const err = new Error("Invalid team_id for this event");
+        err.statusCode = 400;
+        throw err;
+      }
+    } else {
+      const createdTeam = await prisma.event_teams.create({
+        data: {
+          event_id: eventId,
+          leader_id: userId,
+          team_name: `team-${userId.slice(0, 8)}-${Date.now().toString(36)}`,
+          metadata: {
+            team_size: teamSize,
+            member_user_ids: requestedMemberIds,
+            source: "event_registration",
+          },
+        },
+      });
+      resolvedTeamId = createdTeam.id;
+    }
+
+    try {
+      await prisma.event_team_members.createMany({
+        data: allTeamMemberIds.map((memberId) => ({
+          event_id: eventId,
+          team_id: resolvedTeamId,
+          user_id: memberId,
+          role: memberId === userId ? "leader" : "member",
+        })),
+        skipDuplicates: true,
+      });
+    } catch (error) {
+      if (error?.code === "P2002") {
+        const err = new Error(
+          "One or more users are already assigned to another team for this event",
+        );
+        err.statusCode = 409;
+        throw err;
+      }
+      throw error;
+    }
+  }
 
   const registrationCreateData = {
     event_id: eventId,
     user_id: userId,
     registration_status: "registered",
-    team_id: teamId ?? null,
+    team_id: resolvedTeamId ?? null,
     enrollment_number: enrollmentNumber ?? null,
     contact_number: contactNumber ?? null,
     semester: semester ?? null,
@@ -938,7 +1055,7 @@ export const registerEventService = async (eventId, userId, body = {}) => {
   const registrationUpdateData = {
     registration_status: "registered",
     registered_at: new Date(),
-    ...(teamId !== undefined && { team_id: teamId }),
+    ...(resolvedTeamId !== undefined && { team_id: resolvedTeamId }),
     ...(enrollmentNumber !== undefined && {
       enrollment_number: enrollmentNumber,
     }),
@@ -979,6 +1096,7 @@ export const registerEventService = async (eventId, userId, body = {}) => {
   return {
     event: mapEvent(updatedEvent, userId),
     registration: {
+      ...(participationType === "team" ? { team_id: resolvedTeamId } : {}),
       team_size: participationType === "team" ? teamSize : 1,
       ...(payment ? { payment } : {}),
     },
