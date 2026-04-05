@@ -8,6 +8,10 @@ class EventRegistrationPayload extends Equatable {
   final int? semester;
   final String? branch;
   final String? paymentProofUrl;
+  final String? paymentProofFileName;
+  final String? paymentProofFilePath;
+  final List<int>? paymentProofFileBytes;
+  final int? paymentProofFileSize;
   final String? transactionId;
   final Map<String, dynamic> customFieldResponses;
   final List<String> memberUserIds;
@@ -20,6 +24,10 @@ class EventRegistrationPayload extends Equatable {
     this.semester,
     this.branch,
     this.paymentProofUrl,
+    this.paymentProofFileName,
+    this.paymentProofFilePath,
+    this.paymentProofFileBytes,
+    this.paymentProofFileSize,
     this.transactionId,
     this.customFieldResponses = const {},
     this.memberUserIds = const [],
@@ -89,6 +97,10 @@ class EventRegistrationPayload extends Equatable {
     semester,
     branch,
     paymentProofUrl,
+    paymentProofFileName,
+    paymentProofFilePath,
+    paymentProofFileBytes,
+    paymentProofFileSize,
     transactionId,
     customFieldResponses,
     memberUserIds,

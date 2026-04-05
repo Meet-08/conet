@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:conet_app/core/api/dio_client.dart';
 import 'package:conet_app/core/common/data_sources/file_upload_data_source.dart';
 import 'package:conet_app/core/error/error_handler.dart';
@@ -12,6 +14,7 @@ import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/main.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:uuid/uuid.dart';
 
 class EventDataSourceImpl implements EventDataSource {
@@ -131,11 +134,50 @@ class EventDataSourceImpl implements EventDataSource {
   }
 
   @override
-  Future<Event> registerEvent(String eventId, EventRegistrationPayload payload) async {
+  Future<Event> registerEvent(
+    String eventId,
+    EventRegistrationPayload payload,
+  ) async {
     try {
+      final requestBody = payload.toJson();
+
+      final hasPaymentProofUrl =
+          (payload.paymentProofUrl?.trim().isNotEmpty ?? false);
+      final hasPaymentProofFile =
+          (payload.paymentProofFileName?.trim().isNotEmpty ?? false) &&
+          ((payload.paymentProofFilePath?.trim().isNotEmpty ?? false) ||
+              ((payload.paymentProofFileBytes?.isNotEmpty ?? false)));
+
+      if (!hasPaymentProofUrl && hasPaymentProofFile) {
+        final file = PlatformFile(
+          name: payload.paymentProofFileName!.trim(),
+          path: payload.paymentProofFilePath,
+          bytes: payload.paymentProofFileBytes == null
+              ? null
+              : Uint8List.fromList(payload.paymentProofFileBytes!),
+          size:
+              payload.paymentProofFileSize ??
+              payload.paymentProofFileBytes?.length ??
+              0,
+        );
+
+        final urls = await _fileUploadDataSource.uploadFiles(
+          files: [file],
+          bucket: 'event',
+          folder: '$eventId/registration-proof',
+        );
+
+        final uploadedUrl = urls.isEmpty ? null : urls.first;
+        if (uploadedUrl == null || uploadedUrl.trim().isEmpty) {
+          throw ServerException('Failed to upload payment proof');
+        }
+
+        requestBody['payment_proof_url'] = uploadedUrl;
+      }
+
       final response = await _dioClient.dio.post(
         '/events/$eventId/register',
-        data: payload.toJson(),
+        data: requestBody,
       );
 
       if (response.statusCode != 200) {

@@ -1,5 +1,6 @@
+import 'dart:typed_data';
+
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
-import 'package:conet_app/core/common/data_sources/file_upload_data_source.dart';
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/user_selector_bottom_sheet.dart';
@@ -31,7 +32,8 @@ class _EventRegistrationSheet extends StatefulWidget {
   const _EventRegistrationSheet({required this.event});
 
   @override
-  State<_EventRegistrationSheet> createState() => _EventRegistrationSheetState();
+  State<_EventRegistrationSheet> createState() =>
+      _EventRegistrationSheetState();
 }
 
 class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
@@ -51,6 +53,10 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
   late int _teamSize;
   bool _submitting = false;
   bool _uploadingProof = false;
+  String? _paymentProofFileName;
+  String? _paymentProofFilePath;
+  Uint8List? _paymentProofFileBytes;
+  int? _paymentProofFileSize;
 
   bool get _isTeamEvent =>
       (widget.event.participationType ?? '').trim().toLowerCase() == 'team';
@@ -58,7 +64,8 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
   int get _minTeamSize => widget.event.minTeamSize ?? 1;
   int get _maxTeamSize => widget.event.maxTeamSize ?? (_minTeamSize + 10);
 
-  double get _perMemberAmount => widget.event.isPaid ? (widget.event.price ?? 0) : 0;
+  double get _perMemberAmount =>
+      widget.event.isPaid ? (widget.event.price ?? 0) : 0;
 
   int get _paymentMemberCount => _isTeamEvent ? _teamSize : 1;
 
@@ -122,7 +129,9 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
       initialSelectedUsers: _selectedMembers,
       searchUsers: (query, limit) async {
         final result = await searchUsers(query: query, limit: limit);
-        return result.fold((failure) => throw Exception(failure.message), (users) {
+        return result.fold((failure) => throw Exception(failure.message), (
+          users,
+        ) {
           return users;
         });
       },
@@ -145,7 +154,7 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
     });
   }
 
-  Future<void> _uploadPaymentProof() async {
+  Future<void> _pickPaymentProof() async {
     final picked = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowMultiple: false,
@@ -156,36 +165,34 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
     final file = picked?.files.single;
     if (file == null) return;
 
+    if ((file.path == null || file.path!.trim().isEmpty) &&
+        (file.bytes == null || file.bytes!.isEmpty)) {
+      AppToast.showError(context, 'Unable to read selected proof file');
+      return;
+    }
+
     setState(() {
       _uploadingProof = true;
     });
 
     try {
-      final uploader = serviceLocator<FileUploadDataSource>();
-      final urls = await uploader.uploadFiles(
-        files: [file],
-        bucket: 'event',
-        folder: 'registration-proofs/${widget.event.id}',
-      );
+      _paymentProofFileName = file.name;
+      _paymentProofFilePath = file.path;
+      _paymentProofFileBytes = file.bytes;
+      _paymentProofFileSize = file.size;
+      _paymentProofController.text = file.name;
 
       if (!mounted) return;
-
-      final uploadedUrl = urls.isEmpty ? null : urls.first;
-      if (uploadedUrl == null || uploadedUrl.isEmpty) {
-        AppToast.showError(context, 'Failed to upload payment proof');
-        return;
-      }
-
-      _paymentProofController.text = uploadedUrl;
-      AppToast.showSuccess(context, 'Payment proof uploaded');
+      AppToast.showSuccess(context, 'Payment proof selected');
     } catch (e) {
       if (!mounted) return;
       AppToast.showError(context, e.toString());
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _uploadingProof = false;
-      });
+      if (mounted) {
+        setState(() {
+          _uploadingProof = false;
+        });
+      }
     }
   }
 
@@ -224,7 +231,8 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
       }
 
       if (type == 'multi_select') {
-        final selected = _customMultiSelectValues[field.key] ?? const <String>[];
+        final selected =
+            _customMultiSelectValues[field.key] ?? const <String>[];
         if (selected.isEmpty) {
           return '${field.label} is required';
         }
@@ -241,8 +249,8 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
       if (_transactionController.text.trim().isEmpty) {
         return 'Transaction ID is required for paid events';
       }
-      if (_paymentProofController.text.trim().isEmpty) {
-        return 'Payment proof URL is required for paid events';
+      if ((_paymentProofFileName ?? '').trim().isEmpty) {
+        return 'Payment proof is required for paid events';
       }
     }
 
@@ -263,11 +271,12 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
       }
 
       if (type == 'multi_select') {
-        final selected = (_customMultiSelectValues[field.key] ?? const <String>[])
-            .map((value) => value.trim())
-            .where((value) => value.isNotEmpty)
-            .toSet()
-            .toList(growable: false);
+        final selected =
+            (_customMultiSelectValues[field.key] ?? const <String>[])
+                .map((value) => value.trim())
+                .where((value) => value.isNotEmpty)
+                .toSet()
+                .toList(growable: false);
         if (selected.isNotEmpty) {
           customResponses[field.key] = selected;
         }
@@ -297,11 +306,22 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
       transactionId: _transactionController.text.trim().isEmpty
           ? null
           : _transactionController.text.trim(),
-      paymentProofUrl: _paymentProofController.text.trim().isEmpty
+      paymentProofUrl: null,
+      paymentProofFileName: (_paymentProofFileName ?? '').trim().isEmpty
           ? null
-          : _paymentProofController.text.trim(),
+          : _paymentProofFileName!.trim(),
+      paymentProofFilePath: (_paymentProofFilePath ?? '').trim().isEmpty
+          ? null
+          : _paymentProofFilePath!.trim(),
+      paymentProofFileBytes:
+          _paymentProofFileBytes == null || _paymentProofFileBytes!.isEmpty
+          ? null
+          : _paymentProofFileBytes,
+      paymentProofFileSize: _paymentProofFileSize,
       customFieldResponses: customResponses,
-      memberUserIds: _selectedMembers.map((member) => member.id).toList(growable: false),
+      memberUserIds: _selectedMembers
+          .map((member) => member.id)
+          .toList(growable: false),
     );
   }
 
@@ -366,7 +386,10 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
                 ),
                 const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
@@ -456,7 +479,9 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
                             label: Text(_displayName(member)),
                             onDeleted: () {
                               setState(() {
-                                _selectedMembers.removeWhere((u) => u.id == member.id);
+                                _selectedMembers.removeWhere(
+                                  (u) => u.id == member.id,
+                                );
                               });
                             },
                           ),
@@ -527,27 +552,34 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
                         child: Wrap(
                           spacing: 8,
                           runSpacing: 8,
-                          children: field.options.map((option) {
-                            final isSelected = selectedValues.contains(option);
-                            return FilterChip(
-                              label: Text(option),
-                              selected: isSelected,
-                              onSelected: (selected) {
-                                final nextValues = List<String>.from(selectedValues);
-                                if (selected) {
-                                  nextValues.add(option);
-                                } else {
-                                  nextValues.remove(option);
-                                }
+                          children: field.options
+                              .map((option) {
+                                final isSelected = selectedValues.contains(
+                                  option,
+                                );
+                                return FilterChip(
+                                  label: Text(option),
+                                  selected: isSelected,
+                                  onSelected: (selected) {
+                                    final nextValues = List<String>.from(
+                                      selectedValues,
+                                    );
+                                    if (selected) {
+                                      nextValues.add(option);
+                                    } else {
+                                      nextValues.remove(option);
+                                    }
 
-                                setState(() {
-                                  _customMultiSelectValues[field.key] = nextValues
-                                      .toSet()
-                                      .toList(growable: false);
-                                });
-                              },
-                            );
-                          }).toList(growable: false),
+                                    setState(() {
+                                      _customMultiSelectValues[field.key] =
+                                          nextValues.toSet().toList(
+                                            growable: false,
+                                          );
+                                    });
+                                  },
+                                );
+                              })
+                              .toList(growable: false),
                         ),
                       ),
                     );
@@ -585,7 +617,9 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Price per member: Rs ${_perMemberAmount.toStringAsFixed(2)}'),
+                      Text(
+                        'Price per member: Rs ${_perMemberAmount.toStringAsFixed(2)}',
+                      ),
                       Text('Members: $_paymentMemberCount'),
                       Text(
                         'Total: Rs ${_totalAmount.toStringAsFixed(2)}',
@@ -625,13 +659,14 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
                 ),
                 _InputField(
                   controller: _paymentProofController,
-                  label: 'Payment Proof URL *',
-                  icon: FontAwesomeIcons.link,
+                  label: 'Payment Proof File *',
+                  icon: FontAwesomeIcons.file,
+                  readOnly: true,
                 ),
                 Align(
                   alignment: Alignment.centerLeft,
                   child: OutlinedButton.icon(
-                    onPressed: _uploadingProof ? null : _uploadPaymentProof,
+                    onPressed: _uploadingProof ? null : _pickPaymentProof,
                     icon: _uploadingProof
                         ? const SizedBox(
                             width: 14,
@@ -639,7 +674,9 @@ class _EventRegistrationSheetState extends State<_EventRegistrationSheet> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const FaIcon(FontAwesomeIcons.upload, size: 14),
-                    label: Text(_uploadingProof ? 'Uploading...' : 'Upload Proof'),
+                    label: Text(
+                      _uploadingProof ? 'Selecting...' : 'Select Proof',
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -697,6 +734,7 @@ class _InputField extends StatelessWidget {
   final IconData icon;
   final TextInputType keyboardType;
   final int maxLines;
+  final bool readOnly;
 
   const _InputField({
     required this.controller,
@@ -704,6 +742,7 @@ class _InputField extends StatelessWidget {
     required this.icon,
     this.keyboardType = TextInputType.text,
     this.maxLines = 1,
+    this.readOnly = false,
   });
 
   @override
@@ -712,6 +751,7 @@ class _InputField extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: TextFormField(
         controller: controller,
+        readOnly: readOnly,
         keyboardType: keyboardType,
         maxLines: maxLines,
         decoration: _decoration(context, label: label, icon: icon),
