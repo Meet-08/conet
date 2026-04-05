@@ -116,7 +116,9 @@ const normalizeParticipationType = (value) => {
   if (!normalized) return undefined;
 
   if (normalized !== "individual" && normalized !== "team") {
-    const err = new Error("participation_type must be either individual or team");
+    const err = new Error(
+      "participation_type must be either individual or team",
+    );
     err.statusCode = 400;
     throw err;
   }
@@ -548,7 +550,9 @@ export const updateEventService = async (eventId, organizerId, body) => {
       normalizeCustomFieldDefinitions(custom_fields)
     : undefined;
   const normalizedUpiId =
-    upi_id !== undefined ? normalizeOptionalString(upi_id, "upi_id") : undefined;
+    upi_id !== undefined ?
+      normalizeOptionalString(upi_id, "upi_id")
+    : undefined;
   const normalizedConversationId =
     hasConversationIdField ?
       normalizeOptionalString(rawConversationId, "conversation_id")
@@ -786,7 +790,10 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     payload.contact_number,
     "contact_number",
   );
-  const semester = normalizeOptionalPositiveInteger(payload.semester, "semester");
+  const semester = normalizeOptionalPositiveInteger(
+    payload.semester,
+    "semester",
+  );
   const branch = normalizeOptionalString(payload.branch, "branch");
   const paymentProofUrl = normalizeOptionalString(
     payload.payment_proof_url,
@@ -796,7 +803,10 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     payload.transaction_id,
     "transaction_id",
   );
-  const teamSize = normalizeOptionalPositiveInteger(payload.team_size, "team_size");
+  const teamSize = normalizeOptionalPositiveInteger(
+    payload.team_size,
+    "team_size",
+  );
 
   let customFieldResponses;
   if (payload.custom_field_responses !== undefined) {
@@ -836,7 +846,8 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     }
 
     const missingTeamFields = [];
-    if (!hasValue(enrollmentNumber)) missingTeamFields.push("enrollment_number");
+    if (!hasValue(enrollmentNumber))
+      missingTeamFields.push("enrollment_number");
     if (!hasValue(branch)) missingTeamFields.push("branch");
 
     if (missingTeamFields.length) {
@@ -876,7 +887,8 @@ export const registerEventService = async (eventId, userId, body = {}) => {
   if (event.ticket_price_type === "PAID") {
     const missingPaymentFields = [];
     if (!hasValue(transactionId)) missingPaymentFields.push("transaction_id");
-    if (!hasValue(paymentProofUrl)) missingPaymentFields.push("payment_proof_url");
+    if (!hasValue(paymentProofUrl))
+      missingPaymentFields.push("payment_proof_url");
 
     if (missingPaymentFields.length) {
       const err = new Error(
@@ -933,7 +945,9 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     ...(contactNumber !== undefined && { contact_number: contactNumber }),
     ...(semester !== undefined && { semester }),
     ...(branch !== undefined && { branch }),
-    ...(paymentProofUrl !== undefined && { payment_proof_url: paymentProofUrl }),
+    ...(paymentProofUrl !== undefined && {
+      payment_proof_url: paymentProofUrl,
+    }),
     ...(transactionId !== undefined && { transaction_id: transactionId }),
     ...(payload.custom_field_responses !== undefined || teamSize != null ?
       { custom_field_responses: mergedCustomFieldResponses }

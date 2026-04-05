@@ -34,6 +34,13 @@ EventModel _$EventModelFromJson(Map<String, dynamic> json) => EventModel(
   participationType: json['participation_type'] as String?,
   minTeamSize: (json['min_team_size'] as num?)?.toInt(),
   maxTeamSize: (json['max_team_size'] as num?)?.toInt(),
+  upiId: json['upi_id'] as String?,
+  conversationId: json['conversation_id'] as String?,
+  customFields: json['custom_fields'] == null
+      ? []
+      : const EventCustomFieldListConverter().fromJson(
+          json['custom_fields'] as List,
+        ),
   createdAt: json['created_at'] == null
       ? null
       : DateTime.parse(json['created_at'] as String),
@@ -83,6 +90,11 @@ Map<String, dynamic> _$EventModelToJson(
   'created_at': instance.createdAt?.toIso8601String(),
   'activity': const EventActivityListConverter().toJson(instance.activities),
   'prizes': const EventPrizeListConverter().toJson(instance.prizes),
+  'upi_id': instance.upiId,
+  'conversation_id': instance.conversationId,
+  'custom_fields': const EventCustomFieldListConverter().toJson(
+    instance.customFields,
+  ),
   'faqs': const EventFaqListConverter().toJson(instance.faqs),
   'cohosts': const EventCohostListConverter().toJson(instance.cohosts),
   'registration_count': instance.registrationCount,

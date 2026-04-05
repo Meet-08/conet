@@ -1,6 +1,7 @@
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/feature/event/domain/entities/event_activity.dart';
 import 'package:conet_app/feature/event/domain/entities/event_cohost.dart';
+import 'package:conet_app/feature/event/domain/entities/event_custom_field.dart';
 import 'package:conet_app/feature/event/domain/entities/event_faq.dart';
 import 'package:conet_app/feature/event/domain/entities/event_prize.dart';
 import 'package:equatable/equatable.dart';
@@ -61,6 +62,15 @@ class Event extends Equatable {
   @JsonKey(name: 'max_team_size')
   final int? maxTeamSize;
 
+  @JsonKey(name: 'upi_id')
+  final String? upiId;
+
+  @JsonKey(name: 'conversation_id')
+  final String? conversationId;
+
+  @JsonKey(name: 'custom_fields')
+  final List<EventCustomField> customFields;
+
   @JsonKey(name: 'created_at')
   final DateTime? createdAt;
 
@@ -102,6 +112,9 @@ class Event extends Equatable {
     this.participationType,
     this.minTeamSize,
     this.maxTeamSize,
+    this.upiId,
+    this.conversationId,
+    this.customFields = const [],
     this.createdAt,
     this.activities = const [],
     this.prizes = const [],
@@ -140,6 +153,9 @@ class Event extends Equatable {
     String? participationType,
     int? minTeamSize,
     int? maxTeamSize,
+    String? upiId,
+    String? conversationId,
+    List<EventCustomField>? customFields,
     DateTime? createdAt,
     List<EventActivity>? activities,
     List<EventPrize>? prizes,
@@ -173,6 +189,9 @@ class Event extends Equatable {
       participationType: participationType ?? this.participationType,
       minTeamSize: minTeamSize ?? this.minTeamSize,
       maxTeamSize: maxTeamSize ?? this.maxTeamSize,
+      upiId: upiId ?? this.upiId,
+      conversationId: conversationId ?? this.conversationId,
+      customFields: customFields ?? this.customFields,
       createdAt: createdAt ?? this.createdAt,
       activities: activities ?? this.activities,
       prizes: prizes ?? this.prizes,
@@ -209,6 +228,9 @@ class Event extends Equatable {
     participationType,
     minTeamSize,
     maxTeamSize,
+    upiId,
+    conversationId,
+    customFields,
     createdAt,
     activities,
     prizes,

@@ -5,6 +5,7 @@ import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_attendance_result.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_page.dart';
+import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_ticket.dart';
 import 'package:conet_app/feature/event/domain/repositories/event_repository.dart';
 import 'package:fpdart/fpdart.dart';
@@ -76,9 +77,12 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   @override
-  Future<Either<AppFailure, Event>> registerEvent(String eventId) {
+  Future<Either<AppFailure, Event>> registerEvent(
+    String eventId,
+    EventRegistrationPayload payload,
+  ) {
     return _getResult<Event, Event>(
-      () => _eventDataSource.registerEvent(eventId),
+      () => _eventDataSource.registerEvent(eventId, payload),
     );
   }
 
@@ -93,6 +97,24 @@ class EventRepositoryImpl implements EventRepository {
   Future<Either<AppFailure, Event>> publishEvent(EventCreatePayload payload) {
     return _getResult<Event, Event>(
       () => _eventDataSource.publishEvent(payload),
+    );
+  }
+
+  @override
+  Future<Either<AppFailure, Event>> publishDraftById(String eventId) {
+    return _getResult<Event, Event>(() => _eventDataSource.publishDraftById(eventId));
+  }
+
+  @override
+  Future<Either<AppFailure, Event>> updateEventConversationId({
+    required String eventId,
+    required String conversationId,
+  }) {
+    return _getResult<Event, Event>(
+      () => _eventDataSource.updateEventConversationId(
+        eventId: eventId,
+        conversationId: conversationId,
+      ),
     );
   }
 

@@ -61,7 +61,11 @@ export const getEvent = asyncHandler(async (req, res) => {
 });
 
 export const registerEvent = asyncHandler(async (req, res) => {
-  const result = await registerEventService(req.params.id, req.user.id, req.body);
+  const result = await registerEventService(
+    req.params.id,
+    req.user.id,
+    req.body,
+  );
   res.status(200).json({
     success: true,
     message: "Event registered successfully",

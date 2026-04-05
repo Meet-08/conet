@@ -32,6 +32,8 @@ class BasicInfoStep extends StatefulWidget {
 class _BasicInfoStepState extends State<BasicInfoStep> {
   PlatformFile? _pickedImage;
   late QuillController _aboutController;
+  late final FocusNode _aboutFocusNode;
+  late final ScrollController _aboutScrollController;
   String _lastSerializedAbout = '';
 
   String _serializedAbout() {
@@ -62,6 +64,8 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
   @override
   void initState() {
     super.initState();
+    _aboutFocusNode = FocusNode();
+    _aboutScrollController = ScrollController();
     _aboutController = _buildAboutController(
       widget.formData['about'] as String? ?? '',
     );
@@ -96,6 +100,8 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
     _aboutController
       ..removeListener(_onAboutChanged)
       ..dispose();
+    _aboutFocusNode.dispose();
+    _aboutScrollController.dispose();
     super.dispose();
   }
 
@@ -119,30 +125,64 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
   }
 
   Future<void> _setLink() async {
-    final linkController = TextEditingController();
+    String linkValue = '';
     final url = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Add Link'),
         content: TextField(
-          controller: linkController,
           keyboardType: TextInputType.url,
           autofocus: true,
+          textInputAction: TextInputAction.done,
+          onChanged: (value) => linkValue = value,
+          onSubmitted: (value) => ctx.pop(value.trim()),
           decoration: _inputDecoration(hint: 'https://example.com'),
         ),
         actions: [
           TextButton(onPressed: () => ctx.pop(), child: const Text('Cancel')),
           FilledButton(
-            onPressed: () => ctx.pop(linkController.text.trim()),
+            onPressed: () => ctx.pop(linkValue.trim()),
             child: const Text('Apply'),
           ),
         ],
       ),
     );
-    linkController.dispose();
 
     if (url == null || url.isEmpty) return;
-    _aboutController.formatSelection(LinkAttribute(url));
+
+    final normalizedUrl = _normalizeLinkUrl(url);
+    final selection = _aboutController.selection;
+    final selectedLength = selection.end - selection.start;
+
+    if (selectedLength > 0) {
+      _aboutController.formatSelection(LinkAttribute(normalizedUrl));
+      return;
+    }
+
+    final insertAt = selection.start;
+    _aboutController.replaceText(
+      insertAt,
+      0,
+      normalizedUrl,
+      TextSelection.collapsed(offset: insertAt + normalizedUrl.length),
+    );
+    _aboutController.formatText(
+      insertAt,
+      normalizedUrl.length,
+      LinkAttribute(normalizedUrl),
+    );
+  }
+
+  String _normalizeLinkUrl(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty) return trimmed;
+
+    final hasScheme = trimmed.startsWith('http://') ||
+        trimmed.startsWith('https://') ||
+        trimmed.startsWith('mailto:') ||
+        trimmed.startsWith('tel:');
+
+    return hasScheme ? trimmed : 'https://$trimmed';
   }
 
   void _update(Map<String, dynamic> updates) {
@@ -426,6 +466,8 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
                 ),
                 QuillEditor.basic(
                   controller: _aboutController,
+                  focusNode: _aboutFocusNode,
+                  scrollController: _aboutScrollController,
                   config: const QuillEditorConfig(
                     minHeight: 140,
                     maxHeight: 220,

@@ -3,6 +3,7 @@ import 'package:conet_app/core/utils/quill_content_utils.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/event/domain/entities/event_activity.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
+import 'package:conet_app/feature/event/domain/entities/event_custom_field.dart';
 import 'package:conet_app/feature/event/domain/entities/event_faq.dart';
 import 'package:conet_app/feature/event/domain/entities/event_prize.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
@@ -41,6 +42,12 @@ class _CreateEventPageState extends State<CreateEventPage> {
     'meeting_link': '',
     'ticket_price_type': 'FREE', // 'FREE' | 'PAID'
     'price': null,
+    'upi_id': '',
+    'registration_deadline': null,
+    'participation_type': 'individual',
+    'min_team_size': null,
+    'max_team_size': null,
+    'custom_fields': <Map<String, dynamic>>[],
     'event_image_file': null, // PlatformFile?
     'about': '',
     'eligibility': '',
@@ -54,6 +61,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
     'co_organizers': <String>[],
     'co_organizer_ids': <String>[],
     'co_organizer_users': <Map<String, dynamic>>[],
+    'create_event_conversation': false,
+    'event_conversation_id': null,
   };
 
   @override
@@ -98,9 +107,93 @@ class _CreateEventPageState extends State<CreateEventPage> {
           return 'Please add an event description';
         }
         return null;
+      case 1:
+        final eventDate = _formData['event_date'] as DateTime?;
+        final eventStartTime = _formData['start_time'] as TimeOfDay?;
+        final registrationDeadline =
+            _formData['registration_deadline'] as DateTime?;
+
+        if (registrationDeadline != null &&
+            eventDate != null &&
+            eventStartTime != null) {
+          final eventStartDateTime = DateTime(
+            eventDate.year,
+            eventDate.month,
+            eventDate.day,
+            eventStartTime.hour,
+            eventStartTime.minute,
+          );
+
+          if (!registrationDeadline.isBefore(eventStartDateTime)) {
+            return 'Registration deadline must be before event start time';
+          }
+        }
+
+        final participationType =
+            (_formData['participation_type'] as String? ?? 'individual')
+                .toLowerCase();
+        final minTeam = _formData['min_team_size'] as int?;
+        final maxTeam = _formData['max_team_size'] as int?;
+
+        if (participationType == 'team') {
+          if (maxTeam == null) {
+            return 'Please provide max team size for team events';
+          }
+          if (minTeam != null && minTeam > maxTeam) {
+            return 'Min team size cannot be greater than max team size';
+          }
+        }
+
+        final ticketPriceType =
+            (_formData['ticket_price_type'] as String? ?? 'FREE').toUpperCase();
+        if (ticketPriceType == 'PAID') {
+          final price = _formData['price'] as double?;
+          final upiId = (_formData['upi_id'] as String? ?? '').trim();
+          if (price == null || price <= 0) {
+            return 'Please provide a valid ticket price for paid events';
+          }
+          if (upiId.isEmpty) {
+            return 'Please provide UPI ID for paid events';
+          }
+        }
+
+        final rawCustomFields = List<Map<String, dynamic>>.from(
+          _formData['custom_fields'] as List? ?? const <Map<String, dynamic>>[],
+        );
+        for (var i = 0; i < rawCustomFields.length; i++) {
+          final field = rawCustomFields[i];
+          final label = (field['label'] as String? ?? '').trim();
+          final key = (field['key'] as String? ?? '').trim();
+          if (label.isEmpty || key.isEmpty) {
+            return 'Custom field ${i + 1} must have label and key';
+          }
+
+          final type = ((field['type'] as String?) ?? 'text').toLowerCase();
+          final options =
+              (field['options'] as List?)
+                  ?.map((value) => value.toString().trim())
+                  .where((value) => value.isNotEmpty)
+                  .toList(growable: false) ??
+              const <String>[];
+          if ((type == 'select' || type == 'multi_select') && options.isEmpty) {
+            return 'Custom field ${i + 1} needs options for select types';
+          }
+        }
+        return null;
       default:
         return null; // Steps 2-4 have no mandatory fields
     }
+  }
+
+  String? _validateBeforeSubmit() {
+    const requiredSteps = <int>[0, 1];
+    for (final step in requiredSteps) {
+      final validation = _validateStep(step);
+      if (validation != null) {
+        return validation;
+      }
+    }
+    return null;
   }
 
   void _goToStep(int step) {
@@ -205,6 +298,47 @@ class _CreateEventPageState extends State<CreateEventPage> {
         )
         .toList();
 
+    final rawCustomFields = List<Map<String, dynamic>>.from(
+      _formData['custom_fields'] as List? ?? [],
+    );
+    final customFields = rawCustomFields
+        .map((field) {
+          final rawLabel = (field['label'] as String? ?? '').trim();
+          final rawKey = (field['key'] as String? ?? '').trim();
+          final key = rawKey.isEmpty
+              ? _normalizeFieldKeyFromLabel(rawLabel)
+              : _normalizeFieldKeyFromLabel(rawKey);
+          if (key.isEmpty || rawLabel.isEmpty) {
+            return null;
+          }
+
+          final type = ((field['type'] as String?) ?? 'text')
+              .trim()
+              .toLowerCase();
+          final options =
+              (field['options'] as List?)
+                  ?.map((value) => value.toString().trim())
+                  .where((value) => value.isNotEmpty)
+                  .toSet()
+                  .toList(growable: false) ??
+              const <String>[];
+
+          return EventCustomField(
+            key: key,
+            label: rawLabel,
+            type: type.isEmpty ? 'text' : type,
+            required: field['required'] == true,
+            options: options,
+          );
+        })
+        .whereType<EventCustomField>()
+        .fold<List<EventCustomField>>([], (acc, field) {
+          if (acc.any((existing) => existing.key == field.key)) {
+            return acc;
+          }
+          return [...acc, field];
+        });
+
     final isOnline = _formData['location_type'] == 'ONLINE';
     final cityOrCampus = (_formData['location'] as String? ?? '').trim();
     final venueName = (_formData['venue_name'] as String? ?? '').trim();
@@ -212,6 +346,22 @@ class _CreateEventPageState extends State<CreateEventPage> {
       if (cityOrCampus.isNotEmpty) cityOrCampus,
       if (venueName.isNotEmpty) venueName,
     ].join(', ');
+
+    final shouldCreateConversation =
+        _formData['create_event_conversation'] as bool? ?? false;
+    final rawConversationId = shouldCreateConversation
+        ? (_formData['event_conversation_id'] as String?)
+        : null;
+    final normalizedConversationId = rawConversationId?.trim();
+    final normalizedUpiId = (_formData['upi_id'] as String? ?? '').trim();
+    final ticketPriceType = _formData['ticket_price_type'] as String? ?? 'FREE';
+
+    final participationType =
+        (_formData['participation_type'] as String? ?? 'individual')
+            .trim()
+            .toLowerCase();
+    final minTeamSize = _formData['min_team_size'] as int?;
+    final maxTeamSize = _formData['max_team_size'] as int?;
 
     return EventCreatePayload(
       title: _formData['title'] as String,
@@ -235,9 +385,17 @@ class _CreateEventPageState extends State<CreateEventPage> {
               (_formData['meeting_link'] as String?)?.trim().isNotEmpty == true
           ? _formData['meeting_link'] as String?
           : null,
-      ticketPriceType: _formData['ticket_price_type'] as String? ?? 'FREE',
+      ticketPriceType: ticketPriceType,
       price: _formData['price'] as double?,
       maxParticipant: _formData['max_participant'] as int?,
+      registrationDeadline: _formData['registration_deadline'] as DateTime?,
+      participationType: participationType,
+      minTeamSize: participationType == 'team' ? minTeamSize : null,
+      maxTeamSize: participationType == 'team' ? maxTeamSize : null,
+      upiId: ticketPriceType == 'PAID' && normalizedUpiId.isNotEmpty
+          ? normalizedUpiId
+          : null,
+      customFields: customFields,
       eligibility: (_formData['eligibility'] as String?)?.trim().isEmpty == true
           ? null
           : _formData['eligibility'] as String?,
@@ -248,12 +406,37 @@ class _CreateEventPageState extends State<CreateEventPage> {
       cohostUserIds: List<String>.from(
         _formData['co_organizer_ids'] as List? ?? const <String>[],
       ).toSet().toList(growable: false),
+      conversationId:
+          normalizedConversationId == null || normalizedConversationId.isEmpty
+          ? null
+          : normalizedConversationId,
     );
   }
 
+  String _normalizeFieldKeyFromLabel(String value) {
+    return value
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+  }
+
   void _saveDraft() {
+    final validation = _validateBeforeSubmit();
+    if (validation != null) {
+      AppToast.showWarning(context, validation);
+      return;
+    }
+
     try {
-      context.read<EventBloc>().add(EventSaveDraftEvent(_buildPayload()));
+      final shouldCreateConversation =
+          _formData['create_event_conversation'] as bool? ?? false;
+      context.read<EventBloc>().add(
+        EventSaveDraftEvent(
+          _buildPayload(),
+          shouldCreateOrganizerConversation: shouldCreateConversation,
+        ),
+      );
     } catch (e) {
       AppToast.showError(context, 'Failed to build payload: $e');
     }
@@ -269,8 +452,21 @@ class _CreateEventPageState extends State<CreateEventPage> {
   }
 
   void _publish() {
+    final validation = _validateBeforeSubmit();
+    if (validation != null) {
+      AppToast.showWarning(context, validation);
+      return;
+    }
+
     try {
-      context.read<EventBloc>().add(EventPublishEvent(_buildPayload()));
+      final shouldCreateConversation =
+          _formData['create_event_conversation'] as bool? ?? false;
+      context.read<EventBloc>().add(
+        EventPublishEvent(
+          _buildPayload(),
+          shouldCreateOrganizerConversation: shouldCreateConversation,
+        ),
+      );
     } catch (e) {
       AppToast.showError(context, 'Failed to build payload: $e');
     }

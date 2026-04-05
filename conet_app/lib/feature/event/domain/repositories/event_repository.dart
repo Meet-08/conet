@@ -3,17 +3,28 @@ import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_attendance_result.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_page.dart';
+import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_ticket.dart';
 import 'package:fpdart/fpdart.dart';
 
 abstract interface class EventRepository {
   Future<Either<AppFailure, Event>> getEventById(String eventId);
 
-  Future<Either<AppFailure, Event>> registerEvent(String eventId);
+  Future<Either<AppFailure, Event>> registerEvent(
+    String eventId,
+    EventRegistrationPayload payload,
+  );
 
   Future<Either<AppFailure, EventAttendanceResult>> saveEvent(String eventId);
 
   Future<Either<AppFailure, Event>> publishEvent(EventCreatePayload payload);
+
+  Future<Either<AppFailure, Event>> publishDraftById(String eventId);
+
+  Future<Either<AppFailure, Event>> updateEventConversationId({
+    required String eventId,
+    required String conversationId,
+  });
 
   Future<Either<AppFailure, Event>> saveEventDraft(EventCreatePayload payload);
 

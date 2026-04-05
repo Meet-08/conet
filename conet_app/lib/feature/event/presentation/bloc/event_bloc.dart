@@ -1,14 +1,17 @@
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
+import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_organized_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
-import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_publish_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_update_conversation.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_create_group.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -20,10 +23,12 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   final EventGetPublishedEvents _getPublishedEvents;
   final EventGetMyEvents _getMyEvents;
   final EventGetMyOrganizedEvents _getMyOrganizedEvents;
-  final EventPublish _publishEvent;
+  final EventPublishById _publishDraftById;
   final EventRegister _registerEvent;
   final EventSave _saveEvent;
   final EventSaveDraft _saveDraft;
+  final EventUpdateConversation _updateEventConversation;
+  final MessageCreateGroup _createGroup;
 
   String? _nextCursor;
   String? _myEventsNextCursor;
@@ -36,18 +41,22 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     required EventGetPublishedEvents getPublishedEvents,
     required EventGetMyEvents getMyEvents,
     required EventGetMyOrganizedEvents getMyOrganizedEvents,
-    required EventPublish publishEvent,
+     required EventPublishById publishDraftById,
     required EventRegister registerEvent,
     required EventSave saveEvent,
     required EventSaveDraft saveDraft,
+     required EventUpdateConversation updateEventConversation,
+    required MessageCreateGroup createGroup,
   }) : _getById = getById,
        _getPublishedEvents = getPublishedEvents,
        _getMyEvents = getMyEvents,
        _getMyOrganizedEvents = getMyOrganizedEvents,
-       _publishEvent = publishEvent,
+       _publishDraftById = publishDraftById,
        _registerEvent = registerEvent,
        _saveEvent = saveEvent,
        _saveDraft = saveDraft,
+       _updateEventConversation = updateEventConversation,
+       _createGroup = createGroup,
        super(EventInitial()) {
     on<EventFetchByIdEvent>(_onFetchById);
     on<EventFetchPublishedEventsEvent>(_onFetchPublishedEvents);
@@ -265,7 +274,79 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   ) async {
     emit(EventCreateLoading());
 
-    final result = await _publishEvent(event.payload);
+    final draftResult = await _saveDraft(event.payload);
+
+    String? draftFailureMessage;
+    Event? draftEvent;
+    draftResult.fold(
+      (failure) => draftFailureMessage = failure.message,
+      (createdDraft) => draftEvent = createdDraft,
+    );
+
+    if (draftFailureMessage != null || draftEvent == null) {
+      emit(EventCreateFailure(draftFailureMessage ?? 'Failed to save draft'));
+      return;
+    }
+
+    String? conversationId = event.payload.conversationId?.trim();
+    if ((conversationId == null || conversationId.isEmpty) &&
+        event.shouldCreateOrganizerConversation) {
+      final cohostIds = event.payload.cohostUserIds
+          .map((id) => id.trim())
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList(growable: false);
+
+      if (cohostIds.isEmpty) {
+        emit(
+          const EventCreateFailure(
+            'Draft saved, but publishing requires at least one co-host to create organizer conversation',
+          ),
+        );
+        return;
+      }
+
+      final title = event.payload.title.trim();
+      final createGroupResult = await _createGroup(
+        name: title,
+        memberIds: cohostIds,
+      );
+
+      String? createGroupFailure;
+      createGroupResult.fold(
+        (failure) => createGroupFailure = failure.message,
+        (conversation) => conversationId = conversation.id,
+      );
+
+      if (createGroupFailure != null ||
+          conversationId == null ||
+          conversationId!.isEmpty) {
+        emit(
+          EventCreateFailure(
+            createGroupFailure ??
+                'Draft saved, but failed to create organizer conversation',
+          ),
+        );
+        return;
+      }
+    }
+
+    // Best effort: only update when backend supports conversation_id updates.
+    final conversationIdToLink = conversationId?.trim();
+    if (conversationIdToLink != null && conversationIdToLink.isNotEmpty) {
+      final updateResult = await _updateEventConversation(
+        eventId: draftEvent!.id,
+        conversationId: conversationIdToLink,
+      );
+      updateResult.fold(
+        (failure) => debugPrint(
+          'Event conversation_id update skipped/failed before publish: ${failure.message}',
+        ),
+        (_) => null,
+      );
+    }
+
+    final result = await _publishDraftById(draftEvent!.id);
 
     String? failureMessage;
     Event? created;
@@ -288,7 +369,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   ) async {
     emit(EventRegistrationLoading());
 
-    final result = await _registerEvent(event.eventId);
+    final result = await _registerEvent(event.eventId, event.payload);
     result.fold(
       (failure) => emit(EventRegistrationFailure(failure.message)),
       (event) => emit(EventRegistrationSuccess(event)),
@@ -370,7 +451,44 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     if (failureMessage != null) {
       emit(EventCreateFailure(failureMessage!));
     } else {
+      await _createOrganizerGroupAfterEventIfNeeded(
+        payload: event.payload,
+        shouldCreateOrganizerConversation:
+            event.shouldCreateOrganizerConversation,
+      );
       emit(EventCreateSuccess(event: created!, isDraft: true));
     }
+  }
+
+  Future<void> _createOrganizerGroupAfterEventIfNeeded({
+    required EventCreatePayload payload,
+    required bool shouldCreateOrganizerConversation,
+  }) async {
+    if (!shouldCreateOrganizerConversation) return;
+
+    final existingConversationId = payload.conversationId?.trim();
+    if (existingConversationId != null && existingConversationId.isNotEmpty) {
+      return;
+    }
+
+    final cohostIds = payload.cohostUserIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+
+    if (cohostIds.isEmpty) {
+      return;
+    }
+
+    final title = payload.title.trim();
+    final createGroupResult = await _createGroup(name: title, memberIds: cohostIds);
+
+    createGroupResult.fold(
+      (failure) => debugPrint(
+        'Organizer conversation creation failed after event create: ${failure.message}',
+      ),
+      (_) => null,
+    );
   }
 }

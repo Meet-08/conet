@@ -25,6 +25,18 @@ EventCreatePayloadModel _$EventCreatePayloadModelFromJson(
   ticketPriceType: json['ticket_price_type'] as String? ?? 'FREE',
   price: (json['price'] as num?)?.toDouble(),
   maxParticipant: (json['max_participant'] as num?)?.toInt(),
+  registrationDeadline: json['registration_deadline'] == null
+      ? null
+      : DateTime.parse(json['registration_deadline'] as String),
+  participationType: json['participation_type'] as String?,
+  minTeamSize: (json['min_team_size'] as num?)?.toInt(),
+  maxTeamSize: (json['max_team_size'] as num?)?.toInt(),
+  upiId: json['upi_id'] as String?,
+  customFields: json['custom_fields'] == null
+      ? []
+      : const EventRequestCustomFieldListConverter().fromJson(
+          json['custom_fields'] as List,
+        ),
   eligibility: json['eligibility'] as String?,
   activities: json['activity'] == null
       ? []
@@ -37,6 +49,7 @@ EventCreatePayloadModel _$EventCreatePayloadModelFromJson(
   faqs: json['faqs'] == null
       ? []
       : const EventFaqListConverter().fromJson(json['faqs'] as List),
+  conversationId: json['conversation_id'] as String?,
   publish: json['publish'] as bool,
 );
 
@@ -54,6 +67,7 @@ Map<String, dynamic> _$EventCreatePayloadModelToJson(
   'price': ?instance.price,
   'max_participant': ?instance.maxParticipant,
   'eligibility': ?instance.eligibility,
+  'conversation_id': ?instance.conversationId,
   'start_time': const EventRequestTimeConverter().toJson(instance.startTime),
   'end_time': const EventRequestTimeConverter().toJson(instance.endTime),
   'activity': const EventRequestActivityListConverter().toJson(
@@ -61,5 +75,13 @@ Map<String, dynamic> _$EventCreatePayloadModelToJson(
   ),
   'prizes': const EventPrizeListConverter().toJson(instance.prizes),
   'faqs': const EventFaqListConverter().toJson(instance.faqs),
+  'registration_deadline': ?instance.registrationDeadline?.toIso8601String(),
+  'participation_type': ?instance.participationType,
+  'min_team_size': ?instance.minTeamSize,
+  'max_team_size': ?instance.maxTeamSize,
+  'upi_id': ?instance.upiId,
+  'custom_fields': const EventRequestCustomFieldListConverter().toJson(
+    instance.customFields,
+  ),
   'publish': instance.publish,
 };
