@@ -145,10 +145,25 @@ class SupabaseDataSourceImpl implements AuthDataSource {
         throw ServerException('User not logged in');
       }
 
-      if (password != null) {
-        await supabaseClient.auth.updateUser(
-          UserAttributes(password: password),
-        );
+      final trimmedPassword = password?.trim();
+      if (trimmedPassword != null && trimmedPassword.isNotEmpty) {
+        try {
+          await supabaseClient.auth.updateUser(
+            UserAttributes(password: trimmedPassword),
+          );
+        } on AuthApiException catch (e) {
+          final isSamePassword =
+              e.code == 'same_password' ||
+              e.message.toLowerCase().contains(
+                'different from the old password',
+              );
+
+          if (!isSamePassword) rethrow;
+
+          logger.w(
+            'Skipping password update because provided password matches existing password',
+          );
+        }
       }
 
       final data = <String, dynamic>{

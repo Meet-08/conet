@@ -1454,14 +1454,28 @@ export const listMyOrganizedEventsService = async (
   }
 
   const where = {
-    organizer_id: organizerId,
     ...(status && { event_status: status }),
-    ...(parsedCursor && {
-      OR: [
-        { created_at: { lt: parsedCursor.createdAt } },
-        { created_at: parsedCursor.createdAt, id: { lt: parsedCursor.id } },
-      ],
-    }),
+    AND: [
+      {
+        OR: [
+          { organizer_id: organizerId },
+          { event_cohosts: { some: { user_id: organizerId } } },
+        ],
+      },
+      ...(parsedCursor ?
+        [
+          {
+            OR: [
+              { created_at: { lt: parsedCursor.createdAt } },
+              {
+                created_at: parsedCursor.createdAt,
+                id: { lt: parsedCursor.id },
+              },
+            ],
+          },
+        ]
+      : []),
+    ],
   };
 
   const rows = await prisma.events.findMany({

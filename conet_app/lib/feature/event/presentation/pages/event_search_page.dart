@@ -61,28 +61,31 @@ class _EventSearchPageState extends State<EventSearchPage> {
                   child: TextField(
                     controller: _searchController,
                     onChanged: _onSearchChanged,
+                    textAlignVertical: TextAlignVertical.center,
                     cursorColor: colorScheme.primary,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
                       hintText: 'Search by title, category, location...',
+                      filled: true,
+                      fillColor: colorScheme.surfaceContainerHighest,
                       hintStyle: theme.textTheme.bodyMedium?.copyWith(
                         color: colorScheme.onSurfaceVariant,
                       ),
-                      isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,
-                        vertical: 12,
+                        vertical: 14,
                       ),
                       prefixIconConstraints: const BoxConstraints(
                         minWidth: 44,
+                        maxWidth: 48,
                         minHeight: 44,
+                        maxHeight: 44,
                       ),
                       prefixIcon: Padding(
                         padding: const EdgeInsetsDirectional.only(start: 12),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
+                        child: Center(
                           child: FaIcon(
                             FontAwesomeIcons.magnifyingGlass,
                             size: 16,
@@ -90,9 +93,17 @@ class _EventSearchPageState extends State<EventSearchPage> {
                           ),
                         ),
                       ),
+                      suffixIconConstraints: const BoxConstraints(
+                        minWidth: 44,
+                        maxWidth: 48,
+                        minHeight: 44,
+                        maxHeight: 44,
+                      ),
                       suffixIcon: _searchController.text.isNotEmpty
                           ? IconButton(
                               onPressed: _clearSearch,
+                              padding: EdgeInsets.zero,
+                              visualDensity: VisualDensity.compact,
                               icon: FaIcon(
                                 FontAwesomeIcons.circleXmark,
                                 size: 16,

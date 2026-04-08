@@ -184,7 +184,7 @@ describe("GET /api/events", () => {
 });
 
 describe("GET /api/events/organized", () => {
-  it("200 - filters by organizer and status", async () => {
+  it("200 - filters by organizer or co-host membership and status", async () => {
     prismaMock.events.findMany.mockResolvedValue([makeSummaryRow()]);
 
     const res = await request(app)
@@ -195,8 +195,15 @@ describe("GET /api/events/organized", () => {
     expect(prismaMock.events.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          organizer_id: TEST_USER.id,
           event_status: "published",
+          AND: [
+            {
+              OR: [
+                { organizer_id: TEST_USER.id },
+                { event_cohosts: { some: { user_id: TEST_USER.id } } },
+              ],
+            },
+          ],
         }),
         take: 21,
         orderBy: [{ created_at: "desc" }, { id: "desc" }],

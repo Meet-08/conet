@@ -234,6 +234,25 @@
 
 ---
 
+### Payments
+
+- **Organizer Account Setup** — Organizer provides bank account details (account holder, account number, IFSC, PAN)
+- **Initiate Payment** — Create Razorpay order for event registration payment
+- **Payment Webhook** — Verify and process Razorpay payment authorization webhook
+- **Payment Status Tracking** — Track payment status in database (pending/completed)
+
+**Use Cases:** `PaymentCreateOrganizerAccount`, `PaymentGetOrganizerAccount`, `PaymentInitiate`, `PaymentVerifyWebhook`
+**Backend Endpoints:** `POST /payments/organizer-account`, `GET /payments/organizer-account`, `POST /payments/:registrationId/initiate`, `POST /payments/webhook/verify`
+
+**Implementation Notes:**
+
+- Organizer account creation triggers Razorpay linked account creation (TODO)
+- Payment initiation creates order with Razorpay and stores order_id (TODO: call Razorpay API)
+- Webhook verification validates signature and updates payment status (TODO: implement signature verification)
+- No Flutter UI created yet (payment form will be handled by Razorpay SDK)
+
+---
+
 ## 3. UI Only (No Functionality)
 
 > Flutter screens/widgets exist but have no use cases, no bloc/data wiring, and no backend routes. All data shown is static or hardcoded.

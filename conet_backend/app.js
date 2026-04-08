@@ -7,6 +7,7 @@ import deviceRoutes from "./routes/deviceRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import groupRoutes from "./routes/groupRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 
@@ -28,6 +29,7 @@ export function createApp() {
   app.use("/api/devices", deviceRoutes);
   app.use("/api/notifications", notificationRoutes);
   app.use("/api/events", eventRoutes);
+  app.use("/api/payments", paymentRoutes);
 
   app.get("/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });

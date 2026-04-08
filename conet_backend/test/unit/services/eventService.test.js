@@ -728,8 +728,15 @@ describe("listMyOrganizedEventsService", () => {
 
     const arg = prismaMock.events.findMany.mock.calls[0][0];
     expect(arg.where).toMatchObject({
-      organizer_id: ORGANIZER_ID,
       event_status: "draft",
+      AND: [
+        {
+          OR: [
+            { organizer_id: ORGANIZER_ID },
+            { event_cohosts: { some: { user_id: ORGANIZER_ID } } },
+          ],
+        },
+      ],
     });
     expect(arg.orderBy).toEqual([{ created_at: "desc" }, { id: "desc" }]);
   });
