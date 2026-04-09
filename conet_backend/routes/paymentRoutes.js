@@ -3,13 +3,22 @@ import {
   createOrganizerAccount,
   getOrganizerAccount,
   initiatePayment,
+  updateKycStatusWebhook,
   verifyPaymentWebhook,
 } from "../controllers/paymentController.js";
 import validateSupabaseToken from "../middleware/validateSupabaseToken.js";
 
 const router = express.Router();
 
-// All payment routes require a valid Supabase token (except webhook)
+// ─── Webhooks (public, signature-verified) ─────────────────────────────────
+
+router.post("/webhook/payment-verification", verifyPaymentWebhook);
+router.post("/webhook/kyc-status", updateKycStatusWebhook);
+
+// Backward-compatible alias for existing clients.
+router.post("/webhook/verify", verifyPaymentWebhook);
+
+// All non-webhook payment routes require a valid Supabase token.
 router.use(validateSupabaseToken);
 
 // ─── Organizer account management ─────────────────────────────────────────────
@@ -24,10 +33,5 @@ router.get("/organizer-account", getOrganizerAccount);
 
 // Initiate payment for event registration
 router.post("/:registrationId/initiate", initiatePayment);
-
-// ─── Webhooks ────────────────────────────────────────────────────────────────
-
-// Verify and process Razorpay payment webhook (no token required)
-router.post("/webhook/verify", verifyPaymentWebhook);
 
 export default router;

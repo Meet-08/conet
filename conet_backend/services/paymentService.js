@@ -1,5 +1,104 @@
+import crypto from "crypto";
 import prisma from "../config/prisma.js";
 import razorpay from "../config/razorpay.js";
+
+const VERIFIED_KYC_STATUSES = new Set([
+  "activated",
+  "verified",
+  "approved",
+  "live",
+  "completed",
+]);
+
+const REJECTED_KYC_STATUSES = new Set([
+  "rejected",
+  "failed",
+  "suspended",
+  "disabled",
+  "needs_clarification",
+]);
+
+const SUPPORTED_PAYMENT_EVENTS = new Set([
+  "payment.authorized",
+  "payment.captured",
+  "payment.failed",
+]);
+
+const buildStatusError = (message, statusCode) => {
+  const err = new Error(message);
+  err.statusCode = statusCode;
+  return err;
+};
+
+const serializeWebhookPayload = (payload, rawPayload) => {
+  if (typeof rawPayload === "string" && rawPayload.length > 0) {
+    return rawPayload;
+  }
+
+  return JSON.stringify(payload ?? {});
+};
+
+const verifyWebhookSignature = (payload, headers, rawPayload) => {
+  const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    throw buildStatusError("Webhook secret is not configured", 500);
+  }
+
+  const signature = headers?.["x-razorpay-signature"];
+  if (!signature) {
+    throw buildStatusError("Missing webhook signature", 400);
+  }
+
+  const message = serializeWebhookPayload(payload, rawPayload);
+  const expectedSignature = crypto
+    .createHmac("sha256", webhookSecret)
+    .update(message)
+    .digest("hex");
+
+  const signatureBuffer = Buffer.from(signature, "utf8");
+  const expectedBuffer = Buffer.from(expectedSignature, "utf8");
+
+  const isValidSignature =
+    signatureBuffer.length === expectedBuffer.length &&
+    crypto.timingSafeEqual(signatureBuffer, expectedBuffer);
+
+  if (!isValidSignature) {
+    throw buildStatusError("Invalid webhook signature", 403);
+  }
+};
+
+const mapKycVerificationStatus = (event, accountEntity) => {
+  const accountStatus = String(
+    accountEntity?.kyc_status ?? accountEntity?.status ?? "",
+  ).toLowerCase();
+
+  if (VERIFIED_KYC_STATUSES.has(accountStatus)) {
+    return "verified";
+  }
+
+  if (REJECTED_KYC_STATUSES.has(accountStatus)) {
+    return "rejected";
+  }
+
+  const eventName = String(event ?? "").toLowerCase();
+  if (
+    eventName.includes("activated") ||
+    eventName.includes("verified") ||
+    eventName.includes("approved")
+  ) {
+    return "verified";
+  }
+
+  if (
+    eventName.includes("rejected") ||
+    eventName.includes("failed") ||
+    eventName.includes("suspended")
+  ) {
+    return "rejected";
+  }
+
+  return "pending";
+};
 
 // ─── Organizer Account Management ──────────────────────────────────────────
 export const createOrganizerAccountService = async (organizerId, payload) => {
@@ -50,6 +149,15 @@ export const createOrganizerAccountService = async (organizerId, payload) => {
     phone,
   } = payload;
 
+  const address = {
+    street1: street1 ?? "",
+    street2: street2 ?? "",
+    city: city ?? "",
+    state: state ?? "",
+    postal_code: postal_code ?? "",
+    country: "IN",
+  };
+
   const razorpayAccount = await razorpay.accounts.create({
     contact_name: account_holder_name,
     email,
@@ -99,28 +207,26 @@ export const createOrganizerAccountService = async (organizerId, payload) => {
   const account = await prisma.organizer_account_details.upsert({
     where: { organizer_id: organizerId },
     update: {
-      razorpayAccountId: razorpayAccount.id,
-      razorpayContactId: contact.id,
-      razorpayFundAccountId: fundAccount.id,
+      razorpay_account_id: razorpayAccount.id,
       account_holder_name,
       account_number,
       ifsc_code,
       bank_name,
       pan,
       phone,
+      address,
       updated_at: new Date(),
     },
     create: {
       organizer_id: organizerId,
-      razorpayAccountId: razorpayAccount.id,
-      razorpayContactId: contact.id,
-      razorpayFundAccountId: fundAccount.id,
+      razorpay_account_id: razorpayAccount.id,
       account_holder_name,
       account_number,
       ifsc_code,
       bank_name,
       pan,
       phone,
+      address,
       verification_status: "pending",
     },
   });
@@ -153,30 +259,11 @@ export const getOrganizerAccountService = async (organizerId) => {
 };
 
 // ─── Payment Initiation ────────────────────────────────────────────────────
-
-/**
- * Initiate payment for event registration
- * Creates a Razorpay order and payment record in the database
- *
- * @param {string} userId - The user registering for the event
- * @param {string} registrationId - The event registration ID
- * @param {object} payload - Payment details (usually empty, derived from registration + event)
- *
- * @returns {object} Payment record with Razorpay order details
- *
- * TODO: Validate registration exists and is for a paid event
- * TODO: Get event details to extract amount and currency
- * TODO: Call Razorpay createOrder API with amount, currency, etc.
- * TODO: Create payment record in DB with razorpay_order_id
- * TODO: Return Razorpay order details for frontend to initialize payment form
- * TODO: Handle Razorpay API errors gracefully
- */
 export const initiatePaymentService = async (
   userId,
   registrationId,
   payload,
 ) => {
-  // Fetch registration to ensure it exists and user owns it
   const registration = await prisma.event_registrations.findUnique({
     where: { id: registrationId },
     include: {
@@ -211,26 +298,53 @@ export const initiatePaymentService = async (
     throw err;
   }
 
-  // TODO: Check if payment already exists for this registration
-  // If exists and status is pending, return existing order
-  // If exists and status is completed, return error "Payment already completed"
+  // Check if payment already exists for this registration
+  const existingPayment = await prisma.event_payments.findFirst({
+    where: { registration_id: registrationId },
+  });
+
+  if (existingPayment) {
+    if (existingPayment.payment_status === "pending") {
+      return {
+        payment_id: existingPayment.id,
+        razorpay_order_id: existingPayment.razorpay_order_id,
+        amount: Number(existingPayment.amount),
+        currency: existingPayment.currency,
+        message: "Existing pending payment returned",
+      };
+    }
+    if (existingPayment.payment_status === "completed") {
+      const err = new Error("Payment already completed");
+      err.statusCode = 400;
+      throw err;
+    }
+  }
 
   const eventId = registration.events.id;
   const amount = registration.events.amount;
   const currency = registration.events.currency || "INR";
+  const organizerAccount = await prisma.organizer_account_details.findUnique({
+    where: { organizer_id: registration.events.organizer_id },
+  });
 
-  // TODO: Call Razorpay createOrder API
-  // const razorpayOrder = await callRazorpayCreateOrder({
-  //   amount: amount * 100, // Razorpay expects smallest currency unit
-  //   currency,
-  //   receipt: `reg_${registrationId}`,
-  //   description: `Registration for ${registration.events.title}`,
-  // });
+  if (!organizerAccount) {
+    const err = new Error("Organizer account details not found");
+    err.statusCode = 500;
+    throw err;
+  }
 
-  // For now, return a placeholder
-  const razorpayOrder = {
-    id: `order_${Date.now()}`, // TODO: Replace with actual Razorpay order ID
-  };
+  const razorpayOrder = await razorpay.orders.create({
+    amount: amount * 100, // Convert to paise
+    currency,
+    receipt: `receipt_${registrationId}`,
+    transfers: [
+      {
+        account: organizerAccount.razorpay_account_id,
+        amount: amount * 100, // Full amount to organizer for now
+        currency,
+      },
+    ],
+  });
 
   // Create payment record
   const payment = await prisma.event_payments.create({
@@ -263,14 +377,20 @@ export const initiatePaymentService = async (
     },
   });
 
-  // TODO: Return Razorpay order details for frontend
-  // Return minimal info needed by frontend to initialize Razorpay checkout
   return {
     payment_id: payment.id,
-    razorpay_order_id: payment.razorpay_order_id,
+    razorpay_order_id: razorpayOrder.id,
     amount: Number(payment.amount),
     currency: payment.currency,
-    // TODO: Include additional Razorpay order details from API response
+    razorpay_order_details: {
+      id: razorpayOrder.id,
+      entity: razorpayOrder.entity,
+      amount: razorpayOrder.amount,
+      currency: razorpayOrder.currency,
+      status: razorpayOrder.status,
+      receipt: razorpayOrder.receipt,
+      created_at: razorpayOrder.created_at,
+    },
   };
 };
 
@@ -294,49 +414,108 @@ export const initiatePaymentService = async (
  * TODO: Log webhook events for debugging
  * TODO: Handle payment failures (optional refund logic)
  */
-export const verifyPaymentWebhookService = async (payload, headers) => {
-  // TODO: Implement webhook signature verification
-  // const isValid = verifyRazorpaySignature(payload, headers["x-razorpay-signature"]);
-  // if (!isValid) {
-  //   const err = new Error("Invalid webhook signature");
-  //   err.statusCode = 403;
-  //   throw err;
-  // }
+export const verifyPaymentWebhookService = async (
+  payload,
+  headers,
+  rawPayload,
+) => {
+  verifyWebhookSignature(payload, headers, rawPayload);
 
-  // TODO: Extract from payload:
-  // const { id, event } = payload;
-  // if (event !== "payment.authorized") {
-  //   return { message: "Event not relevant", event };
-  // }
+  const event = payload?.event;
+  if (!SUPPORTED_PAYMENT_EVENTS.has(event)) {
+    return {
+      message: "Event ignored",
+      event,
+    };
+  }
 
-  // TODO: Extract payment details:
-  // const { razorpay_payment_id, razorpay_order_id } = payload.payload.payment.entity;
+  const paymentEntity = payload?.payload?.payment?.entity;
+  const razorpayOrderId = paymentEntity?.order_id;
+  const razorpayPaymentId = paymentEntity?.id;
 
-  // TODO: Find payment record by razorpay_order_id
-  // const payment = await prisma.event_payments.findUnique({
-  //   where: { razorpay_order_id },
-  // });
+  if (!razorpayOrderId || !razorpayPaymentId) {
+    throw buildStatusError("Invalid payment webhook payload", 400);
+  }
 
-  // TODO: Update payment status to "completed"
-  // const updatedPayment = await prisma.event_payments.update({
-  //   where: { id: payment.id },
-  //   data: {
-  //     razorpay_payment_id,
-  //     razorpay_signature: headers["x-razorpay-signature"],
-  //     payment_status: "completed",
-  //     updated_at: new Date(),
-  //   },
-  // });
+  const payment = await prisma.event_payments.findFirst({
+    where: { razorpay_order_id: razorpayOrderId },
+  });
 
-  // TODO: Update event_registration status if needed
-  // Check event_registrations schema to see what status field should be set
+  if (!payment) {
+    return {
+      message: "Payment not found for Razorpay order",
+      event,
+      razorpay_order_id: razorpayOrderId,
+      ignored: true,
+    };
+  }
 
-  // TODO: Consider sending confirmation notification to user
-  // notificationService.createNotification(...)
+  const paymentStatus = event === "payment.failed" ? "failed" : "completed";
+  const signature = headers?.["x-razorpay-signature"];
 
-  // For now, return placeholder
+  const updatedPayment = await prisma.event_payments.update({
+    where: { id: payment.id },
+    data: {
+      razorpay_payment_id: razorpayPaymentId,
+      razorpay_signature: signature,
+      payment_status: paymentStatus,
+      updated_at: new Date(),
+    },
+  });
+
   return {
-    message: "Webhook processed",
-    // TODO: Return actual webhook processing result
+    message: "Payment webhook processed",
+    event,
+    payment_id: updatedPayment.id,
+    payment_status: updatedPayment.payment_status,
+    razorpay_order_id: razorpayOrderId,
+    razorpay_payment_id: razorpayPaymentId,
+  };
+};
+
+export const updateKycStatusWebhookService = async (
+  payload,
+  headers,
+  rawPayload,
+) => {
+  verifyWebhookSignature(payload, headers, rawPayload);
+
+  const event = payload?.event;
+  const accountEntity = payload?.payload?.account?.entity;
+  const razorpayAccountId = accountEntity?.id;
+
+  if (!razorpayAccountId) {
+    throw buildStatusError("Invalid KYC webhook payload", 400);
+  }
+
+  const verificationStatus = mapKycVerificationStatus(event, accountEntity);
+
+  const organizerAccount = await prisma.organizer_account_details.findFirst({
+    where: { razorpay_account_id: razorpayAccountId },
+  });
+
+  if (!organizerAccount) {
+    return {
+      message: "Organizer account not found for Razorpay account",
+      event,
+      razorpay_account_id: razorpayAccountId,
+      ignored: true,
+    };
+  }
+
+  const updatedAccount = await prisma.organizer_account_details.update({
+    where: { id: organizerAccount.id },
+    data: {
+      verification_status: verificationStatus,
+      updated_at: new Date(),
+    },
+  });
+
+  return {
+    message: "KYC webhook processed",
+    event,
+    organizer_id: updatedAccount.organizer_id,
+    razorpay_account_id: updatedAccount.razorpay_account_id,
+    verification_status: updatedAccount.verification_status,
   };
 };

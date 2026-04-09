@@ -3,6 +3,7 @@ import {
   createOrganizerAccountService,
   getOrganizerAccountService,
   initiatePaymentService,
+  updateKycStatusWebhookService,
   verifyPaymentWebhookService,
 } from "../services/paymentService.js";
 
@@ -44,10 +45,29 @@ export const initiatePayment = asyncHandler(async (req, res) => {
 // ─── Verify payment webhook ────────────────────────────────────────────────
 
 export const verifyPaymentWebhook = asyncHandler(async (req, res) => {
-  const result = await verifyPaymentWebhookService(req.body, req.headers);
+  const result = await verifyPaymentWebhookService(
+    req.body,
+    req.headers,
+    req.rawBody,
+  );
   res.status(200).json({
     success: true,
     message: "Payment webhook processed successfully",
+    result,
+  });
+});
+
+// ─── KYC status webhook ─────────────────────────────────────────────────────
+
+export const updateKycStatusWebhook = asyncHandler(async (req, res) => {
+  const result = await updateKycStatusWebhookService(
+    req.body,
+    req.headers,
+    req.rawBody,
+  );
+  res.status(200).json({
+    success: true,
+    message: "KYC webhook processed successfully",
     result,
   });
 });

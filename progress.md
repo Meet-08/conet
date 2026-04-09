@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-04-06
+> Last updated: 2026-04-09
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -238,17 +238,18 @@
 
 - **Organizer Account Setup** — Organizer provides bank account details (account holder, account number, IFSC, PAN)
 - **Initiate Payment** — Create Razorpay order for event registration payment
-- **Payment Webhook** — Verify and process Razorpay payment authorization webhook
-- **Payment Status Tracking** — Track payment status in database (pending/completed)
+- **Payment Verification Webhook** — Verifies Razorpay webhook signature and updates payment status from payment events
+- **KYC Status Webhook** — Verifies Razorpay webhook signature and updates organizer account verification status
+- **Payment Status Tracking** — Tracks payment status in database (pending/completed/failed)
 
 **Use Cases:** `PaymentCreateOrganizerAccount`, `PaymentGetOrganizerAccount`, `PaymentInitiate`, `PaymentVerifyWebhook`
-**Backend Endpoints:** `POST /payments/organizer-account`, `GET /payments/organizer-account`, `POST /payments/:registrationId/initiate`, `POST /payments/webhook/verify`
+**Backend Endpoints:** `POST /payments/organizer-account`, `GET /payments/organizer-account`, `POST /payments/:registrationId/initiate`, `POST /payments/webhook/payment-verification`, `POST /payments/webhook/kyc-status`, `POST /payments/webhook/verify`
 
 **Implementation Notes:**
 
 - Organizer account creation triggers Razorpay linked account creation (TODO)
 - Payment initiation creates order with Razorpay and stores order_id (TODO: call Razorpay API)
-- Webhook verification validates signature and updates payment status (TODO: implement signature verification)
+- Webhook handlers validate signatures using `RAZORPAY_WEBHOOK_SECRET` and process idempotent updates for payment/KYC events
 - No Flutter UI created yet (payment form will be handled by Razorpay SDK)
 
 ---
