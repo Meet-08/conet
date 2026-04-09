@@ -43,6 +43,42 @@ const assertAttendanceScanner = async (eventId, scannerUserId) => {
   return event;
 };
 
+const attendeeUserSelect = {
+  id: true,
+  username: true,
+  first_name: true,
+  last_name: true,
+  profile_pic_url: true,
+};
+
+const mapAttendeeUser = (user) => ({
+  id: user?.id ?? null,
+  username: user?.username ?? null,
+  first_name: user?.first_name ?? null,
+  last_name: user?.last_name ?? null,
+  profile_pic_url: user?.profile_pic_url ?? null,
+});
+
+const normalizeAttendeeStatusFilter = (value) => {
+  if (value === undefined || value === null) return null;
+
+  const normalized = String(value).trim().toLowerCase();
+  if (!normalized) return null;
+
+  if (normalized === "all") return "all";
+
+  const allowedStatuses = new Set(["registered", "attended", "cancelled"]);
+  if (!allowedStatuses.has(normalized)) {
+    const err = new Error(
+      "status must be one of: registered, attended, cancelled, all",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  return normalized;
+};
+
 const buildPublishedEventsCursor = (eventDate, id) =>
   Buffer.from(
     JSON.stringify({ eventDate: eventDate.toISOString(), id }),
@@ -403,6 +439,79 @@ const normalizeCustomFieldResponsesForEvent = (customFields, responses) => {
   return normalized;
 };
 
+const parseActivityTimeValue = (value, fieldName) => {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      const err = new Error(`${fieldName} must be a valid date/time`);
+      err.statusCode = 400;
+      throw err;
+    }
+    return value;
+  }
+
+  if (typeof value !== "string") {
+    const err = new Error(`${fieldName} must be a string date/time value`);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    const err = new Error(`${fieldName} is required`);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  // Support HH:MM(:SS) payloads from app clients.
+  if (/^\d{2}:\d{2}(:\d{2})?$/.test(trimmed)) {
+    return parseTimeString(trimmed, fieldName);
+  }
+
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    const err = new Error(
+      `${fieldName} must be a valid ISO date-time or HH:MM(:SS)`,
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  return parsed;
+};
+
+const normalizeActivityEntries = (activity, fieldName = "activity") => {
+  if (!Array.isArray(activity)) {
+    const err = new Error(`${fieldName} must be an array`);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  return activity.map((entry, index) => {
+    if (!isPlainObject(entry)) {
+      const err = new Error(`${fieldName}[${index}] must be an object`);
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const title = String(entry.activity_title ?? "").trim();
+    if (!title) {
+      const err = new Error(
+        `${fieldName}[${index}].activity_title is required`,
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
+    return {
+      activity_time: parseActivityTimeValue(
+        entry.activity_time,
+        `${fieldName}[${index}].activity_time`,
+      ),
+      activity_title: title,
+    };
+  });
+};
+
 // ─── Create event (draft or publish) ─────────────────────────────────────────
 
 export const createEventService = async (organizerId, body) => {
@@ -510,6 +619,7 @@ export const createEventService = async (organizerId, body) => {
     : 1;
   const resolvedMaxTeamSize =
     normalizedParticipationType === "team" ? normalizedMaxTeamSize : 1;
+  const normalizedActivities = normalizeActivityEntries(activity, "activity");
 
   const event = await prisma.events.create({
     data: {
@@ -541,12 +651,14 @@ export const createEventService = async (organizerId, body) => {
         conversation_id: normalizedConversationId,
       }),
       event_activity:
-        activity.length ?
+        normalizedActivities.length ?
           {
-            create: activity.map(({ activity_time, activity_title }) => ({
-              activity_time: new Date(activity_time),
-              activity_title,
-            })),
+            create: normalizedActivities.map(
+              ({ activity_time, activity_title }) => ({
+                activity_time,
+                activity_title,
+              }),
+            ),
           }
         : undefined,
       event_prizes:
@@ -685,6 +797,10 @@ export const updateEventService = async (eventId, organizerId, body) => {
     hasConversationIdField ?
       normalizeOptionalString(rawConversationId, "conversation_id")
     : undefined;
+  const normalizedActivities =
+    activity !== undefined ?
+      normalizeActivityEntries(activity, "activity")
+    : undefined;
 
   const resetTeamSizesForIndividual =
     normalizedParticipationType === "individual" &&
@@ -736,13 +852,15 @@ export const updateEventService = async (eventId, organizerId, body) => {
   const updated = await prisma.$transaction(async (tx) => {
     if (activity !== undefined) {
       await tx.event_activity.deleteMany({ where: { event_id: eventId } });
-      if (activity.length) {
+      if (normalizedActivities.length) {
         await tx.event_activity.createMany({
-          data: activity.map(({ activity_time, activity_title }) => ({
-            event_id: eventId,
-            activity_time: new Date(activity_time),
-            activity_title,
-          })),
+          data: normalizedActivities.map(
+            ({ activity_time, activity_title }) => ({
+              event_id: eventId,
+              activity_time,
+              activity_title,
+            }),
+          ),
         });
       }
     }
@@ -1252,6 +1370,124 @@ export const getRegistrationInfoService = async (eventId, userId) => {
     event_id: event.id,
     user_id: registration.users.id,
     registration_id: registration.id,
+  };
+};
+
+export const getEventAttendeesService = async (
+  eventId,
+  requesterUserId,
+  { status } = {},
+) => {
+  const event = await assertAttendanceScanner(eventId, requesterUserId);
+  const participationType =
+    normalizeParticipationType(event.participation_type) ?? "individual";
+
+  const statusFilter = normalizeAttendeeStatusFilter(status);
+  const registrations = await prisma.event_registrations.findMany({
+    where: {
+      event_id: eventId,
+      ...(statusFilter === "all" ? {}
+      : statusFilter ? { registration_status: statusFilter }
+      : {
+          registration_status: {
+            in: ["registered", "attended"],
+          },
+        }),
+    },
+    orderBy: [{ registered_at: "asc" }, { id: "asc" }],
+    include: {
+      users: {
+        select: attendeeUserSelect,
+      },
+      event_teams: {
+        include: {
+          users: {
+            select: attendeeUserSelect,
+          },
+          event_team_members: {
+            orderBy: [{ joined_at: "asc" }, { id: "asc" }],
+            include: {
+              users: {
+                select: attendeeUserSelect,
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const statusCounts = registrations.reduce(
+    (acc, registration) => {
+      const currentStatus = registration.registration_status ?? "registered";
+      if (currentStatus === "registered") acc.registered += 1;
+      if (currentStatus === "attended") acc.attended += 1;
+      if (currentStatus === "cancelled") acc.cancelled += 1;
+      return acc;
+    },
+    { registered: 0, attended: 0, cancelled: 0 },
+  );
+
+  if (participationType === "team") {
+    const teams = registrations.map((registration) => {
+      const team = registration.event_teams;
+      const members = (team?.event_team_members ?? []).map((member) => ({
+        user_id: member.user_id,
+        role: member.role,
+        joined_at: member.joined_at,
+        user: mapAttendeeUser(member.users),
+      }));
+
+      return {
+        team_id: registration.team_id,
+        team_name: team?.team_name ?? null,
+        leader_user_id: team?.leader_id ?? registration.user_id,
+        leader: mapAttendeeUser(team?.users ?? registration.users),
+        registration_id: registration.id,
+        registration_status: registration.registration_status,
+        registered_at: registration.registered_at,
+        member_count: members.length,
+        members,
+      };
+    });
+
+    const totalMembers = teams.reduce(
+      (sum, team) => sum + (team.member_count ?? 0),
+      0,
+    );
+
+    return {
+      event_id: event.id,
+      participation_type: participationType,
+      attendees: teams,
+      summary: {
+        total_teams: teams.length,
+        total_members: totalMembers,
+        registered: statusCounts.registered,
+        attended: statusCounts.attended,
+        cancelled: statusCounts.cancelled,
+      },
+    };
+  }
+
+  const attendees = registrations.map((registration) => ({
+    registration_id: registration.id,
+    user_id: registration.user_id,
+    user: mapAttendeeUser(registration.users),
+    registration_status: registration.registration_status,
+    registered_at: registration.registered_at,
+  }));
+
+  return {
+    event_id: event.id,
+    participation_type: participationType,
+    attendees,
+    summary: {
+      total_attendees: attendees.length,
+      registered: statusCounts.registered,
+      attended: statusCounts.attended,
+      cancelled: statusCounts.cancelled,
+    },
   };
 };
 

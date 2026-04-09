@@ -524,6 +524,7 @@ model conversations {
   messages_conversations_last_message_idTomessages messages?              @relation("conversations_last_message_idTomessages", fields: [last_message_id], references: [id], onUpdate: NoAction, map: "conversations_last_message_fkey")
   users_conversations_user_oneTousers              users?                 @relation("conversations_user_oneTousers", fields: [user_one], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users_conversations_user_twoTousers              users?                 @relation("conversations_user_twoTousers", fields: [user_two], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  events                                           events[]
   messages                                         messages[]
 
   @@index([user_one], map: "idx_conversations_user_one")
@@ -723,20 +724,31 @@ model event_prizes {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model event_registrations {
-  id                  String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  event_id            String                    @db.Uuid
-  user_id             String                    @db.Uuid
-  registration_status registration_status_enum? @default(registered)
-  registered_at       DateTime?                 @default(now()) @db.Timestamp(6)
-  team_id             String?                   @db.Uuid
-  event_payments      event_payments?
-  events              events                    @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  event_teams         event_teams?              @relation(fields: [team_id], references: [id], onUpdate: NoAction)
-  users               users                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                     String                    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  event_id               String                    @db.Uuid
+  user_id                String                    @db.Uuid
+  registration_status    registration_status_enum? @default(registered)
+  registered_at          DateTime?                 @default(now()) @db.Timestamp(6)
+  team_id                String?                   @db.Uuid
+  enrollment_number      String?
+  contact_number         String?
+  semester               Int?
+  branch                 String?
+  payment_proof_url      String?
+  transaction_id         String?
+  custom_field_responses Json?                     @default("{}")
+  event_payments         event_payments?
+  events                 events                    @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  event_teams            event_teams?              @relation(fields: [team_id], references: [id], onUpdate: NoAction)
+  users                  users                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([event_id, user_id])
+  @@unique([event_id, enrollment_number], map: "idx_event_registrations_event_enrollment")
   @@index([event_id], map: "idx_event_registrations_event")
   @@index([user_id], map: "idx_event_registrations_user")
+  @@index([custom_field_responses], map: "idx_event_registrations_custom_fields_gin", type: Gin)
+  @@index([enrollment_number], map: "idx_event_registrations_enrollment_number")
+  @@index([transaction_id], map: "idx_event_registrations_transaction_id")
   @@schema("public")
 }
 
@@ -746,7 +758,6 @@ model events {
   organizer_id          String                  @db.Uuid
   title                 String                  @db.VarChar(255)
   category              String                  @db.VarChar(100)
-  about                 String?
   event_date            DateTime                @db.Date
   start_time            DateTime                @db.Time(6)
   end_time              DateTime                @db.Time(6)
@@ -765,6 +776,10 @@ model events {
   participation_type    participation_type_enum @default(individual)
   min_team_size         Int?                    @default(1)
   max_team_size         Int?                    @default(1)
+  about                 Json                    @default("{\"ops\": []}")
+  upi_id                String?
+  custom_fields         Json?                   @default("[]")
+  conversation_id       String?                 @db.Uuid
   event_activity        event_activity[]
   event_bookmarks       event_bookmarks[]
   event_cohosts         event_cohosts[]
@@ -774,12 +789,15 @@ model events {
   event_registrations   event_registrations[]
   event_team_members    event_team_members[]
   event_teams           event_teams[]
+  conversations         conversations?          @relation(fields: [conversation_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users                 users                   @relation(fields: [organizer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([event_date], map: "idx_events_date")
   @@index([organizer_id], map: "idx_events_organizer")
   @@index([event_status], map: "idx_events_status")
   @@index([participation_type], map: "idx_events_participation_type")
+  @@index([about], map: "idx_events_about", type: Gin)
+  @@index([custom_fields], map: "idx_events_custom_fields_gin", type: Gin)
   @@schema("public")
 }
 

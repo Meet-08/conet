@@ -361,7 +361,8 @@ void _initEvent() {
     () => EventPublishById(repository: serviceLocator<EventRepository>()),
   );
   serviceLocator.registerFactory(
-    () => EventUpdateConversation(repository: serviceLocator<EventRepository>()),
+    () =>
+        EventUpdateConversation(repository: serviceLocator<EventRepository>()),
   );
   serviceLocator.registerFactory(
     () => EventGetById(repository: serviceLocator<EventRepository>()),
@@ -389,6 +390,9 @@ void _initEvent() {
         EventGetRegistrationInfo(repository: serviceLocator<EventRepository>()),
   );
   serviceLocator.registerFactory(
+    () => EventGetAttendees(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
     () => EventMarkAttendance(repository: serviceLocator<EventRepository>()),
   );
 
@@ -409,6 +413,7 @@ void _initEvent() {
 
   serviceLocator.registerFactory(
     () => EventRegistrationBloc(
+      getAttendees: serviceLocator(),
       getRegistrationInfo: serviceLocator(),
       markAttendance: serviceLocator(),
     ),

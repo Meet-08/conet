@@ -4,6 +4,7 @@ import {
   attendEventService,
   cancelEventService,
   createEventService,
+  getEventAttendeesService,
   getEventService,
   getRegistrationInfoService,
   listCohostsService,
@@ -79,6 +80,13 @@ export const getRegistrationInfo = asyncHandler(async (req, res) => {
     req.user.id,
   );
   res.status(200).json({ success: true, registration });
+});
+
+export const getEventAttendees = asyncHandler(async (req, res) => {
+  const result = await getEventAttendeesService(req.params.id, req.user.id, {
+    status: req.query.status,
+  });
+  res.status(200).json({ success: true, ...result });
 });
 
 export const attendEvent = asyncHandler(async (req, res) => {

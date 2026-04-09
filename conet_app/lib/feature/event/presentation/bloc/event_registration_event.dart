@@ -5,6 +5,17 @@ sealed class EventRegistrationEvent {
   const EventRegistrationEvent();
 }
 
+final class EventRegistrationFetchAttendeesEvent
+    extends EventRegistrationEvent {
+  final String eventId;
+  final String status;
+
+  const EventRegistrationFetchAttendeesEvent({
+    required this.eventId,
+    this.status = 'all',
+  });
+}
+
 final class EventRegistrationFetchTicketEvent extends EventRegistrationEvent {
   final String eventId;
 

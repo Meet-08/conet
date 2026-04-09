@@ -5,6 +5,7 @@ import {
   cancelEvent,
   createEvent,
   getEvent,
+  getEventAttendees,
   getRegistrationInfo,
   listCohosts,
   listMyEvents,
@@ -29,6 +30,7 @@ router.get("/my", listMyEvents);
 router.get("/:id", getEvent);
 router.post("/:id/register", registerEvent);
 router.get("/:id/registration-info", getRegistrationInfo);
+router.get("/:id/attendees", getEventAttendees);
 router.post("/:id/attend", attendEvent);
 router.post("/:id/save", saveEvent);
 

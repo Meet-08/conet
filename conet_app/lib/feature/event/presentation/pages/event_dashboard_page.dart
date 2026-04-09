@@ -243,6 +243,23 @@ class _EventDashboardCard extends StatelessWidget {
     return 'Rs ${value.toStringAsFixed(2)}';
   }
 
+  void _handleActionTap(BuildContext context, String action) {
+    switch (action) {
+      case 'Attendees':
+        context.push(
+          '/event-attendees',
+          extra: {'eventId': event.id, 'eventTitle': event.title},
+        );
+        return;
+      case 'Analytics':
+        AppToast.showInfo(context, 'Analytics dashboard is coming soon.');
+        return;
+      case 'Edit':
+        AppToast.showInfo(context, 'Draft editing flow is not available yet.');
+        return;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = theme.colorScheme;
@@ -330,7 +347,12 @@ class _EventDashboardCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: actions
-                .map((action) => _ActionPill(label: action))
+                .map(
+                  (action) => _ActionPill(
+                    label: action,
+                    onTap: () => _handleActionTap(context, action),
+                  ),
+                )
                 .toList(),
           ),
         ],
@@ -368,8 +390,9 @@ class _MetaRow extends StatelessWidget {
 
 class _ActionPill extends StatelessWidget {
   final String label;
+  final VoidCallback? onTap;
 
-  const _ActionPill({required this.label});
+  const _ActionPill({required this.label, this.onTap});
 
   IconData _iconForLabel() {
     switch (label) {
@@ -388,19 +411,23 @@ class _ActionPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FaIcon(_iconForLabel(), size: 12),
-          const SizedBox(width: 6),
-          Text(label),
-        ],
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FaIcon(_iconForLabel(), size: 12),
+            const SizedBox(width: 6),
+            Text(label),
+          ],
+        ),
       ),
     );
   }

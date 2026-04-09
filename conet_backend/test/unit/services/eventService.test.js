@@ -8,6 +8,7 @@ import {
   addCohostService,
   attendEventService,
   createEventService,
+  getEventAttendeesService,
   getRegistrationInfoService,
   listCohostsService,
   listMyEventsService,
@@ -95,6 +96,7 @@ beforeEach(() => {
   });
   prismaMock.event_registrations.findUnique.mockResolvedValue(null);
   prismaMock.event_registrations.findFirst.mockResolvedValue(null);
+  prismaMock.event_registrations.findMany.mockResolvedValue([]);
   prismaMock.event_registrations.update.mockResolvedValue({
     id: REGISTRATION_ID,
   });
@@ -187,6 +189,63 @@ describe("createEventService", () => {
     expect(createArg.data.end_time).toBeInstanceOf(Date);
     expect(createArg.data.event_activity.create).toHaveLength(1);
     expect(result.event_status).toBe("published");
+  });
+
+  it("accepts HH:MM(:SS) activity_time payloads", async () => {
+    prismaMock.events.create.mockResolvedValue(
+      makeEventRow({ event_status: "published" }),
+    );
+
+    await createEventService(ORGANIZER_ID, {
+      title: "Demo Event",
+      category: "hackathon",
+      event_date: "2026-06-01",
+      start_time: "09:30",
+      end_time: "11:30",
+      location_type: "OFFLINE",
+      location: "Main Campus",
+      event_image_url: "https://cdn.example.com/events/demo-banner.jpg",
+      activity: [
+        {
+          activity_time: "09:45:00",
+          activity_title: "Onboarding",
+        },
+      ],
+    });
+
+    const createArg = prismaMock.events.create.mock.calls[0][0];
+    expect(createArg.data.event_activity.create).toHaveLength(1);
+    expect(
+      createArg.data.event_activity.create[0].activity_time,
+    ).toBeInstanceOf(Date);
+    expect(
+      createArg.data.event_activity.create[0].activity_time.toISOString(),
+    ).toBe("1970-01-01T09:45:00.000Z");
+  });
+
+  it("throws 400 for invalid activity_time values", async () => {
+    await expect(
+      createEventService(ORGANIZER_ID, {
+        title: "Broken Activity Event",
+        category: "Technology",
+        event_date: "2026-06-01",
+        start_time: "09:30",
+        end_time: "11:30",
+        location_type: "ONLINE",
+        meeting_link: "https://meet.example/demo",
+        event_image_url: "https://cdn.example.com/events/demo-banner.jpg",
+        activity: [
+          {
+            activity_time: "not-a-time",
+            activity_title: "Intro",
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message:
+        "activity[0].activity_time must be a valid ISO date-time or HH:MM(:SS)",
+    });
   });
 });
 
@@ -508,6 +567,176 @@ describe("getRegistrationInfoService", () => {
       event_id: EVENT_ID,
       user_id: ATTENDEE_ID,
       registration_id: REGISTRATION_ID,
+    });
+  });
+});
+
+describe("getEventAttendeesService", () => {
+  it("throws 403 when requester is neither organizer nor cohost", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({ event_status: "published" }),
+    );
+    prismaMock.event_cohosts.findUnique.mockResolvedValue(null);
+
+    await expect(
+      getEventAttendeesService(EVENT_ID, ATTENDEE_ID),
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      message: "Only organizer or co-host can scan tickets",
+    });
+  });
+
+  it("returns attendee list and summary for individual events", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({
+        event_status: "published",
+        participation_type: "individual",
+      }),
+    );
+    prismaMock.event_registrations.findMany.mockResolvedValue([
+      {
+        id: "registration-1",
+        event_id: EVENT_ID,
+        user_id: ATTENDEE_ID,
+        registration_status: "registered",
+        registered_at: new Date("2026-04-01T10:00:00.000Z"),
+        users: {
+          id: ATTENDEE_ID,
+          username: "bob",
+          first_name: "Bob",
+          last_name: "Jones",
+          profile_pic_url: null,
+        },
+        event_teams: null,
+      },
+      {
+        id: "registration-2",
+        event_id: EVENT_ID,
+        user_id: "member-2",
+        registration_status: "attended",
+        registered_at: new Date("2026-04-01T11:00:00.000Z"),
+        users: {
+          id: "member-2",
+          username: "clara",
+          first_name: "Clara",
+          last_name: "Ray",
+          profile_pic_url: null,
+        },
+        event_teams: null,
+      },
+    ]);
+
+    const result = await getEventAttendeesService(EVENT_ID, ORGANIZER_ID);
+
+    expect(prismaMock.event_registrations.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          event_id: EVENT_ID,
+          registration_status: { in: ["registered", "attended"] },
+        },
+      }),
+    );
+    expect(result.participation_type).toBe("individual");
+    expect(result.attendees).toHaveLength(2);
+    expect(result.summary).toEqual({
+      total_attendees: 2,
+      registered: 1,
+      attended: 1,
+      cancelled: 0,
+    });
+  });
+
+  it("returns team attendee groups for team events", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({
+        event_status: "published",
+        participation_type: "team",
+      }),
+    );
+    prismaMock.event_registrations.findMany.mockResolvedValue([
+      {
+        id: "registration-team-1",
+        event_id: EVENT_ID,
+        user_id: ATTENDEE_ID,
+        team_id: "team-1",
+        registration_status: "registered",
+        registered_at: new Date("2026-04-02T10:00:00.000Z"),
+        users: {
+          id: ATTENDEE_ID,
+          username: "bob",
+          first_name: "Bob",
+          last_name: "Jones",
+          profile_pic_url: null,
+        },
+        event_teams: {
+          id: "team-1",
+          team_name: "Alpha",
+          leader_id: ATTENDEE_ID,
+          users: {
+            id: ATTENDEE_ID,
+            username: "bob",
+            first_name: "Bob",
+            last_name: "Jones",
+            profile_pic_url: null,
+          },
+          event_team_members: [
+            {
+              id: "member-row-1",
+              user_id: ATTENDEE_ID,
+              role: "leader",
+              joined_at: new Date("2026-04-02T10:00:00.000Z"),
+              users: {
+                id: ATTENDEE_ID,
+                username: "bob",
+                first_name: "Bob",
+                last_name: "Jones",
+                profile_pic_url: null,
+              },
+            },
+            {
+              id: "member-row-2",
+              user_id: "member-2",
+              role: "member",
+              joined_at: new Date("2026-04-02T10:00:00.000Z"),
+              users: {
+                id: "member-2",
+                username: "clara",
+                first_name: "Clara",
+                last_name: "Ray",
+                profile_pic_url: null,
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    const result = await getEventAttendeesService(EVENT_ID, ORGANIZER_ID, {
+      status: "registered",
+    });
+
+    expect(prismaMock.event_registrations.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          event_id: EVENT_ID,
+          registration_status: "registered",
+        },
+      }),
+    );
+    expect(result.participation_type).toBe("team");
+    expect(result.attendees).toHaveLength(1);
+    expect(result.attendees[0]).toMatchObject({
+      team_id: "team-1",
+      team_name: "Alpha",
+      member_count: 2,
+      registration_id: "registration-team-1",
+    });
+    expect(result.summary).toEqual({
+      total_teams: 1,
+      total_members: 2,
+      registered: 1,
+      attended: 0,
+      cancelled: 0,
     });
   });
 });

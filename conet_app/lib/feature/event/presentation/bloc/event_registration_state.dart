@@ -9,6 +9,18 @@ final class EventRegistrationInitial extends EventRegistrationState {}
 
 final class EventRegistrationLoading extends EventRegistrationState {}
 
+final class EventRegistrationAttendeesLoading extends EventRegistrationState {}
+
+final class EventRegistrationAttendeesLoaded extends EventRegistrationState {
+  final EventAttendees attendees;
+  final String statusFilter;
+
+  const EventRegistrationAttendeesLoaded(
+    this.attendees, {
+    this.statusFilter = 'all',
+  });
+}
+
 final class EventRegistrationTicketLoaded extends EventRegistrationState {
   final EventRegistrationTicket ticket;
 

@@ -96,6 +96,7 @@ beforeEach(() => {
   prismaMock.event_registrations.count.mockResolvedValue(0);
   prismaMock.event_registrations.findUnique.mockResolvedValue(null);
   prismaMock.event_registrations.findFirst.mockResolvedValue(null);
+  prismaMock.event_registrations.findMany.mockResolvedValue([]);
   prismaMock.event_registrations.upsert.mockResolvedValue({
     id: REGISTRATION_ID,
   });
@@ -425,6 +426,49 @@ describe("Registration and attendance routes", () => {
     expect(prismaMock.event_registrations.update).toHaveBeenCalledWith({
       where: { id: REGISTRATION_ID },
       data: { registration_status: "attended" },
+    });
+  });
+
+  it("200 - returns attendees for organizer", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({
+        event_status: "published",
+        participation_type: "individual",
+        organizer_id: TEST_USER.id,
+      }),
+    );
+    prismaMock.event_registrations.findMany.mockResolvedValue([
+      {
+        id: REGISTRATION_ID,
+        event_id: EVENT_ID,
+        user_id: TEST_USER_B.id,
+        registration_status: "registered",
+        registered_at: new Date("2026-04-01T10:00:00.000Z"),
+        users: {
+          id: TEST_USER_B.id,
+          username: "bob",
+          first_name: "Bob",
+          last_name: "Jones",
+          profile_pic_url: null,
+        },
+        event_teams: null,
+      },
+    ]);
+
+    const res = await request(app)
+      .get(`/api/events/${EVENT_ID}/attendees`)
+      .set("Authorization", makeAuthHeader(TEST_USER));
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.participation_type).toBe("individual");
+    expect(Array.isArray(res.body.attendees)).toBe(true);
+    expect(res.body.attendees).toHaveLength(1);
+    expect(res.body.summary).toEqual({
+      total_attendees: 1,
+      registered: 1,
+      attended: 0,
+      cancelled: 0,
     });
   });
 });

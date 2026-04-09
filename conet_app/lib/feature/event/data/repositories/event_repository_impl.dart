@@ -3,6 +3,7 @@ import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/event/data/data_sources/event_data_source.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_attendance_result.dart';
+import 'package:conet_app/feature/event/domain/entities/event_attendees.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_page.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
@@ -102,7 +103,9 @@ class EventRepositoryImpl implements EventRepository {
 
   @override
   Future<Either<AppFailure, Event>> publishDraftById(String eventId) {
-    return _getResult<Event, Event>(() => _eventDataSource.publishDraftById(eventId));
+    return _getResult<Event, Event>(
+      () => _eventDataSource.publishDraftById(eventId),
+    );
   }
 
   @override
@@ -131,6 +134,17 @@ class EventRepositoryImpl implements EventRepository {
   ) {
     return _getResult<EventRegistrationTicket, EventRegistrationTicket>(
       () => _eventDataSource.getRegistrationInfo(eventId),
+    );
+  }
+
+  @override
+  Future<Either<AppFailure, EventAttendees>> getEventAttendees({
+    required String eventId,
+    String? status,
+  }) {
+    return _getResult<EventAttendees, EventAttendees>(
+      () =>
+          _eventDataSource.getEventAttendees(eventId: eventId, status: status),
     );
   }
 

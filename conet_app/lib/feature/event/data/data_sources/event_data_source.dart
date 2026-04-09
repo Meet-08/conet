@@ -1,4 +1,5 @@
 import 'package:conet_app/feature/event/data/models/event_attendance_result_model.dart';
+import 'package:conet_app/feature/event/data/models/event_attendees_model.dart';
 import 'package:conet_app/feature/event/data/models/event_page_model.dart';
 import 'package:conet_app/feature/event/data/models/event_registration_ticket_model.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
@@ -46,6 +47,11 @@ abstract class EventDataSource {
   });
 
   Future<EventRegistrationTicketModel> getRegistrationInfo(String eventId);
+
+  Future<EventAttendeesModel> getEventAttendees({
+    required String eventId,
+    String? status,
+  });
 
   Future<EventAttendanceResultModel> markAttendance({
     required String eventId,

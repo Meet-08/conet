@@ -1,7 +1,9 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/event/domain/entities/event_attendance_result.dart';
+import 'package:conet_app/feature/event/domain/entities/event_attendees.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_ticket.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_get_attendees.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_registration_info.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_mark_attendance.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_registration_bloc.dart';
@@ -12,12 +14,30 @@ import 'package:mocktail/mocktail.dart';
 class MockEventGetRegistrationInfo extends Mock
     implements EventGetRegistrationInfo {}
 
+class MockEventGetAttendees extends Mock implements EventGetAttendees {}
+
 class MockEventMarkAttendance extends Mock implements EventMarkAttendance {}
 
 void main() {
   late EventRegistrationBloc bloc;
+  late MockEventGetAttendees mockGetAttendees;
   late MockEventGetRegistrationInfo mockGetRegistrationInfo;
   late MockEventMarkAttendance mockMarkAttendance;
+
+  const tAttendees = EventAttendees(
+    eventId: 'event-1',
+    participationType: 'individual',
+    attendees: [
+      EventAttendee(
+        registrationId: 'reg-1',
+        registrationStatus: 'registered',
+        registeredAt: null,
+        userId: 'user-1',
+        user: EventAttendeeUser(id: 'user-1', username: 'demo'),
+      ),
+    ],
+    summary: EventAttendeesSummary(totalAttendees: 1, registered: 1),
+  );
 
   const tTicket = EventRegistrationTicket(
     eventId: 'event-1',
@@ -31,10 +51,12 @@ void main() {
   );
 
   setUp(() {
+    mockGetAttendees = MockEventGetAttendees();
     mockGetRegistrationInfo = MockEventGetRegistrationInfo();
     mockMarkAttendance = MockEventMarkAttendance();
 
     bloc = EventRegistrationBloc(
+      getAttendees: mockGetAttendees,
       getRegistrationInfo: mockGetRegistrationInfo,
       markAttendance: mockMarkAttendance,
     );
@@ -88,6 +110,57 @@ void main() {
           (s) => s.message,
           'message',
           'Ticket not found',
+        ),
+      ],
+    );
+  });
+
+  group('EventRegistrationFetchAttendeesEvent', () {
+    blocTest<EventRegistrationBloc, EventRegistrationState>(
+      'emits [EventRegistrationAttendeesLoading, EventRegistrationAttendeesLoaded] on success',
+      build: () {
+        when(
+          () => mockGetAttendees(eventId: 'event-1', status: 'all'),
+        ).thenAnswer((_) async => const Right(tAttendees));
+        return bloc;
+      },
+      act: (bloc) => bloc.add(
+        const EventRegistrationFetchAttendeesEvent(eventId: 'event-1'),
+      ),
+      expect: () => [
+        isA<EventRegistrationAttendeesLoading>(),
+        isA<EventRegistrationAttendeesLoaded>()
+            .having((s) => s.attendees.eventId, 'eventId', 'event-1')
+            .having(
+              (s) => s.attendees.summary.totalAttendees,
+              'totalAttendees',
+              1,
+            ),
+      ],
+      verify: (_) {
+        verify(
+          () => mockGetAttendees(eventId: 'event-1', status: 'all'),
+        ).called(1);
+      },
+    );
+
+    blocTest<EventRegistrationBloc, EventRegistrationState>(
+      'emits [EventRegistrationAttendeesLoading, EventRegistrationFailure] on failure',
+      build: () {
+        when(
+          () => mockGetAttendees(eventId: 'event-1', status: 'all'),
+        ).thenAnswer((_) async => Left(AppFailure('Failed attendees')));
+        return bloc;
+      },
+      act: (bloc) => bloc.add(
+        const EventRegistrationFetchAttendeesEvent(eventId: 'event-1'),
+      ),
+      expect: () => [
+        isA<EventRegistrationAttendeesLoading>(),
+        isA<EventRegistrationFailure>().having(
+          (s) => s.message,
+          'message',
+          'Failed attendees',
         ),
       ],
     );

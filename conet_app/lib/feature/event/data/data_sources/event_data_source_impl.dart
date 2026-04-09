@@ -6,6 +6,7 @@ import 'package:conet_app/core/error/error_handler.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/event/data/data_sources/event_data_source.dart';
 import 'package:conet_app/feature/event/data/models/event_attendance_result_model.dart';
+import 'package:conet_app/feature/event/data/models/event_attendees_model.dart';
 import 'package:conet_app/feature/event/data/models/event_create_payload_model.dart';
 import 'package:conet_app/feature/event/data/models/event_model.dart';
 import 'package:conet_app/feature/event/data/models/event_page_model.dart';
@@ -224,6 +225,31 @@ class EventDataSourceImpl implements EventDataSource {
       final data = response.data as Map<String, dynamic>;
       return EventRegistrationTicketModel.fromJson(
         data['registration'] as Map<String, dynamic>,
+      );
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<EventAttendeesModel> getEventAttendees({
+    required String eventId,
+    String? status,
+  }) async {
+    try {
+      final response = await _dioClient.dio.get(
+        '/events/$eventId/attendees',
+        queryParameters: {
+          if (status != null && status.trim().isNotEmpty) 'status': status,
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to fetch attendees');
+      }
+
+      return EventAttendeesModel.fromJson(
+        response.data as Map<String, dynamic>,
       );
     } catch (e) {
       throw ServerException(AppErrorHandler.handleException(e), e);
