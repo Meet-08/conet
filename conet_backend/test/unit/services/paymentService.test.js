@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import crypto from "crypto";
 
 const prismaMock = {
@@ -23,10 +23,13 @@ const razorpayMock = {
 mock.module("../../../config/prisma.js", () => ({ default: prismaMock }));
 mock.module("../../../config/razorpay.js", () => ({ default: razorpayMock }));
 
-import {
-  updateKycStatusWebhookService,
-  verifyPaymentWebhookService,
-} from "../../../services/paymentService.js";
+let verifyPaymentWebhookService;
+let updateKycStatusWebhookService;
+
+beforeAll(async () => {
+  ({ verifyPaymentWebhookService, updateKycStatusWebhookService } =
+    await import("../../../services/paymentService.js?unit-payment-service"));
+});
 
 const makeSignature = (rawPayload) =>
   crypto
