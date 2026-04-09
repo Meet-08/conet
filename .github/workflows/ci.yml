@@ -116,6 +116,9 @@ jobs:
           DEEP_LINK_HOST=${{ vars.DEEP_LINK_HOST }}
           EOF
 
+      - name: Clean
+        run: flutter clean
+
       # 🏗 Build Release APK
       - name: Build APK
         run: flutter build apk --release
