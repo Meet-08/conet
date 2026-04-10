@@ -78,10 +78,7 @@ class TeamRegistrationDetailPage extends StatelessWidget {
               user: attendee.leader,
               onTap: attendee.leader?.id != null
                   ? () {
-                      context.push(
-                        '/user-profile/${attendee.leader!.id!}',
-                        extra: attendee.leader,
-                      );
+                      context.push('/user-profile', extra: attendee.leader?.id);
                     }
                   : null,
             ),
@@ -105,8 +102,8 @@ class TeamRegistrationDetailPage extends StatelessWidget {
                     onTap: member.user?.id != null
                         ? () {
                             context.push(
-                              '/user-profile/${member.user!.id!}',
-                              extra: member.user,
+                              '/user-profile',
+                              extra: member.user?.id,
                             );
                           }
                         : null,
