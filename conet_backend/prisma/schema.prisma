@@ -730,11 +730,6 @@ model event_registrations {
   registration_status    registration_status_enum? @default(registered)
   registered_at          DateTime?                 @default(now()) @db.Timestamp(6)
   team_id                String?                   @db.Uuid
-  enrollment_number      String?
-  contact_number         String?
-  semester               Int?
-  branch                 String?
-  payment_proof_url      String?
   transaction_id         String?
   custom_field_responses Json?                     @default("{}")
   event_payments         event_payments?
@@ -743,11 +738,9 @@ model event_registrations {
   users                  users                     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@unique([event_id, user_id])
-  @@unique([event_id, enrollment_number], map: "idx_event_registrations_event_enrollment")
   @@index([event_id], map: "idx_event_registrations_event")
   @@index([user_id], map: "idx_event_registrations_user")
   @@index([custom_field_responses], map: "idx_event_registrations_custom_fields_gin", type: Gin)
-  @@index([enrollment_number], map: "idx_event_registrations_enrollment_number")
   @@index([transaction_id], map: "idx_event_registrations_transaction_id")
   @@schema("public")
 }

@@ -314,28 +314,6 @@ describe("Registration and attendance routes", () => {
     expect(prismaMock.event_registrations.upsert).toHaveBeenCalled();
   });
 
-  it("400 - rejects team registration when required fields are missing", async () => {
-    prismaMock.events.findUnique.mockResolvedValue(
-      makeEventRow({
-        event_status: "published",
-        participation_type: "team",
-        min_team_size: 2,
-        max_team_size: 5,
-      }),
-    );
-
-    const res = await request(app)
-      .post(`/api/events/${EVENT_ID}/register`)
-      .set("Authorization", makeAuthHeader(TEST_USER_B))
-      .send({ team_size: 2, member_user_ids: ["member-1"] });
-
-    expect(res.status).toBe(400);
-    expect(res.body.message).toBe(
-      "enrollment_number, branch are required for team event registration",
-    );
-    expect(prismaMock.event_registrations.upsert).not.toHaveBeenCalled();
-  });
-
   it("200 - generates team_id for team registrations", async () => {
     prismaMock.events.findUnique
       .mockResolvedValueOnce(
@@ -360,8 +338,6 @@ describe("Registration and attendance routes", () => {
       .set("Authorization", makeAuthHeader(TEST_USER_B))
       .send({
         team_size: 2,
-        enrollment_number: "ENR-001",
-        branch: "CSE",
         member_user_ids: ["member-1"],
       });
 

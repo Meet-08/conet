@@ -282,9 +282,24 @@ const normalizeCustomFieldDefinitions = (customFields) => {
     const label = String(field.label ?? field.name ?? field.title ?? key)
       .trim()
       .slice(0, 100);
-    const type = String(field.type ?? field.field_type ?? "text")
+    const rawType = String(field.type ?? field.field_type ?? "text")
       .trim()
       .toLowerCase();
+    const type =
+      (
+        rawType === "single_select" ||
+        rawType === "single-select" ||
+        rawType === "singleselect" ||
+        rawType === "dropdown"
+      ) ?
+        "select"
+      : (
+        rawType === "multiple_select" ||
+        rawType === "multiple-select" ||
+        rawType === "multiselect"
+      ) ?
+        "multi_select"
+      : rawType;
     const options =
       Array.isArray(field.options) ?
         field.options.map((option) => String(option).trim()).filter(Boolean)
@@ -1028,19 +1043,6 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     normalizeParticipationType(event.participation_type) ?? "individual";
 
   const teamId = normalizeOptionalString(payload.team_id, "team_id");
-  const enrollmentNumber = normalizeOptionalString(
-    payload.enrollment_number,
-    "enrollment_number",
-  );
-  const contactNumber = normalizeOptionalString(
-    payload.contact_number,
-    "contact_number",
-  );
-  const semester = normalizeOptionalPositiveInteger(
-    payload.semester,
-    "semester",
-  );
-  const branch = normalizeOptionalString(payload.branch, "branch");
   const paymentProofUrl = normalizeOptionalString(
     payload.payment_proof_url,
     "payment_proof_url",
@@ -1107,19 +1109,6 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     if (selectedAdditionalMembers.length !== requiredAdditionalMembers) {
       const err = new Error(
         `Add exactly ${requiredAdditionalMembers} team members before registration`,
-      );
-      err.statusCode = 400;
-      throw err;
-    }
-
-    const missingTeamFields = [];
-    if (!hasValue(enrollmentNumber))
-      missingTeamFields.push("enrollment_number");
-    if (!hasValue(branch)) missingTeamFields.push("branch");
-
-    if (missingTeamFields.length) {
-      const err = new Error(
-        `${missingTeamFields.join(", ")} are required for team event registration`,
       );
       err.statusCode = 400;
       throw err;
@@ -1250,11 +1239,6 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     user_id: userId,
     registration_status: "registered",
     team_id: resolvedTeamId ?? null,
-    enrollment_number: enrollmentNumber ?? null,
-    contact_number: contactNumber ?? null,
-    semester: semester ?? null,
-    branch: branch ?? null,
-    payment_proof_url: paymentProofUrl ?? null,
     transaction_id: transactionId ?? null,
     custom_field_responses: normalizedCustomFieldResponses,
   };
@@ -1263,15 +1247,6 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     registration_status: "registered",
     registered_at: new Date(),
     ...(resolvedTeamId !== undefined && { team_id: resolvedTeamId }),
-    ...(enrollmentNumber !== undefined && {
-      enrollment_number: enrollmentNumber,
-    }),
-    ...(contactNumber !== undefined && { contact_number: contactNumber }),
-    ...(semester !== undefined && { semester }),
-    ...(branch !== undefined && { branch }),
-    ...(paymentProofUrl !== undefined && {
-      payment_proof_url: paymentProofUrl,
-    }),
     ...(transactionId !== undefined && { transaction_id: transactionId }),
     ...(payload.custom_field_responses !== undefined ?
       { custom_field_responses: normalizedCustomFieldResponses }
@@ -1286,9 +1261,7 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     });
   } catch (error) {
     if (error?.code === "P2002") {
-      const err = new Error(
-        "Enrollment number is already registered for this event",
-      );
+      const err = new Error("Registration already exists for this user");
       err.statusCode = 409;
       throw err;
     }
@@ -1448,6 +1421,7 @@ export const getEventAttendeesService = async (
         registered_at: registration.registered_at,
         member_count: members.length,
         members,
+        custom_field_responses: registration.custom_field_responses ?? {},
       };
     });
 
@@ -1476,6 +1450,7 @@ export const getEventAttendeesService = async (
     user: mapAttendeeUser(registration.users),
     registration_status: registration.registration_status,
     registered_at: registration.registered_at,
+    custom_field_responses: registration.custom_field_responses ?? {},
   }));
 
   return {

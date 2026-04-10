@@ -166,9 +166,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
         for (var i = 0; i < rawCustomFields.length; i++) {
           final field = rawCustomFields[i];
           final label = (field['label'] as String? ?? '').trim();
-          final key = (field['key'] as String? ?? '').trim();
-          if (label.isEmpty || key.isEmpty) {
-            return 'Custom field ${i + 1} must have label and key';
+          if (label.isEmpty) {
+            return 'Custom field ${i + 1} must have label';
           }
 
           final type = ((field['type'] as String?) ?? 'text').toLowerCase();
@@ -307,17 +306,27 @@ class _CreateEventPageState extends State<CreateEventPage> {
     final customFields = rawCustomFields
         .map((field) {
           final rawLabel = (field['label'] as String? ?? '').trim();
-          final rawKey = (field['key'] as String? ?? '').trim();
-          final key = rawKey.isEmpty
-              ? _normalizeFieldKeyFromLabel(rawLabel)
-              : _normalizeFieldKeyFromLabel(rawKey);
+          final key = _normalizeFieldKeyFromLabel(rawLabel);
           if (key.isEmpty || rawLabel.isEmpty) {
             return null;
           }
 
+          final helperText = (field['helper_text'] as String? ?? '').trim();
+
           final type = ((field['type'] as String?) ?? 'text')
               .trim()
               .toLowerCase();
+          final normalizedType =
+              type == 'single_select' ||
+                  type == 'single-select' ||
+                  type == 'singleselect' ||
+                  type == 'dropdown'
+              ? 'select'
+              : (type == 'multiple_select' ||
+                    type == 'multiple-select' ||
+                    type == 'multiselect')
+              ? 'multi_select'
+              : (type.isEmpty ? 'text' : type);
           final options =
               (field['options'] as List?)
                   ?.map((value) => value.toString().trim())
@@ -329,7 +338,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
           return EventCustomField(
             key: key,
             label: rawLabel,
-            type: type.isEmpty ? 'text' : type,
+            helperText: helperText.isEmpty ? null : helperText,
+            type: normalizedType,
             required: field['required'] == true,
             options: options,
           );

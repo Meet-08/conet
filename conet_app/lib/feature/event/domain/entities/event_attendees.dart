@@ -31,6 +31,7 @@ class EventAttendee extends Equatable {
   final EventAttendeeUser? leader;
   final int memberCount;
   final List<EventAttendeeMember> members;
+  final Map<String, dynamic> customFieldResponses;
 
   const EventAttendee({
     required this.registrationId,
@@ -44,6 +45,7 @@ class EventAttendee extends Equatable {
     this.leader,
     this.memberCount = 0,
     this.members = const [],
+    this.customFieldResponses = const {},
   });
 
   bool get isTeam => teamId != null && teamId!.isNotEmpty;
@@ -61,6 +63,7 @@ class EventAttendee extends Equatable {
     leader,
     memberCount,
     members,
+    customFieldResponses,
   ];
 }
 

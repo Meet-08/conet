@@ -39,32 +39,32 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
 
     final eventDate = widget.formData['event_date'] as DateTime?;
     final eventStartTime = widget.formData['start_time'] as TimeOfDay?;
-    final eventStartDateTime =
-        eventDate != null && eventStartTime != null
-            ? DateTime(
-                eventDate.year,
-                eventDate.month,
-                eventDate.day,
-                eventStartTime.hour,
-                eventStartTime.minute,
-              )
-            : null;
+    final eventStartDateTime = eventDate != null && eventStartTime != null
+        ? DateTime(
+            eventDate.year,
+            eventDate.month,
+            eventDate.day,
+            eventStartTime.hour,
+            eventStartTime.minute,
+          )
+        : null;
 
     final now = DateTime.now();
     final firstDate = DateTime(now.year, now.month, now.day);
-    final maxDate =
-        eventStartDateTime != null
-            ? DateTime(
-                eventStartDateTime.year,
-                eventStartDateTime.month,
-                eventStartDateTime.day,
-              )
-            : DateTime.now().add(const Duration(days: 365));
+    final maxDate = eventStartDateTime != null
+        ? DateTime(
+            eventStartDateTime.year,
+            eventStartDateTime.month,
+            eventStartDateTime.day,
+          )
+        : DateTime.now().add(const Duration(days: 365));
 
     final initialDateCandidate = currentDeadline ?? firstDate;
     final initialDate = initialDateCandidate.isBefore(firstDate)
         ? firstDate
-        : (initialDateCandidate.isAfter(maxDate) ? maxDate : initialDateCandidate);
+        : (initialDateCandidate.isAfter(maxDate)
+              ? maxDate
+              : initialDateCandidate);
 
     final selectedDate = await showDatePicker(
       context: context,
@@ -119,7 +119,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
     final list = _customFields
       ..add({
         'label': '',
-        'key': '',
+        'helper_text': '',
         'type': 'text',
         'required': false,
         'options': <String>[],
@@ -136,14 +136,6 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
     final list = _customFields;
     list[index] = {...list[index], ...patch};
     _update({'custom_fields': list});
-  }
-
-  String _normalizeKeyFromLabel(String label) {
-    return label
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
-        .replaceAll(RegExp(r'^_+|_+$'), '');
   }
 
   @override
@@ -377,8 +369,19 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
           else
             ...List.generate(customFields.length, (index) {
               final field = customFields[index];
-              final fieldType = (field['type'] as String? ?? 'text')
+              final rawFieldType = (field['type'] as String? ?? 'text')
                   .toLowerCase();
+              final fieldType =
+                  rawFieldType == 'single_select' ||
+                      rawFieldType == 'single-select' ||
+                      rawFieldType == 'singleselect' ||
+                      rawFieldType == 'dropdown'
+                  ? 'select'
+                  : (rawFieldType == 'multiple_select' ||
+                        rawFieldType == 'multiple-select' ||
+                        rawFieldType == 'multiselect')
+                  ? 'multi_select'
+                  : rawFieldType;
               final options =
                   (field['options'] as List?)
                       ?.map((value) => value.toString().trim())
@@ -426,29 +429,21 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                         ),
                       ),
                       onChanged: (value) {
-                        final nextLabel = value.trim();
-                        final currentKey = (field['key'] as String? ?? '')
-                            .trim();
-                        _updateCustomField(index, {
-                          'label': value,
-                          if (currentKey.isEmpty)
-                            'key': _normalizeKeyFromLabel(nextLabel),
-                        });
+                        _updateCustomField(index, {'label': value});
                       },
                     ),
                     const SizedBox(height: 8),
                     TextFormField(
-                      initialValue: field['key'] as String? ?? '',
+                      initialValue: field['helper_text'] as String? ?? '',
                       decoration: _inputDecoration(
-                        hint: 'Field key (e.g. college_id)',
+                        hint: 'Helper text (optional)',
                         prefixIcon: const FaIcon(
-                          FontAwesomeIcons.key,
+                          FontAwesomeIcons.circleInfo,
                           size: 15,
                         ),
                       ),
-                      onChanged: (value) => _updateCustomField(index, {
-                        'key': _normalizeKeyFromLabel(value),
-                      }),
+                      onChanged: (value) =>
+                          _updateCustomField(index, {'helper_text': value}),
                     ),
                     const SizedBox(height: 8),
                     DropdownButtonFormField<String>(
@@ -483,12 +478,14 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                         final nextType = value ?? 'text';
                         _updateCustomField(index, {
                           'type': nextType,
-                          if (nextType != 'select' && nextType != 'multi_select')
+                          if (nextType != 'select' &&
+                              nextType != 'multi_select')
                             'options': <String>[],
                         });
                       },
                     ),
-                    if (fieldType == 'select' || fieldType == 'multi_select') ...[
+                    if (fieldType == 'select' ||
+                        fieldType == 'multi_select') ...[
                       const SizedBox(height: 8),
                       TextFormField(
                         initialValue: options.join(', '),

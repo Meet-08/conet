@@ -246,9 +246,10 @@ class _EventDashboardCard extends StatelessWidget {
   void _handleActionTap(BuildContext context, String action) {
     switch (action) {
       case 'Attendees':
+        final encodedTitle = Uri.encodeComponent(event.title);
         context.push(
-          '/event-attendees',
-          extra: {'eventId': event.id, 'eventTitle': event.title},
+          '/event-attendees/${event.id}?title=$encodedTitle',
+          extra: {'event': event},
         );
         return;
       case 'Analytics':

@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 class EventCustomField extends Equatable {
   final String key;
   final String label;
+  final String? helperText;
   final String type;
   final bool required;
   final List<String> options;
@@ -10,6 +11,7 @@ class EventCustomField extends Equatable {
   const EventCustomField({
     required this.key,
     required this.label,
+    this.helperText,
     this.type = 'text',
     this.required = false,
     this.options = const [],
@@ -18,8 +20,16 @@ class EventCustomField extends Equatable {
   String get normalizedType {
     final value = type.trim().toLowerCase();
     if (value.isEmpty) return 'text';
+    if (value == 'single_select' ||
+        value == 'single-select' ||
+        value == 'singleselect' ||
+        value == 'dropdown') {
+      return 'select';
+    }
     if (value == 'multiselect' ||
         value == 'multi-select' ||
+        value == 'multiple_select' ||
+        value == 'multiple-select' ||
         value == 'multiple') {
       return 'multi_select';
     }
@@ -29,6 +39,10 @@ class EventCustomField extends Equatable {
   factory EventCustomField.fromJson(Map<String, dynamic> json) {
     final key = (json['key'] ?? json['id'] ?? '').toString().trim();
     final label = (json['label'] ?? json['name'] ?? key).toString().trim();
+    final helperText =
+        (json['helper_text'] ?? json['helperText'] ?? json['description'])
+            ?.toString()
+            .trim();
     final type = (json['type'] ?? 'text').toString().trim().toLowerCase();
     final optionsRaw = json['options'];
 
@@ -42,6 +56,9 @@ class EventCustomField extends Equatable {
     return EventCustomField(
       key: key,
       label: label.isEmpty ? key : label,
+      helperText: (helperText == null || helperText.isEmpty)
+          ? null
+          : helperText,
       type: type.isEmpty ? 'text' : type,
       required: json['required'] == true,
       options: options,
@@ -52,6 +69,8 @@ class EventCustomField extends Equatable {
     return {
       'key': key,
       'label': label,
+      if (helperText != null && helperText!.trim().isNotEmpty)
+        'helper_text': helperText!.trim(),
       'type': normalizedType,
       'required': required,
       if (options.isNotEmpty) 'options': options,
@@ -59,5 +78,12 @@ class EventCustomField extends Equatable {
   }
 
   @override
-  List<Object?> get props => [key, label, normalizedType, required, options];
+  List<Object?> get props => [
+    key,
+    label,
+    helperText,
+    normalizedType,
+    required,
+    options,
+  ];
 }

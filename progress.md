@@ -153,7 +153,7 @@
 - **Create Event Wizard** — Organizer creates draft/published events with timeline, prizes, FAQs, co-hosts, and validation
 - **Registration Configuration Builder** — Organizer configures registration deadline, team participation constraints, paid/free mode, UPI ID, and dynamic custom registration fields
 - **Organizer Conversation Linking** — Organizer can auto-create and attach a new organizer/co-host group conversation during event submission
-- **Registration Form Sheet** — Event detail registration opens a dynamic form with required custom field validation and payload mapping
+- **Registration Form Page** — Event detail registration opens a dedicated dynamic page with required custom field validation and payload mapping
 - **Team Registration UI** — Team events collect captain enrollment/semester/branch, enforce team-size limits, and allow searchable optional team member selection
 - **Paid Registration QR Flow** — Paid events generate UPI QR with per-member amount and team-size-based total, plus transaction ID and payment proof upload support
 

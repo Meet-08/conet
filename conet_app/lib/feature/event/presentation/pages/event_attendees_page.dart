@@ -1,16 +1,24 @@
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_attendees.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_registration_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class EventAttendeesPage extends StatefulWidget {
   final String eventId;
   final String? eventTitle;
+  final Event? event;
 
-  const EventAttendeesPage({super.key, required this.eventId, this.eventTitle});
+  const EventAttendeesPage({
+    super.key,
+    required this.eventId,
+    this.eventTitle,
+    this.event,
+  });
 
   @override
   State<EventAttendeesPage> createState() => _EventAttendeesPageState();
@@ -146,7 +154,12 @@ class _EventAttendeesPageState extends State<EventAttendeesPage> {
                   ...attendees.attendees.map(
                     (attendee) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: _TeamAttendeeCard(attendee: attendee),
+                      child: _TeamAttendeeCard(
+                        attendee: attendee,
+                        event: widget.event,
+                        eventId: widget.eventId,
+                        eventTitle: widget.eventTitle,
+                      ),
                     ),
                   )
                 else
@@ -275,78 +288,95 @@ class _IndividualAttendeeCard extends StatelessWidget {
 
 class _TeamAttendeeCard extends StatelessWidget {
   final EventAttendee attendee;
+  final Event? event;
+  final String eventId;
+  final String? eventTitle;
 
-  const _TeamAttendeeCard({required this.attendee});
+  const _TeamAttendeeCard({
+    required this.attendee,
+    this.event,
+    required this.eventId,
+    this.eventTitle,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final leaderName = attendee.leader?.displayName ?? 'Unknown leader';
 
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  attendee.teamName?.trim().isNotEmpty == true
-                      ? attendee.teamName!.trim()
-                      : 'Unnamed Team',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+    return InkWell(
+      onTap: () {
+        final encodedTitle = Uri.encodeComponent(eventTitle ?? '');
+        context.push(
+          '/team-registration-detail/${attendee.registrationId}?eventId=$eventId&title=$encodedTitle',
+          extra: {'attendee': attendee, 'event': event},
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          border: Border.all(color: colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    attendee.teamName?.trim().isNotEmpty == true
+                        ? attendee.teamName!.trim()
+                        : 'Unnamed Team',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                _StatusPill(status: attendee.registrationStatus),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Leader: $leaderName',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              '${attendee.memberCount} member${attendee.memberCount == 1 ? '' : 's'}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            if (attendee.members.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              ...attendee.members.map(
+                (member) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      const FaIcon(FontAwesomeIcons.userGroup, size: 12),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          member.user?.displayName ?? member.userId,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ),
+                      Text(
+                        member.role,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              _StatusPill(status: attendee.registrationStatus),
             ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Leader: $leaderName',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            '${attendee.memberCount} member${attendee.memberCount == 1 ? '' : 's'}',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          if (attendee.members.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            ...attendee.members.map(
-              (member) => Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    const FaIcon(FontAwesomeIcons.userGroup, size: 12),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        member.user?.displayName ?? member.userId,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                    Text(
-                      member.role,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ],
-        ],
+        ),
       ),
     );
   }

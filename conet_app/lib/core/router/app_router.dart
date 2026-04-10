@@ -8,6 +8,8 @@ import 'package:conet_app/feature/auth/presentation/pages/add_details_page.dart'
 import 'package:conet_app/feature/auth/presentation/pages/email_signup_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/login_page.dart';
 import 'package:conet_app/feature/auth/presentation/pages/welcome_page.dart';
+import 'package:conet_app/feature/event/domain/entities/event.dart';
+import 'package:conet_app/feature/event/domain/entities/event_attendees.dart';
 import 'package:conet_app/feature/event/presentation/constants/event_constants.dart';
 import 'package:conet_app/feature/event/presentation/pages/create_event_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_attendance_scanner_page.dart';
@@ -17,6 +19,7 @@ import 'package:conet_app/feature/event/presentation/pages/event_detail_page.dar
 import 'package:conet_app/feature/event/presentation/pages/event_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_search_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/my_events_page.dart';
+import 'package:conet_app/feature/event/presentation/pages/team_registration_detail_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/view_ticket.dart';
 import 'package:conet_app/feature/message/data/models/conversation_model.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
@@ -390,11 +393,16 @@ class AppRouter {
       ),
 
       GoRoute(
-        path: '/event-attendees',
+        path: '/event-attendees/:eventId',
         builder: (context, state) {
-          final extras = state.extra as Map<String, String>?;
-          final eventId = extras?['eventId'];
-          final eventTitle = extras?['eventTitle'];
+          final rawExtra = state.extra;
+          final extras = rawExtra is Map ? rawExtra : null;
+          final eventId = state.pathParameters['eventId']?.trim();
+          final eventTitle =
+              state.uri.queryParameters['title']?.trim() ??
+              extras?['eventTitle']?.toString();
+          final rawEvent = extras?['event'];
+          final event = rawEvent is Event ? rawEvent : null;
 
           if (eventId == null || eventId.isEmpty) {
             return const Scaffold(
@@ -402,7 +410,42 @@ class AppRouter {
             );
           }
 
-          return EventAttendeesPage(eventId: eventId, eventTitle: eventTitle);
+          return EventAttendeesPage(
+            eventId: eventId,
+            eventTitle: eventTitle,
+            event: event,
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/team-registration-detail/:registrationId',
+        builder: (context, state) {
+          final rawExtra = state.extra;
+          final extras = rawExtra is Map ? rawExtra : null;
+
+          final attendee = extras?['attendee'];
+          final rawEvent = extras?['event'];
+          final event = rawEvent is Event ? rawEvent : null;
+
+          if (attendee is EventAttendee) {
+            return TeamRegistrationDetailPage(attendee: attendee, event: event);
+          }
+
+          final eventId = state.uri.queryParameters['eventId']?.trim();
+          final eventTitle = state.uri.queryParameters['title']?.trim();
+
+          if (eventId != null && eventId.isNotEmpty) {
+            return EventAttendeesPage(
+              eventId: eventId,
+              eventTitle: eventTitle,
+              event: event,
+            );
+          }
+
+          return const Scaffold(
+            body: Center(child: Text('Invalid attendee data')),
+          );
         },
       ),
 

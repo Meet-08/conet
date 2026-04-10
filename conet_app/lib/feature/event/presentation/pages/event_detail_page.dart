@@ -6,8 +6,9 @@ import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_activity.dart';
 import 'package:conet_app/feature/event/domain/entities/event_faq.dart';
 import 'package:conet_app/feature/event/domain/entities/event_prize.dart';
+import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
-import 'package:conet_app/feature/event/presentation/widgets/event_registration_sheet.dart';
+import 'package:conet_app/feature/event/presentation/pages/event_registration_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -29,9 +30,8 @@ class _EventDetailPageState extends State<EventDetailPage> {
   bool? _bookmarkBeforeSave;
 
   Future<void> _onRegisterPressed(Event event) async {
-    final payload = await showEventRegistrationSheet(
-      context: context,
-      event: event,
+    final payload = await Navigator.of(context).push<EventRegistrationPayload>(
+      MaterialPageRoute(builder: (_) => EventRegistrationPage(event: event)),
     );
 
     if (!mounted || payload == null) return;

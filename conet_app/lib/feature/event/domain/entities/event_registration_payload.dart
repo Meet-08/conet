@@ -3,10 +3,6 @@ import 'package:equatable/equatable.dart';
 class EventRegistrationPayload extends Equatable {
   final String? teamId;
   final int? teamSize;
-  final String? enrollmentNumber;
-  final String? contactNumber;
-  final int? semester;
-  final String? branch;
   final String? paymentProofUrl;
   final String? paymentProofFileName;
   final String? paymentProofFilePath;
@@ -19,10 +15,6 @@ class EventRegistrationPayload extends Equatable {
   const EventRegistrationPayload({
     this.teamId,
     this.teamSize,
-    this.enrollmentNumber,
-    this.contactNumber,
-    this.semester,
-    this.branch,
     this.paymentProofUrl,
     this.paymentProofFileName,
     this.paymentProofFilePath,
@@ -71,12 +63,6 @@ class EventRegistrationPayload extends Equatable {
     return {
       if (normalizeText(teamId) != null) 'team_id': normalizeText(teamId),
       if (teamSize != null) 'team_size': teamSize,
-      if (normalizeText(enrollmentNumber) != null)
-        'enrollment_number': normalizeText(enrollmentNumber),
-      if (normalizeText(contactNumber) != null)
-        'contact_number': normalizeText(contactNumber),
-      if (semester != null) 'semester': semester,
-      if (normalizeText(branch) != null) 'branch': normalizeText(branch),
       if (normalizeText(paymentProofUrl) != null)
         'payment_proof_url': normalizeText(paymentProofUrl),
       if (normalizeText(transactionId) != null)
@@ -92,10 +78,6 @@ class EventRegistrationPayload extends Equatable {
   List<Object?> get props => [
     teamId,
     teamSize,
-    enrollmentNumber,
-    contactNumber,
-    semester,
-    branch,
     paymentProofUrl,
     paymentProofFileName,
     paymentProofFilePath,

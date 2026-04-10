@@ -28,6 +28,9 @@ class EventAttendeesModel extends EventAttendees {
         .whereType<Map<String, dynamic>>()
         .toList(growable: false);
 
+    final customFieldResponses =
+        (json['custom_field_responses'] as Map<String, dynamic>?) ?? {};
+
     return EventAttendee(
       registrationId: json['registration_id']?.toString() ?? '',
       registrationStatus:
@@ -46,6 +49,7 @@ class EventAttendeesModel extends EventAttendees {
       memberCount:
           (json['member_count'] as num?)?.toInt() ?? membersJson.length,
       members: membersJson.map(EventAttendeesModel._parseMember).toList(),
+      customFieldResponses: customFieldResponses,
     );
   }
 
