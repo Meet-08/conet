@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "conet_app/**"
+      - ".github/workflows/ci.yml"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -115,9 +116,6 @@ jobs:
           WEB_CLIENT_ID=${{ secrets.WEB_CLIENT_ID }}
           DEEP_LINK_HOST=${{ vars.DEEP_LINK_HOST }}
           EOF
-
-      - name: Clean
-        run: flutter clean
 
       # 🏗 Build Release APK
       - name: Build APK
