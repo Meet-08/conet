@@ -4,12 +4,16 @@ import 'package:conet_app/feature/event/data/models/event_page_model.dart';
 import 'package:conet_app/feature/event/data/models/event_registration_ticket_model.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
+import 'package:conet_app/feature/event/domain/entities/event_register_response.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 
 abstract class EventDataSource {
   Future<Event> getEventById(String eventId);
 
-  Future<Event> registerEvent(String eventId, EventRegistrationPayload payload);
+  Future<EventRegisterResponse> registerEvent(
+    String eventId,
+    EventRegistrationPayload payload,
+  );
 
   Future<EventAttendanceResultModel> saveEvent(String eventId);
 

@@ -62,10 +62,28 @@ export const getEvent = asyncHandler(async (req, res) => {
 });
 
 export const registerEvent = asyncHandler(async (req, res) => {
+  const payload =
+    req.body != null && typeof req.body === "object" ?
+      { ...req.body }
+    : req.body;
+
+  if (
+    payload != null &&
+    typeof payload === "object" &&
+    payload.team_name !== undefined
+  ) {
+    if (typeof payload.team_name !== "string") {
+      res.status(400);
+      throw new Error("team_name must be a string");
+    }
+
+    payload.team_name = payload.team_name.trim();
+  }
+
   const result = await registerEventService(
     req.params.id,
     req.user.id,
-    req.body,
+    payload,
   );
   res.status(200).json({
     success: true,

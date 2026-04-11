@@ -42,7 +42,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
     'meeting_link': '',
     'ticket_price_type': 'FREE', // 'FREE' | 'PAID'
     'price': null,
-    'upi_id': '',
     'registration_deadline': null,
     'participation_type': 'individual',
     'min_team_size': null,
@@ -151,12 +150,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
             (_formData['ticket_price_type'] as String? ?? 'FREE').toUpperCase();
         if (ticketPriceType == 'PAID') {
           final price = _formData['price'] as double?;
-          final upiId = (_formData['upi_id'] as String? ?? '').trim();
           if (price == null || price <= 0) {
             return 'Please provide a valid ticket price for paid events';
-          }
-          if (upiId.isEmpty) {
-            return 'Please provide UPI ID for paid events';
           }
         }
 
@@ -366,7 +361,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
         ? (_formData['event_conversation_id'] as String?)
         : null;
     final normalizedConversationId = rawConversationId?.trim();
-    final normalizedUpiId = (_formData['upi_id'] as String? ?? '').trim();
     final ticketPriceType = _formData['ticket_price_type'] as String? ?? 'FREE';
 
     final participationType =
@@ -405,9 +399,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
       participationType: participationType,
       minTeamSize: participationType == 'team' ? minTeamSize : null,
       maxTeamSize: participationType == 'team' ? maxTeamSize : null,
-      upiId: ticketPriceType == 'PAID' && normalizedUpiId.isNotEmpty
-          ? normalizedUpiId
-          : null,
+      upiId: null,
       customFields: customFields,
       eligibility: (_formData['eligibility'] as String?)?.trim().isEmpty == true
           ? null

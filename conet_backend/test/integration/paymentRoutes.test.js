@@ -16,6 +16,9 @@ mock.module("../../services/paymentService.js", () => ({
   createOrganizerAccountService: mock(() => Promise.resolve({})),
   getOrganizerAccountService: mock(() => Promise.resolve({ id: "acct-1" })),
   initiatePaymentService: mock(() => Promise.resolve({ id: "payment-1" })),
+  revertRegistrationAfterPaymentFailureService: mock(() =>
+    Promise.resolve({ registration_id: "registration-1", rolled_back: true }),
+  ),
   verifyPaymentWebhookService: mock(() =>
     Promise.resolve({ message: "Payment webhook processed" }),
   ),
@@ -52,6 +55,15 @@ describe("Payment webhook routes", () => {
 
   it("GET /api/payments/organizer-account requires auth", async () => {
     const res = await request(app).get("/api/payments/organizer-account");
+
+    expect(res.status).toBe(401);
+    expect(res.body.title).toBe("Unauthorized");
+  });
+
+  it("POST /api/payments/:registrationId/revert requires auth", async () => {
+    const res = await request(app)
+      .post("/api/payments/registration-1/revert")
+      .send({ reason: "payment_failed" });
 
     expect(res.status).toBe(401);
     expect(res.body.title).toBe("Unauthorized");

@@ -3,6 +3,7 @@ import {
   createOrganizerAccountService,
   getOrganizerAccountService,
   initiatePaymentService,
+  revertRegistrationAfterPaymentFailureService,
   updateKycStatusWebhookService,
   verifyPaymentWebhookService,
 } from "../services/paymentService.js";
@@ -41,6 +42,22 @@ export const initiatePayment = asyncHandler(async (req, res) => {
     payment,
   });
 });
+
+export const revertRegistrationAfterPaymentFailure = asyncHandler(
+  async (req, res) => {
+    const result = await revertRegistrationAfterPaymentFailureService(
+      req.user.id,
+      req.params.registrationId,
+      req.body?.reason,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Registration reverted successfully",
+      result,
+    });
+  },
+);
 
 // ─── Verify payment webhook ────────────────────────────────────────────────
 

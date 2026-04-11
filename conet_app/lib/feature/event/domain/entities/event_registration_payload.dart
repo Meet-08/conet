@@ -2,25 +2,15 @@ import 'package:equatable/equatable.dart';
 
 class EventRegistrationPayload extends Equatable {
   final String? teamId;
+  final String? teamName;
   final int? teamSize;
-  final String? paymentProofUrl;
-  final String? paymentProofFileName;
-  final String? paymentProofFilePath;
-  final List<int>? paymentProofFileBytes;
-  final int? paymentProofFileSize;
-  final String? transactionId;
   final Map<String, dynamic> customFieldResponses;
   final List<String> memberUserIds;
 
   const EventRegistrationPayload({
     this.teamId,
+    this.teamName,
     this.teamSize,
-    this.paymentProofUrl,
-    this.paymentProofFileName,
-    this.paymentProofFilePath,
-    this.paymentProofFileBytes,
-    this.paymentProofFileSize,
-    this.transactionId,
     this.customFieldResponses = const {},
     this.memberUserIds = const [],
   });
@@ -62,11 +52,8 @@ class EventRegistrationPayload extends Equatable {
 
     return {
       if (normalizeText(teamId) != null) 'team_id': normalizeText(teamId),
+      if (normalizeText(teamName) != null) 'team_name': normalizeText(teamName),
       if (teamSize != null) 'team_size': teamSize,
-      if (normalizeText(paymentProofUrl) != null)
-        'payment_proof_url': normalizeText(paymentProofUrl),
-      if (normalizeText(transactionId) != null)
-        'transaction_id': normalizeText(transactionId),
       if (normalizedResponses.isNotEmpty)
         'custom_field_responses': normalizedResponses,
       if (normalizedMemberIds.isNotEmpty)
@@ -77,13 +64,8 @@ class EventRegistrationPayload extends Equatable {
   @override
   List<Object?> get props => [
     teamId,
+    teamName,
     teamSize,
-    paymentProofUrl,
-    paymentProofFileName,
-    paymentProofFilePath,
-    paymentProofFileBytes,
-    paymentProofFileSize,
-    transactionId,
     customFieldResponses,
     memberUserIds,
   ];

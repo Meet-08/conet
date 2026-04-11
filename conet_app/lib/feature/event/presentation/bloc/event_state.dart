@@ -136,9 +136,9 @@ final class EventDetailFailure extends EventState {
 final class EventRegistrationLoading extends EventState {}
 
 final class EventRegistrationSuccess extends EventState {
-  final Event event;
+  final EventRegisterResponse response;
 
-  const EventRegistrationSuccess(this.event);
+  const EventRegistrationSuccess(this.response);
 }
 
 final class EventRegistrationFailure extends EventState {

@@ -116,6 +116,7 @@ jobs:
           IOS_CLIENT_ID=${{ secrets.IOS_CLIENT_ID }}
           WEB_CLIENT_ID=${{ secrets.WEB_CLIENT_ID }}
           DEEP_LINK_HOST=${{ vars.DEEP_LINK_HOST }}
+          RAZORPAY_KEY_ID=${{ secrets.RAZORPAY_KEY_ID }}
           EOF
 
       - name: Build APK

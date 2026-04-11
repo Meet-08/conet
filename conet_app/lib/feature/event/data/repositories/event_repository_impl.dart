@@ -6,6 +6,7 @@ import 'package:conet_app/feature/event/domain/entities/event_attendance_result.
 import 'package:conet_app/feature/event/domain/entities/event_attendees.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_page.dart';
+import 'package:conet_app/feature/event/domain/entities/event_register_response.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_ticket.dart';
 import 'package:conet_app/feature/event/domain/repositories/event_repository.dart';
@@ -78,11 +79,11 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   @override
-  Future<Either<AppFailure, Event>> registerEvent(
+  Future<Either<AppFailure, EventRegisterResponse>> registerEvent(
     String eventId,
     EventRegistrationPayload payload,
   ) {
-    return _getResult<Event, Event>(
+    return _getResult<EventRegisterResponse, EventRegisterResponse>(
       () => _eventDataSource.registerEvent(eventId, payload),
     );
   }
