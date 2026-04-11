@@ -312,6 +312,8 @@ describe("Registration and attendance routes", () => {
 
     expect(res.status).toBe(200);
     expect(prismaMock.event_registrations.upsert).toHaveBeenCalled();
+    expect(res.body.registration.id).toBe(REGISTRATION_ID);
+    expect(res.body.registration.registration_id).toBe(REGISTRATION_ID);
   });
 
   it("200 - generates team_id for team registrations", async () => {
@@ -337,6 +339,7 @@ describe("Registration and attendance routes", () => {
       .post(`/api/events/${EVENT_ID}/register`)
       .set("Authorization", makeAuthHeader(TEST_USER_B))
       .send({
+        team_name: "Alpha",
         team_size: 2,
         member_user_ids: ["member-1"],
       });

@@ -1,5 +1,6 @@
 import 'package:conet_app/core/theme/app_tokens.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/feature/payment/presentation/pages/setup_organizer_account_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -306,7 +307,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
               final isPaidValue = value == 'Paid';
               _update({
                 'ticket_price_type': isPaidValue ? 'PAID' : 'FREE',
-                if (!isPaidValue) ...{'price': null, 'upi_id': null},
+                if (!isPaidValue) ...{'price': null},
               });
             },
           ),
@@ -332,13 +333,39 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
               }),
             ),
             const SizedBox(height: 10),
-            TextFormField(
-              initialValue: widget.formData['upi_id'] as String? ?? '',
-              decoration: _inputDecoration(
-                hint: 'UPI ID (e.g. name@bank)',
-                prefixIcon: const FaIcon(FontAwesomeIcons.qrcode, size: 15),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHigh,
+                borderRadius: AppRadius.mdAll,
               ),
-              onChanged: (value) => _update({'upi_id': value.trim()}),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Razorpay payout account details are required to receive payments.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const SetupOrganizerAccountPage(),
+                        ),
+                      );
+                    },
+                    icon: const FaIcon(
+                      FontAwesomeIcons.buildingColumns,
+                      size: 14,
+                    ),
+                    label: const Text('Setup Razorpay Account'),
+                  ),
+                ],
+              ),
             ),
           ],
           const SizedBox(height: 24),

@@ -4,6 +4,7 @@ import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
 import 'package:conet_app/feature/event/domain/entities/event_page.dart';
+import 'package:conet_app/feature/event/domain/entities/event_register_response.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_events.dart';
@@ -443,9 +444,11 @@ void main() {
     blocTest<EventBloc, EventState>(
       'emits [EventRegistrationLoading, EventRegistrationSuccess] on success',
       build: () {
-        when(
-          () => mockRegister('event-1', tRegistrationPayload),
-        ).thenAnswer((_) async => Right(tEvent));
+        when(() => mockRegister('event-1', tRegistrationPayload)).thenAnswer(
+          (_) async => Right(
+            EventRegisterResponse(event: tEvent, registrationId: 'reg-1'),
+          ),
+        );
         return bloc;
       },
       act: (bloc) =>
@@ -453,7 +456,7 @@ void main() {
       expect: () => [
         isA<EventRegistrationLoading>(),
         isA<EventRegistrationSuccess>().having(
-          (s) => s.event.id,
+          (s) => s.response.event.id,
           'event.id',
           'event-1',
         ),

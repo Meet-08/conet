@@ -1,6 +1,7 @@
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
+import 'package:conet_app/feature/event/domain/entities/event_register_response.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_events.dart';
@@ -372,7 +373,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     final result = await _registerEvent(event.eventId, event.payload);
     result.fold(
       (failure) => emit(EventRegistrationFailure(failure.message)),
-      (event) => emit(EventRegistrationSuccess(event)),
+      (response) => emit(EventRegistrationSuccess(response)),
     );
   }
 

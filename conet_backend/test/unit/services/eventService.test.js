@@ -346,6 +346,8 @@ describe("registerEventService", () => {
     );
     expect(result.event.is_registered).toBe(true);
     expect(result.event.registration_count).toBe(1);
+    expect(result.registration.id).toBe(REGISTRATION_ID);
+    expect(result.registration.registration_id).toBe(REGISTRATION_ID);
     expect(result.registration.team_size).toBe(1);
   });
 
@@ -361,12 +363,34 @@ describe("registerEventService", () => {
 
     await expect(
       registerEventService(EVENT_ID, ATTENDEE_ID, {
+        team_name: "Alpha",
         team_size: 4,
         member_user_ids: ["member-1", "member-2"],
       }),
     ).rejects.toMatchObject({
       statusCode: 400,
       message: "Add exactly 3 team members before registration",
+    });
+  });
+
+  it("throws 400 when team_name is missing for team events", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({
+        event_status: "published",
+        participation_type: "team",
+        min_team_size: 2,
+        max_team_size: 5,
+      }),
+    );
+
+    await expect(
+      registerEventService(EVENT_ID, ATTENDEE_ID, {
+        team_size: 2,
+        member_user_ids: ["member-1"],
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: "team_name is required for team events",
     });
   });
 
@@ -446,9 +470,8 @@ describe("registerEventService", () => {
       );
 
     const result = await registerEventService(EVENT_ID, ATTENDEE_ID, {
+      team_name: "Alpha",
       team_size: 2,
-      payment_proof_url: "https://cdn.example/proof.png",
-      transaction_id: "TXN-123",
       member_user_ids: ["member-1"],
     });
 
@@ -463,8 +486,15 @@ describe("registerEventService", () => {
       expect.objectContaining({
         create: expect.objectContaining({
           team_id: "team-generated-1",
-          transaction_id: "TXN-123",
+          transaction_id: null,
           custom_field_responses: {},
+        }),
+      }),
+    );
+    expect(prismaMock.event_teams.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          team_name: "Alpha",
         }),
       }),
     );

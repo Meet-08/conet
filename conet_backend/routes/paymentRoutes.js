@@ -3,6 +3,7 @@ import {
   createOrganizerAccount,
   getOrganizerAccount,
   initiatePayment,
+  revertRegistrationAfterPaymentFailure,
   updateKycStatusWebhook,
   verifyPaymentWebhook,
 } from "../controllers/paymentController.js";
@@ -33,5 +34,8 @@ router.get("/organizer-account", getOrganizerAccount);
 
 // Initiate payment for event registration
 router.post("/:registrationId/initiate", initiatePayment);
+
+// Revert registration when payment fails/cancels or checkout cannot be opened
+router.post("/:registrationId/revert", revertRegistrationAfterPaymentFailure);
 
 export default router;

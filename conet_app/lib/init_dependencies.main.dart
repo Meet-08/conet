@@ -465,3 +465,38 @@ void _initNotification() {
     ),
   );
 }
+
+void _initPayment() {
+  serviceLocator.registerFactory<PaymentDataSource>(
+    () => PaymentDataSourceImpl(serviceLocator<DioClient>()),
+  );
+
+  serviceLocator.registerFactory<PaymentRepository>(
+    () => PaymentRepositoryImpl(serviceLocator<PaymentDataSource>()),
+  );
+
+  serviceLocator.registerFactory(
+    () => InitiatePayment(serviceLocator<PaymentRepository>()),
+  );
+
+  serviceLocator.registerFactory(
+    () => RevertRegistration(serviceLocator<PaymentRepository>()),
+  );
+
+  serviceLocator.registerFactory(
+    () => CreateOrganizerAccount(serviceLocator<PaymentRepository>()),
+  );
+
+  serviceLocator.registerFactory(
+    () => GetOrganizerAccount(serviceLocator<PaymentRepository>()),
+  );
+
+  serviceLocator.registerFactory(
+    () => PaymentBloc(
+      initiatePayment: serviceLocator<InitiatePayment>(),
+      revertRegistration: serviceLocator<RevertRegistration>(),
+      createOrganizerAccount: serviceLocator<CreateOrganizerAccount>(),
+      getOrganizerAccount: serviceLocator<GetOrganizerAccount>(),
+    ),
+  );
+}

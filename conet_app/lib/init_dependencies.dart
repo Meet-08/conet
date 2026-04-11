@@ -76,6 +76,14 @@ import 'package:conet_app/feature/notification/domain/usecases/get_notifications
 import 'package:conet_app/feature/notification/domain/usecases/mark_all_as_seen_usecase.dart';
 import 'package:conet_app/feature/notification/domain/usecases/watch_notifications_usecase.dart';
 import 'package:conet_app/feature/notification/presentation/bloc/notification_bloc.dart';
+import 'package:conet_app/feature/payment/data/data_sources/payment_data_source.dart';
+import 'package:conet_app/feature/payment/data/repositories/payment_repository_impl.dart';
+import 'package:conet_app/feature/payment/domain/repositories/payment_repository.dart';
+import 'package:conet_app/feature/payment/domain/usecases/create_organizer_account.dart';
+import 'package:conet_app/feature/payment/domain/usecases/get_organizer_account.dart';
+import 'package:conet_app/feature/payment/domain/usecases/initiate_payment.dart';
+import 'package:conet_app/feature/payment/domain/usecases/revert_registration.dart';
+import 'package:conet_app/feature/payment/presentation/bloc/payment_bloc.dart';
 import 'package:conet_app/feature/post/data/data_sources/file_data_source.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_bookmark_local_data_source.dart';
 import 'package:conet_app/feature/post/data/data_sources/post_bookmark_local_data_source_impl.dart';
@@ -158,6 +166,7 @@ Future<void> initDependencies() async {
   _initDevice();
   _initNotification();
   _initEvent();
+  _initPayment();
 
   await serviceLocator<NotificationConfigService>().init();
 }

@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
@@ -8,11 +6,9 @@ import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/init_dependencies.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:qr_flutter/qr_flutter.dart';
 
 class EventRegistrationPage extends StatefulWidget {
   final Event event;
@@ -24,8 +20,7 @@ class EventRegistrationPage extends StatefulWidget {
 }
 
 class _EventRegistrationPageState extends State<EventRegistrationPage> {
-  final _transactionController = TextEditingController();
-  final _paymentProofController = TextEditingController();
+  final _teamNameController = TextEditingController();
 
   final Map<String, TextEditingController> _customTextControllers = {};
   final Map<String, String?> _customSelectValues = {};
@@ -35,11 +30,6 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
 
   late int _teamSize;
   bool _submitting = false;
-  bool _uploadingProof = false;
-  String? _paymentProofFileName;
-  String? _paymentProofFilePath;
-  Uint8List? _paymentProofFileBytes;
-  int? _paymentProofFileSize;
 
   bool get _isTeamEvent =>
       (widget.event.participationType ?? '').trim().toLowerCase() == 'team';
@@ -53,13 +43,6 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
   int get _paymentMemberCount => _isTeamEvent ? _teamSize : 1;
 
   double get _totalAmount => _perMemberAmount * _paymentMemberCount;
-
-  String? get _upiPaymentUri {
-    final upiId = widget.event.upiId?.trim();
-    if (!widget.event.isPaid || upiId == null || upiId.isEmpty) return null;
-
-    return 'upi://pay?pa=${Uri.encodeComponent(upiId)}&pn=${Uri.encodeComponent(widget.event.title)}&tn=${Uri.encodeComponent('Event Registration')}&am=${_totalAmount.toStringAsFixed(2)}&cu=INR';
-  }
 
   @override
   void initState() {
@@ -80,8 +63,7 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
 
   @override
   void dispose() {
-    _transactionController.dispose();
-    _paymentProofController.dispose();
+    _teamNameController.dispose();
 
     for (final controller in _customTextControllers.values) {
       controller.dispose();
@@ -133,50 +115,11 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
     });
   }
 
-  Future<void> _pickPaymentProof() async {
-    final picked = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowMultiple: false,
-      withData: true,
-      allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp', 'pdf'],
-    );
-
-    final file = picked?.files.single;
-    if (file == null) return;
-
-    if ((file.path == null || file.path!.trim().isEmpty) &&
-        (file.bytes == null || file.bytes!.isEmpty)) {
-      AppToast.showError(context, 'Unable to read selected proof file');
-      return;
-    }
-
-    setState(() {
-      _uploadingProof = true;
-    });
-
-    try {
-      _paymentProofFileName = file.name;
-      _paymentProofFilePath = file.path;
-      _paymentProofFileBytes = file.bytes;
-      _paymentProofFileSize = file.size;
-      _paymentProofController.text = file.name;
-
-      if (!mounted) return;
-      AppToast.showSuccess(context, 'Payment proof selected');
-    } catch (e) {
-      if (!mounted) return;
-      AppToast.showError(context, e.toString());
-    } finally {
-      if (mounted) {
-        setState(() {
-          _uploadingProof = false;
-        });
-      }
-    }
-  }
-
   String? _validate() {
     if (_isTeamEvent) {
+      if (_teamNameController.text.trim().isEmpty) {
+        return 'Team name is required for team events';
+      }
       if (_teamSize < _minTeamSize) {
         return 'Team size must be at least $_minTeamSize';
       }
@@ -219,15 +162,6 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
       }
     }
 
-    if (widget.event.isPaid) {
-      if (_transactionController.text.trim().isEmpty) {
-        return 'Transaction ID is required for paid events';
-      }
-      if ((_paymentProofFileName ?? '').trim().isEmpty) {
-        return 'Payment proof is required for paid events';
-      }
-    }
-
     return null;
   }
 
@@ -264,22 +198,8 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
     }
 
     return EventRegistrationPayload(
+      teamName: _isTeamEvent ? _teamNameController.text.trim() : null,
       teamSize: _isTeamEvent ? _teamSize : null,
-      transactionId: _transactionController.text.trim().isEmpty
-          ? null
-          : _transactionController.text.trim(),
-      paymentProofUrl: null,
-      paymentProofFileName: (_paymentProofFileName ?? '').trim().isEmpty
-          ? null
-          : _paymentProofFileName!.trim(),
-      paymentProofFilePath: (_paymentProofFilePath ?? '').trim().isEmpty
-          ? null
-          : _paymentProofFilePath!.trim(),
-      paymentProofFileBytes:
-          _paymentProofFileBytes == null || _paymentProofFileBytes!.isEmpty
-          ? null
-          : _paymentProofFileBytes,
-      paymentProofFileSize: _paymentProofFileSize,
       customFieldResponses: customResponses,
       memberUserIds: _selectedMembers
           .map((member) => member.id)
@@ -339,6 +259,11 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
                     ),
                   ),
                   const SizedBox(height: 8),
+                  _InputField(
+                    controller: _teamNameController,
+                    label: 'Team Name *',
+                    icon: FontAwesomeIcons.users,
+                  ),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -575,58 +500,14 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-                        if (widget.event.upiId?.trim().isNotEmpty == true)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 6),
-                            child: Text(
-                              'UPI ID: ${widget.event.upiId!.trim()}',
-                            ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'After registration, you will be redirected to Razorpay to complete payment.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                           ),
+                        ),
                       ],
-                    ),
-                  ),
-                  if (_upiPaymentUri != null) ...[
-                    const SizedBox(height: 10),
-                    Center(
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: QrImageView(
-                          data: _upiPaymentUri!,
-                          size: 180,
-                          version: QrVersions.auto,
-                        ),
-                      ),
-                    ),
-                  ],
-                  _InputField(
-                    controller: _transactionController,
-                    label: 'Transaction ID *',
-                    icon: FontAwesomeIcons.receipt,
-                  ),
-                  _InputField(
-                    controller: _paymentProofController,
-                    label: 'Payment Proof File *',
-                    icon: FontAwesomeIcons.file,
-                    readOnly: true,
-                  ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: OutlinedButton.icon(
-                      onPressed: _uploadingProof ? null : _pickPaymentProof,
-                      icon: _uploadingProof
-                          ? const SizedBox(
-                              width: 14,
-                              height: 14,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const FaIcon(FontAwesomeIcons.upload, size: 14),
-                      label: Text(
-                        _uploadingProof ? 'Selecting...' : 'Select Proof',
-                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -688,7 +569,6 @@ class _InputField extends StatelessWidget {
   final String? helperText;
   final TextInputType keyboardType;
   final int maxLines;
-  final bool readOnly;
 
   const _InputField({
     required this.controller,
@@ -697,7 +577,6 @@ class _InputField extends StatelessWidget {
     this.helperText,
     this.keyboardType = TextInputType.text,
     this.maxLines = 1,
-    this.readOnly = false,
   });
 
   @override
@@ -706,7 +585,6 @@ class _InputField extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: TextFormField(
         controller: controller,
-        readOnly: readOnly,
         keyboardType: keyboardType,
         maxLines: maxLines,
         decoration: _decoration(

@@ -30,6 +30,49 @@ const buildStatusError = (message, statusCode) => {
   return err;
 };
 
+const extractRazorpayErrorMessage = (error) => {
+  if (!error) return "Unknown Razorpay error";
+
+  if (typeof error === "string") {
+    return error;
+  }
+
+  if (typeof error?.message === "string" && error.message.trim().length) {
+    return error.message;
+  }
+
+  if (
+    typeof error?.error?.description === "string" &&
+    error.error.description.trim().length
+  ) {
+    return error.error.description;
+  }
+
+  if (
+    typeof error?.description === "string" &&
+    error.description.trim().length
+  ) {
+    return error.description;
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return "Unknown Razorpay error";
+  }
+};
+
+const buildOrderReceipt = (registrationId) => {
+  // Razorpay receipt has a max length constraint; hash keeps it deterministic and short.
+  const digest = crypto
+    .createHash("sha1")
+    .update(String(registrationId ?? ""))
+    .digest("hex")
+    .slice(0, 30);
+
+  return `reg_${digest}`;
+};
+
 const serializeWebhookPayload = (payload, rawPayload) => {
   if (typeof rawPayload === "string" && rawPayload.length > 0) {
     return rawPayload;
@@ -111,6 +154,11 @@ export const createOrganizerAccountService = async (organizerId, payload) => {
     "email",
     "phone",
     "title",
+    "street1",
+    "city",
+    "state",
+    "postal_code",
+    "country",
   ];
 
   for (const field of requiredFields) {
@@ -147,7 +195,23 @@ export const createOrganizerAccountService = async (organizerId, payload) => {
     bank_name,
     pan,
     phone,
+    country,
   } = payload;
+
+  const normalizedCountry = String(country ?? "")
+    .trim()
+    .toUpperCase();
+  if (normalizedCountry !== "IN") {
+    const err = new Error("country must be IN");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (!/^\d{6}$/.test(String(postal_code).trim())) {
+    const err = new Error("postal_code must be a 6 digit pin code");
+    err.statusCode = 400;
+    throw err;
+  }
 
   const address = {
     street1: street1 ?? "",
@@ -155,59 +219,74 @@ export const createOrganizerAccountService = async (organizerId, payload) => {
     city: city ?? "",
     state: state ?? "",
     postal_code: postal_code ?? "",
-    country: "IN",
+    country: normalizedCountry,
   };
 
-  const razorpayAccount = await razorpay.accounts.create({
-    contact_name: account_holder_name,
-    email,
-    phone,
-    legal_business_name: title,
-    business_type: "individual",
-    type: "route",
-    profile: {
-      category: "events",
-      subcategory: "event_management",
-      addresses: {
-        registered: {
-          street1,
-          street2,
-          city,
-          state,
-          postal_code,
-          country: "IN",
+  let razorpayAccountId = null;
+  let verificationStatus = "pending";
+  let shouldForcePendingVerification = false;
+
+  try {
+    const razorpayAccount = await razorpay.accounts.create({
+      contact_name: account_holder_name,
+      email,
+      phone,
+      legal_business_name: title,
+      business_type: "individual",
+      type: "route",
+      profile: {
+        category: "events",
+        subcategory: "event_management",
+        addresses: {
+          registered: {
+            street1,
+            street2,
+            city,
+            state,
+            postal_code,
+            country: normalizedCountry,
+          },
         },
       },
-    },
-    legal_info: { pan },
-  });
+      legal_info: { pan },
+    });
 
-  await razorpay.products.request(razorpayAccount.id, {
-    product_name: "route",
-  });
+    razorpayAccountId = razorpayAccount.id;
 
-  const contact = await razorpay.contacts.create({
-    name: account_holder_name,
-    email,
-    contact: phone,
-    type: "vendor",
-    reference_id: razorpayAccount.id,
-  });
+    await razorpay.products.request(razorpayAccount.id, {
+      product_name: "route",
+    });
 
-  const fundAccount = await razorpay.fundAccount.create({
-    contact_id: contact.id,
-    account_type: "bank_account",
-    bank_account: {
+    const contact = await razorpay.contacts.create({
       name: account_holder_name,
-      ifsc: ifsc_code,
-      account_number,
-    },
-  });
+      email,
+      contact: phone,
+      type: "vendor",
+      reference_id: razorpayAccount.id,
+    });
+
+    await razorpay.fundAccount.create({
+      contact_id: contact.id,
+      account_type: "bank_account",
+      bank_account: {
+        name: account_holder_name,
+        ifsc: ifsc_code,
+        account_number,
+      },
+    });
+  } catch (error) {
+    // TODO: Replace with route transfer error or enforce organizer account when live mode is achieved
+    console.warn(
+      `Razorpay account creation failed for organizer ${organizerId}. Saving bank details without route account. Error: ${error.message}`,
+    );
+    verificationStatus = "pending";
+    shouldForcePendingVerification = true;
+  }
 
   const account = await prisma.organizer_account_details.upsert({
     where: { organizer_id: organizerId },
     update: {
-      razorpay_account_id: razorpayAccount.id,
+      razorpay_account_id: razorpayAccountId,
       account_holder_name,
       account_number,
       ifsc_code,
@@ -215,11 +294,13 @@ export const createOrganizerAccountService = async (organizerId, payload) => {
       pan,
       phone,
       address,
+      verification_status:
+        shouldForcePendingVerification ? "pending" : undefined,
       updated_at: new Date(),
     },
     create: {
       organizer_id: organizerId,
-      razorpay_account_id: razorpayAccount.id,
+      razorpay_account_id: razorpayAccountId,
       account_holder_name,
       account_number,
       ifsc_code,
@@ -227,7 +308,7 @@ export const createOrganizerAccountService = async (organizerId, payload) => {
       pan,
       phone,
       address,
-      verification_status: "pending",
+      verification_status: verificationStatus,
     },
   });
 
@@ -271,8 +352,8 @@ export const initiatePaymentService = async (
         select: {
           id: true,
           title: true,
-          amount: true,
-          currency: true,
+          ticket_price_type: true,
+          price: true,
           organizer_id: true,
         },
       },
@@ -292,7 +373,12 @@ export const initiatePaymentService = async (
   }
 
   // Verify event is paid
-  if (!registration.events.amount || registration.events.amount <= 0) {
+  const isPaidEvent =
+    String(registration.events.ticket_price_type ?? "").toUpperCase() ===
+    "PAID";
+  const eventPrice = Number(registration.events.price ?? 0);
+
+  if (!isPaidEvent || !Number.isFinite(eventPrice) || eventPrice <= 0) {
     const err = new Error("Event is not a paid event");
     err.statusCode = 400;
     throw err;
@@ -321,61 +407,104 @@ export const initiatePaymentService = async (
   }
 
   const eventId = registration.events.id;
-  const amount = registration.events.amount;
-  const currency = registration.events.currency || "INR";
+  const amount = Number(eventPrice.toFixed(2));
+  const currency = "INR";
   const organizerAccount = await prisma.organizer_account_details.findUnique({
     where: { organizer_id: registration.events.organizer_id },
   });
 
-  if (!organizerAccount) {
-    const err = new Error("Organizer account details not found");
-    err.statusCode = 500;
-    throw err;
-  }
-
-  const razorpayOrder = await razorpay.orders.create({
-    amount: amount * 100, // Convert to paise
+  const orderOptions = {
+    amount: Math.round(amount * 100), // Convert to paise
     currency,
-    receipt: `receipt_${registrationId}`,
-    transfers: [
+    receipt: buildOrderReceipt(registrationId),
+  };
+
+  if (organizerAccount?.razorpay_account_id) {
+    orderOptions.transfers = [
       {
         account: organizerAccount.razorpay_account_id,
-        amount: amount * 100, // Full amount to organizer for now
+        amount: Math.round(amount * 100), // Full amount to organizer for now
         currency,
       },
-    ],
-  });
+    ];
+  } else {
+    // TODO: Replace with route transfer error or enforce organizer account when live mode is achieved
+    console.warn(
+      `Fallback to regular payment: Organizer account missing for organizer_id: ${registration.events.organizer_id}`,
+    );
+  }
 
-  // Create payment record
-  const payment = await prisma.event_payments.create({
-    data: {
-      registration_id: registrationId,
-      event_id: eventId,
-      user_id: userId,
-      amount,
-      currency,
-      razorpay_order_id: razorpayOrder.id,
-      payment_status: "pending",
-    },
-    include: {
-      events: {
-        select: {
-          id: true,
-          title: true,
-          amount: true,
-          currency: true,
-        },
+  let razorpayOrder;
+
+  const createRazorpayOrder = async (options) => {
+    try {
+      return await razorpay.orders.create(options);
+    } catch (error) {
+      const message = extractRazorpayErrorMessage(error);
+      const upstreamStatus = Number(error?.statusCode ?? error?.error?.status);
+      const statusCode =
+        (
+          Number.isInteger(upstreamStatus) &&
+          upstreamStatus >= 400 &&
+          upstreamStatus < 500
+        ) ?
+          400
+        : 502;
+
+      throw buildStatusError(
+        `Unable to initiate Razorpay payment: ${message}`,
+        statusCode,
+      );
+    }
+  };
+
+  try {
+    razorpayOrder = await createRazorpayOrder(orderOptions);
+  } catch (error) {
+    if (orderOptions.transfers) {
+      const routeErrorMessage = extractRazorpayErrorMessage(error);
+      console.warn(
+        `Route transfer failed for organizer ${registration.events.organizer_id}, falling back to regular payment. Error: ${routeErrorMessage}`,
+      );
+      // TODO: Replace with route transfer error when live mode is achieved
+      delete orderOptions.transfers;
+      razorpayOrder = await createRazorpayOrder(orderOptions);
+    } else {
+      throw error;
+    }
+  }
+
+  let payment;
+
+  // Reuse failed payment rows to avoid unique constraint collisions on registration_id.
+  if (existingPayment && existingPayment.payment_status === "failed") {
+    payment = await prisma.event_payments.update({
+      where: { id: existingPayment.id },
+      data: {
+        event_id: eventId,
+        user_id: userId,
+        amount,
+        currency,
+        razorpay_order_id: razorpayOrder.id,
+        razorpay_payment_id: null,
+        razorpay_signature: null,
+        payment_status: "pending",
+        updated_at: new Date(),
       },
-      users: {
-        select: {
-          id: true,
-          email: true,
-          first_name: true,
-          last_name: true,
-        },
+    });
+  } else {
+    payment = await prisma.event_payments.create({
+      data: {
+        registration_id: registrationId,
+        event_id: eventId,
+        user_id: userId,
+        amount,
+        currency,
+        razorpay_order_id: razorpayOrder.id,
+        payment_status: "pending",
       },
-    },
-  });
+    });
+  }
 
   return {
     payment_id: payment.id,
@@ -391,6 +520,95 @@ export const initiatePaymentService = async (
       receipt: razorpayOrder.receipt,
       created_at: razorpayOrder.created_at,
     },
+  };
+};
+
+export const revertRegistrationAfterPaymentFailureService = async (
+  userId,
+  registrationId,
+  reason,
+) => {
+  const registration = await prisma.event_registrations.findUnique({
+    where: { id: registrationId },
+    include: {
+      event_payments: true,
+    },
+  });
+
+  if (!registration) {
+    return {
+      registration_id: registrationId,
+      rolled_back: false,
+      message: "Registration already reverted",
+      reason: reason ?? "payment_failed",
+    };
+  }
+
+  if (registration.user_id !== userId) {
+    throw buildStatusError(
+      "Unauthorized: Registration belongs to another user",
+      403,
+    );
+  }
+
+  const existingPayment = registration.event_payments;
+  if (existingPayment?.payment_status === "completed") {
+    throw buildStatusError(
+      "Cannot revert registration after successful payment",
+      409,
+    );
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    let deletedPaymentId = null;
+    if (existingPayment) {
+      await tx.event_payments.delete({
+        where: { id: existingPayment.id },
+      });
+      deletedPaymentId = existingPayment.id;
+    }
+
+    const deletedRegistration = await tx.event_registrations.delete({
+      where: { id: registration.id },
+    });
+
+    let deletedTeam = false;
+    if (registration.team_id) {
+      const remainingRegistrations = await tx.event_registrations.count({
+        where: { team_id: registration.team_id },
+      });
+
+      if (remainingRegistrations === 0) {
+        await tx.event_team_members.deleteMany({
+          where: { team_id: registration.team_id },
+        });
+
+        await tx.event_teams.deleteMany({
+          where: {
+            id: registration.team_id,
+            event_id: registration.event_id,
+          },
+        });
+
+        deletedTeam = true;
+      }
+    }
+
+    return {
+      registration: deletedRegistration,
+      payment_id: deletedPaymentId,
+      deleted_team: deletedTeam,
+    };
+  });
+
+  return {
+    registration_id: result.registration.id,
+    registration_deleted: true,
+    payment_id: result.payment_id,
+    payment_deleted: result.payment_id != null,
+    team_deleted: result.deleted_team,
+    rolled_back: true,
+    reason: reason ?? "payment_failed",
   };
 };
 
@@ -462,6 +680,20 @@ export const verifyPaymentWebhookService = async (
       updated_at: new Date(),
     },
   });
+
+  if (paymentStatus === "failed") {
+    await prisma.event_registrations.updateMany({
+      where: {
+        id: payment.registration_id,
+        registration_status: {
+          not: "cancelled",
+        },
+      },
+      data: {
+        registration_status: "cancelled",
+      },
+    });
+  }
 
   return {
     message: "Payment webhook processed",

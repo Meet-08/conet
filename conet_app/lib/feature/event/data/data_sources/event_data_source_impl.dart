@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:conet_app/core/api/dio_client.dart';
 import 'package:conet_app/core/common/data_sources/file_upload_data_source.dart';
 import 'package:conet_app/core/error/error_handler.dart';
@@ -13,9 +11,9 @@ import 'package:conet_app/feature/event/data/models/event_page_model.dart';
 import 'package:conet_app/feature/event/data/models/event_registration_ticket_model.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
+import 'package:conet_app/feature/event/domain/entities/event_register_response.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/main.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:uuid/uuid.dart';
 
 class EventDataSourceImpl implements EventDataSource {
@@ -135,46 +133,12 @@ class EventDataSourceImpl implements EventDataSource {
   }
 
   @override
-  Future<Event> registerEvent(
+  Future<EventRegisterResponse> registerEvent(
     String eventId,
     EventRegistrationPayload payload,
   ) async {
     try {
       final requestBody = payload.toJson();
-
-      final hasPaymentProofUrl =
-          (payload.paymentProofUrl?.trim().isNotEmpty ?? false);
-      final hasPaymentProofFile =
-          (payload.paymentProofFileName?.trim().isNotEmpty ?? false) &&
-          ((payload.paymentProofFilePath?.trim().isNotEmpty ?? false) ||
-              ((payload.paymentProofFileBytes?.isNotEmpty ?? false)));
-
-      if (!hasPaymentProofUrl && hasPaymentProofFile) {
-        final file = PlatformFile(
-          name: payload.paymentProofFileName!.trim(),
-          path: payload.paymentProofFilePath,
-          bytes: payload.paymentProofFileBytes == null
-              ? null
-              : Uint8List.fromList(payload.paymentProofFileBytes!),
-          size:
-              payload.paymentProofFileSize ??
-              payload.paymentProofFileBytes?.length ??
-              0,
-        );
-
-        final urls = await _fileUploadDataSource.uploadFiles(
-          files: [file],
-          bucket: 'event',
-          folder: '$eventId/registration-proof',
-        );
-
-        final uploadedUrl = urls.isEmpty ? null : urls.first;
-        if (uploadedUrl == null || uploadedUrl.trim().isEmpty) {
-          throw ServerException('Failed to upload payment proof');
-        }
-
-        requestBody['payment_proof_url'] = uploadedUrl;
-      }
 
       final response = await _dioClient.dio.post(
         '/events/$eventId/register',
@@ -186,7 +150,21 @@ class EventDataSourceImpl implements EventDataSource {
       }
 
       final data = response.data as Map<String, dynamic>;
-      return EventModel.fromJson(data['event'] as Map<String, dynamic>);
+      final eventResult = EventModel.fromJson(
+        data['event'] as Map<String, dynamic>,
+      );
+      final registration = data['registration'] as Map<String, dynamic>;
+      final registrationId =
+          (registration['id'] ?? registration['registration_id'])?.toString();
+
+      if (registrationId == null || registrationId.trim().isEmpty) {
+        throw ServerException('Registration ID missing in register response');
+      }
+
+      return EventRegisterResponse(
+        event: eventResult,
+        registrationId: registrationId,
+      );
     } catch (e) {
       throw ServerException(AppErrorHandler.handleException(e), e);
     }

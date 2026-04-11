@@ -4,6 +4,7 @@ import 'package:conet_app/feature/event/domain/entities/event_attendance_result.
 import 'package:conet_app/feature/event/domain/entities/event_attendees.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_page.dart';
+import 'package:conet_app/feature/event/domain/entities/event_register_response.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_ticket.dart';
 import 'package:fpdart/fpdart.dart';
@@ -11,7 +12,7 @@ import 'package:fpdart/fpdart.dart';
 abstract interface class EventRepository {
   Future<Either<AppFailure, Event>> getEventById(String eventId);
 
-  Future<Either<AppFailure, Event>> registerEvent(
+  Future<Either<AppFailure, EventRegisterResponse>> registerEvent(
     String eventId,
     EventRegistrationPayload payload,
   );

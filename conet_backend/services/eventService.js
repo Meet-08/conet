@@ -1043,10 +1043,7 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     normalizeParticipationType(event.participation_type) ?? "individual";
 
   const teamId = normalizeOptionalString(payload.team_id, "team_id");
-  const paymentProofUrl = normalizeOptionalString(
-    payload.payment_proof_url,
-    "payment_proof_url",
-  );
+  const teamName = normalizeOptionalString(payload.team_name, "team_name");
   const transactionId = normalizeOptionalString(
     payload.transaction_id,
     "transaction_id",
@@ -1075,6 +1072,12 @@ export const registerEventService = async (eventId, userId, body = {}) => {
   }
 
   if (participationType === "team") {
+    if (!hasValue(teamName)) {
+      const err = new Error("team_name is required for team events");
+      err.statusCode = 400;
+      throw err;
+    }
+
     if (teamSize == null) {
       const err = new Error("team_size is required for team events");
       err.statusCode = 400;
@@ -1137,19 +1140,6 @@ export const registerEventService = async (eventId, userId, body = {}) => {
 
   let payment = null;
   if (event.ticket_price_type === "PAID") {
-    const missingPaymentFields = [];
-    if (!hasValue(transactionId)) missingPaymentFields.push("transaction_id");
-    if (!hasValue(paymentProofUrl))
-      missingPaymentFields.push("payment_proof_url");
-
-    if (missingPaymentFields.length) {
-      const err = new Error(
-        `${missingPaymentFields.join(", ")} are required for paid event registration`,
-      );
-      err.statusCode = 400;
-      throw err;
-    }
-
     const perMemberAmount = Number(event.price ?? 0);
     if (!Number.isFinite(perMemberAmount) || perMemberAmount <= 0) {
       const err = new Error("Invalid paid event price configuration");
@@ -1201,7 +1191,7 @@ export const registerEventService = async (eventId, userId, body = {}) => {
         data: {
           event_id: eventId,
           leader_id: userId,
-          team_name: `team-${userId.slice(0, 8)}-${Date.now().toString(36)}`,
+          team_name: teamName,
           metadata: {
             team_size: teamSize,
             member_user_ids: requestedMemberIds,
@@ -1253,8 +1243,9 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     : {}),
   };
 
+  let registrationRecord;
   try {
-    await prisma.event_registrations.upsert({
+    registrationRecord = await prisma.event_registrations.upsert({
       where: { event_id_user_id: { event_id: eventId, user_id: userId } },
       create: registrationCreateData,
       update: registrationUpdateData,
@@ -1276,6 +1267,8 @@ export const registerEventService = async (eventId, userId, body = {}) => {
   return {
     event: mapEvent(updatedEvent, userId),
     registration: {
+      id: registrationRecord.id,
+      registration_id: registrationRecord.id,
       ...(participationType === "team" ? { team_id: resolvedTeamId } : {}),
       team_size: participationType === "team" ? teamSize : 1,
       ...(payment ? { payment } : {}),
