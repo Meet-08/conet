@@ -52,6 +52,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/conet_test
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/conet_test
       TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/conet_test
+      REDIS_URL: redis://localhost:6379
 
     services:
       postgres:
