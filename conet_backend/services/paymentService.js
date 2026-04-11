@@ -73,6 +73,36 @@ const buildOrderReceipt = (registrationId) => {
   return `reg_${digest}`;
 };
 
+const getPositiveInteger = (value) => {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const resolveRegistrationMemberCount = async (registration) => {
+  if (!registration?.team_id) {
+    return 1;
+  }
+
+  const metadata = registration?.event_teams?.metadata;
+  const metadataTeamSize =
+    metadata && typeof metadata === "object" ?
+      getPositiveInteger(metadata.team_size)
+    : null;
+
+  if (metadataTeamSize != null) {
+    return metadataTeamSize;
+  }
+
+  const teamMembersCount = await prisma.event_team_members.count({
+    where: {
+      event_id: registration.event_id,
+      team_id: registration.team_id,
+    },
+  });
+
+  return getPositiveInteger(teamMembersCount) ?? 1;
+};
+
 const serializeWebhookPayload = (payload, rawPayload) => {
   if (typeof rawPayload === "string" && rawPayload.length > 0) {
     return rawPayload;
@@ -348,6 +378,11 @@ export const initiatePaymentService = async (
   const registration = await prisma.event_registrations.findUnique({
     where: { id: registrationId },
     include: {
+      event_teams: {
+        select: {
+          metadata: true,
+        },
+      },
       events: {
         select: {
           id: true,
@@ -406,8 +441,10 @@ export const initiatePaymentService = async (
     }
   }
 
+  const memberCount = await resolveRegistrationMemberCount(registration);
+  const amountPerMember = Number(eventPrice.toFixed(2));
   const eventId = registration.events.id;
-  const amount = Number(eventPrice.toFixed(2));
+  const amount = Number((amountPerMember * memberCount).toFixed(2));
   const currency = "INR";
   const organizerAccount = await prisma.organizer_account_details.findUnique({
     where: { organizer_id: registration.events.organizer_id },
@@ -510,6 +547,8 @@ export const initiatePaymentService = async (
     payment_id: payment.id,
     razorpay_order_id: razorpayOrder.id,
     amount: Number(payment.amount),
+    amount_per_member: amountPerMember,
+    member_count: memberCount,
     currency: payment.currency,
     razorpay_order_details: {
       id: razorpayOrder.id,

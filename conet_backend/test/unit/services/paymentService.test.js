@@ -16,6 +16,7 @@ const prismaMock = {
     count: mock(() => Promise.resolve(0)),
   },
   event_team_members: {
+    count: mock(() => Promise.resolve(0)),
     deleteMany: mock(() => Promise.resolve({ count: 0 })),
   },
   event_teams: {
@@ -64,11 +65,13 @@ beforeEach(() => {
   prismaMock.event_payments.findFirst.mockReset();
   prismaMock.event_payments.findFirst.mockResolvedValue(null);
   prismaMock.event_payments.create.mockReset();
-  prismaMock.event_payments.create.mockResolvedValue({
-    id: "payment-1",
-    amount: 499,
-    currency: "INR",
-  });
+  prismaMock.event_payments.create.mockImplementation(({ data }) =>
+    Promise.resolve({
+      id: "payment-1",
+      amount: data.amount,
+      currency: data.currency ?? "INR",
+    }),
+  );
   prismaMock.event_payments.delete.mockReset();
   prismaMock.event_payments.delete.mockResolvedValue({ id: "payment-1" });
   prismaMock.event_payments.update.mockReset();
@@ -107,11 +110,16 @@ beforeEach(() => {
 
   prismaMock.event_team_members.deleteMany.mockReset();
   prismaMock.event_team_members.deleteMany.mockResolvedValue({ count: 0 });
+  prismaMock.event_team_members.count.mockReset();
+  prismaMock.event_team_members.count.mockResolvedValue(0);
   prismaMock.event_teams.deleteMany.mockReset();
   prismaMock.event_teams.deleteMany.mockResolvedValue({ count: 0 });
 
   prismaMock.$transaction.mockReset();
   prismaMock.$transaction.mockImplementation((fn) => fn(prismaMock));
+
+  razorpayMock.orders.create.mockReset();
+  razorpayMock.orders.create.mockResolvedValue({ id: "order_1" });
 
   process.env.RAZORPAY_WEBHOOK_SECRET = "webhook-secret";
 });
@@ -251,10 +259,12 @@ describe("verifyPaymentWebhookService", () => {
 });
 
 describe("initiatePaymentService", () => {
-  it("creates Razorpay order using event price and INR currency", async () => {
+  it("creates Razorpay order using event price for individual registrations", async () => {
     prismaMock.event_registrations.findUnique.mockResolvedValue({
       id: "registration-1",
       user_id: "user-1",
+      event_id: "event-1",
+      team_id: null,
       events: {
         id: "event-1",
         title: "Hackathon",
@@ -266,7 +276,8 @@ describe("initiatePaymentService", () => {
 
     const result = await initiatePaymentService("user-1", "registration-1");
 
-    const firstOrderCall = razorpayMock.orders.create.mock.calls[0]?.[0] ?? {};
+    const firstOrderCall =
+      razorpayMock.orders.create.mock.calls.at(-1)?.[0] ?? {};
 
     expect(firstOrderCall).toEqual(
       expect.objectContaining({
@@ -287,7 +298,94 @@ describe("initiatePaymentService", () => {
       }),
     );
     expect(result.amount).toBe(499);
+    expect(result.amount_per_member).toBe(499);
+    expect(result.member_count).toBe(1);
     expect(result.currency).toBe("INR");
+  });
+
+  it("multiplies amount by team member count from team metadata", async () => {
+    prismaMock.event_registrations.findUnique.mockResolvedValue({
+      id: "registration-team-1",
+      user_id: "user-1",
+      event_id: "event-1",
+      team_id: "team-1",
+      event_teams: {
+        metadata: {
+          team_size: 4,
+        },
+      },
+      events: {
+        id: "event-1",
+        title: "Hackathon Team",
+        ticket_price_type: "PAID",
+        price: 299,
+        organizer_id: "organizer-1",
+      },
+    });
+
+    const result = await initiatePaymentService(
+      "user-1",
+      "registration-team-1",
+    );
+
+    const firstOrderCall =
+      razorpayMock.orders.create.mock.calls.at(-1)?.[0] ?? {};
+    expect(firstOrderCall).toEqual(
+      expect.objectContaining({
+        amount: 119600,
+        currency: "INR",
+      }),
+    );
+    expect(prismaMock.event_team_members.count).not.toHaveBeenCalled();
+    expect(prismaMock.event_payments.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          amount: 1196,
+          event_id: "event-1",
+          user_id: "user-1",
+        }),
+      }),
+    );
+    expect(result.amount).toBe(1196);
+    expect(result.amount_per_member).toBe(299);
+    expect(result.member_count).toBe(4);
+  });
+
+  it("falls back to team members count when team metadata is missing", async () => {
+    prismaMock.event_registrations.findUnique.mockResolvedValue({
+      id: "registration-team-2",
+      user_id: "user-1",
+      event_id: "event-1",
+      team_id: "team-2",
+      event_teams: {
+        metadata: {},
+      },
+      events: {
+        id: "event-1",
+        title: "Hackathon Team",
+        ticket_price_type: "PAID",
+        price: 150,
+        organizer_id: "organizer-1",
+      },
+    });
+    prismaMock.event_team_members.count.mockResolvedValueOnce(3);
+
+    const result = await initiatePaymentService(
+      "user-1",
+      "registration-team-2",
+    );
+
+    expect(prismaMock.event_team_members.count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          event_id: "event-1",
+          team_id: "team-2",
+        },
+      }),
+    );
+    expect(result.amount).toBe(450);
+    expect(result.amount_per_member).toBe(150);
+    expect(result.member_count).toBe(3);
   });
 
   it("keeps receipt within Razorpay length limit for UUID registration IDs", async () => {
@@ -296,6 +394,8 @@ describe("initiatePaymentService", () => {
     prismaMock.event_registrations.findUnique.mockResolvedValue({
       id: registrationId,
       user_id: "user-1",
+      event_id: "event-1",
+      team_id: null,
       events: {
         id: "event-1",
         title: "Hackathon",
@@ -307,7 +407,8 @@ describe("initiatePaymentService", () => {
 
     await initiatePaymentService("user-1", registrationId);
 
-    const firstOrderCall = razorpayMock.orders.create.mock.calls[0]?.[0] ?? {};
+    const firstOrderCall =
+      razorpayMock.orders.create.mock.calls.at(-1)?.[0] ?? {};
     expect(firstOrderCall.receipt).toMatch(/^reg_[a-f0-9]{30}$/);
     expect(firstOrderCall.receipt.length).toBeLessThanOrEqual(40);
   });
@@ -316,6 +417,8 @@ describe("initiatePaymentService", () => {
     prismaMock.event_registrations.findUnique.mockResolvedValue({
       id: "registration-1",
       user_id: "user-1",
+      event_id: "event-1",
+      team_id: null,
       events: {
         id: "event-1",
         title: "Free Event",
@@ -337,6 +440,8 @@ describe("initiatePaymentService", () => {
     prismaMock.event_registrations.findUnique.mockResolvedValue({
       id: "registration-1",
       user_id: "user-1",
+      event_id: "event-1",
+      team_id: null,
       events: {
         id: "event-1",
         title: "Hackathon",
@@ -381,6 +486,8 @@ describe("initiatePaymentService", () => {
     prismaMock.event_registrations.findUnique.mockResolvedValue({
       id: "registration-1",
       user_id: "user-1",
+      event_id: "event-1",
+      team_id: null,
       events: {
         id: "event-1",
         title: "Hackathon",
