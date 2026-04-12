@@ -43,13 +43,14 @@ abstract interface class MessageRepository {
   Future<Either<AppFailure, Conversation>> createGroup({
     required String name,
     required List<String> memberIds,
-    String? groupImageUrl,
+    PlatformFile? groupImageFile,
   });
 
   Future<Either<AppFailure, Conversation>> updateGroup({
     required String groupId,
     String? name,
     String? groupImageUrl,
+    PlatformFile? groupImageFile,
   });
 
   Future<Either<AppFailure, Unit>> deleteGroup(String groupId);

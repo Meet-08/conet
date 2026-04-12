@@ -662,7 +662,7 @@ export const updateGroupService = async (
 };
 
 /**
- * Delete a group entirely. Only admins may do this.
+ * Delete a group entirely. Only the group creator may do this.
  */
 export const deleteGroupService = async (groupId, currentUserId) => {
   const conversation = await prisma.conversations.findUnique({
@@ -676,12 +676,8 @@ export const deleteGroupService = async (groupId, currentUserId) => {
     throw err;
   }
 
-  const self = conversation.conversation_members.find(
-    (m) => m.user_id === currentUserId,
-  );
-
-  if (!self || self.role !== "admin") {
-    const err = new Error("Only group admins can delete the group");
+  if (conversation.created_by !== currentUserId) {
+    const err = new Error("Only the group creator can delete the group");
     err.statusCode = 403;
     throw err;
   }

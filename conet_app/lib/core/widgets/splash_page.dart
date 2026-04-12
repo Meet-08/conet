@@ -24,16 +24,6 @@ class SplashPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-            // App name
-            const Text(
-              'Conet',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 1,
-              ),
-            ),
-            const SizedBox(height: 8),
             Text(
               'Connecting people',
               style: TextStyle(fontSize: 14, color: Colors.grey.shade600),

@@ -28,7 +28,6 @@ class ProfileDataSourceImpl implements ProfileDataSource {
         throw ServerException("Failed to fetch user profile");
       }
       final data = res.data as Map<String, dynamic>;
-      logger.i("User profile fetched $data");
       return UserProfileModel.fromJson(data['profile']);
     } catch (e) {
       logger.e("Failed to fetch user profile", error: e);

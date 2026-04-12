@@ -14,31 +14,22 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   const ChatAppBar({super.key, required this.conversation});
 
-  String _getInitials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return '';
-    if (parts.length == 1) return parts.first[0].toUpperCase();
-    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
-  }
-
   @override
   Widget build(BuildContext context) {
     final displayName = conversation.displayName;
     final imageUrl = conversation.displayImageUrl;
-    final initials = _getInitials(displayName);
 
     if (conversation.isGroup) {
-      return _buildGroupAppBar(context, displayName, imageUrl, initials);
+      return _buildGroupAppBar(context, displayName, imageUrl);
     }
 
-    return _buildDirectAppBar(context, displayName, imageUrl, initials);
+    return _buildDirectAppBar(context, displayName, imageUrl);
   }
 
   AppBar _buildGroupAppBar(
     BuildContext context,
     String displayName,
     String? imageUrl,
-    String initials,
   ) {
     final memberCount = conversation.members.length;
     final subtitle = memberCount > 0 ? '$memberCount members' : 'Group';
@@ -48,53 +39,41 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       leadingWidth: 40,
       leading: IconButton(
         icon: const FaIcon(FontAwesomeIcons.arrowLeft),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => context.pop(),
       ),
-      title: Row(
-        children: [
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: Colors
-                .primaries[displayName.hashCode % Colors.primaries.length]
-                .shade100,
-            backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
-                ? NetworkImage(imageUrl)
-                : null,
-            child: (imageUrl == null || imageUrl.isEmpty)
-                ? Icon(
-                    Icons.group,
-                    color: Colors
-                        .primaries[displayName.hashCode %
-                            Colors.primaries.length]
-                        .shade800,
-                    size: 20,
-                  )
-                : null,
-          ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                displayName,
-                style: AppTextStyles.label.copyWith(color: colors.textPrimary),
-              ),
-              Text(
-                subtitle,
-                style: AppTextStyles.micro.copyWith(
-                  color: colors.textSecondary,
+      title: GestureDetector(
+        onTap: () => context.push('/group-details', extra: conversation),
+        child: Row(
+          children: [
+            CustomCircleAvatar(
+              radius: 24,
+              imageUrl: imageUrl,
+              displayName: displayName,
+              backgroundColor: Colors
+                  .primaries[displayName.hashCode % Colors.primaries.length]
+                  .shade100,
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  displayName,
+                  style: AppTextStyles.label.copyWith(
+                    color: colors.textPrimary,
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ],
-      ),
-      actions: [
-        IconButton(
-          icon: const FaIcon(FontAwesomeIcons.ellipsisVertical),
-          onPressed: () {},
+                Text(
+                  subtitle,
+                  style: AppTextStyles.micro.copyWith(
+                    color: colors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -102,7 +81,6 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
     BuildContext context,
     String displayName,
     String? imageUrl,
-    String initials,
   ) {
     final otherUser = conversation.otherUser;
     final colors = Theme.of(context).extension<AppSemanticColors>()!;
@@ -111,11 +89,10 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       leadingWidth: 40,
       leading: IconButton(
         icon: const FaIcon(FontAwesomeIcons.arrowLeft),
-        onPressed: () => Navigator.pop(context),
+        onPressed: () => context.pop(),
       ),
       title: Row(
         children: [
-          // Avatar with online indicator
           if (otherUser != null)
             BlocSelector<PresenceCubit, Set<String>, bool>(
               selector: (onlineIds) => onlineIds.contains(otherUser.id),
@@ -129,7 +106,7 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                       CustomCircleAvatar(
                         size: CustomCircleAvatarSize.medium,
                         imageUrl: imageUrl,
-                        displayName: initials,
+                        displayName: displayName,
                         userId: otherUser.id,
                         backgroundColor: Colors
                             .primaries[displayName.hashCode %
@@ -147,21 +124,13 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               },
             )
           else
-            CircleAvatar(
+            CustomCircleAvatar(
               radius: 24,
+              imageUrl: imageUrl,
+              displayName: displayName,
               backgroundColor: Colors
                   .primaries[displayName.hashCode % Colors.primaries.length]
                   .shade100,
-              child: Text(
-                initials,
-                style: TextStyle(
-                  color: Colors
-                      .primaries[displayName.hashCode % Colors.primaries.length]
-                      .shade800,
-                  fontWeight: AppTypographyTokens.weightBold,
-                  fontSize: 15,
-                ),
-              ),
             ),
           const SizedBox(width: 8),
           // Name and online status text

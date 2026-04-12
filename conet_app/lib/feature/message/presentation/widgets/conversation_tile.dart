@@ -1,5 +1,6 @@
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/theme/app_typography.dart';
+import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -8,14 +9,6 @@ class ConversationTile extends StatelessWidget {
   final Conversation conversation;
 
   const ConversationTile({super.key, required this.conversation});
-
-  String _getInitials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty) return '';
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'
-        .toUpperCase();
-  }
 
   String _formatRelativeTime(DateTime? dateTime) {
     if (dateTime == null) return '';
@@ -74,7 +67,6 @@ class ConversationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final displayName = conversation.displayName;
     final imageUrl = conversation.displayImageUrl;
-    final initials = _getInitials(displayName);
     final hasUnread = conversation.unreadCount > 0;
     final colors = Theme.of(context).extension<AppSemanticColors>()!;
 
@@ -86,37 +78,13 @@ class ConversationTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
-            // Circle avatar with initials
-            CircleAvatar(
+            CustomCircleAvatar(
               radius: 24,
+              imageUrl: imageUrl,
+              displayName: displayName,
               backgroundColor: Colors
                   .primaries[displayName.hashCode % Colors.primaries.length]
                   .shade100,
-              backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
-                  ? NetworkImage(imageUrl)
-                  : null,
-              child: (imageUrl == null || imageUrl.isEmpty)
-                  ? conversation.isGroup
-                        ? Icon(
-                            Icons.group,
-                            color: Colors
-                                .primaries[displayName.hashCode %
-                                    Colors.primaries.length]
-                                .shade800,
-                            size: 20,
-                          )
-                        : Text(
-                            initials,
-                            style: TextStyle(
-                              color: Colors
-                                  .primaries[displayName.hashCode %
-                                      Colors.primaries.length]
-                                  .shade800,
-                              fontWeight: AppTypographyTokens.weightBold,
-                              fontSize: 15,
-                            ),
-                          )
-                  : null,
             ),
             const SizedBox(width: 14),
             // Content area
@@ -157,13 +125,15 @@ class ConversationTile extends StatelessWidget {
                       if (hasUnread) ...[
                         const SizedBox(width: 8),
                         Container(
+                          width: 24,
+                          height: 20,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
+                            horizontal: 8,
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: colors.backgroundInverse,
-                            borderRadius: BorderRadius.circular(12),
+                            color: colors.backgroundInfo,
+                            borderRadius: BorderRadius.circular(15),
                           ),
                           child: Text(
                             '${conversation.unreadCount}',

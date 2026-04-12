@@ -24,6 +24,7 @@ import 'package:conet_app/feature/event/presentation/pages/view_ticket.dart';
 import 'package:conet_app/feature/message/data/models/conversation_model.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/presentation/pages/chat_detail_page.dart';
+import 'package:conet_app/feature/message/presentation/pages/group_details_page.dart';
 import 'package:conet_app/feature/message/presentation/pages/messages_page.dart';
 import 'package:conet_app/feature/notification/presentation/pages/notification_page.dart'
     as notification_ui;
@@ -246,6 +247,26 @@ class AppRouter {
           }
 
           return ChatDetailPage(conversation: conversation);
+        },
+      ),
+
+      GoRoute(
+        path: '/group-details',
+        builder: (context, state) {
+          final extra = state.extra;
+          final Conversation? conversation = switch (extra) {
+            Conversation c => c,
+            Map<String, dynamic> m => ConversationModel.fromJson(m),
+            _ => null,
+          };
+
+          if (conversation == null || !conversation.isGroup) {
+            return const Scaffold(
+              body: Center(child: Text('Invalid group payload')),
+            );
+          }
+
+          return GroupDetailsPage(conversation: conversation);
         },
       ),
 

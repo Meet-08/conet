@@ -350,6 +350,47 @@ describe("Registration and attendance routes", () => {
     expect(prismaMock.event_team_members.createMany).toHaveBeenCalled();
   });
 
+  it("409 - rejects team registration when participant already belongs to another team", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({
+        event_status: "published",
+        participation_type: "team",
+        min_team_size: 2,
+        max_team_size: 5,
+      }),
+    );
+    prismaMock.event_team_members.findMany.mockResolvedValue([
+      {
+        user_id: "member-1",
+        users: {
+          username: "mike",
+          first_name: "Mike",
+          last_name: "Ross",
+        },
+        event_teams: {
+          team_name: "Alpha",
+        },
+      },
+    ]);
+
+    const res = await request(app)
+      .post(`/api/events/${EVENT_ID}/register`)
+      .set("Authorization", makeAuthHeader(TEST_USER_B))
+      .send({
+        team_name: "Beta",
+        team_size: 2,
+        member_user_ids: ["member-1"],
+      });
+
+    expect(res.status).toBe(409);
+    expect(res.body.message).toBe(
+      "Mike Ross is already in team Alpha for this event",
+    );
+
+    expect(prismaMock.event_team_members.createMany).not.toHaveBeenCalled();
+    expect(prismaMock.event_registrations.upsert).not.toHaveBeenCalled();
+  });
+
   it("200 - returns registration info", async () => {
     prismaMock.events.findUnique.mockResolvedValue({
       id: EVENT_ID,

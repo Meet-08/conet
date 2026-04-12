@@ -59,6 +59,19 @@ const mapAttendeeUser = (user) => ({
   profile_pic_url: user?.profile_pic_url ?? null,
 });
 
+const formatParticipantDisplayName = (member) => {
+  const firstName = String(member?.users?.first_name ?? "").trim();
+  const lastName = String(member?.users?.last_name ?? "").trim();
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  if (fullName) return fullName;
+
+  const username = String(member?.users?.username ?? "").trim();
+  if (username) return username;
+
+  return String(member?.user_id ?? "A participant");
+};
+
 const normalizeAttendeeStatusFilter = (value) => {
   if (value === undefined || value === null) return null;
 
@@ -1202,6 +1215,45 @@ export const registerEventService = async (eventId, userId, body = {}) => {
       resolvedTeamId = createdTeam.id;
     }
 
+    const conflictingMembers = await prisma.event_team_members.findMany({
+      where: {
+        event_id: eventId,
+        user_id: { in: allTeamMemberIds },
+        ...(resolvedTeamId ? { team_id: { not: resolvedTeamId } } : {}),
+      },
+      include: {
+        users: {
+          select: {
+            username: true,
+            first_name: true,
+            last_name: true,
+          },
+        },
+        event_teams: {
+          select: {
+            team_name: true,
+          },
+        },
+      },
+      orderBy: {
+        joined_at: "asc",
+      },
+    });
+
+    if (conflictingMembers.length > 0) {
+      const conflictingMember = conflictingMembers[0];
+      const participantName = formatParticipantDisplayName(conflictingMember);
+      const existingTeamName =
+        String(conflictingMember?.event_teams?.team_name ?? "").trim() ||
+        "another team";
+
+      const err = new Error(
+        `${participantName} is already in team ${existingTeamName} for this event`,
+      );
+      err.statusCode = 409;
+      throw err;
+    }
+
     try {
       await prisma.event_team_members.createMany({
         data: allTeamMemberIds.map((memberId) => ({
@@ -1215,7 +1267,7 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     } catch (error) {
       if (error?.code === "P2002") {
         const err = new Error(
-          "One or more users are already assigned to another team for this event",
+          "One or more participants are already in a team for this event",
         );
         err.statusCode = 409;
         throw err;

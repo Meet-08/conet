@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-04-11
+> Last updated: 2026-04-12
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -93,6 +93,9 @@
 - **Group Management** — Rename group, change group image (admin only)
 - **Delete Group** — Admin can dissolve the group
 - **Group Members** — View, add, and remove group members
+- **Group Details Page** — Group profile screen with live member list, add-member search, and settings entry points
+- **Group Image Upload** — Create-group and group-details flows now support image picker upload before persisting group metadata
+- **Group Permissions Dialog** — Group permissions are shown in a dedicated modal with read-only status toggles sourced from backend role/creator data
 
 **Use Cases:** `MessageCreateConversation`, `MessageGetConversations`, `MessageGetMessages`, `MessageSendMessage`, `MessageMarkAsRead`, `MessageWatchMessages`, `MessageWatchConversationUpdates`, `MessageSearchUsers`, `MessageCreateGroup`, `MessageUpdateGroup`, `MessageDeleteGroup`, `MessageGetGroupMembers`, `MessageAddGroupMember`, `MessageRemoveGroupMember`
 **Backend Endpoints:** `POST/GET /conversations`, `GET/POST /conversations/:id/messages`, `POST /conversations/:id/mark_as_read`, `GET /conversations/search_users`, `POST/PATCH/DELETE /groups/:id`, `GET/POST /groups/:id/members`, `DELETE /groups/:id/members/:userId`

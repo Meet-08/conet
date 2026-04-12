@@ -258,7 +258,7 @@ describe("PATCH /api/groups/:groupId", () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 describe("DELETE /api/groups/:groupId", () => {
-  it("200 – admin can delete a group", async () => {
+  it("200 – creator can delete a group", async () => {
     prismaMock.conversations.findUnique.mockResolvedValue(
       mockGroupConversation,
     );
@@ -275,16 +275,11 @@ describe("DELETE /api/groups/:groupId", () => {
     );
   });
 
-  it("403 – non-admin cannot delete group", async () => {
-    const groupWhereAliceIsMember = {
+  it("403 – non-creator admin cannot delete group", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
       ...mockGroupConversation,
-      conversation_members: mockGroupConversation.conversation_members.map(
-        (m) => (m.user_id === TEST_USER.id ? { ...m, role: "member" } : m),
-      ),
-    };
-    prismaMock.conversations.findUnique.mockResolvedValue(
-      groupWhereAliceIsMember,
-    );
+      created_by: TEST_USER_B.id,
+    });
 
     const res = await request(app)
       .delete(`/api/groups/${GROUP_ID}`)

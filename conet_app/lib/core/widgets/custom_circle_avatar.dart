@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -39,12 +40,14 @@ class CustomCircleAvatar extends StatelessWidget {
         .split(' ')
         .where((word) => word.isNotEmpty)
         .map((word) => word[0].toUpperCase())
+        .take(2)
         .join();
   }
 
   Widget _buildAvatar(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final semantics = context.semanticColors;
 
     if (imageUrl != null && imageUrl!.isNotEmpty) {
       return CircleAvatar(
@@ -60,7 +63,7 @@ class CustomCircleAvatar extends StatelessWidget {
       child: Text(
         _initials,
         style: TextStyle(
-          color: foregroundColor ?? colorScheme.onPrimaryContainer,
+          color: semantics.textOnBrand,
           fontSize: _effectiveRadius * 0.7,
           fontWeight: FontWeight.w500,
         ),
