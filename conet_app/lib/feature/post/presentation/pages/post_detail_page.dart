@@ -1,5 +1,6 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/theme/theme.dart';
+import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/core/widgets/responsive_center_scrollable.dart';
 import 'package:conet_app/feature/post/domain/entities/comment.dart';
@@ -11,6 +12,7 @@ import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class PostDetailPage extends StatelessWidget {
   final Post? post;
@@ -70,7 +72,7 @@ class _PostDetailPageFetchWrapper extends StatelessWidget {
                   FontAwesomeIcons.arrowLeft,
                   color: semantic.iconPrimary,
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => context.pop(),
               ),
             ),
             body: Center(
@@ -92,7 +94,7 @@ class _PostDetailPageFetchWrapper extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => context.pop(),
                     child: const Text('Go Back'),
                   ),
                 ],
@@ -205,7 +207,13 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
               FontAwesomeIcons.arrowLeft,
               color: semantic.iconPrimary,
             ),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/');
+              }
+            },
           ),
           title: Text(
             'Post',
@@ -431,23 +439,11 @@ class _CommentItem extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Avatar
-        CircleAvatar(
-          radius: 18,
+        CustomCircleAvatar(
+          size: CustomCircleAvatarSize.medium,
+          imageUrl: comment.profilePicUrl,
+          displayName: comment.username,
           backgroundColor: semantic.backgroundDisabled,
-          backgroundImage:
-              comment.profilePicUrl != null && comment.profilePicUrl!.isNotEmpty
-              ? NetworkImage(comment.profilePicUrl!)
-              : null,
-          child: comment.profilePicUrl == null || comment.profilePicUrl!.isEmpty
-              ? Text(
-                  comment.username.isNotEmpty
-                      ? comment.username[0].toUpperCase()
-                      : '?',
-                  style: textTheme.labelMedium?.copyWith(
-                    color: semantic.textPrimary,
-                  ),
-                )
-              : null,
         ),
         const SizedBox(width: 12),
 

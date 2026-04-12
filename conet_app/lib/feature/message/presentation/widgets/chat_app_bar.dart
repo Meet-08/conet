@@ -1,6 +1,7 @@
 import 'package:conet_app/core/common/cubit/presence_cubit.dart';
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/theme/app_typography.dart';
+import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/core/widgets/online_indicator.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:flutter/material.dart';
@@ -125,29 +126,15 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      CircleAvatar(
-                        radius: 24,
+                      CustomCircleAvatar(
+                        size: CustomCircleAvatarSize.medium,
+                        imageUrl: imageUrl,
+                        displayName: initials,
+                        userId: otherUser.id,
                         backgroundColor: Colors
                             .primaries[displayName.hashCode %
                                 Colors.primaries.length]
                             .shade100,
-                        backgroundImage:
-                            (imageUrl != null && imageUrl.isNotEmpty)
-                            ? NetworkImage(imageUrl)
-                            : null,
-                        child: (imageUrl == null || imageUrl.isEmpty)
-                            ? Text(
-                                initials,
-                                style: TextStyle(
-                                  color: Colors
-                                      .primaries[displayName.hashCode %
-                                          Colors.primaries.length]
-                                      .shade800,
-                                  fontWeight: AppTypographyTokens.weightBold,
-                                  fontSize: 15,
-                                ),
-                              )
-                            : null,
                       ),
                       Positioned(
                         right: 0,

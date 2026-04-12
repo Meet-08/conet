@@ -1,6 +1,7 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/utils/quill_content_utils.dart';
+import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/core/widgets/quill_read_only_view.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
@@ -12,10 +13,12 @@ import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_registration_page.dart';
 import 'package:conet_app/feature/payment/domain/entities/payment_initiate_response.dart';
 import 'package:conet_app/feature/payment/presentation/bloc/payment_bloc.dart';
+import 'package:conet_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 
@@ -129,13 +132,16 @@ class _EventDetailPageState extends State<EventDetailPage> {
     }
 
     final imageUrl = event.eventImageUrl?.trim();
+    logger.d(
+      'Opening Razorpay checkout with options: key=$razorpayKey, order_id=${payment.razorpayOrderId}, amount=${payment.amount}, currency=${payment.currency}, name=${event.title}, description=Event registration payment, image=$imageUrl, prefill_name=$fullName, prefill_email=$email, prefill_contact=$contact, notes_event_id=${event.id}, notes_payment_id=${payment.paymentId}',
+    );
     final options = <String, dynamic>{
       'key': razorpayKey,
       'order_id': payment.razorpayOrderId,
       'amount': (payment.amount * 100).round(),
       'currency': payment.currency,
-      'name': 'Conet Events',
-      'description': event.title,
+      'name': event.title,
+      'description': 'Event registration payment',
       if (imageUrl != null && imageUrl.isNotEmpty) 'image': imageUrl,
       'prefill': {
         'name': fullName,
@@ -164,14 +170,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
     final registrationId = _pendingPaymentRegistrationId?.trim();
     if (registrationId == null || registrationId.isEmpty) {
-      if (failureMessage != null && failureMessage.isNotEmpty) {
-        AppToast.showError(context, failureMessage);
-      }
       return;
-    }
-
-    if (failureMessage != null && failureMessage.isNotEmpty) {
-      AppToast.showError(context, failureMessage);
     }
 
     if (_isRollbackInFlight) return;
@@ -873,20 +872,24 @@ class _OrganizerSection extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: colorScheme.primaryContainer,
-                    backgroundImage: organizer?.profilePicUrl != null
-                        ? NetworkImage(organizer!.profilePicUrl!)
+                  GestureDetector(
+                    onTap:
+                        context.read<AppUserCubit>().state
+                            is AppUserAuthenticated
+                        ? () {
+                            final userId = organizer?.id;
+                            if (userId != null) {
+                              context.push('/user-profile', extra: userId);
+                            }
+                          }
                         : null,
-                    child: organizer?.profilePicUrl == null
-                        ? Text(
-                            _initials(organizerName),
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          )
-                        : null,
+                    child: CustomCircleAvatar(
+                      size: CustomCircleAvatarSize.small,
+                      imageUrl: organizer?.profilePicUrl,
+                      displayName: organizerName,
+                      userId: organizer?.id,
+                      backgroundColor: colorScheme.primaryContainer,
+                    ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -908,17 +911,11 @@ class _OrganizerSection extends StatelessWidget {
                       .take(5)
                       .map(
                         (cohost) => Chip(
-                          avatar: CircleAvatar(
-                            radius: 12,
-                            backgroundImage: cohost.profilePicUrl != null
-                                ? NetworkImage(cohost.profilePicUrl!)
-                                : null,
-                            child: cohost.profilePicUrl == null
-                                ? Text(
-                                    _initials(cohost.displayName),
-                                    style: theme.textTheme.labelSmall,
-                                  )
-                                : null,
+                          avatar: CustomCircleAvatar(
+                            size: CustomCircleAvatarSize.small,
+                            imageUrl: cohost.profilePicUrl,
+                            displayName: cohost.displayName,
+                            userId: cohost.id,
                           ),
                           label: Text(cohost.displayName),
                           visualDensity: VisualDensity.compact,
@@ -1122,15 +1119,4 @@ String? _teamSizeLabel(Event event) {
   if (min != null && max != null) return '$min-$max members';
   if (min != null) return 'Minimum $min members';
   return 'Up to $max members';
-}
-
-String _initials(String name) {
-  final words = name
-      .trim()
-      .split(RegExp(r'\s+'))
-      .where((w) => w.isNotEmpty)
-      .toList();
-  if (words.isEmpty) return 'U';
-  if (words.length == 1) return words.first[0].toUpperCase();
-  return '${words[0][0]}${words[1][0]}'.toUpperCase();
 }

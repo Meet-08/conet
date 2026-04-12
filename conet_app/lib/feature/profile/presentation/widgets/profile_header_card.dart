@@ -1,5 +1,6 @@
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/theme/app_typography.dart';
+import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_academics.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:flutter/material.dart';
@@ -10,16 +11,6 @@ class ProfileHeaderCard extends StatelessWidget {
   final UserProfile userProfile;
 
   const ProfileHeaderCard({super.key, required this.userProfile});
-
-  String get _initials {
-    final first = userProfile.firstName?.isNotEmpty == true
-        ? userProfile.firstName![0]
-        : '';
-    final last = userProfile.lastName?.isNotEmpty == true
-        ? userProfile.lastName![0]
-        : '';
-    return '$first$last'.toUpperCase();
-  }
 
   String get _fullName {
     final first = userProfile.firstName ?? '';
@@ -70,25 +61,16 @@ class ProfileHeaderCard extends StatelessWidget {
                   color: Theme.of(context).colorScheme.surface,
                   shape: BoxShape.circle,
                 ),
-                child: userProfile.profilePicUrl != null
-                    ? CircleAvatar(
-                        radius: 42,
-                        backgroundImage: NetworkImage(
-                          userProfile.profilePicUrl!,
-                        ),
-                      )
-                    : CircleAvatar(
-                        radius: 42,
-                        backgroundColor: Theme.of(
-                          context,
-                        ).extension<AppSemanticColors>()!.backgroundTertiary,
-                        child: Text(
-                          _initials,
-                          style: AppTextStyles.display.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                        ),
-                      ),
+                child: CustomCircleAvatar(
+                  size: CustomCircleAvatarSize.medium,
+                  radius: 42,
+                  imageUrl: userProfile.profilePicUrl,
+                  displayName: _fullName,
+                  userId: userProfile.id,
+                  backgroundColor: Theme.of(
+                    context,
+                  ).extension<AppSemanticColors>()!.backgroundTertiary,
+                ),
               ),
             ),
           ],

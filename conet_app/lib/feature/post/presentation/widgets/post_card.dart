@@ -3,6 +3,7 @@ import 'package:conet_app/core/utils/date_formatter.dart';
 import 'package:conet_app/core/utils/media_type_utils.dart';
 import 'package:conet_app/core/utils/post_share_helper.dart';
 import 'package:conet_app/core/utils/quill_content_utils.dart';
+import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/core/widgets/quill_read_only_view.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
@@ -42,8 +43,6 @@ class _PostCardState extends State<PostCard> {
     super.initState();
     _isLiked = widget.post.isLiked;
     _likeCount = widget.post.likeCount;
-    // Refresh the bookmarked-IDs set in the Bloc for this post's card.
-    // The Bloc handler is efficient: it only re-emits if the set changed.
     context.read<PostBloc>().add(
       PostCheckBookmarkStatusEvent(postId: widget.post.id),
     );
@@ -118,29 +117,12 @@ class _PostCardState extends State<PostCard> {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  onTap: () {
-                    context.push('/user-profile', extra: user.id);
-                  },
-                  child: CircleAvatar(
-                    radius: 21,
-                    backgroundColor: _getAvatarColor(user.username),
-                    backgroundImage:
-                        user.profilePicUrl != null &&
-                            user.profilePicUrl!.isNotEmpty
-                        ? NetworkImage(user.profilePicUrl!)
-                        : null,
-                    child:
-                        user.profilePicUrl == null ||
-                            user.profilePicUrl!.isEmpty
-                        ? Text(
-                            _getInitials(),
-                            style: textTheme.labelMedium?.copyWith(
-                              color: semantic.textPrimary,
-                            ),
-                          )
-                        : null,
-                  ),
+                CustomCircleAvatar(
+                  size: CustomCircleAvatarSize.medium,
+                  imageUrl: user.profilePicUrl,
+                  displayName: _buildDisplayName(),
+                  userId: user.id,
+                  backgroundColor: _getAvatarColor(user.username),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -404,17 +386,6 @@ class _PostCardState extends State<PostCard> {
         ),
       ),
     );
-  }
-
-  String _getInitials() {
-    final base = _buildDisplayName();
-    if (base.isEmpty) return '?';
-
-    final parts = base.trim().split(RegExp(r'\s+'));
-    if (parts.length >= 2) {
-      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
-    }
-    return base.substring(0, base.length >= 2 ? 2 : 1).toUpperCase();
   }
 
   String _formatDisplayName(String username) {

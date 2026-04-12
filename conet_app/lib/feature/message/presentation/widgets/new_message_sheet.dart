@@ -1,4 +1,5 @@
 import 'package:conet_app/core/common/entities/user.dart';
+import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/message/presentation/widgets/create_group_sheet.dart';
 import 'package:flutter/material.dart';
@@ -266,14 +267,11 @@ class _UserTile extends StatelessWidget {
     final initials = _initials(displayName, user.username);
 
     return ListTile(
-      leading: CircleAvatar(
-        backgroundImage:
-            (user.profilePicUrl != null && user.profilePicUrl!.isNotEmpty)
-            ? NetworkImage(user.profilePicUrl!)
-            : null,
-        child: (user.profilePicUrl == null || user.profilePicUrl!.isEmpty)
-            ? Text(initials)
-            : null,
+      leading: CustomCircleAvatar(
+        size: CustomCircleAvatarSize.medium,
+        imageUrl: user.profilePicUrl,
+        displayName: initials,
+        userId: user.id,
       ),
       title: Text(
         displayName.isNotEmpty

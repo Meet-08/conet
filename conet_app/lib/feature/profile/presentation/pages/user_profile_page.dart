@@ -2,6 +2,7 @@ import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
@@ -79,10 +80,6 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
       messageBloc.add(MessageConversationCreated(profileId));
     }
   }
-
-  String _initials(String? first, String? last) =>
-      '${first?.isNotEmpty == true ? first![0].toUpperCase() : ''}'
-      '${last?.isNotEmpty == true ? last![0].toUpperCase() : ''}';
 
   String _fullName(String? first, String? last) =>
       '${first ?? ''} ${last ?? ''}'.trim();
@@ -183,7 +180,6 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
 
             if (state is ProfileLoaded) {
               final profile = state.userProfile;
-              final initials = _initials(profile.firstName, profile.lastName);
               final fullName = _fullName(profile.firstName, profile.lastName);
               final academics = _uniqueAcademics(profile.academics);
 
@@ -282,27 +278,15 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                                   color: Theme.of(context).colorScheme.surface,
                                   shape: BoxShape.circle,
                                 ),
-                                child: profile.profilePicUrl?.isNotEmpty == true
-                                    ? CircleAvatar(
-                                        radius: 42,
-                                        backgroundImage: NetworkImage(
-                                          profile.profilePicUrl!,
-                                        ),
-                                      )
-                                    : CircleAvatar(
-                                        radius: 42,
-                                        backgroundColor: Theme.of(context)
-                                            .extension<AppSemanticColors>()!
-                                            .backgroundTertiary,
-                                        child: Text(
-                                          initials,
-                                          style: AppTextStyles.display.copyWith(
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.onSurface,
-                                          ),
-                                        ),
-                                      ),
+                                child: CustomCircleAvatar(
+                                  size: CustomCircleAvatarSize.medium,
+                                  radius: 42,
+                                  imageUrl: profile.profilePicUrl,
+                                  displayName: fullName,
+                                  backgroundColor: Theme.of(context)
+                                      .extension<AppSemanticColors>()!
+                                      .backgroundTertiary,
+                                ),
                               ),
                             ),
                           ],

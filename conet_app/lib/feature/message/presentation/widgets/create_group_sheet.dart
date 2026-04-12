@@ -1,4 +1,5 @@
 import 'package:conet_app/core/common/entities/user.dart';
+import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -162,22 +163,10 @@ class _CreateGroupSheetState extends State<CreateGroupSheet> {
                           : (user.username.isNotEmpty ? user.username : 'User');
 
                       return Chip(
-                        avatar: CircleAvatar(
-                          backgroundImage:
-                              (user.profilePicUrl != null &&
-                                  user.profilePicUrl!.isNotEmpty)
-                              ? NetworkImage(user.profilePicUrl!)
-                              : null,
-                          child:
-                              (user.profilePicUrl == null ||
-                                  user.profilePicUrl!.isEmpty)
-                              ? Text(
-                                  label.isNotEmpty
-                                      ? label[0].toUpperCase()
-                                      : 'U',
-                                  style: const TextStyle(fontSize: 10),
-                                )
-                              : null,
+                        avatar: CustomCircleAvatar(
+                          size: CustomCircleAvatarSize.small,
+                          imageUrl: user.profilePicUrl,
+                          displayName: label.isNotEmpty ? label[0] : 'U',
                         ),
                         label: Text(
                           label,
@@ -351,14 +340,10 @@ class _SelectableUserTile extends StatelessWidget {
     final initials = _initials(displayName, user.username);
 
     return ListTile(
-      leading: CircleAvatar(
-        backgroundImage:
-            (user.profilePicUrl != null && user.profilePicUrl!.isNotEmpty)
-            ? NetworkImage(user.profilePicUrl!)
-            : null,
-        child: (user.profilePicUrl == null || user.profilePicUrl!.isEmpty)
-            ? Text(initials)
-            : null,
+      leading: CustomCircleAvatar(
+        size: CustomCircleAvatarSize.medium,
+        imageUrl: user.profilePicUrl,
+        displayName: initials,
       ),
       title: Text(
         displayName.isNotEmpty
