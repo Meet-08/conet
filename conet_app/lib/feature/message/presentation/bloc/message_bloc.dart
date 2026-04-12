@@ -233,7 +233,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     final result = await _createGroup(
       name: event.name,
       memberIds: event.userIds,
-      groupImageUrl: event.groupImageUrl,
+      groupImageFile: event.groupImageFile,
     );
     result.fold(
       (l) => emit(
@@ -273,6 +273,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
       groupId: event.groupId,
       name: event.name,
       groupImageUrl: event.groupImageUrl,
+      groupImageFile: event.groupImageFile,
     );
     result.fold(
       (l) => emit(state.copyWith(errorMessage: l.message)),

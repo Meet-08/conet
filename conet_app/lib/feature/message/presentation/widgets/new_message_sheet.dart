@@ -264,13 +264,13 @@ class _UserTile extends StatelessWidget {
     final subtitle = user.email.isNotEmpty
         ? user.email
         : (user.username.isNotEmpty ? '@${user.username}' : '');
-    final initials = _initials(displayName, user.username);
+    final avatarName = displayName.isNotEmpty ? displayName : user.username;
 
     return ListTile(
       leading: CustomCircleAvatar(
         size: CustomCircleAvatarSize.medium,
         imageUrl: user.profilePicUrl,
-        displayName: initials,
+        displayName: avatarName,
         userId: user.id,
       ),
       title: Text(
@@ -281,17 +281,5 @@ class _UserTile extends StatelessWidget {
       subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
       onTap: onTap,
     );
-  }
-
-  String _initials(String displayName, String username) {
-    if (displayName.isNotEmpty) {
-      return displayName
-          .split(RegExp(r'\s+'))
-          .map((p) => p.isNotEmpty ? p[0] : '')
-          .take(2)
-          .join()
-          .toUpperCase();
-    }
-    return username.isNotEmpty ? username[0].toUpperCase() : 'U';
   }
 }

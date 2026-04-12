@@ -193,6 +193,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
   Future<void> _pickImage() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.image,
+      allowedExtensions: ['png', 'jpg', 'jpeg', 'gif'],
       allowMultiple: false,
       withData: true,
     );

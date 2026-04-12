@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:conet_app/core/common/entities/user.dart';
+import 'package:conet_app/core/utils/pick_files.dart';
 import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -16,6 +21,7 @@ class _CreateGroupSheetState extends State<CreateGroupSheet> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _groupNameController = TextEditingController();
   final List<User> _selectedUsers = [];
+  PlatformFile? _groupImageFile;
 
   @override
   void dispose() {
@@ -50,6 +56,53 @@ class _CreateGroupSheetState extends State<CreateGroupSheet> {
       MessageGroupCreated(
         name: groupName,
         userIds: _selectedUsers.map((u) => u.id).toList(),
+        groupImageFile: _groupImageFile,
+      ),
+    );
+  }
+
+  Future<void> _pickGroupImage() async {
+    final files = await pickFiles(
+      limit: 1,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'bmp'],
+    );
+
+    if (!mounted || files == null || files.isEmpty) return;
+    setState(() {
+      _groupImageFile = files.first;
+    });
+  }
+
+  Widget _buildGroupImagePreview(ColorScheme colorScheme) {
+    if (_groupImageFile != null && _groupImageFile!.bytes != null) {
+      return ClipOval(
+        child: Image.memory(
+          _groupImageFile!.bytes!,
+          width: 72,
+          height: 72,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+
+    if (!kIsWeb && _groupImageFile?.path != null) {
+      return ClipOval(
+        child: Image.file(
+          File(_groupImageFile!.path!),
+          width: 72,
+          height: 72,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+
+    return CircleAvatar(
+      radius: 36,
+      backgroundColor: colorScheme.onSurface.withValues(alpha: 0.08),
+      child: FaIcon(
+        FontAwesomeIcons.userGroup,
+        color: colorScheme.onSurface.withValues(alpha: 0.55),
+        size: 22,
       ),
     );
   }
@@ -117,6 +170,43 @@ class _CreateGroupSheetState extends State<CreateGroupSheet> {
 
               // Group name input
               Padding(
+                padding: const EdgeInsets.only(top: 8, bottom: 8),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(40),
+                  onTap: _pickGroupImage,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      _buildGroupImagePreview(colorScheme),
+                      Positioned(
+                        right: -2,
+                        bottom: -2,
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: colorScheme.surface,
+                              width: 2,
+                            ),
+                          ),
+                          child: const Center(
+                            child: FaIcon(
+                              FontAwesomeIcons.camera,
+                              size: 10,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
@@ -166,7 +256,7 @@ class _CreateGroupSheetState extends State<CreateGroupSheet> {
                         avatar: CustomCircleAvatar(
                           size: CustomCircleAvatarSize.small,
                           imageUrl: user.profilePicUrl,
-                          displayName: label.isNotEmpty ? label[0] : 'U',
+                          displayName: label,
                         ),
                         label: Text(
                           label,
@@ -337,13 +427,13 @@ class _SelectableUserTile extends StatelessWidget {
     final subtitle = user.email.isNotEmpty
         ? user.email
         : (user.username.isNotEmpty ? '@${user.username}' : '');
-    final initials = _initials(displayName, user.username);
+    final avatarName = displayName.isNotEmpty ? displayName : user.username;
 
     return ListTile(
       leading: CustomCircleAvatar(
         size: CustomCircleAvatarSize.medium,
         imageUrl: user.profilePicUrl,
-        displayName: initials,
+        displayName: avatarName,
       ),
       title: Text(
         displayName.isNotEmpty
@@ -367,17 +457,5 @@ class _SelectableUserTile extends StatelessWidget {
             ),
       onTap: onTap,
     );
-  }
-
-  String _initials(String displayName, String username) {
-    if (displayName.isNotEmpty) {
-      return displayName
-          .split(RegExp(r'\s+'))
-          .map((p) => p.isNotEmpty ? p[0] : '')
-          .take(2)
-          .join()
-          .toUpperCase();
-    }
-    return username.isNotEmpty ? username[0].toUpperCase() : 'U';
   }
 }

@@ -849,6 +849,8 @@ class _OrganizerSection extends StatelessWidget {
         : '${organizer.firstName} ${organizer.lastName}'.trim().isEmpty
         ? organizer.username
         : '${organizer.firstName} ${organizer.lastName}'.trim();
+    final canOpenProfile =
+        context.read<AppUserCubit>().state is AppUserAuthenticated;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -907,21 +909,31 @@ class _OrganizerSection extends StatelessWidget {
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
-                  children: event.cohosts
-                      .take(5)
-                      .map(
-                        (cohost) => Chip(
-                          avatar: CustomCircleAvatar(
-                            size: CustomCircleAvatarSize.small,
-                            imageUrl: cohost.profilePicUrl,
-                            displayName: cohost.displayName,
-                            userId: cohost.id,
-                          ),
-                          label: Text(cohost.displayName),
-                          visualDensity: VisualDensity.compact,
+                  children: event.cohosts.take(5).map((cohost) {
+                    final cohostUserId = cohost.userId.trim();
+
+                    return InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: canOpenProfile && cohostUserId.isNotEmpty
+                          ? () {
+                              context.push(
+                                '/user-profile',
+                                extra: cohostUserId,
+                              );
+                            }
+                          : null,
+                      child: Chip(
+                        avatar: CustomCircleAvatar(
+                          size: CustomCircleAvatarSize.small,
+                          imageUrl: cohost.profilePicUrl,
+                          displayName: cohost.displayName,
+                          userId: cohostUserId,
                         ),
-                      )
-                      .toList(),
+                        label: Text(cohost.displayName),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    );
+                  }).toList(),
                 ),
               ],
             ],

@@ -119,15 +119,28 @@ class MessageRepositoryImpl implements MessageRepository {
   Future<Either<AppFailure, Conversation>> createGroup({
     required String name,
     required List<String> memberIds,
-    String? groupImageUrl,
+    PlatformFile? groupImageFile,
   }) {
-    return _getResult(
-      () => _messageDataSource.createGroup(
+    return _getResult(() async {
+      String? uploadedImageUrl;
+
+      if (groupImageFile != null) {
+        final urls = await _fileUploadDataSource.uploadFiles(
+          files: [groupImageFile],
+          bucket: 'message',
+          folder: 'groups',
+        );
+        if (urls.isNotEmpty) {
+          uploadedImageUrl = urls.first;
+        }
+      }
+
+      return _messageDataSource.createGroup(
         name: name,
         memberIds: memberIds,
-        groupImageUrl: groupImageUrl,
-      ),
-    );
+        groupImageUrl: uploadedImageUrl,
+      );
+    });
   }
 
   @override
@@ -135,14 +148,28 @@ class MessageRepositoryImpl implements MessageRepository {
     required String groupId,
     String? name,
     String? groupImageUrl,
+    PlatformFile? groupImageFile,
   }) {
-    return _getResult(
-      () => _messageDataSource.updateGroup(
+    return _getResult(() async {
+      var uploadedImageUrl = groupImageUrl;
+
+      if (groupImageFile != null) {
+        final urls = await _fileUploadDataSource.uploadFiles(
+          files: [groupImageFile],
+          bucket: 'message',
+          folder: 'groups/$groupId',
+        );
+        if (urls.isNotEmpty) {
+          uploadedImageUrl = urls.first;
+        }
+      }
+
+      return _messageDataSource.updateGroup(
         groupId: groupId,
         name: name,
-        groupImageUrl: groupImageUrl,
-      ),
-    );
+        groupImageUrl: uploadedImageUrl,
+      );
+    });
   }
 
   @override

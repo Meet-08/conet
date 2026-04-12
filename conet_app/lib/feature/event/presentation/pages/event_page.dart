@@ -240,9 +240,9 @@ class _DiscoverSection extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     OutlinedButton(
-                      onPressed: () {
-                        // TODO: refresh discover feed
-                      },
+                      onPressed: () => context.read<EventBloc>().add(
+                        const EventFetchPublishedEventsEvent(),
+                      ),
                       style: OutlinedButton.styleFrom(
                         shape: const StadiumBorder(),
                         padding: const EdgeInsets.symmetric(

@@ -53,10 +53,12 @@ class MessageGroupCreated extends MessageEvent {
   final String name;
   final List<String> userIds;
   final String? groupImageUrl;
+  final PlatformFile? groupImageFile;
   MessageGroupCreated({
     required this.name,
     required this.userIds,
     this.groupImageUrl,
+    this.groupImageFile,
   });
 }
 
@@ -84,7 +86,13 @@ class MessageGroupUpdated extends MessageEvent {
   final String groupId;
   final String? name;
   final String? groupImageUrl;
-  MessageGroupUpdated({required this.groupId, this.name, this.groupImageUrl});
+  final PlatformFile? groupImageFile;
+  MessageGroupUpdated({
+    required this.groupId,
+    this.name,
+    this.groupImageUrl,
+    this.groupImageFile,
+  });
 }
 
 class MessageGroupDeleted extends MessageEvent {
