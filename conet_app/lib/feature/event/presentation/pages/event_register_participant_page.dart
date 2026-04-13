@@ -17,10 +17,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 class EventRegisterParticipantPage extends StatefulWidget {
   final Event event;
 
-  const EventRegisterParticipantPage({
-    super.key,
-    required this.event,
-  });
+  const EventRegisterParticipantPage({super.key, required this.event});
 
   @override
   State<EventRegisterParticipantPage> createState() =>
@@ -398,7 +395,10 @@ class _EventRegisterParticipantPageState
                             onPressed: _teamSize > _minTeamSize
                                 ? () => setState(() => _teamSize--)
                                 : null,
-                            icon: const FaIcon(FontAwesomeIcons.minus, size: 14),
+                            icon: const FaIcon(
+                              FontAwesomeIcons.minus,
+                              size: 14,
+                            ),
                           ),
                           Expanded(
                             child: Column(

@@ -15,8 +15,8 @@ import {
   listMyOrganizedEventsService,
   listPublishedEventsService,
   publishEventService,
-  registerParticipantForEventService,
   registerEventService,
+  registerParticipantForEventService,
   removeCohostService,
   saveEventService,
 } from "../../../services/eventService.js";

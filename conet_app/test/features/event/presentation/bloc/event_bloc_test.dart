@@ -37,7 +37,7 @@ class MockEventPublishById extends Mock implements EventPublishById {}
 class MockEventRegister extends Mock implements EventRegister {}
 
 class MockEventRegisterParticipant extends Mock
-  implements EventRegisterParticipant {}
+    implements EventRegisterParticipant {}
 
 class MockEventSave extends Mock implements EventSave {}
 

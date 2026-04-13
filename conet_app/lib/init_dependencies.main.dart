@@ -371,7 +371,8 @@ void _initEvent() {
     () => EventRegister(repository: serviceLocator<EventRepository>()),
   );
   serviceLocator.registerFactory(
-    () => EventRegisterParticipant(repository: serviceLocator<EventRepository>()),
+    () =>
+        EventRegisterParticipant(repository: serviceLocator<EventRepository>()),
   );
   serviceLocator.registerFactory(
     () => EventSave(repository: serviceLocator<EventRepository>()),

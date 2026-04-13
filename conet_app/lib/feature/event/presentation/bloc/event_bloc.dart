@@ -57,7 +57,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
        _getMyOrganizedEvents = getMyOrganizedEvents,
        _publishDraftById = publishDraftById,
        _registerEvent = registerEvent,
-      _registerParticipant = registerParticipant,
+       _registerParticipant = registerParticipant,
        _saveEvent = saveEvent,
        _saveDraft = saveDraft,
        _updateEventConversation = updateEventConversation,
