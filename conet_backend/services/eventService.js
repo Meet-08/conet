@@ -1276,18 +1276,8 @@ export const registerEventService = async (eventId, userId, body = {}) => {
       throw error;
     }
 
-    const teamMembers = await prisma.event_team_members.findMany({
-      where: {
-        event_id: eventId,
-        team_id: resolvedTeamId,
-      },
-      select: {
-        user_id: true,
-      },
-    });
-
     participantIdsForConversation = [
-      ...new Set(teamMembers.map((member) => member.user_id)),
+      ...new Set(allTeamMemberIds.filter(Boolean)),
     ];
   }
 
