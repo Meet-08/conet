@@ -39,6 +39,10 @@ class EventCreatePayloadModel extends EventCreatePayload {
   final List<EventFaq> faqs;
 
   @override
+  @JsonKey(name: 'venue')
+  final String? venue;
+
+  @override
   @JsonKey(name: 'registration_deadline')
   final DateTime? registrationDeadline;
 
@@ -53,10 +57,6 @@ class EventCreatePayloadModel extends EventCreatePayload {
   @override
   @JsonKey(name: 'max_team_size')
   final int? maxTeamSize;
-
-  @override
-  @JsonKey(name: 'upi_id')
-  final String? upiId;
 
   @override
   @JsonKey(name: 'custom_fields', defaultValue: [])
@@ -82,11 +82,11 @@ class EventCreatePayloadModel extends EventCreatePayload {
     super.ticketPriceType = 'FREE',
     super.price,
     super.maxParticipant,
+    this.venue,
     this.registrationDeadline,
     this.participationType,
     this.minTeamSize,
     this.maxTeamSize,
-    this.upiId,
     this.customFields = const [],
     super.eligibility,
     this.eventImage,
@@ -101,11 +101,11 @@ class EventCreatePayloadModel extends EventCreatePayload {
          activities: activities,
          prizes: prizes,
          faqs: faqs,
+         venue: venue,
          registrationDeadline: registrationDeadline,
          participationType: participationType,
          minTeamSize: minTeamSize,
          maxTeamSize: maxTeamSize,
-         upiId: upiId,
          customFields: customFields,
          eventImage: eventImage,
        );
@@ -130,13 +130,13 @@ class EventCreatePayloadModel extends EventCreatePayload {
       ticketPriceType: payload.ticketPriceType,
       price: payload.price,
       maxParticipant: payload.maxParticipant,
+      venue: _nullableText(payload.venue),
       registrationDeadline: payload.registrationDeadline,
       participationType: _nullableText(
         payload.participationType,
       )?.toLowerCase(),
       minTeamSize: payload.minTeamSize,
       maxTeamSize: payload.maxTeamSize,
-      upiId: _nullableText(payload.upiId),
       customFields: payload.customFields,
       eligibility: _nullableText(payload.eligibility),
       eventImage: payload.eventImage,

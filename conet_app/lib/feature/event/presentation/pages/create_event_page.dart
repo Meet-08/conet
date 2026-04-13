@@ -329,14 +329,20 @@ class _CreateEventPageState extends State<CreateEventPage> {
                   .toSet()
                   .toList(growable: false) ??
               const <String>[];
+          final imageUrl = (field['image_url'] as String?)?.trim();
+          final imageFile = field['image_file'] as PlatformFile?;
 
           return EventCustomField(
             key: key,
             label: rawLabel,
             helperText: helperText.isEmpty ? null : helperText,
             type: normalizedType,
-            required: field['required'] == true,
-            options: options,
+            required: normalizedType == 'image'
+                ? false
+                : field['required'] == true,
+            options: normalizedType == 'image' ? const <String>[] : options,
+            imageUrl: imageUrl == null || imageUrl.isEmpty ? null : imageUrl,
+            imageFile: normalizedType == 'image' ? imageFile : null,
           );
         })
         .whereType<EventCustomField>()
@@ -350,10 +356,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
     final isOnline = _formData['location_type'] == 'ONLINE';
     final cityOrCampus = (_formData['location'] as String? ?? '').trim();
     final venueName = (_formData['venue_name'] as String? ?? '').trim();
-    final offlineLocation = [
-      if (cityOrCampus.isNotEmpty) cityOrCampus,
-      if (venueName.isNotEmpty) venueName,
-    ].join(', ');
 
     final shouldCreateConversation =
         _formData['create_event_conversation'] as bool? ?? false;
@@ -384,9 +386,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
       startTime: todToDateTime(startTod),
       endTime: todToDateTime(endTod),
       locationType: _formData['location_type'] as String,
-      location: isOnline
-          ? null
-          : (offlineLocation.isEmpty ? null : offlineLocation),
+      location: isOnline ? null : (cityOrCampus.isEmpty ? null : cityOrCampus),
+      venue: isOnline ? null : (venueName.isEmpty ? null : venueName),
       meetingLink:
           isOnline &&
               (_formData['meeting_link'] as String?)?.trim().isNotEmpty == true
@@ -399,7 +400,6 @@ class _CreateEventPageState extends State<CreateEventPage> {
       participationType: participationType,
       minTeamSize: participationType == 'team' ? minTeamSize : null,
       maxTeamSize: participationType == 'team' ? maxTeamSize : null,
-      upiId: null,
       customFields: customFields,
       eligibility: (_formData['eligibility'] as String?)?.trim().isEmpty == true
           ? null

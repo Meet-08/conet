@@ -25,13 +25,13 @@ EventCreatePayloadModel _$EventCreatePayloadModelFromJson(
   ticketPriceType: json['ticket_price_type'] as String? ?? 'FREE',
   price: (json['price'] as num?)?.toDouble(),
   maxParticipant: (json['max_participant'] as num?)?.toInt(),
+  venue: json['venue'] as String?,
   registrationDeadline: json['registration_deadline'] == null
       ? null
       : DateTime.parse(json['registration_deadline'] as String),
   participationType: json['participation_type'] as String?,
   minTeamSize: (json['min_team_size'] as num?)?.toInt(),
   maxTeamSize: (json['max_team_size'] as num?)?.toInt(),
-  upiId: json['upi_id'] as String?,
   customFields: json['custom_fields'] == null
       ? []
       : const EventRequestCustomFieldListConverter().fromJson(
@@ -66,6 +66,7 @@ Map<String, dynamic> _$EventCreatePayloadModelToJson(
   'ticket_price_type': instance.ticketPriceType,
   'price': ?instance.price,
   'max_participant': ?instance.maxParticipant,
+  'venue': ?instance.venue,
   'eligibility': ?instance.eligibility,
   'conversation_id': ?instance.conversationId,
   'start_time': const EventRequestTimeConverter().toJson(instance.startTime),
@@ -79,7 +80,6 @@ Map<String, dynamic> _$EventCreatePayloadModelToJson(
   'participation_type': ?instance.participationType,
   'min_team_size': ?instance.minTeamSize,
   'max_team_size': ?instance.maxTeamSize,
-  'upi_id': ?instance.upiId,
   'custom_fields': const EventRequestCustomFieldListConverter().toJson(
     instance.customFields,
   ),

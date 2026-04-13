@@ -11,6 +11,7 @@ import 'package:conet_app/feature/event/data/models/event_page_model.dart';
 import 'package:conet_app/feature/event/data/models/event_registration_ticket_model.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
+import 'package:conet_app/feature/event/domain/entities/event_custom_field.dart';
 import 'package:conet_app/feature/event/domain/entities/event_register_response.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/main.dart';
@@ -350,8 +351,16 @@ class EventDataSourceImpl implements EventDataSource {
     );
     imageUrl = urls.isNotEmpty ? urls.first : null;
 
+    final resolvedCustomFields = await _uploadCustomFieldImages(
+      eventId: eventId,
+      customFields: payload.customFields,
+    );
+    final payloadWithUploadedFieldImages = payload.copyWith(
+      customFields: resolvedCustomFields,
+    );
+
     final requestBody = EventCreatePayloadModel.fromEntity(
-      payload,
+      payloadWithUploadedFieldImages,
       publish: false,
     ).toJson();
 
@@ -374,6 +383,70 @@ class EventDataSourceImpl implements EventDataSource {
     );
 
     return createdEvent;
+  }
+
+  Future<List<EventCustomField>> _uploadCustomFieldImages({
+    required String eventId,
+    required List<EventCustomField> customFields,
+  }) async {
+    if (customFields.isEmpty) {
+      return customFields;
+    }
+
+    final resolved = <EventCustomField>[];
+
+    for (final field in customFields) {
+      if (field.normalizedType != 'image') {
+        resolved.add(field.copyWith(imageFile: null));
+        continue;
+      }
+
+      final folderSegment = _sanitizeStorageSegment(
+        field.key.isNotEmpty ? field.key : field.label,
+      );
+
+      String? uploadedImageUrl = field.imageUrl?.trim();
+      if (field.imageFile != null) {
+        final urls = await _fileUploadDataSource.uploadFiles(
+          files: [field.imageFile!],
+          bucket: 'event',
+          folder: '$eventId/custom_fields/$folderSegment',
+        );
+
+        uploadedImageUrl = urls.isNotEmpty ? urls.first : null;
+      }
+
+      if (uploadedImageUrl == null || uploadedImageUrl.isEmpty) {
+        throw ServerException(
+          'Image is required for custom field: ${field.label}',
+        );
+      }
+
+      resolved.add(
+        field.copyWith(
+          required: false,
+          options: const <String>[],
+          imageUrl: uploadedImageUrl,
+          imageFile: null,
+        ),
+      );
+    }
+
+    return resolved;
+  }
+
+  String _sanitizeStorageSegment(String raw) {
+    final normalized = raw
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+
+    if (normalized.isNotEmpty) {
+      return normalized;
+    }
+
+    return const Uuid().v4();
   }
 
   Future<void> _syncCohostsForEvent({

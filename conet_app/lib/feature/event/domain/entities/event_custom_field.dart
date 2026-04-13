@@ -1,4 +1,7 @@
 import 'package:equatable/equatable.dart';
+import 'package:file_picker/file_picker.dart';
+
+const Object _eventCustomFieldUnset = Object();
 
 class EventCustomField extends Equatable {
   final String key;
@@ -7,6 +10,8 @@ class EventCustomField extends Equatable {
   final String type;
   final bool required;
   final List<String> options;
+  final String? imageUrl;
+  final PlatformFile? imageFile;
 
   const EventCustomField({
     required this.key,
@@ -15,6 +20,8 @@ class EventCustomField extends Equatable {
     this.type = 'text',
     this.required = false,
     this.options = const [],
+    this.imageUrl,
+    this.imageFile,
   });
 
   String get normalizedType {
@@ -33,6 +40,9 @@ class EventCustomField extends Equatable {
         value == 'multiple') {
       return 'multi_select';
     }
+    if (value == 'image_url' || value == 'image-url') {
+      return 'image';
+    }
     return value;
   }
 
@@ -44,7 +54,13 @@ class EventCustomField extends Equatable {
             ?.toString()
             .trim();
     final type = (json['type'] ?? 'text').toString().trim().toLowerCase();
+    final normalizedType = EventCustomField(
+      key: key,
+      label: label,
+      type: type,
+    ).normalizedType;
     final optionsRaw = json['options'];
+    final imageUrl = (json['image_url'] ?? json['imageUrl'])?.toString().trim();
 
     final options = optionsRaw is List
         ? optionsRaw
@@ -60,8 +76,9 @@ class EventCustomField extends Equatable {
           ? null
           : helperText,
       type: type.isEmpty ? 'text' : type,
-      required: json['required'] == true,
+      required: normalizedType == 'image' ? false : json['required'] == true,
       options: options,
+      imageUrl: (imageUrl == null || imageUrl.isEmpty) ? null : imageUrl,
     );
   }
 
@@ -72,9 +89,39 @@ class EventCustomField extends Equatable {
       if (helperText != null && helperText!.trim().isNotEmpty)
         'helper_text': helperText!.trim(),
       'type': normalizedType,
-      'required': required,
-      if (options.isNotEmpty) 'options': options,
+      'required': normalizedType == 'image' ? false : required,
+      if (normalizedType == 'image' &&
+          imageUrl != null &&
+          imageUrl!.trim().isNotEmpty)
+        'image_url': imageUrl!.trim(),
+      if (normalizedType != 'image' && options.isNotEmpty) 'options': options,
     };
+  }
+
+  EventCustomField copyWith({
+    String? key,
+    String? label,
+    String? helperText,
+    String? type,
+    bool? required,
+    List<String>? options,
+    Object? imageUrl = _eventCustomFieldUnset,
+    Object? imageFile = _eventCustomFieldUnset,
+  }) {
+    return EventCustomField(
+      key: key ?? this.key,
+      label: label ?? this.label,
+      helperText: helperText ?? this.helperText,
+      type: type ?? this.type,
+      required: required ?? this.required,
+      options: options ?? this.options,
+      imageUrl: identical(imageUrl, _eventCustomFieldUnset)
+          ? this.imageUrl
+          : imageUrl as String?,
+      imageFile: identical(imageFile, _eventCustomFieldUnset)
+          ? this.imageFile
+          : imageFile as PlatformFile?,
+    );
   }
 
   @override
@@ -85,5 +132,7 @@ class EventCustomField extends Equatable {
     normalizedType,
     required,
     options,
+    imageUrl,
+    imageFile,
   ];
 }

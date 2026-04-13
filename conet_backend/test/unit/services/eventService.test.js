@@ -250,6 +250,64 @@ describe("createEventService", () => {
         "activity[0].activity_time must be a valid ISO date-time or HH:MM(:SS)",
     });
   });
+
+  it("normalizes image custom fields and stores image_url", async () => {
+    await createEventService(ORGANIZER_ID, {
+      title: "Image Field Event",
+      category: "Technology",
+      event_date: "2026-06-01",
+      start_time: "09:30",
+      end_time: "11:30",
+      location_type: "ONLINE",
+      meeting_link: "https://meet.example/image-field",
+      event_image_url: "https://cdn.example.com/events/banner.jpg",
+      custom_fields: [
+        {
+          key: "rules_banner",
+          label: "Rules Banner",
+          type: "image",
+          required: true,
+          image_url: "https://cdn.example.com/events/rules.jpg",
+        },
+      ],
+    });
+
+    const createArg = prismaMock.events.create.mock.calls[0][0];
+    expect(createArg.data.custom_fields).toEqual([
+      {
+        key: "rules_banner",
+        label: "Rules Banner",
+        type: "image",
+        required: false,
+        image_url: "https://cdn.example.com/events/rules.jpg",
+      },
+    ]);
+  });
+
+  it("throws 400 when image custom field omits image_url", async () => {
+    await expect(
+      createEventService(ORGANIZER_ID, {
+        title: "Broken Image Field Event",
+        category: "Technology",
+        event_date: "2026-06-01",
+        start_time: "09:30",
+        end_time: "11:30",
+        location_type: "ONLINE",
+        meeting_link: "https://meet.example/image-field",
+        event_image_url: "https://cdn.example.com/events/banner.jpg",
+        custom_fields: [
+          {
+            key: "rules_banner",
+            label: "Rules Banner",
+            type: "image",
+          },
+        ],
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: "custom_fields[0].image_url is required for image fields",
+    });
+  });
 });
 
 describe("publishEventService", () => {
@@ -573,6 +631,51 @@ describe("registerEventService", () => {
       statusCode: 400,
       message: "Unknown custom form fields in response: random_key",
     });
+  });
+
+  it("does not require responses for image custom fields", async () => {
+    prismaMock.events.findUnique
+      .mockResolvedValueOnce(
+        makeEventRow({
+          event_status: "published",
+          custom_fields: [
+            {
+              key: "rules_banner",
+              label: "Rules Banner",
+              type: "image",
+              required: true,
+              image_url: "https://cdn.example.com/events/rules.jpg",
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        makeEventRow({
+          event_status: "published",
+          custom_fields: [
+            {
+              key: "rules_banner",
+              label: "Rules Banner",
+              type: "image",
+              required: false,
+              image_url: "https://cdn.example.com/events/rules.jpg",
+            },
+          ],
+        }),
+      );
+
+    const result = await registerEventService(EVENT_ID, ATTENDEE_ID, {
+      custom_field_responses: {},
+    });
+
+    expect(result.registration.id).toBe(REGISTRATION_ID);
+    expect(prismaMock.event_registrations.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        create: expect.objectContaining({
+          custom_field_responses: {},
+        }),
+      }),
+    );
   });
 
   it("returns per-member payment summary for paid team events", async () => {

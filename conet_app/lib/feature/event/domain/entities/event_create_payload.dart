@@ -19,11 +19,11 @@ class EventCreatePayload extends Equatable {
   final String ticketPriceType;
   final double? price;
   final int? maxParticipant;
+  final String? venue;
   final DateTime? registrationDeadline;
   final String? participationType;
   final int? minTeamSize;
   final int? maxTeamSize;
-  final String? upiId;
   final List<EventCustomField> customFields;
   final String? eligibility;
   final PlatformFile? eventImage;
@@ -48,11 +48,11 @@ class EventCreatePayload extends Equatable {
     this.ticketPriceType = 'FREE',
     this.price,
     this.maxParticipant,
+    this.venue,
     this.registrationDeadline,
     this.participationType,
     this.minTeamSize,
     this.maxTeamSize,
-    this.upiId,
     this.customFields = const [],
     this.eligibility,
     this.eventImage,
@@ -76,11 +76,11 @@ class EventCreatePayload extends Equatable {
     String? ticketPriceType,
     double? price,
     int? maxParticipant,
+    String? venue,
     DateTime? registrationDeadline,
     String? participationType,
     int? minTeamSize,
     int? maxTeamSize,
-    String? upiId,
     List<EventCustomField>? customFields,
     String? eligibility,
     PlatformFile? eventImage,
@@ -103,11 +103,11 @@ class EventCreatePayload extends Equatable {
       ticketPriceType: ticketPriceType ?? this.ticketPriceType,
       price: price ?? this.price,
       maxParticipant: maxParticipant ?? this.maxParticipant,
+      venue: venue ?? this.venue,
       registrationDeadline: registrationDeadline ?? this.registrationDeadline,
       participationType: participationType ?? this.participationType,
       minTeamSize: minTeamSize ?? this.minTeamSize,
       maxTeamSize: maxTeamSize ?? this.maxTeamSize,
-      upiId: upiId ?? this.upiId,
       customFields: customFields ?? this.customFields,
       eligibility: eligibility ?? this.eligibility,
       eventImage: eventImage ?? this.eventImage,
@@ -133,11 +133,11 @@ class EventCreatePayload extends Equatable {
     ticketPriceType,
     price,
     maxParticipant,
+    venue,
     registrationDeadline,
     participationType,
     minTeamSize,
     maxTeamSize,
-    upiId,
     customFields,
     eligibility,
     eventImage,

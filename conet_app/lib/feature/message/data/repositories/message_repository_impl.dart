@@ -128,7 +128,7 @@ class MessageRepositoryImpl implements MessageRepository {
         final urls = await _fileUploadDataSource.uploadFiles(
           files: [groupImageFile],
           bucket: 'message',
-          folder: 'groups',
+          folder: 'groups/$name',
         );
         if (urls.isNotEmpty) {
           uploadedImageUrl = urls.first;

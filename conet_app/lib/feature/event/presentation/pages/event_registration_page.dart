@@ -1,11 +1,15 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/utils/media_cache_manager.dart';
 import 'package:conet_app/core/widgets/user_selector_bottom_sheet.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
+import 'package:conet_app/feature/event/domain/entities/event_custom_field.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
+import 'package:conet_app/feature/message/presentation/pages/image_viewer_page.dart';
 import 'package:conet_app/feature/payment/domain/entities/payment_initiate_response.dart';
 import 'package:conet_app/feature/payment/presentation/bloc/payment_bloc.dart';
 import 'package:conet_app/init_dependencies.dart';
@@ -54,6 +58,13 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
 
   double get _totalAmount => _perMemberAmount * _paymentMemberCount;
 
+  String _normalizedImageUrl(String rawUrl) {
+    final trimmed = rawUrl.trim();
+    final uri = Uri.tryParse(trimmed);
+    if (uri != null) return uri.toString();
+    return Uri.encodeFull(trimmed);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -65,6 +76,10 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
     _teamSize = _isTeamEvent ? _minTeamSize : 1;
 
     for (final field in widget.event.customFields) {
+      if (field.normalizedType == 'image') {
+        continue;
+      }
+
       if (field.normalizedType == 'select' && field.options.isNotEmpty) {
         _customSelectValues[field.key] = null;
       } else if (field.normalizedType == 'multi_select' &&
@@ -273,6 +288,10 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
     }
 
     for (final field in widget.event.customFields) {
+      if (field.normalizedType == 'image') {
+        continue;
+      }
+
       if (!field.required) continue;
 
       final type = field.normalizedType;
@@ -307,6 +326,10 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
 
     for (final field in widget.event.customFields) {
       final type = field.normalizedType;
+      if (type == 'image') {
+        continue;
+      }
+
       if (type == 'select') {
         final selected = (_customSelectValues[field.key] ?? '').trim();
         if (selected.isNotEmpty) {
@@ -358,6 +381,186 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
       _submitting = true;
     });
     context.read<EventBloc>().add(EventRegisterEvent(widget.event.id, payload));
+  }
+
+  Widget _buildReadOnlyImageField(EventCustomField field) {
+    final imageUrl = field.imageUrl?.trim();
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    void openViewer() {
+      if (imageUrl == null || imageUrl.isEmpty) return;
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ImageViewerPage(
+            imageUrls: [_normalizedImageUrl(imageUrl)],
+            initialIndex: 0,
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: InkWell(
+        onTap: imageUrl == null || imageUrl.isEmpty ? null : openViewer,
+        borderRadius: BorderRadius.circular(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                FaIcon(
+                  FontAwesomeIcons.image,
+                  size: 15,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    field.label,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if ((field.helperText ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                field.helperText!.trim(),
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+            const SizedBox(height: 10),
+            Container(
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.65),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: AspectRatio(
+                aspectRatio: 1,
+                child: imageUrl != null && imageUrl.isNotEmpty
+                    ? Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          CachedNetworkImage(
+                            imageUrl: _normalizedImageUrl(imageUrl),
+                            cacheManager: MediaCacheManager.instance,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) =>
+                                _buildImageLoadingPlaceholder(),
+                            errorWidget: (context, url, error) =>
+                                _buildImageUnavailablePlaceholder(),
+                          ),
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.42),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            left: 14,
+                            right: 14,
+                            bottom: 12,
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.45),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    'Organizer image',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      )
+                    : _buildImageUnavailablePlaceholder(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageLoadingPlaceholder() {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      color: colorScheme.surfaceContainerHighest,
+      alignment: Alignment.center,
+      child: const SizedBox(
+        width: 22,
+        height: 22,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    );
+  }
+
+  Widget _buildImageUnavailablePlaceholder() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          FaIcon(
+            FontAwesomeIcons.image,
+            size: 24,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Image unavailable',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -630,6 +833,10 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
                     const SizedBox(height: 8),
                     ...widget.event.customFields.map((field) {
                       final normalizedType = field.normalizedType;
+                      if (normalizedType == 'image') {
+                        return _buildReadOnlyImageField(field);
+                      }
+
                       final requiredMark = field.required ? ' *' : '';
 
                       if (normalizedType == 'select' &&

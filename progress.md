@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-04-12
+> Last updated: 2026-04-13
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -155,8 +155,9 @@
 
 - **Create Event Wizard** — Organizer creates draft/published events with timeline, prizes, FAQs, co-hosts, and validation
 - **Registration Configuration Builder** — Organizer configures registration deadline, team participation constraints, paid/free mode, UPI ID, and dynamic custom registration fields
+- **Custom Field Reference Images** — Organizer can add image-type custom fields; images upload to Supabase under `event/custom_field/{field_name}` and are stored as URLs in event custom_fields
 - **Organizer Conversation Linking** — Organizer can auto-create and attach a new organizer/co-host group conversation during event submission
-- **Registration Form Page** — Event detail registration opens a dedicated dynamic page with required custom field validation and payload mapping
+- **Registration Form Page** — Event detail registration opens a dedicated dynamic page with required custom field validation and payload mapping, while image-type fields are read-only organizer content
 - **Team Registration UI** — Team events collect captain enrollment/semester/branch, enforce team-size limits, and allow searchable optional team member selection
 - **Paid Registration QR Flow** — Paid events generate UPI QR with per-member amount and team-size-based total, plus transaction ID and payment proof upload support
 

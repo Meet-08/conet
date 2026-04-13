@@ -312,19 +312,32 @@ const normalizeCustomFieldDefinitions = (customFields) => {
         rawType === "multiselect"
       ) ?
         "multi_select"
+      : rawType === "image_url" || rawType === "image-url" ? "image"
       : rawType;
     const options =
       Array.isArray(field.options) ?
         field.options.map((option) => String(option).trim()).filter(Boolean)
       : undefined;
+    const imageUrl = String(
+      field.image_url ?? field.imageUrl ?? field.url ?? "",
+    ).trim();
+
+    if (type === "image" && !imageUrl) {
+      const err = new Error(
+        `custom_fields[${index}].image_url is required for image fields`,
+      );
+      err.statusCode = 400;
+      throw err;
+    }
 
     return {
       ...field,
       key,
       label: label || key,
       type: type || "text",
-      required: Boolean(field.required),
-      ...(options ? { options } : {}),
+      required: type === "image" ? false : Boolean(field.required),
+      ...(type === "image" ? { image_url: imageUrl } : {}),
+      ...(type !== "image" && options ? { options } : {}),
     };
   });
 };
@@ -355,7 +368,14 @@ const getRequiredCustomFields = (customFields) => {
   const definitions = parseEventCustomFields(customFields);
 
   return definitions
-    .filter((field) => isPlainObject(field) && Boolean(field.required))
+    .filter(
+      (field) =>
+        isPlainObject(field) &&
+        String(field.type ?? "")
+          .trim()
+          .toLowerCase() !== "image" &&
+        Boolean(field.required),
+    )
     .map((field) => {
       const key = String(
         field.key ?? field.field_key ?? field.id ?? field.name ?? field.label,
@@ -409,7 +429,13 @@ const getEventCustomFieldDescriptors = (customFields) => {
   const definitions = parseEventCustomFields(customFields);
 
   return definitions
-    .filter((field) => isPlainObject(field))
+    .filter(
+      (field) =>
+        isPlainObject(field) &&
+        String(field.type ?? "")
+          .trim()
+          .toLowerCase() !== "image",
+    )
     .map((field) => {
       const key = String(
         field.key ?? field.field_key ?? field.id ?? field.name ?? field.label,
@@ -563,7 +589,6 @@ export const createEventService = async (organizerId, body) => {
     participation_type,
     min_team_size,
     max_team_size,
-    upi_id,
     custom_fields,
     publish = false,
     activity = [],
@@ -635,7 +660,7 @@ export const createEventService = async (organizerId, body) => {
   });
 
   const normalizedCustomFields = normalizeCustomFieldDefinitions(custom_fields);
-  const normalizedUpiId = normalizeOptionalString(upi_id, "upi_id");
+  const normalizedVenue = normalizeOptionalString(venue, "venue");
   const normalizedConversationId =
     hasConversationIdField ?
       normalizeOptionalString(rawConversationId, "conversation_id")
@@ -667,13 +692,13 @@ export const createEventService = async (organizerId, body) => {
       event_status: publish ? "published" : "draft",
       eligibility,
       event_image_url: normalizedEventImageUrl,
-      venue,
+      venue: normalizedVenue,
       registration_deadline:
         registration_deadline ? new Date(registration_deadline) : null,
       participation_type: normalizedParticipationType,
       min_team_size: resolvedMinTeamSize,
       max_team_size: resolvedMaxTeamSize,
-      upi_id: normalizedUpiId ?? null,
+      upi_id: null,
       custom_fields: normalizedCustomFields ?? [],
       ...(normalizedConversationId !== undefined && {
         conversation_id: normalizedConversationId,
@@ -736,7 +761,6 @@ export const updateEventService = async (eventId, organizerId, body) => {
     participation_type,
     min_team_size,
     max_team_size,
-    upi_id,
     custom_fields,
     activity,
     prizes,
@@ -817,10 +841,8 @@ export const updateEventService = async (eventId, organizerId, body) => {
     custom_fields !== undefined ?
       normalizeCustomFieldDefinitions(custom_fields)
     : undefined;
-  const normalizedUpiId =
-    upi_id !== undefined ?
-      normalizeOptionalString(upi_id, "upi_id")
-    : undefined;
+  const normalizedVenue =
+    venue !== undefined ? normalizeOptionalString(venue, "venue") : undefined;
   const normalizedConversationId =
     hasConversationIdField ?
       normalizeOptionalString(rawConversationId, "conversation_id")
@@ -850,7 +872,7 @@ export const updateEventService = async (eventId, organizerId, body) => {
     ...(max_participant !== undefined && { max_participant }),
     ...(eligibility !== undefined && { eligibility }),
     ...(event_image_url !== undefined && { event_image_url }),
-    ...(venue !== undefined && { venue }),
+    ...(normalizedVenue !== undefined && { venue: normalizedVenue }),
     ...(registration_deadline !== undefined && {
       registration_deadline:
         registration_deadline ? new Date(registration_deadline) : null,
@@ -868,7 +890,6 @@ export const updateEventService = async (eventId, organizerId, body) => {
       min_team_size: 1,
       max_team_size: 1,
     }),
-    ...(normalizedUpiId !== undefined && { upi_id: normalizedUpiId }),
     ...(normalizedCustomFields !== undefined && {
       custom_fields: normalizedCustomFields,
     }),

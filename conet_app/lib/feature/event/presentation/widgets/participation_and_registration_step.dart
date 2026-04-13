@@ -1,6 +1,7 @@
 import 'package:conet_app/core/theme/app_tokens.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/payment/presentation/pages/setup_organizer_account_page.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -124,6 +125,8 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
         'type': 'text',
         'required': false,
         'options': <String>[],
+        'image_url': null,
+        'image_file': null,
       });
     _update({'custom_fields': list});
   }
@@ -137,6 +140,54 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
     final list = _customFields;
     list[index] = {...list[index], ...patch};
     _update({'custom_fields': list});
+  }
+
+  Future<void> _pickCustomFieldImage(int index) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+
+    if (result == null || result.files.isEmpty) {
+      return;
+    }
+
+    final selected = result.files.first;
+    if ((selected.name).trim().isEmpty) {
+      AppToast.showWarning(context, 'Invalid image selection');
+      return;
+    }
+
+    _updateCustomField(index, {'image_file': selected, 'image_url': null});
+  }
+
+  Widget _buildCustomFieldImagePreview(
+    BuildContext context,
+    PlatformFile file,
+    ColorScheme colorScheme,
+  ) {
+    if (file.bytes != null) {
+      return ClipRRect(
+        borderRadius: AppRadius.mdAll,
+        child: Image.memory(
+          file.bytes!,
+          width: double.infinity,
+          height: 140,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      height: 80,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: AppRadius.mdAll,
+      ),
+      alignment: Alignment.center,
+      child: Text(file.name, textAlign: TextAlign.center),
+    );
   }
 
   @override
@@ -415,6 +466,8 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                       .where((value) => value.isNotEmpty)
                       .toList(growable: false) ??
                   const <String>[];
+              final imageFile = field['image_file'] as PlatformFile?;
+              final isImageField = fieldType == 'image';
 
               return Container(
                 margin: const EdgeInsets.only(top: 10),
@@ -500,6 +553,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                           value: 'multi_select',
                           child: Text('Multi Select'),
                         ),
+                        DropdownMenuItem(value: 'image', child: Text('Image')),
                       ],
                       onChanged: (value) {
                         final nextType = value ?? 'text';
@@ -508,6 +562,11 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                           if (nextType != 'select' &&
                               nextType != 'multi_select')
                             'options': <String>[],
+                          if (nextType != 'image') ...{
+                            'image_file': null,
+                            'image_url': null,
+                          },
+                          if (nextType == 'image') ...{'required': false},
                         });
                       },
                     ),
@@ -535,13 +594,41 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                         },
                       ),
                     ],
+                    if (isImageField) ...[
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => _pickCustomFieldImage(index),
+                          icon: const FaIcon(FontAwesomeIcons.image, size: 14),
+                          label: Text(
+                            imageFile == null ? 'Select image' : 'Change image',
+                          ),
+                        ),
+                      ),
+                      if (imageFile != null) ...[
+                        const SizedBox(height: 8),
+                        _buildCustomFieldImagePreview(
+                          context,
+                          imageFile,
+                          colorScheme,
+                        ),
+                      ],
+                    ],
                     const SizedBox(height: 8),
                     SwitchListTile.adaptive(
                       contentPadding: EdgeInsets.zero,
                       title: const Text('Required field'),
-                      value: field['required'] == true,
-                      onChanged: (value) =>
-                          _updateCustomField(index, {'required': value}),
+                      subtitle: isImageField
+                          ? const Text(
+                              'Image fields are organizer-only and never required for registrants.',
+                            )
+                          : null,
+                      value: isImageField ? false : field['required'] == true,
+                      onChanged: isImageField
+                          ? null
+                          : (value) =>
+                                _updateCustomField(index, {'required': value}),
                     ),
                   ],
                 ),
