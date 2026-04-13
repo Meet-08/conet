@@ -15,6 +15,12 @@ abstract class EventDataSource {
     EventRegistrationPayload payload,
   );
 
+  Future<EventRegisterResponse> registerParticipantForEvent(
+    String eventId,
+    String participantUserId,
+    EventRegistrationPayload payload,
+  );
+
   Future<EventAttendanceResultModel> saveEvent(String eventId);
 
   Future<Event> publishEvent(EventCreatePayload payload);

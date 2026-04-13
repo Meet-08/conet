@@ -1420,6 +1420,45 @@ export const registerEventService = async (eventId, userId, body = {}) => {
   };
 };
 
+export const registerParticipantForEventService = async (
+  eventId,
+  requesterUserId,
+  body = {},
+) => {
+  if (body != null && !isPlainObject(body)) {
+    const err = new Error("Registration payload must be an object");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const payload = body ?? {};
+  const participantUserId = normalizeOptionalString(
+    payload.participant_user_id,
+    "participant_user_id",
+  );
+
+  if (!hasValue(participantUserId)) {
+    const err = new Error("participant_user_id is required");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (participantUserId === requesterUserId) {
+    const err = new Error(
+      "participant_user_id must be different from requesting user",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  await assertAttendanceScanner(eventId, requesterUserId);
+
+  const registrationPayload = { ...payload };
+  delete registrationPayload.participant_user_id;
+
+  return registerEventService(eventId, participantUserId, registrationPayload);
+};
+
 export const getRegistrationInfoService = async (eventId, userId) => {
   const event = await prisma.events.findUnique({
     where: { id: eventId },

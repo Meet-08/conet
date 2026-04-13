@@ -13,6 +13,7 @@ import {
   listMyOrganizedEvents,
   listPublishedEvents,
   publishEvent,
+  registerParticipant,
   registerEvent,
   removeCohost,
   saveEvent,
@@ -30,6 +31,7 @@ router.get("/organized", listMyOrganizedEvents);
 router.get("/my", listMyEvents);
 router.get("/:id", getEvent);
 router.post("/:id/register", registerEvent);
+router.post("/:id/register-participant", registerParticipant);
 router.get("/:id/registration-info", getRegistrationInfo);
 router.get("/:id/attendees", getEventAttendees);
 router.get("/:id/participants/export", exportEventParticipationXlsx);

@@ -9,6 +9,7 @@ import 'package:conet_app/feature/event/domain/usecases/event_get_my_organized_e
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_register_participant.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_update_conversation.dart';
@@ -26,6 +27,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   final EventGetMyOrganizedEvents _getMyOrganizedEvents;
   final EventPublishById _publishDraftById;
   final EventRegister _registerEvent;
+  final EventRegisterParticipant _registerParticipant;
   final EventSave _saveEvent;
   final EventSaveDraft _saveDraft;
   final EventUpdateConversation _updateEventConversation;
@@ -44,6 +46,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     required EventGetMyOrganizedEvents getMyOrganizedEvents,
     required EventPublishById publishDraftById,
     required EventRegister registerEvent,
+    required EventRegisterParticipant registerParticipant,
     required EventSave saveEvent,
     required EventSaveDraft saveDraft,
     required EventUpdateConversation updateEventConversation,
@@ -54,6 +57,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
        _getMyOrganizedEvents = getMyOrganizedEvents,
        _publishDraftById = publishDraftById,
        _registerEvent = registerEvent,
+      _registerParticipant = registerParticipant,
        _saveEvent = saveEvent,
        _saveDraft = saveDraft,
        _updateEventConversation = updateEventConversation,
@@ -68,6 +72,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     on<EventFetchMoreMyOrganizedEventsEvent>(_onFetchMoreMyOrganizedEvents);
     on<EventPublishEvent>(_onPublish);
     on<EventRegisterEvent>(_onRegister);
+    on<EventRegisterParticipantEvent>(_onRegisterParticipant);
     on<EventSaveEvent>(_onSaveEvent);
     on<EventSaveDraftEvent>(_onSaveDraft);
   }
@@ -372,6 +377,24 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     emit(EventRegistrationLoading());
 
     final result = await _registerEvent(event.eventId, event.payload);
+    result.fold(
+      (failure) => emit(EventRegistrationFailure(failure.message)),
+      (response) => emit(EventRegistrationSuccess(response)),
+    );
+  }
+
+  Future<void> _onRegisterParticipant(
+    EventRegisterParticipantEvent event,
+    Emitter<EventState> emit,
+  ) async {
+    emit(EventRegistrationLoading());
+
+    final result = await _registerParticipant(
+      eventId: event.eventId,
+      participantUserId: event.participantUserId,
+      payload: event.payload,
+    );
+
     result.fold(
       (failure) => emit(EventRegistrationFailure(failure.message)),
       (response) => emit(EventRegistrationSuccess(response)),

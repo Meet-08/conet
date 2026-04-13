@@ -316,6 +316,46 @@ describe("Registration and attendance routes", () => {
     expect(res.body.registration.registration_id).toBe(REGISTRATION_ID);
   });
 
+  it("200 - organizer registers participant", async () => {
+    prismaMock.events.findUnique
+      .mockResolvedValueOnce(makeEventRow({ event_status: "published" }))
+      .mockResolvedValueOnce(makeEventRow({ event_status: "published" }))
+      .mockResolvedValueOnce(makeEventRow({ event_status: "published" }));
+
+    const res = await request(app)
+      .post(`/api/events/${EVENT_ID}/register-participant`)
+      .set("Authorization", makeAuthHeader(TEST_USER))
+      .send({ participant_user_id: TEST_USER_B.id });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toBe("Participant registered successfully");
+    expect(prismaMock.event_registrations.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          event_id_user_id: {
+            event_id: EVENT_ID,
+            user_id: TEST_USER_B.id,
+          },
+        },
+      }),
+    );
+  });
+
+  it("403 - non organizer/co-host cannot register participant", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({ event_status: "published" }),
+    );
+
+    const res = await request(app)
+      .post(`/api/events/${EVENT_ID}/register-participant`)
+      .set("Authorization", makeAuthHeader(TEST_USER_B))
+      .send({ participant_user_id: "member-1" });
+
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe("Only organizer or co-host can scan tickets");
+  });
+
   it("200 - generates team_id for team registrations", async () => {
     prismaMock.events.findUnique
       .mockResolvedValueOnce(

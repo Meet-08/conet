@@ -12,6 +12,7 @@ import 'package:conet_app/feature/event/domain/usecases/event_get_my_organized_e
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_register_participant.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_update_conversation.dart';
@@ -35,6 +36,9 @@ class MockEventPublishById extends Mock implements EventPublishById {}
 
 class MockEventRegister extends Mock implements EventRegister {}
 
+class MockEventRegisterParticipant extends Mock
+  implements EventRegisterParticipant {}
+
 class MockEventSave extends Mock implements EventSave {}
 
 class MockEventSaveDraft extends Mock implements EventSaveDraft {}
@@ -52,6 +56,7 @@ void main() {
   late MockEventGetMyOrganizedEvents mockGetMyOrganizedEvents;
   late MockEventPublishById mockPublishById;
   late MockEventRegister mockRegister;
+  late MockEventRegisterParticipant mockRegisterParticipant;
   late MockEventSave mockSave;
   late MockEventSaveDraft mockSaveDraft;
   late MockEventUpdateConversation mockUpdateConversation;
@@ -126,6 +131,7 @@ void main() {
     mockGetMyOrganizedEvents = MockEventGetMyOrganizedEvents();
     mockPublishById = MockEventPublishById();
     mockRegister = MockEventRegister();
+    mockRegisterParticipant = MockEventRegisterParticipant();
     mockSave = MockEventSave();
     mockSaveDraft = MockEventSaveDraft();
     mockUpdateConversation = MockEventUpdateConversation();
@@ -138,6 +144,7 @@ void main() {
       getMyOrganizedEvents: mockGetMyOrganizedEvents,
       publishDraftById: mockPublishById,
       registerEvent: mockRegister,
+      registerParticipant: mockRegisterParticipant,
       saveEvent: mockSave,
       saveDraft: mockSaveDraft,
       updateEventConversation: mockUpdateConversation,
@@ -476,6 +483,70 @@ void main() {
       },
       act: (bloc) =>
           bloc.add(const EventRegisterEvent('event-1', tRegistrationPayload)),
+      expect: () => [
+        isA<EventRegistrationLoading>(),
+        isA<EventRegistrationFailure>().having(
+          (s) => s.message,
+          'message',
+          'Registration failed',
+        ),
+      ],
+    );
+  });
+
+  group('EventRegisterParticipantEvent', () {
+    blocTest<EventBloc, EventState>(
+      'emits [EventRegistrationLoading, EventRegistrationSuccess] on success',
+      build: () {
+        when(
+          () => mockRegisterParticipant(
+            eventId: 'event-1',
+            participantUserId: 'user-2',
+            payload: tRegistrationPayload,
+          ),
+        ).thenAnswer(
+          (_) async => Right(
+            EventRegisterResponse(event: tEvent, registrationId: 'reg-2'),
+          ),
+        );
+        return bloc;
+      },
+      act: (bloc) => bloc.add(
+        const EventRegisterParticipantEvent(
+          eventId: 'event-1',
+          participantUserId: 'user-2',
+          payload: tRegistrationPayload,
+        ),
+      ),
+      expect: () => [
+        isA<EventRegistrationLoading>(),
+        isA<EventRegistrationSuccess>().having(
+          (s) => s.response.registrationId,
+          'registrationId',
+          'reg-2',
+        ),
+      ],
+    );
+
+    blocTest<EventBloc, EventState>(
+      'emits [EventRegistrationLoading, EventRegistrationFailure] on failure',
+      build: () {
+        when(
+          () => mockRegisterParticipant(
+            eventId: 'event-1',
+            participantUserId: 'user-2',
+            payload: tRegistrationPayload,
+          ),
+        ).thenAnswer((_) async => Left(AppFailure('Registration failed')));
+        return bloc;
+      },
+      act: (bloc) => bloc.add(
+        const EventRegisterParticipantEvent(
+          eventId: 'event-1',
+          participantUserId: 'user-2',
+          payload: tRegistrationPayload,
+        ),
+      ),
       expect: () => [
         isA<EventRegistrationLoading>(),
         isA<EventRegistrationFailure>().having(

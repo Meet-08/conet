@@ -72,6 +72,18 @@ final class EventRegisterEvent extends EventEvent {
   const EventRegisterEvent(this.eventId, this.payload);
 }
 
+final class EventRegisterParticipantEvent extends EventEvent {
+  final String eventId;
+  final String participantUserId;
+  final EventRegistrationPayload payload;
+
+  const EventRegisterParticipantEvent({
+    required this.eventId,
+    required this.participantUserId,
+    required this.payload,
+  });
+}
+
 final class EventSaveEvent extends EventEvent {
   final String eventId;
 

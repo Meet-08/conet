@@ -9,6 +9,7 @@ import 'package:conet_app/feature/event/domain/entities/event_activity.dart';
 import 'package:conet_app/feature/event/domain/entities/event_faq.dart';
 import 'package:conet_app/feature/event/domain/entities/event_prize.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
+import 'package:conet_app/feature/event/presentation/pages/event_register_participant_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_registration_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -42,6 +43,19 @@ class _EventDetailPageState extends State<EventDetailPage> {
   Future<void> _onRegisterPressed(Event event) async {
     final didCompleteRegistration = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => EventRegistrationPage(event: event)),
+    );
+
+    if (!mounted) return;
+    if (didCompleteRegistration == true) {
+      context.read<EventBloc>().add(EventFetchByIdEvent(widget.eventId));
+    }
+  }
+
+  Future<void> _onRegisterParticipantPressed(Event event) async {
+    final didCompleteRegistration = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => EventRegisterParticipantPage(event: event),
+      ),
     );
 
     if (!mounted) return;
@@ -193,6 +207,9 @@ class _EventDetailPageState extends State<EventDetailPage> {
             },
             onGoToDashboard: () {
               context.push('/event-dashboard');
+            },
+            onRegisterParticipant: () {
+              _onRegisterParticipantPressed(event);
             },
           ),
           body: SingleChildScrollView(
@@ -816,6 +833,7 @@ class _RegisterBar extends StatelessWidget {
   final bool showDashboardAction;
   final VoidCallback onRegister;
   final VoidCallback onGoToDashboard;
+  final VoidCallback onRegisterParticipant;
 
   const _RegisterBar({
     required this.event,
@@ -823,6 +841,7 @@ class _RegisterBar extends StatelessWidget {
     required this.showDashboardAction,
     required this.onRegister,
     required this.onGoToDashboard,
+    required this.onRegisterParticipant,
   });
 
   @override
@@ -841,6 +860,15 @@ class _RegisterBar extends StatelessWidget {
         : event.eventStatus != 'published'
         ? 'Unavailable'
         : 'Register Now';
+
+    Widget buttonText(String value) {
+      return Text(
+        value,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+      );
+    }
 
     return SafeArea(
       top: false,
@@ -869,21 +897,97 @@ class _RegisterBar extends StatelessWidget {
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: FilledButton(
-                onPressed: showDashboardAction
-                    ? onGoToDashboard
-                    : (canRegister ? onRegister : null),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: (!showDashboardAction && loading)
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(buttonLabel),
-              ),
+              child: showDashboardAction
+                  ? LayoutBuilder(
+                      builder: (context, constraints) {
+                        final compact = constraints.maxWidth < 420;
+
+                        if (compact) {
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              OutlinedButton.icon(
+                                onPressed: onRegisterParticipant,
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                ),
+                                icon: const FaIcon(
+                                  FontAwesomeIcons.userPlus,
+                                  size: 14,
+                                ),
+                                label: buttonText('Register Participant'),
+                              ),
+                              const SizedBox(height: 8),
+                              FilledButton.icon(
+                                onPressed: onGoToDashboard,
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                ),
+                                icon: const FaIcon(
+                                  FontAwesomeIcons.tableColumns,
+                                  size: 14,
+                                ),
+                                label: buttonText('Go to Dashboard'),
+                              ),
+                            ],
+                          );
+                        }
+
+                        return Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: onRegisterParticipant,
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                ),
+                                icon: const FaIcon(
+                                  FontAwesomeIcons.userPlus,
+                                  size: 14,
+                                ),
+                                label: buttonText('Register Participant'),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: onGoToDashboard,
+                                style: FilledButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                ),
+                                icon: const FaIcon(
+                                  FontAwesomeIcons.tableColumns,
+                                  size: 14,
+                                ),
+                                label: buttonText('Go to Dashboard'),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    )
+                  : FilledButton(
+                      onPressed: canRegister ? onRegister : null,
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      child: loading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : buttonText(buttonLabel),
+                    ),
             ),
           ],
         ),

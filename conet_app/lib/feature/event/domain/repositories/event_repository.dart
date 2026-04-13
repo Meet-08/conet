@@ -17,6 +17,12 @@ abstract interface class EventRepository {
     EventRegistrationPayload payload,
   );
 
+  Future<Either<AppFailure, EventRegisterResponse>> registerParticipantForEvent(
+    String eventId,
+    String participantUserId,
+    EventRegistrationPayload payload,
+  );
+
   Future<Either<AppFailure, EventAttendanceResult>> saveEvent(String eventId);
 
   Future<Either<AppFailure, Event>> publishEvent(EventCreatePayload payload);

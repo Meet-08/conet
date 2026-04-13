@@ -172,6 +172,50 @@ class EventDataSourceImpl implements EventDataSource {
   }
 
   @override
+  Future<EventRegisterResponse> registerParticipantForEvent(
+    String eventId,
+    String participantUserId,
+    EventRegistrationPayload payload,
+  ) async {
+    try {
+      final requestBody = {
+        'participant_user_id': participantUserId,
+        ...payload.toJson(),
+      };
+
+      final response = await _dioClient.dio.post(
+        '/events/$eventId/register-participant',
+        data: requestBody,
+      );
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to register participant for event');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      final eventResult = EventModel.fromJson(
+        data['event'] as Map<String, dynamic>,
+      );
+      final registration = data['registration'] as Map<String, dynamic>;
+      final registrationId =
+          (registration['id'] ?? registration['registration_id'])?.toString();
+
+      if (registrationId == null || registrationId.trim().isEmpty) {
+        throw ServerException(
+          'Registration ID missing in register participant response',
+        );
+      }
+
+      return EventRegisterResponse(
+        event: eventResult,
+        registrationId: registrationId,
+      );
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
   Future<EventAttendanceResultModel> saveEvent(String eventId) async {
     try {
       final response = await _dioClient.dio.post('/events/$eventId/save');

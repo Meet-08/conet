@@ -161,9 +161,10 @@
 - **Registration Form Page** — Event detail registration opens a dedicated dynamic page with required custom field validation and payload mapping, while image-type fields are read-only organizer content
 - **Team Registration UI** — Team events collect captain enrollment/semester/branch, enforce team-size limits, and allow searchable optional team member selection
 - **Paid Registration QR Flow** — Paid events generate UPI QR with per-member amount and team-size-based total, plus transaction ID and payment proof upload support
+- **Organizer/Cohost Register Participant Page** — Organizer/co-host can select a participant and submit individual/team registration on their behalf with dynamic custom fields
 
-**Use Cases:** `EventPublish`, `EventSaveDraft`, `EventRegister`, `MessageCreateGroup`, `MessageSearchUsers`
-**Backend Endpoints:** `POST /events`, `PATCH /events/:id/publish`, `POST /events/:id/register`, `POST /groups`
+**Use Cases:** `EventPublish`, `EventSaveDraft`, `EventRegister`, `EventRegisterParticipant`, `MessageCreateGroup`, `MessageSearchUsers`
+**Backend Endpoints:** `POST /events`, `PATCH /events/:id/publish`, `POST /events/:id/register`, `POST /events/:id/register-participant`, `POST /groups`
 
 ---
 
@@ -234,9 +235,10 @@
 - **Add Co-host** — Organizer adds another user as a co-host
 - **Remove Co-host** — Organizer removes a co-host
 - **List Co-hosts** — Retrieve all co-hosts for an event
+- **Organizer/Cohost Participant Registration** — Organizer or co-host can register another user/team to the event on their behalf
 
 **Use Cases:** `EventGetById`, `EventGetPublishedEvents`, `EventGetMyEvents`, `EventGetRegistrationInfo`, `EventMarkAttendance`
-**Backend Endpoints:** `GET /events`, `GET /events/my`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `POST /events/:id/register`, `GET /events/:id/registration-info`, `POST /events/:id/attend`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
+**Backend Endpoints:** `GET /events`, `GET /events/my`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `POST /events/:id/register`, `POST /events/:id/register-participant`, `GET /events/:id/registration-info`, `POST /events/:id/attend`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
 
 ---
 

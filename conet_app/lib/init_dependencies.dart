@@ -40,6 +40,7 @@ import 'package:conet_app/feature/event/domain/usecases/event_mark_attendance.da
 import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_register_participant.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_update_conversation.dart';

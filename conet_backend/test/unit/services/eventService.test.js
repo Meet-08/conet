@@ -15,6 +15,7 @@ import {
   listMyOrganizedEventsService,
   listPublishedEventsService,
   publishEventService,
+  registerParticipantForEventService,
   registerEventService,
   removeCohostService,
   saveEventService,
@@ -747,6 +748,56 @@ describe("registerEventService", () => {
         skipDuplicates: true,
       }),
     );
+  });
+});
+
+describe("registerParticipantForEventService", () => {
+  it("allows organizer to register another participant", async () => {
+    prismaMock.events.findUnique
+      .mockResolvedValueOnce(makeEventRow({ event_status: "published" }))
+      .mockResolvedValueOnce(makeEventRow({ event_status: "published" }))
+      .mockResolvedValueOnce(
+        makeEventRow({
+          event_status: "published",
+          event_registrations: [{ user_id: ATTENDEE_ID }],
+          _count: { event_registrations: 1 },
+        }),
+      );
+
+    const result = await registerParticipantForEventService(
+      EVENT_ID,
+      ORGANIZER_ID,
+      {
+        participant_user_id: ATTENDEE_ID,
+      },
+    );
+
+    expect(prismaMock.event_registrations.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          event_id_user_id: {
+            event_id: EVENT_ID,
+            user_id: ATTENDEE_ID,
+          },
+        },
+      }),
+    );
+    expect(result.registration.id).toBe(REGISTRATION_ID);
+  });
+
+  it("throws 403 when requester is not organizer or co-host", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({ event_status: "published" }),
+    );
+
+    await expect(
+      registerParticipantForEventService(EVENT_ID, ATTENDEE_ID, {
+        participant_user_id: "member-1",
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      message: "Only organizer or co-host can scan tickets",
+    });
   });
 });
 
