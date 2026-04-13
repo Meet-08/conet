@@ -4,11 +4,17 @@ import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/user_selector_bottom_sheet.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
+import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
+import 'package:conet_app/feature/payment/domain/entities/payment_initiate_response.dart';
+import 'package:conet_app/feature/payment/presentation/bloc/payment_bloc.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class EventRegistrationPage extends StatefulWidget {
   final Event event;
@@ -30,6 +36,10 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
 
   late int _teamSize;
   bool _submitting = false;
+  String? _pendingPaymentRegistrationId;
+  bool _isInitiatePaymentPending = false;
+  bool _isRollbackInFlight = false;
+  late final Razorpay _razorpay;
 
   bool get _isTeamEvent =>
       (widget.event.participationType ?? '').trim().toLowerCase() == 'team';
@@ -47,6 +57,11 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
   @override
   void initState() {
     super.initState();
+    _razorpay = Razorpay();
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+
     _teamSize = _isTeamEvent ? _minTeamSize : 1;
 
     for (final field in widget.event.customFields) {
@@ -63,6 +78,7 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
 
   @override
   void dispose() {
+    _razorpay.clear();
     _teamNameController.dispose();
 
     for (final controller in _customTextControllers.values) {
@@ -70,6 +86,127 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
     }
 
     super.dispose();
+  }
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) {
+    if (!mounted) return;
+    _pendingPaymentRegistrationId = null;
+    _isInitiatePaymentPending = false;
+    _isRollbackInFlight = false;
+    AppToast.showSuccess(context, 'Payment completed successfully');
+    _navigateToDetail();
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    if (!mounted) return;
+    final message = (response.message ?? 'Payment failed').trim();
+    _triggerRegistrationRollback(
+      reason: 'payment_failed',
+      failureMessage: message.isEmpty ? 'Payment failed' : message,
+    );
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    if (!mounted) return;
+    final wallet = (response.walletName ?? '').trim();
+    if (wallet.isEmpty) return;
+    AppToast.showSuccess(context, 'Continue payment in $wallet');
+  }
+
+  void _openRazorpayCheckout(PaymentInitiateResponse payment) {
+    final razorpayKey = (dotenv.env['RAZORPAY_KEY_ID'] ?? '').trim();
+    if (razorpayKey.isEmpty) {
+      _triggerRegistrationRollback(
+        reason: 'checkout_not_opened_missing_key',
+        failureMessage: 'RAZORPAY_KEY_ID is missing in .env',
+      );
+      return;
+    }
+
+    final appUserState = context.read<AppUserCubit>().state;
+    String? email;
+    String? contact;
+    String fullName = 'Conet User';
+
+    if (appUserState is AppUserAuthenticated) {
+      final user = appUserState.user;
+      email = user.email.trim();
+      contact = user.phone?.trim();
+      final name = '${user.firstName} ${user.lastName}'.trim();
+      if (name.isNotEmpty) {
+        fullName = name;
+      } else if (user.username.trim().isNotEmpty) {
+        fullName = user.username.trim();
+      }
+    }
+
+    final imageUrl = widget.event.eventImageUrl?.trim();
+    final options = <String, dynamic>{
+      'key': razorpayKey,
+      'order_id': payment.razorpayOrderId,
+      'amount': (payment.amount * 100).round(),
+      'currency': payment.currency,
+      'name': widget.event.title,
+      'description': 'Event registration payment',
+      if (imageUrl != null && imageUrl.isNotEmpty) 'image': imageUrl,
+      'prefill': {
+        'name': fullName,
+        if (email != null && email.isNotEmpty) 'email': email,
+        if (contact != null && contact.isNotEmpty) 'contact': contact,
+      },
+      'notes': {'event_id': widget.event.id, 'payment_id': payment.paymentId},
+      'theme': {'color': '#0A7EA4'},
+    };
+
+    try {
+      _razorpay.open(options);
+    } catch (_) {
+      _triggerRegistrationRollback(
+        reason: 'checkout_open_exception',
+        failureMessage: 'Unable to open Razorpay checkout',
+      );
+    }
+  }
+
+  void _triggerRegistrationRollback({
+    required String reason,
+    String? failureMessage,
+  }) {
+    if (!mounted) return;
+
+    final registrationId = _pendingPaymentRegistrationId?.trim();
+    if (registrationId == null || registrationId.isEmpty) {
+      return;
+    }
+
+    if (_isRollbackInFlight) return;
+
+    _isInitiatePaymentPending = false;
+    _isRollbackInFlight = true;
+    context.read<PaymentBloc>().add(
+      PaymentRevertRegistrationEvent(registrationId, reason: reason),
+    );
+  }
+
+  bool _shouldRollbackOnInitiateFailure(String message) {
+    final normalized = message.trim().toLowerCase();
+    if (normalized.isEmpty) return true;
+
+    if (normalized.contains('payment already completed')) return false;
+    if (normalized.contains('event is not a paid event')) return false;
+    if (normalized.contains('registration not found')) return false;
+    if (normalized.contains('unauthorized')) return false;
+
+    return true;
+  }
+
+  void _navigateToDetail() {
+    if (!mounted) return;
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    context.go('/event-detail/${widget.event.id}');
   }
 
   Future<void> _pickTeamMembers() async {
@@ -214,15 +351,13 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
       return;
     }
 
-    setState(() {
-      _submitting = true;
-    });
-
     final payload = _buildPayload();
 
     if (!mounted) return;
-
-    Navigator.of(context).pop(payload);
+    setState(() {
+      _submitting = true;
+    });
+    context.read<EventBloc>().add(EventRegisterEvent(widget.event.id, payload));
   }
 
   @override
@@ -230,303 +365,426 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Event Registration')),
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: 16 + MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.event.title,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                if (_isTeamEvent) ...[
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<EventBloc, EventState>(
+          listener: (context, state) {
+            if (state is EventRegistrationLoading) {
+              setState(() {
+                _submitting = true;
+              });
+              return;
+            }
+
+            if (state is EventRegistrationSuccess &&
+                state.response.event.id == widget.event.id) {
+              if (state.response.event.isPaid) {
+                _pendingPaymentRegistrationId = state.response.registrationId;
+                _isInitiatePaymentPending = true;
+                _isRollbackInFlight = false;
+                context.read<PaymentBloc>().add(
+                  PaymentInitiateEvent(state.response.registrationId),
+                );
+              } else {
+                _pendingPaymentRegistrationId = null;
+                _isInitiatePaymentPending = false;
+                _isRollbackInFlight = false;
+                AppToast.showSuccess(context, 'Registered successfully');
+                _navigateToDetail();
+              }
+              return;
+            }
+
+            if (state is EventRegistrationFailure) {
+              setState(() {
+                _submitting = false;
+              });
+              AppToast.showError(context, state.message);
+            }
+          },
+        ),
+        BlocListener<PaymentBloc, PaymentState>(
+          listener: (context, state) {
+            if (state is PaymentInitiateSuccess) {
+              _isInitiatePaymentPending = false;
+              _openRazorpayCheckout(state.response);
+              return;
+            }
+
+            if (state is PaymentRevertRegistrationSuccess) {
+              _pendingPaymentRegistrationId = null;
+              _isInitiatePaymentPending = false;
+              _isRollbackInFlight = false;
+              setState(() {
+                _submitting = false;
+              });
+              AppToast.showError(
+                context,
+                'Payment failed. Registration has been reverted.',
+              );
+              return;
+            }
+
+            if (state is PaymentFailure) {
+              if (_isInitiatePaymentPending) {
+                if (_shouldRollbackOnInitiateFailure(state.message)) {
+                  _triggerRegistrationRollback(
+                    reason: 'payment_initiation_failed',
+                    failureMessage: state.message,
+                  );
+                  return;
+                }
+
+                _isInitiatePaymentPending = false;
+                _isRollbackInFlight = false;
+                setState(() {
+                  _submitting = false;
+                });
+
+                final normalized = state.message.trim().toLowerCase();
+                if (normalized.contains('event is not a paid event')) {
+                  _pendingPaymentRegistrationId = null;
+                  AppToast.showSuccess(
+                    context,
+                    'Registered successfully (payment not required).',
+                  );
+                  _navigateToDetail();
+                  return;
+                }
+
+                if (normalized.contains('payment already completed')) {
+                  _pendingPaymentRegistrationId = null;
+                  AppToast.showSuccess(context, 'Payment already completed.');
+                  _navigateToDetail();
+                  return;
+                }
+
+                AppToast.showError(context, state.message);
+                return;
+              }
+
+              if (_isRollbackInFlight) {
+                _isRollbackInFlight = false;
+                setState(() {
+                  _submitting = false;
+                });
+                AppToast.showError(
+                  context,
+                  'Payment failed and registration rollback failed: ${state.message}',
+                );
+                return;
+              }
+
+              AppToast.showError(context, state.message);
+            }
+          },
+        ),
+      ],
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        appBar: AppBar(title: const Text('Event Registration')),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(
+              left: 16,
+              right: 16,
+              top: 16,
+              bottom: 16,
+            ),
+            child: SingleChildScrollView(
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    'Team Registration',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                    widget.event.title,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  _InputField(
-                    controller: _teamNameController,
-                    label: 'Team Name *',
-                    icon: FontAwesomeIcons.users,
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: _teamSize > _minTeamSize
-                              ? () => setState(() => _teamSize--)
-                              : null,
-                          icon: const FaIcon(FontAwesomeIcons.minus, size: 14),
-                        ),
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Text(
-                                '$_teamSize Members',
-                                style: theme.textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              Text(
-                                'Allowed: $_minTeamSize - $_maxTeamSize',
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: _teamSize < _maxTeamSize
-                              ? () => setState(() => _teamSize++)
-                              : null,
-                          icon: const FaIcon(FontAwesomeIcons.plus, size: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _selectedMembers.length == (_teamSize - 1)
-                        ? 'Team is complete. You can submit now.'
-                        : 'Add ${(_teamSize - 1) - _selectedMembers.length} more member(s) to continue',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: _selectedMembers.length == (_teamSize - 1)
-                          ? colorScheme.primary
-                          : colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Team Members (${_selectedMembers.length})',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: _pickTeamMembers,
-                        child: const Text('Search & Add'),
-                      ),
-                    ],
-                  ),
-                  if (_selectedMembers.isNotEmpty)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _selectedMembers
-                          .map(
-                            (member) => Chip(
-                              label: Text(_displayName(member)),
-                              onDeleted: () {
-                                setState(() {
-                                  _selectedMembers.removeWhere(
-                                    (u) => u.id == member.id,
-                                  );
-                                });
-                              },
-                            ),
-                          )
-                          .toList(growable: false),
-                    )
-                  else
+                  const SizedBox(height: 10),
+                  if (_isTeamEvent) ...[
                     Text(
-                      'Add members to match selected team size',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                      'Team Registration',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                  const SizedBox(height: 14),
-                ],
-                if (widget.event.customFields.isNotEmpty) ...[
-                  Text(
-                    'Registration Fields',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                    const SizedBox(height: 8),
+                    _InputField(
+                      controller: _teamNameController,
+                      label: 'Team Name *',
+                      icon: FontAwesomeIcons.users,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...widget.event.customFields.map((field) {
-                    final normalizedType = field.normalizedType;
-                    final requiredMark = field.required ? ' *' : '';
-
-                    if (normalizedType == 'select' &&
-                        field.options.isNotEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _customSelectValues[field.key],
-                          decoration: _decoration(
-                            context,
-                            label: '${field.label}$requiredMark',
-                            icon: FontAwesomeIcons.list,
-                            helperText: field.helperText,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: _teamSize > _minTeamSize
+                                ? () => setState(() => _teamSize--)
+                                : null,
+                            icon: const FaIcon(
+                              FontAwesomeIcons.minus,
+                              size: 14,
+                            ),
                           ),
-                          items: field.options
-                              .map(
-                                (option) => DropdownMenuItem<String>(
-                                  value: option,
-                                  child: Text(option),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Text(
+                                  '$_teamSize Members',
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
-                              )
-                              .toList(growable: false),
-                          onChanged: (value) {
-                            setState(() {
-                              _customSelectValues[field.key] = value;
-                            });
-                          },
-                        ),
-                      );
-                    }
-
-                    if (normalizedType == 'multi_select' &&
-                        field.options.isNotEmpty) {
-                      final selectedValues =
-                          _customMultiSelectValues[field.key] ??
-                          const <String>[];
-
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: InputDecorator(
-                          decoration: _decoration(
-                            context,
-                            label: '${field.label}$requiredMark',
-                            icon: FontAwesomeIcons.listCheck,
-                            helperText: field.helperText,
+                                Text(
+                                  'Allowed: $_minTeamSize - $_maxTeamSize',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          child: Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: field.options
-                                .map((option) {
-                                  final isSelected = selectedValues.contains(
-                                    option,
-                                  );
-                                  return FilterChip(
-                                    label: Text(option),
-                                    selected: isSelected,
-                                    onSelected: (selected) {
-                                      final nextValues = List<String>.from(
-                                        selectedValues,
-                                      );
-                                      if (selected) {
-                                        nextValues.add(option);
-                                      } else {
-                                        nextValues.remove(option);
-                                      }
-
-                                      setState(() {
-                                        _customMultiSelectValues[field.key] =
-                                            nextValues.toSet().toList(
-                                              growable: false,
-                                            );
-                                      });
-                                    },
-                                  );
-                                })
-                                .toList(growable: false),
+                          IconButton(
+                            onPressed: _teamSize < _maxTeamSize
+                                ? () => setState(() => _teamSize++)
+                                : null,
+                            icon: const FaIcon(FontAwesomeIcons.plus, size: 14),
                           ),
-                        ),
-                      );
-                    }
-
-                    return _InputField(
-                      controller: _customTextControllers[field.key]!,
-                      label: '${field.label}$requiredMark',
-                      icon: normalizedType == 'number'
-                          ? FontAwesomeIcons.hashtag
-                          : FontAwesomeIcons.pen,
-                      helperText: field.helperText,
-                      keyboardType: normalizedType == 'number'
-                          ? const TextInputType.numberWithOptions(decimal: true)
-                          : TextInputType.text,
-                      maxLines: normalizedType == 'textarea' ? 3 : 1,
-                    );
-                  }),
-                  const SizedBox(height: 12),
-                ],
-                if (widget.event.isPaid) ...[
-                  Text(
-                    'Payment',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
+                    const SizedBox(height: 6),
+                    Text(
+                      _selectedMembers.length == (_teamSize - 1)
+                          ? 'Team is complete. You can submit now.'
+                          : 'Add ${(_teamSize - 1) - _selectedMembers.length} more member(s) to continue',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: _selectedMembers.length == (_teamSize - 1)
+                            ? colorScheme.primary
+                            : colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    const SizedBox(height: 12),
+                    Row(
                       children: [
-                        Text(
-                          'Price per member: Rs ${_perMemberAmount.toStringAsFixed(2)}',
-                        ),
-                        Text('Members: $_paymentMemberCount'),
-                        Text(
-                          'Total: Rs ${_totalAmount.toStringAsFixed(2)}',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
+                        Expanded(
+                          child: Text(
+                            'Team Members (${_selectedMembers.length})',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 6),
-                        Text(
-                          'After registration, you will be redirected to Razorpay to complete payment.',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                          ),
+                        TextButton(
+                          onPressed: _pickTeamMembers,
+                          child: const Text('Search & Add'),
                         ),
                       ],
                     ),
-                  ),
+                    if (_selectedMembers.isNotEmpty)
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _selectedMembers
+                            .map(
+                              (member) => Chip(
+                                label: Text(_displayName(member)),
+                                onDeleted: () {
+                                  setState(() {
+                                    _selectedMembers.removeWhere(
+                                      (u) => u.id == member.id,
+                                    );
+                                  });
+                                },
+                              ),
+                            )
+                            .toList(growable: false),
+                      )
+                    else
+                      Text(
+                        'Add members to match selected team size',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    const SizedBox(height: 14),
+                  ],
+                  if (widget.event.customFields.isNotEmpty) ...[
+                    Text(
+                      'Registration Fields',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ...widget.event.customFields.map((field) {
+                      final normalizedType = field.normalizedType;
+                      final requiredMark = field.required ? ' *' : '';
+
+                      if (normalizedType == 'select' &&
+                          field.options.isNotEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: DropdownButtonFormField<String>(
+                            initialValue: _customSelectValues[field.key],
+                            decoration: _decoration(
+                              context,
+                              label: '${field.label}$requiredMark',
+                              icon: FontAwesomeIcons.list,
+                              helperText: field.helperText,
+                            ),
+                            items: field.options
+                                .map(
+                                  (option) => DropdownMenuItem<String>(
+                                    value: option,
+                                    child: Text(option),
+                                  ),
+                                )
+                                .toList(growable: false),
+                            onChanged: (value) {
+                              setState(() {
+                                _customSelectValues[field.key] = value;
+                              });
+                            },
+                          ),
+                        );
+                      }
+
+                      if (normalizedType == 'multi_select' &&
+                          field.options.isNotEmpty) {
+                        final selectedValues =
+                            _customMultiSelectValues[field.key] ??
+                            const <String>[];
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: InputDecorator(
+                            decoration: _decoration(
+                              context,
+                              label: '${field.label}$requiredMark',
+                              icon: FontAwesomeIcons.listCheck,
+                              helperText: field.helperText,
+                            ),
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: field.options
+                                  .map((option) {
+                                    final isSelected = selectedValues.contains(
+                                      option,
+                                    );
+                                    return FilterChip(
+                                      label: Text(option),
+                                      selected: isSelected,
+                                      onSelected: (selected) {
+                                        final nextValues = List<String>.from(
+                                          selectedValues,
+                                        );
+                                        if (selected) {
+                                          nextValues.add(option);
+                                        } else {
+                                          nextValues.remove(option);
+                                        }
+
+                                        setState(() {
+                                          _customMultiSelectValues[field.key] =
+                                              nextValues.toSet().toList(
+                                                growable: false,
+                                              );
+                                        });
+                                      },
+                                    );
+                                  })
+                                  .toList(growable: false),
+                            ),
+                          ),
+                        );
+                      }
+
+                      return _InputField(
+                        controller: _customTextControllers[field.key]!,
+                        label: '${field.label}$requiredMark',
+                        icon: normalizedType == 'number'
+                            ? FontAwesomeIcons.hashtag
+                            : FontAwesomeIcons.pen,
+                        helperText: field.helperText,
+                        keyboardType: normalizedType == 'number'
+                            ? const TextInputType.numberWithOptions(
+                                decimal: true,
+                              )
+                            : TextInputType.text,
+                        maxLines: normalizedType == 'textarea' ? 3 : 1,
+                      );
+                    }),
+                    const SizedBox(height: 12),
+                  ],
+                  if (widget.event.isPaid) ...[
+                    Text(
+                      'Payment',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Price per member: Rs ${_perMemberAmount.toStringAsFixed(2)}',
+                          ),
+                          Text('Members: $_paymentMemberCount'),
+                          Text(
+                            'Total: Rs ${_totalAmount.toStringAsFixed(2)}',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'After registration, you will be redirected to Razorpay to complete payment.',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   const SizedBox(height: 8),
-                ],
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: _submitting ? null : _submit,
-                    child: _submitting
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Submit Registration'),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: _submitting ? null : _submit,
+                      child: _submitting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Submit Registration'),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

@@ -311,6 +311,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
       final createGroupResult = await _createGroup(
         name: title,
         memberIds: cohostIds,
+        groupImageFile: event.payload.eventImage,
       );
 
       String? createGroupFailure;
@@ -483,6 +484,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     final createGroupResult = await _createGroup(
       name: title,
       memberIds: cohostIds,
+      groupImageFile: payload.eventImage,
     );
 
     createGroupResult.fold(

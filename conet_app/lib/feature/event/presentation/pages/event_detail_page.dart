@@ -8,19 +8,13 @@ import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_activity.dart';
 import 'package:conet_app/feature/event/domain/entities/event_faq.dart';
 import 'package:conet_app/feature/event/domain/entities/event_prize.dart';
-import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_registration_page.dart';
-import 'package:conet_app/feature/payment/domain/entities/payment_initiate_response.dart';
-import 'package:conet_app/feature/payment/presentation/bloc/payment_bloc.dart';
-import 'package:conet_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 
 class EventDetailPage extends StatefulWidget {
   final String eventId;
@@ -36,162 +30,24 @@ class _EventDetailPageState extends State<EventDetailPage> {
   int? _expandedFaqIndex;
   bool _isSaveInFlight = false;
   bool? _bookmarkBeforeSave;
-  String? _pendingPaymentRegistrationId;
-  bool _isInitiatePaymentPending = false;
-  bool _isRollbackInFlight = false;
-  late final Razorpay _razorpay;
 
   @override
   void initState() {
     super.initState();
-    _razorpay = Razorpay();
-    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<EventBloc>().add(EventFetchByIdEvent(widget.eventId));
     });
   }
 
-  @override
-  void dispose() {
-    _razorpay.clear();
-    super.dispose();
-  }
-
   Future<void> _onRegisterPressed(Event event) async {
-    final payload = await Navigator.of(context).push<EventRegistrationPayload>(
+    final didCompleteRegistration = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => EventRegistrationPage(event: event)),
     );
 
-    if (!mounted || payload == null) return;
-
-    context.read<EventBloc>().add(EventRegisterEvent(event.id, payload));
-  }
-
-  void _handlePaymentSuccess(PaymentSuccessResponse response) {
     if (!mounted) return;
-    _pendingPaymentRegistrationId = null;
-    _isInitiatePaymentPending = false;
-    _isRollbackInFlight = false;
-    AppToast.showSuccess(context, 'Payment completed successfully');
-    context.read<EventBloc>().add(EventFetchByIdEvent(widget.eventId));
-  }
-
-  void _handlePaymentError(PaymentFailureResponse response) {
-    if (!mounted) return;
-    final message = (response.message ?? 'Payment failed').trim();
-    _triggerRegistrationRollback(
-      reason: 'payment_failed',
-      failureMessage: message.isEmpty ? 'Payment failed' : message,
-    );
-  }
-
-  void _handleExternalWallet(ExternalWalletResponse response) {
-    if (!mounted) return;
-    final wallet = (response.walletName ?? '').trim();
-    if (wallet.isEmpty) return;
-    AppToast.showSuccess(context, 'Continue payment in $wallet');
-  }
-
-  void _openRazorpayCheckout(PaymentInitiateResponse payment) {
-    final razorpayKey = (dotenv.env['RAZORPAY_KEY_ID'] ?? '').trim();
-    if (razorpayKey.isEmpty) {
-      _triggerRegistrationRollback(
-        reason: 'checkout_not_opened_missing_key',
-        failureMessage: 'RAZORPAY_KEY_ID is missing in .env',
-      );
-      return;
+    if (didCompleteRegistration == true) {
+      context.read<EventBloc>().add(EventFetchByIdEvent(widget.eventId));
     }
-
-    final event = _event;
-    if (event == null) {
-      _triggerRegistrationRollback(
-        reason: 'checkout_not_opened_event_missing',
-        failureMessage: 'Event details not available for checkout',
-      );
-      return;
-    }
-
-    final appUserState = context.read<AppUserCubit>().state;
-    String? email;
-    String? contact;
-    String fullName = 'Conet User';
-
-    if (appUserState is AppUserAuthenticated) {
-      final user = appUserState.user;
-      email = user.email.trim();
-      contact = user.phone?.trim();
-      final name = '${user.firstName} ${user.lastName}'.trim();
-      if (name.isNotEmpty) {
-        fullName = name;
-      } else if (user.username.trim().isNotEmpty) {
-        fullName = user.username.trim();
-      }
-    }
-
-    final imageUrl = event.eventImageUrl?.trim();
-    logger.d(
-      'Opening Razorpay checkout with options: key=$razorpayKey, order_id=${payment.razorpayOrderId}, amount=${payment.amount}, currency=${payment.currency}, name=${event.title}, description=Event registration payment, image=$imageUrl, prefill_name=$fullName, prefill_email=$email, prefill_contact=$contact, notes_event_id=${event.id}, notes_payment_id=${payment.paymentId}',
-    );
-    final options = <String, dynamic>{
-      'key': razorpayKey,
-      'order_id': payment.razorpayOrderId,
-      'amount': (payment.amount * 100).round(),
-      'currency': payment.currency,
-      'name': event.title,
-      'description': 'Event registration payment',
-      if (imageUrl != null && imageUrl.isNotEmpty) 'image': imageUrl,
-      'prefill': {
-        'name': fullName,
-        if (email != null && email.isNotEmpty) 'email': email,
-        if (contact != null && contact.isNotEmpty) 'contact': contact,
-      },
-      'notes': {'event_id': event.id, 'payment_id': payment.paymentId},
-      'theme': {'color': '#0A7EA4'},
-    };
-
-    try {
-      _razorpay.open(options);
-    } catch (_) {
-      _triggerRegistrationRollback(
-        reason: 'checkout_open_exception',
-        failureMessage: 'Unable to open Razorpay checkout',
-      );
-    }
-  }
-
-  void _triggerRegistrationRollback({
-    required String reason,
-    String? failureMessage,
-  }) {
-    if (!mounted) return;
-
-    final registrationId = _pendingPaymentRegistrationId?.trim();
-    if (registrationId == null || registrationId.isEmpty) {
-      return;
-    }
-
-    if (_isRollbackInFlight) return;
-
-    _isInitiatePaymentPending = false;
-    _isRollbackInFlight = true;
-    context.read<PaymentBloc>().add(
-      PaymentRevertRegistrationEvent(registrationId, reason: reason),
-    );
-  }
-
-  bool _shouldRollbackOnInitiateFailure(String message) {
-    final normalized = message.trim().toLowerCase();
-    if (normalized.isEmpty) return true;
-
-    if (normalized.contains('payment already completed')) return false;
-    if (normalized.contains('event is not a paid event')) return false;
-    if (normalized.contains('registration not found')) return false;
-    if (normalized.contains('unauthorized')) return false;
-
-    return true;
   }
 
   @override
@@ -199,284 +55,202 @@ class _EventDetailPageState extends State<EventDetailPage> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return MultiBlocListener(
-      listeners: [
-        BlocListener<PaymentBloc, PaymentState>(
-          listener: (context, state) {
-            if (state is PaymentInitiateSuccess) {
-              _isInitiatePaymentPending = false;
-              _openRazorpayCheckout(state.response);
-            } else if (state is PaymentRevertRegistrationSuccess) {
-              _pendingPaymentRegistrationId = null;
-              _isInitiatePaymentPending = false;
-              _isRollbackInFlight = false;
-              AppToast.showError(
-                context,
-                'Payment failed. Registration has been reverted.',
-              );
-              context.read<EventBloc>().add(
-                EventFetchByIdEvent(widget.eventId),
-              );
-            } else if (state is PaymentFailure) {
-              if (_isInitiatePaymentPending) {
-                if (_shouldRollbackOnInitiateFailure(state.message)) {
-                  _triggerRegistrationRollback(
-                    reason: 'payment_initiation_failed',
-                    failureMessage: state.message,
-                  );
-                  return;
-                }
+    return BlocConsumer<EventBloc, EventState>(
+      listener: (context, state) {
+        if (state is EventDetailLoaded) {
+          setState(() {
+            _event = state.event;
+          });
+        }
 
-                _isInitiatePaymentPending = false;
-                _isRollbackInFlight = false;
-
-                final normalized = state.message.trim().toLowerCase();
-                if (normalized.contains('event is not a paid event')) {
-                  _pendingPaymentRegistrationId = null;
-                  AppToast.showSuccess(
-                    context,
-                    'Registered successfully (payment not required).',
-                  );
-                  context.read<EventBloc>().add(
-                    EventFetchByIdEvent(widget.eventId),
-                  );
-                  return;
-                }
-
-                if (normalized.contains('payment already completed')) {
-                  _pendingPaymentRegistrationId = null;
-                  AppToast.showSuccess(context, 'Payment already completed.');
-                  context.read<EventBloc>().add(
-                    EventFetchByIdEvent(widget.eventId),
-                  );
-                  return;
-                }
-
-                AppToast.showError(context, state.message);
-                return;
-              }
-
-              if (_isRollbackInFlight) {
-                _isRollbackInFlight = false;
-                AppToast.showError(
-                  context,
-                  'Payment failed and registration rollback failed: ${state.message}',
-                );
-                return;
-              }
-
-              AppToast.showError(context, state.message);
-            }
-          },
-        ),
-      ],
-      child: BlocConsumer<EventBloc, EventState>(
-        listener: (context, state) {
-          if (state is EventDetailLoaded) {
-            setState(() {
-              _event = state.event;
-            });
-          }
-
-          if (state is EventRegistrationSuccess) {
-            setState(() {
-              _event = state.response.event;
-            });
-
-            if (_event?.isPaid == true) {
-              // Wait for payment initiate API
-              _pendingPaymentRegistrationId = state.response.registrationId;
-              _isInitiatePaymentPending = true;
-              _isRollbackInFlight = false;
-              context.read<PaymentBloc>().add(
-                PaymentInitiateEvent(state.response.registrationId),
-              );
-            } else {
-              _pendingPaymentRegistrationId = null;
-              _isInitiatePaymentPending = false;
-              _isRollbackInFlight = false;
-              AppToast.showSuccess(context, 'Registered successfully');
-            }
-          }
-
-          if (state is EventRegistrationFailure) {
-            AppToast.showError(context, state.message);
-          }
-
-          if (state is EventSaveFailure) {
-            if (state.eventId == widget.eventId) {
-              setState(() {
-                _isSaveInFlight = false;
-                if (_event != null && _bookmarkBeforeSave != null) {
-                  _event = _event!.copyWith(isBookmarked: _bookmarkBeforeSave);
-                }
-                _bookmarkBeforeSave = null;
-              });
-              AppToast.showError(context, state.message);
-            }
-          }
-
-          if (state is EventSaveSuccess && state.eventId == widget.eventId) {
+        if (state is EventSaveFailure) {
+          if (state.eventId == widget.eventId) {
             setState(() {
               _isSaveInFlight = false;
+              if (_event != null && _bookmarkBeforeSave != null) {
+                _event = _event!.copyWith(isBookmarked: _bookmarkBeforeSave);
+              }
               _bookmarkBeforeSave = null;
             });
-          }
-
-          if (state is EventDetailFailure) {
             AppToast.showError(context, state.message);
           }
-        },
-        builder: (context, state) {
-          if (_event == null &&
-              (state is EventDetailLoading || state is EventInitial)) {
-            return const Scaffold(body: Center(child: Loader()));
-          }
+        }
 
-          if (_event == null && state is EventDetailFailure) {
-            return Scaffold(
-              appBar: AppBar(title: const Text('Event')),
-              body: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(state.message, textAlign: TextAlign.center),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: () {
-                        context.read<EventBloc>().add(
-                          EventFetchByIdEvent(widget.eventId),
-                        );
-                      },
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
+        if (state is EventSaveSuccess && state.eventId == widget.eventId) {
+          setState(() {
+            _isSaveInFlight = false;
+            _bookmarkBeforeSave = null;
+          });
+        }
 
-          final event = _event;
-          if (event == null) {
-            return const Scaffold(body: Center(child: Loader()));
-          }
+        if (state is EventDetailFailure) {
+          AppToast.showError(context, state.message);
+        }
+      },
+      builder: (context, state) {
+        if (_event == null &&
+            (state is EventDetailLoading || state is EventInitial)) {
+          return const Scaffold(body: Center(child: Loader()));
+        }
 
-          final isRegistering = state is EventRegistrationLoading;
-
+        if (_event == null && state is EventDetailFailure) {
           return Scaffold(
-            appBar: AppBar(
-              title: Text(
-                event.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              actions: [
-                IconButton(
-                  onPressed: () {},
-                  icon: const FaIcon(FontAwesomeIcons.shareNodes, size: 18),
-                ),
-                IconButton(
-                  onPressed: _isSaveInFlight
-                      ? null
-                      : () {
-                          final currentEvent = _event;
-                          if (currentEvent == null) return;
-
-                          setState(() {
-                            _bookmarkBeforeSave = currentEvent.isBookmarked;
-                            _event = currentEvent.copyWith(
-                              isBookmarked: !currentEvent.isBookmarked,
-                            );
-                            _isSaveInFlight = true;
-                          });
-                          context.read<EventBloc>().add(
-                            EventSaveEvent(currentEvent.id),
-                          );
-                        },
-                  icon: _isSaveInFlight
-                      ? SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.onSurface,
-                            ),
-                          ),
-                        )
-                      : FaIcon(
-                          event.isBookmarked
-                              ? FontAwesomeIcons.solidBookmark
-                              : FontAwesomeIcons.bookmark,
-                          size: 18,
-                        ),
-                ),
-              ],
-            ),
-            bottomNavigationBar: _RegisterBar(
-              event: event,
-              loading: isRegistering,
-              onRegister: () {
-                _onRegisterPressed(event);
-              },
-            ),
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+            appBar: AppBar(title: const Text('Event')),
+            body: Center(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _HeaderCard(event: event),
-                  const SizedBox(height: 16),
-                  _AboutSection(event: event),
-                  if (event.activities.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _ScheduleSection(activities: event.activities),
-                  ],
-                  if (event.prizes.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _PrizeSection(prizes: event.prizes),
-                  ],
-                  const SizedBox(height: 20),
-                  _OrganizerSection(event: event),
-                  if ((event.eligibility ?? '').trim().isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _EligibilitySection(eligibility: event.eligibility!.trim()),
-                  ],
-                  if (event.faqs.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    _FaqSection(
-                      faqs: event.faqs,
-                      expandedFaqIndex: _expandedFaqIndex,
-                      onToggle: (index) {
-                        setState(() {
-                          _expandedFaqIndex = _expandedFaqIndex == index
-                              ? null
-                              : index;
-                        });
-                      },
-                    ),
-                  ],
-                  const SizedBox(height: 20),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      event.isRegistered
-                          ? 'You are registered for this event.'
-                          : 'Register to secure your participation.',
-                      style: theme.textTheme.bodySmall,
-                    ),
+                  Text(state.message, textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: () {
+                      context.read<EventBloc>().add(
+                        EventFetchByIdEvent(widget.eventId),
+                      );
+                    },
+                    child: const Text('Retry'),
                   ),
                 ],
               ),
             ),
           );
-        },
-      ),
+        }
+
+        final event = _event;
+        if (event == null) {
+          return const Scaffold(body: Center(child: Loader()));
+        }
+
+        final appUserState = context.read<AppUserCubit>().state;
+        final currentUserId = appUserState is AppUserAuthenticated
+            ? appUserState.user.id
+            : null;
+        final isOrganizerOrCohost =
+            currentUserId != null &&
+            (event.organizerId == currentUserId ||
+                event.cohosts.any(
+                  (cohost) => cohost.userId.trim() == currentUserId,
+                ));
+
+        final isRegistering = state is EventRegistrationLoading;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(
+              event.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            actions: [
+              IconButton(
+                onPressed: () {},
+                icon: const FaIcon(FontAwesomeIcons.shareNodes, size: 18),
+              ),
+              IconButton(
+                onPressed: _isSaveInFlight
+                    ? null
+                    : () {
+                        final currentEvent = _event;
+                        if (currentEvent == null) return;
+
+                        setState(() {
+                          _bookmarkBeforeSave = currentEvent.isBookmarked;
+                          _event = currentEvent.copyWith(
+                            isBookmarked: !currentEvent.isBookmarked,
+                          );
+                          _isSaveInFlight = true;
+                        });
+                        context.read<EventBloc>().add(
+                          EventSaveEvent(currentEvent.id),
+                        );
+                      },
+                icon: _isSaveInFlight
+                    ? SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            colorScheme.onSurface,
+                          ),
+                        ),
+                      )
+                    : FaIcon(
+                        event.isBookmarked
+                            ? FontAwesomeIcons.solidBookmark
+                            : FontAwesomeIcons.bookmark,
+                        size: 18,
+                      ),
+              ),
+            ],
+          ),
+          bottomNavigationBar: _RegisterBar(
+            event: event,
+            loading: isRegistering,
+            showDashboardAction: isOrganizerOrCohost,
+            onRegister: () {
+              _onRegisterPressed(event);
+            },
+            onGoToDashboard: () {
+              context.push('/event-dashboard');
+            },
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _HeaderCard(event: event),
+                const SizedBox(height: 16),
+                _AboutSection(event: event),
+                if (event.activities.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _ScheduleSection(activities: event.activities),
+                ],
+                if (event.prizes.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _PrizeSection(prizes: event.prizes),
+                ],
+                const SizedBox(height: 20),
+                _OrganizerSection(event: event),
+                if ((event.eligibility ?? '').trim().isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _EligibilitySection(eligibility: event.eligibility!.trim()),
+                ],
+                if (event.faqs.isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  _FaqSection(
+                    faqs: event.faqs,
+                    expandedFaqIndex: _expandedFaqIndex,
+                    onToggle: (index) {
+                      setState(() {
+                        _expandedFaqIndex = _expandedFaqIndex == index
+                            ? null
+                            : index;
+                      });
+                    },
+                  ),
+                ],
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    event.isRegistered
+                        ? 'You are registered for this event.'
+                        : 'Register to secure your participation.',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -1039,21 +813,30 @@ class _FaqSection extends StatelessWidget {
 class _RegisterBar extends StatelessWidget {
   final Event event;
   final bool loading;
+  final bool showDashboardAction;
   final VoidCallback onRegister;
+  final VoidCallback onGoToDashboard;
 
   const _RegisterBar({
     required this.event,
     required this.loading,
+    required this.showDashboardAction,
     required this.onRegister,
+    required this.onGoToDashboard,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final canRegister =
-        !loading && !event.isRegistered && event.eventStatus == 'published';
+        !showDashboardAction &&
+        !loading &&
+        !event.isRegistered &&
+        event.eventStatus == 'published';
 
-    final buttonLabel = event.isRegistered
+    final buttonLabel = showDashboardAction
+        ? 'Go to Dashboard'
+        : event.isRegistered
         ? 'Registered'
         : event.eventStatus != 'published'
         ? 'Unavailable'
@@ -1087,11 +870,13 @@ class _RegisterBar extends StatelessWidget {
             const SizedBox(width: 10),
             Expanded(
               child: FilledButton(
-                onPressed: canRegister ? onRegister : null,
+                onPressed: showDashboardAction
+                    ? onGoToDashboard
+                    : (canRegister ? onRegister : null),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: loading
+                child: (!showDashboardAction && loading)
                     ? const SizedBox(
                         width: 18,
                         height: 18,

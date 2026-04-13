@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:conet_app/core/theme/app_tokens.dart';
+import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/utils/quill_content_utils.dart';
 import 'package:conet_app/feature/event/presentation/constants/event_constants.dart';
 import 'package:file_picker/file_picker.dart';
@@ -191,16 +192,21 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
   }
 
   Future<void> _pickImage() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.image,
-      allowedExtensions: ['png', 'jpg', 'jpeg', 'gif'],
-      allowMultiple: false,
-      withData: true,
-    );
-    final image = result?.files.first;
-    if (image == null) return;
-    setState(() => _pickedImage = image);
-    _update({'event_image_file': image});
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'],
+        allowMultiple: false,
+        withData: true,
+      );
+      final image = result?.files.first;
+      if (image == null) return;
+      setState(() => _pickedImage = image);
+      _update({'event_image_file': image});
+    } catch (_) {
+      if (!mounted) return;
+      AppToast.showError(context, 'Unable to open image picker');
+    }
   }
 
   List<Map<String, dynamic>> get _activities => List<Map<String, dynamic>>.from(

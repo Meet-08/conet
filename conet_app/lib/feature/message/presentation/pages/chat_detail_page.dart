@@ -175,6 +175,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                   return ChatMessageList(
                     messages: state.messages,
                     currentUserId: state.currentUserId,
+                    isGroupConversation: widget.conversation.isGroup,
+                    isDirectConversation: widget.conversation.isDirect,
+                    groupMembers: widget.conversation.members,
                     scrollController: _scrollController,
                     isFetchingHistory: state.isFetchingHistory,
                     messageStatus: state.messageStatus,

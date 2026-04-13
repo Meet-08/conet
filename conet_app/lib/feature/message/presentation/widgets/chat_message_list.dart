@@ -1,6 +1,7 @@
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/widgets/loader.dart';
+import 'package:conet_app/feature/message/domain/entities/group_member.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/message/presentation/widgets/chat_message_bubble.dart';
@@ -9,6 +10,9 @@ import 'package:flutter/material.dart';
 class ChatMessageList extends StatelessWidget {
   final List<Message> messages;
   final String? currentUserId;
+  final bool isGroupConversation;
+  final bool isDirectConversation;
+  final List<GroupMember> groupMembers;
   final ScrollController? scrollController;
   final bool isFetchingHistory;
   final MessageStatus messageStatus;
@@ -17,6 +21,9 @@ class ChatMessageList extends StatelessWidget {
     super.key,
     required this.messages,
     required this.currentUserId,
+    this.isGroupConversation = false,
+    this.isDirectConversation = false,
+    this.groupMembers = const [],
     this.scrollController,
     required this.messageStatus,
     this.isFetchingHistory = false,
@@ -43,6 +50,19 @@ class ChatMessageList extends StatelessWidget {
 
     final sorted = [...messages]
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final groupMembersById = {
+      for (final member in groupMembers) member.id: member,
+    };
+
+    String? latestOutgoingMessageId;
+    if (currentUserId != null) {
+      for (final message in sorted) {
+        if (message.senderId == currentUserId) {
+          latestOutgoingMessageId = message.id;
+          break;
+        }
+      }
+    }
 
     final totalCount = sorted.length + (isFetchingHistory ? 1 : 0);
 
@@ -68,15 +88,24 @@ class ChatMessageList extends StatelessWidget {
 
         final message = sorted[index];
         final isMe = currentUserId != null && message.senderId == currentUserId;
+        final sender = groupMembersById[message.senderId];
         final time = TimeOfDay.fromDateTime(
           message.createdAt.toLocal(),
         ).format(context);
+
         return ChatMessageBubble(
           text: message.content,
           time: time,
           isMe: isMe,
           mediaUrls: message.mediaUrls,
           status: message.status,
+          senderName: sender?.displayName,
+          senderImageUrl: sender?.profilePicUrl,
+          showSeenStatus:
+              isDirectConversation &&
+              isMe &&
+              message.id == latestOutgoingMessageId,
+          isSeen: message.isRead,
         );
       },
     );

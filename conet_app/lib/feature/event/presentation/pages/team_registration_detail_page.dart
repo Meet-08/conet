@@ -1,7 +1,7 @@
+import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_attendees.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -19,6 +19,16 @@ class TeamRegistrationDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final leaderId = attendee.leader?.id?.trim();
+    final teamMembers = attendee.members
+        .where((member) {
+          final memberId = member.user?.id?.trim();
+          if (leaderId != null && leaderId.isNotEmpty && memberId == leaderId) {
+            return false;
+          }
+          return member.role.trim().toLowerCase() != 'leader';
+        })
+        .toList(growable: false);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Team Details')),
@@ -85,15 +95,15 @@ class TeamRegistrationDetailPage extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Team Members Section
-            if (attendee.members.isNotEmpty) ...[
+            if (teamMembers.isNotEmpty) ...[
               Text(
-                'Team Members (${attendee.members.length})',
+                'Team Members (${teamMembers.length})',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 10),
-              ...attendee.members.map(
+              ...teamMembers.map(
                 (member) => Padding(
                   padding: const EdgeInsets.only(bottom: 10),
                   child: _UserProfileCard(
@@ -205,22 +215,10 @@ class _UserProfileCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: user?.profilePicUrl != null
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        user!.profilePicUrl!,
-                        fit: BoxFit.cover,
-                      ),
-                    )
-                  : const FaIcon(FontAwesomeIcons.user, size: 20),
+            CustomCircleAvatar(
+              radius: 24,
+              imageUrl: user?.profilePicUrl,
+              displayName: user?.displayName,
             ),
             const SizedBox(width: 12),
             Expanded(

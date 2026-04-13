@@ -37,21 +37,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
         title: const Text('Complete Your Profile'),
         centerTitle: false,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: FilledButton(
-              onPressed: () => context.pop(),
-              style: FilledButton.styleFrom(
-                backgroundColor: context.semanticColors.backgroundBrand,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: const Text('Save'),
-            ),
-          ),
-        ],
       ),
       body: BlocConsumer<ProfileBloc, ProfileState>(
         listener: (context, state) {

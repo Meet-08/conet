@@ -107,7 +107,10 @@ beforeEach(() => {
     leader_id: ATTENDEE_ID,
   });
   prismaMock.event_teams.findUnique.mockResolvedValue(null);
+  prismaMock.event_team_members.findMany.mockResolvedValue([]);
   prismaMock.event_team_members.createMany.mockResolvedValue({ count: 0 });
+  prismaMock.conversations.findUnique.mockResolvedValue(null);
+  prismaMock.conversation_members.createMany.mockResolvedValue({ count: 0 });
 
   prismaMock.event_bookmarks.findUnique.mockResolvedValue(null);
   prismaMock.event_bookmarks.create.mockResolvedValue({
@@ -349,6 +352,94 @@ describe("registerEventService", () => {
     expect(result.registration.id).toBe(REGISTRATION_ID);
     expect(result.registration.registration_id).toBe(REGISTRATION_ID);
     expect(result.registration.team_size).toBe(1);
+  });
+
+  it("adds individual registrant to linked event conversation", async () => {
+    prismaMock.events.findUnique
+      .mockResolvedValueOnce(
+        makeEventRow({
+          event_status: "published",
+          conversation_id: "conversation-1",
+        }),
+      )
+      .mockResolvedValueOnce(
+        makeEventRow({
+          event_status: "published",
+          conversation_id: "conversation-1",
+        }),
+      );
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: "conversation-1",
+      type: "group",
+    });
+
+    await registerEventService(EVENT_ID, ATTENDEE_ID);
+
+    expect(prismaMock.conversation_members.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: [
+          {
+            conversation_id: "conversation-1",
+            user_id: ATTENDEE_ID,
+          },
+        ],
+        skipDuplicates: true,
+      }),
+    );
+  });
+
+  it("adds all team members to linked event conversation", async () => {
+    prismaMock.events.findUnique
+      .mockResolvedValueOnce(
+        makeEventRow({
+          event_status: "published",
+          participation_type: "team",
+          min_team_size: 2,
+          max_team_size: 5,
+          conversation_id: "conversation-1",
+        }),
+      )
+      .mockResolvedValueOnce(
+        makeEventRow({
+          event_status: "published",
+          participation_type: "team",
+          min_team_size: 2,
+          max_team_size: 5,
+          conversation_id: "conversation-1",
+        }),
+      );
+    prismaMock.event_team_members.findMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { user_id: ATTENDEE_ID },
+        { user_id: "member-1" },
+      ]);
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: "conversation-1",
+      type: "group",
+    });
+
+    await registerEventService(EVENT_ID, ATTENDEE_ID, {
+      team_name: "Alpha",
+      team_size: 2,
+      member_user_ids: ["member-1"],
+    });
+
+    expect(prismaMock.conversation_members.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.arrayContaining([
+          {
+            conversation_id: "conversation-1",
+            user_id: ATTENDEE_ID,
+          },
+          {
+            conversation_id: "conversation-1",
+            user_id: "member-1",
+          },
+        ]),
+        skipDuplicates: true,
+      }),
+    );
   });
 
   it("throws 400 when required team members are not added", async () => {

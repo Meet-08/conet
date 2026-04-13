@@ -1172,6 +1172,7 @@ export const registerEventService = async (eventId, userId, body = {}) => {
   }
 
   let resolvedTeamId = teamId;
+  let participantIdsForConversation = [userId];
 
   if (participationType === "team") {
     const requestedMemberIds = memberUserIds ?? [];
@@ -1274,6 +1275,20 @@ export const registerEventService = async (eventId, userId, body = {}) => {
       }
       throw error;
     }
+
+    const teamMembers = await prisma.event_team_members.findMany({
+      where: {
+        event_id: eventId,
+        team_id: resolvedTeamId,
+      },
+      select: {
+        user_id: true,
+      },
+    });
+
+    participantIdsForConversation = [
+      ...new Set(teamMembers.map((member) => member.user_id)),
+    ];
   }
 
   const registrationCreateData = {
@@ -1309,6 +1324,30 @@ export const registerEventService = async (eventId, userId, body = {}) => {
       throw err;
     }
     throw error;
+  }
+
+  const linkedConversationId = String(event.conversation_id ?? "").trim();
+  if (linkedConversationId) {
+    const linkedConversation = await prisma.conversations.findUnique({
+      where: { id: linkedConversationId },
+      select: { id: true, type: true },
+    });
+
+    if (linkedConversation?.type === "group") {
+      const uniqueParticipantIds = [
+        ...new Set(participantIdsForConversation.filter(Boolean)),
+      ];
+
+      if (uniqueParticipantIds.length) {
+        await prisma.conversation_members.createMany({
+          data: uniqueParticipantIds.map((participantId) => ({
+            conversation_id: linkedConversationId,
+            user_id: participantId,
+          })),
+          skipDuplicates: true,
+        });
+      }
+    }
   }
 
   const updatedEvent = await prisma.events.findUnique({
