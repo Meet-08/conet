@@ -27,6 +27,7 @@
     "bullmq": "^5.70.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
+    "exceljs": "^4.4.0",
     "express": "^5.2.1",
     "express-async-handler": "^1.2.0",
     "firebase-admin": "^13.6.1",

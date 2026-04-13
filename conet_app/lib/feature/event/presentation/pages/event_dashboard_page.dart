@@ -95,7 +95,13 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
         centerTitle: false,
         actions: [
           IconButton(
-            onPressed: () => context.push('/create-event'),
+            onPressed: () async {
+              final created = await context.push<bool>('/create-event');
+              if (!mounted) return;
+              if (created == true) {
+                _fetchForSelectedFilter();
+              }
+            },
             icon: const FaIcon(FontAwesomeIcons.plus),
           ),
         ],

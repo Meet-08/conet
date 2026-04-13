@@ -1,4 +1,5 @@
 import 'package:conet_app/core/utils/app_toast.dart';
+import 'package:conet_app/core/widgets/file_download_open_button.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_attendees.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_registration_bloc.dart';
@@ -26,6 +27,14 @@ class EventAttendeesPage extends StatefulWidget {
 
 class _EventAttendeesPageState extends State<EventAttendeesPage> {
   String _selectedStatus = 'all';
+
+  String _exportFileName() {
+    final safeTitle = (widget.eventTitle ?? 'event_participants')
+        .trim()
+        .replaceAll(RegExp(r'[^a-zA-Z0-9-_ ]'), '')
+        .replaceAll(RegExp(r'\s+'), '_');
+    return '${safeTitle.isEmpty ? 'event_participants' : safeTitle}_participants.xlsx';
+  }
 
   static const _statusFilters = [
     _StatusFilter(label: 'All', value: 'all'),
@@ -62,6 +71,14 @@ class _EventAttendeesPageState extends State<EventAttendeesPage> {
               ? 'Attendees'
               : 'Event Attendees',
         ),
+        actions: [
+          FileDownloadOpenButton(
+            downloadUrl: '/events/${widget.eventId}/participants/export',
+            fileName: _exportFileName(),
+            allowRedownload: true,
+            subDirectory: 'event_exports',
+          ),
+        ],
       ),
       body: BlocConsumer<EventRegistrationBloc, EventRegistrationState>(
         listener: (context, state) {

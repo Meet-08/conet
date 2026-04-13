@@ -1,3 +1,4 @@
+import ExcelJS from "exceljs";
 import prisma from "../config/prisma.js";
 import {
   assertEndAfterStart,
@@ -70,6 +71,47 @@ const formatParticipantDisplayName = (member) => {
   if (username) return username;
 
   return String(member?.user_id ?? "A participant");
+};
+
+const formatUserDisplayName = (user) => {
+  const firstName = String(user?.first_name ?? "").trim();
+  const lastName = String(user?.last_name ?? "").trim();
+  const fullName = `${firstName} ${lastName}`.trim();
+  if (fullName) return fullName;
+
+  const username = String(user?.username ?? "").trim();
+  if (username) return username;
+
+  return "Unknown attendee";
+};
+
+const sanitizeXlsxFileName = (value) =>
+  String(value ?? "participants")
+    .trim()
+    .replace(/[^a-zA-Z0-9-_ ]+/g, "")
+    .replace(/\s+/g, "_")
+    .slice(0, 60) || "participants";
+
+const normalizeCellValue = (value) => {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => normalizeCellValue(entry))
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  if (isPlainObject(value)) {
+    return Object.entries(value)
+      .map(([key, entry]) => `${key}: ${normalizeCellValue(entry)}`)
+      .join("; ");
+  }
+
+  return String(value);
 };
 
 const normalizeAttendeeStatusFilter = (value) => {
@@ -1559,6 +1601,145 @@ export const getEventAttendeesService = async (
       cancelled: statusCounts.cancelled,
     },
   };
+};
+
+export const exportEventParticipationXlsxService = async (
+  eventId,
+  requesterUserId,
+) => {
+  const event = await assertAttendanceScanner(eventId, requesterUserId);
+  const participationType =
+    normalizeParticipationType(event.participation_type) ?? "individual";
+
+  const registrations = await prisma.event_registrations.findMany({
+    where: {
+      event_id: eventId,
+      registration_status: {
+        in: ["registered", "attended", "cancelled"],
+      },
+    },
+    orderBy: [{ registered_at: "asc" }, { id: "asc" }],
+    include: {
+      users: {
+        select: attendeeUserSelect,
+      },
+      event_teams: {
+        include: {
+          users: {
+            select: attendeeUserSelect,
+          },
+          event_team_members: {
+            orderBy: [{ joined_at: "asc" }, { id: "asc" }],
+            include: {
+              users: {
+                select: attendeeUserSelect,
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const customFieldDescriptors = getEventCustomFieldDescriptors(
+    event.custom_fields,
+  );
+
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "CoNet";
+  workbook.created = new Date();
+
+  const sheet = workbook.addWorksheet("Participants");
+  const customFieldColumns = customFieldDescriptors.map(
+    (descriptor, index) => ({
+      header:
+        descriptor.label?.trim().length ?
+          descriptor.label.trim()
+        : `Custom Field ${index + 1}`,
+      key: `custom_response_${index + 1}`,
+      width: 40,
+    }),
+  );
+
+  if (participationType === "team") {
+    const maxMemberCount = registrations.reduce((max, registration) => {
+      const members = (
+        registration.event_teams?.event_team_members ?? []
+      ).filter((member) => member.role !== "leader");
+      return Math.max(max, members.length);
+    }, 0);
+
+    const memberColumns = Array.from(
+      { length: maxMemberCount },
+      (_, index) => ({
+        header: `Team Member ${index + 1}`,
+        key: `team_member_${index + 1}`,
+        width: 28,
+      }),
+    );
+
+    sheet.columns = [
+      { header: "Team Name", key: "team_name", width: 28 },
+      { header: "Leader Name", key: "leader_name", width: 28 },
+      ...memberColumns,
+      ...customFieldColumns,
+    ];
+
+    for (const registration of registrations) {
+      const team = registration.event_teams;
+      const members = (team?.event_team_members ?? []).filter(
+        (member) => member.role !== "leader",
+      );
+      const row = {
+        team_name:
+          String(team?.team_name ?? "").trim() ||
+          `Team-${registration.team_id ?? registration.id}`,
+        leader_name: formatUserDisplayName(team?.users ?? registration.users),
+      };
+
+      members.forEach((member, index) => {
+        row[`team_member_${index + 1}`] = formatUserDisplayName(member.users);
+      });
+
+      customFieldDescriptors.forEach((descriptor, index) => {
+        const rawValue = findCustomFieldResponseValue(
+          registration.custom_field_responses,
+          descriptor,
+        );
+        row[`custom_response_${index + 1}`] = normalizeCellValue(rawValue);
+      });
+
+      sheet.addRow(row);
+    }
+  } else {
+    sheet.columns = [
+      { header: "Name", key: "name", width: 28 },
+      ...customFieldColumns,
+    ];
+
+    for (const registration of registrations) {
+      const row = {
+        name: formatUserDisplayName(registration.users),
+      };
+
+      customFieldDescriptors.forEach((descriptor, index) => {
+        const rawValue = findCustomFieldResponseValue(
+          registration.custom_field_responses,
+          descriptor,
+        );
+        row[`custom_response_${index + 1}`] = normalizeCellValue(rawValue);
+      });
+
+      sheet.addRow(row);
+    }
+  }
+
+  sheet.getRow(1).font = { bold: true };
+
+  const safeTitle = sanitizeXlsxFileName(event.title || "event_participants");
+  const fileName = `${safeTitle}_participants.xlsx`;
+
+  return { workbook, fileName };
 };
 
 export const attendEventService = async (eventId, scannerUserId, body = {}) => {

@@ -490,7 +490,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
               ? 'Event saved as draft'
               : 'Event published successfully!';
           AppToast.showSuccess(context, msg);
-          context.pop();
+          context.pop(true);
         } else if (state is EventCreateFailure) {
           AppToast.showError(context, state.message);
         }

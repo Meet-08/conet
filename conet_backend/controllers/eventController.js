@@ -4,6 +4,7 @@ import {
   attendEventService,
   cancelEventService,
   createEventService,
+  exportEventParticipationXlsxService,
   getEventAttendeesService,
   getEventService,
   getRegistrationInfoService,
@@ -105,6 +106,22 @@ export const getEventAttendees = asyncHandler(async (req, res) => {
     status: req.query.status,
   });
   res.status(200).json({ success: true, ...result });
+});
+
+export const exportEventParticipationXlsx = asyncHandler(async (req, res) => {
+  const { workbook, fileName } = await exportEventParticipationXlsxService(
+    req.params.id,
+    req.user.id,
+  );
+
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  );
+  res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+
+  await workbook.xlsx.write(res);
+  res.end();
 });
 
 export const attendEvent = asyncHandler(async (req, res) => {

@@ -775,6 +775,7 @@ model events {
   upi_id                String?
   custom_fields         Json?                   @default("[]")
   conversation_id       String?                 @db.Uuid
+  payment_bypass        Boolean                 @default(true)
   event_activity        event_activity[]
   event_bookmarks       event_bookmarks[]
   event_cohosts         event_cohosts[]
