@@ -51,38 +51,46 @@
 		<string>remote-notification</string>
 	</array>
 
-	<!-- Google Sign-in Section -->
-	<key>CFBundleURLTypes</key>
-	<array>
-  		<dict>
-    	<key>CFBundleTypeRole</key>
-    	<string>Editor</string>
-    	<key>CFBundleURLSchemes</key>
-    	<array>
-      <!-- Copied from GoogleService-Info.plist key REVERSED_CLIENT_ID -->
-	  <string>com.googleusercontent.apps.391005038758-f099rrath1a0nntgcpbb9pras3g390tg</string>
-      <!-- <string>com.googleusercontent.apps.303081967551-j2t47r1evlpd7v3q36soahqnrl2t21pm</string> -->
-    </array>
-	<!-- End of the Google Sign-in Section -->
-
-	<key>CFBundleURLTypes</key>
-	<array>
-    	<dict>
-        	<key>CFBundleTypeRole</key>
-        	<string>Editor</string>
-        	<key>CFBundleURLName</key>
-        	<string>com.example.conet_app</string>
-			<key>CFBundleURLSchemes</key>
-        	<array>
-            	<string>conetapp</string>
-        	</array>
-    	</dict>
-	</array>
-	<key>NSDocumentUsageDescription</key>
-	<string>Conet needs access to your files to download and save media content.</string>
+	<!-- Permission Descriptions -->
+	<key>NSCameraUsageDescription</key>
+	<string>Conet needs access to your camera for scanning QR codes and capturing photos in messages.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Conet needs access to your microphone for recording audio messages.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Conet needs access to your photo library to share photos and videos in messages.</string>
+	<key>NSPhotoLibraryAddOnlyUsageDescription</key>
+	<string>Conet needs permission to save photos and videos to your library.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Conet needs local network access for connectivity.</string>
-  </dict>
-</array>
+	<key>NSDocumentUsageDescription</key>
+	<string>Conet needs access to your files to download and save media content.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Conet needs access to your calendar for event management.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Conet needs your location for sharing event venues and location-based features.</string>
+
+	<!-- Google Sign-in Configuration -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- Reversed Client ID from GoogleService-Info.plist -->
+				<string>com.googleusercontent.apps.391005038758-f099rrath1a0nntgcpbb9pras3g390tg</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.example.conet_app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>conetapp</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
