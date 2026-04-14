@@ -41,6 +41,14 @@ export function createApp() {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
+  app.get("/healthy", (_req, res) => {
+    res.json({
+      status: "ok",
+      healthy: true,
+      timestamp: new Date().toISOString(),
+    });
+  });
+
   // Catch-all 404 – must be registered BEFORE errorHandler
   app.use((_req, res, next) => {
     res.status(404);

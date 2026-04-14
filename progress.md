@@ -207,6 +207,7 @@
 - **Token Interceptor** — Dio interceptor that auto-attaches Supabase JWT `Authorization` header to every API request
 - **Backend JWT Middleware** — `validateSupabaseToken.js` verifies Supabase JWT on all protected backend routes
 - **Request Logger** — `requestLogger.js` structured request/response logging to `logs/` via Winston
+- **Health Check Endpoint** — Exposes `GET /health` and `GET /healthy` for uptime/status probes
 
 ---
 
