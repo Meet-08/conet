@@ -13,6 +13,7 @@ import 'package:conet_app/feature/message/domain/usecases/message_get_conversati
 import 'package:conet_app/feature/message/domain/usecases/message_get_group_members.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_promote_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_remove_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
@@ -46,6 +47,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   final MessageDeleteGroup _deleteGroup;
   final MessageGetGroupMembers _getGroupMembers;
   final MessageAddGroupMember _addGroupMember;
+  final MessagePromoteGroupMember _promoteGroupMember;
   final MessageRemoveGroupMember _removeGroupMember;
   final String? Function() _getCurrentUserId;
   StreamSubscription<MessageRealtimeEvent>? _messagesSubscription;
@@ -69,6 +71,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     required MessageDeleteGroup deleteGroup,
     required MessageGetGroupMembers getGroupMembers,
     required MessageAddGroupMember addGroupMember,
+    required MessagePromoteGroupMember promoteGroupMember,
     required MessageRemoveGroupMember removeGroupMember,
     String? Function()? getCurrentUserId,
   }) : _createConversation = createConversation,
@@ -84,6 +87,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
        _deleteGroup = deleteGroup,
        _getGroupMembers = getGroupMembers,
        _addGroupMember = addGroupMember,
+       _promoteGroupMember = promoteGroupMember,
        _removeGroupMember = removeGroupMember,
        _getCurrentUserId =
            (getCurrentUserId ??
@@ -113,6 +117,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     on<MessageGroupDeleted>(_onGroupDeleted);
     on<MessageGroupMembersRequested>(_onGroupMembersRequested);
     on<MessageGroupMemberAdded>(_onGroupMemberAdded);
+    on<MessageGroupMemberPromoted>(_onGroupMemberPromoted);
     on<MessageGroupMemberRemoved>(_onGroupMemberRemoved);
 
     // Initial global subscription setup
@@ -308,6 +313,20 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     Emitter<MessageState> emit,
   ) async {
     final result = await _addGroupMember(
+      groupId: event.groupId,
+      userId: event.userId,
+    );
+    result.fold(
+      (l) => emit(state.copyWith(errorMessage: l.message)),
+      (r) => add(MessageGroupMembersRequested(event.groupId)),
+    );
+  }
+
+  Future<void> _onGroupMemberPromoted(
+    MessageGroupMemberPromoted event,
+    Emitter<MessageState> emit,
+  ) async {
+    final result = await _promoteGroupMember(
       groupId: event.groupId,
       userId: event.userId,
     );

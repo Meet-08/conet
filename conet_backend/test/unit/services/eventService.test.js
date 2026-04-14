@@ -340,19 +340,6 @@ describe("registerEventService", () => {
     });
   });
 
-  it("throws 400 when organizer attempts self-registration", async () => {
-    prismaMock.events.findUnique.mockResolvedValue(
-      makeEventRow({ event_status: "published" }),
-    );
-
-    await expect(
-      registerEventService(EVENT_ID, ORGANIZER_ID),
-    ).rejects.toMatchObject({
-      statusCode: 400,
-      message: "Organizer cannot register for their own event",
-    });
-  });
-
   it("throws 409 when registration deadline is passed", async () => {
     prismaMock.events.findUnique.mockResolvedValue(
       makeEventRow({
@@ -778,6 +765,39 @@ describe("registerParticipantForEventService", () => {
           event_id_user_id: {
             event_id: EVENT_ID,
             user_id: ATTENDEE_ID,
+          },
+        },
+      }),
+    );
+    expect(result.registration.id).toBe(REGISTRATION_ID);
+  });
+
+  it("allows organizer or co-host to register themselves", async () => {
+    prismaMock.events.findUnique
+      .mockResolvedValueOnce(makeEventRow({ event_status: "published" }))
+      .mockResolvedValueOnce(makeEventRow({ event_status: "published" }))
+      .mockResolvedValueOnce(
+        makeEventRow({
+          event_status: "published",
+          event_registrations: [{ user_id: ORGANIZER_ID }],
+          _count: { event_registrations: 1 },
+        }),
+      );
+
+    const result = await registerParticipantForEventService(
+      EVENT_ID,
+      ORGANIZER_ID,
+      {
+        participant_user_id: ORGANIZER_ID,
+      },
+    );
+
+    expect(prismaMock.event_registrations.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          event_id_user_id: {
+            event_id: EVENT_ID,
+            user_id: ORGANIZER_ID,
           },
         },
       }),

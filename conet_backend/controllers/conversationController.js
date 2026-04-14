@@ -8,6 +8,7 @@ import {
   getGroupMembersService,
   getMessagesService,
   markAsReadService,
+  promoteGroupMemberService,
   removeGroupMemberService,
   searchUsersService,
   sendMessageService,
@@ -176,6 +177,20 @@ export const addGroupMember = asyncHandler(async (req, res) => {
   const member = await addGroupMemberService(groupId, currentUserId, userId);
 
   res.status(201).json({ success: true, member });
+});
+
+// PATCH /api/groups/:groupId/members/:userId/role
+export const promoteGroupMember = asyncHandler(async (req, res) => {
+  const { groupId, userId } = req.params;
+  const currentUserId = req.user.id;
+
+  const member = await promoteGroupMemberService(
+    groupId,
+    currentUserId,
+    userId,
+  );
+
+  res.status(200).json({ success: true, member });
 });
 
 // DELETE /api/groups/:groupId/members/:userId

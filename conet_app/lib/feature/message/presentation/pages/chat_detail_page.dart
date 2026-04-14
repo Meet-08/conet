@@ -237,11 +237,17 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                 ),
               ),
             ),
-          ChatInputBar(
-            controller: _controller,
-            onSend: _sendMessage,
-            onFilesSelected: _pickFiles,
-            selectedFilesCount: _selectedFiles.length,
+          BlocBuilder<MessageBloc, MessageState>(
+            builder: (context, state) {
+              return ChatInputBar(
+                controller: _controller,
+                onSend: _sendMessage,
+                onFilesSelected: _pickFiles,
+                selectedFilesCount: _selectedFiles.length,
+                isGroupChat: widget.conversation.isGroup,
+                isAdmin: widget.conversation.isAdmin,
+              );
+            },
           ),
         ],
       ),

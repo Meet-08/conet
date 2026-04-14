@@ -526,6 +526,81 @@ export const addGroupMemberService = async (
 };
 
 /**
+ * Promote a group member to admin.
+ */
+export const promoteGroupMemberService = async (
+  groupId,
+  currentUserId,
+  targetUserId,
+) => {
+  const conversation = await prisma.conversations.findUnique({
+    where: { id: groupId },
+    include: { conversation_members: true },
+  });
+
+  if (!conversation || conversation.type !== "group") {
+    const err = new Error("Group not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const self = conversation.conversation_members.find(
+    (m) => m.user_id === currentUserId,
+  );
+
+  if (!self || self.role !== "admin") {
+    const err = new Error("Only group admins can promote members");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  if (targetUserId === currentUserId) {
+    const err = new Error("Cannot promote yourself");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const targetMember = conversation.conversation_members.find(
+    (m) => m.user_id === targetUserId,
+  );
+
+  if (!targetMember) {
+    const err = new Error("Target user is not a member of this group");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (targetMember.role === "admin") {
+    const err = new Error("User is already an admin");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const targetUser = await prisma.users.findUnique({
+    where: { id: targetUserId },
+    select: USER_SELECT_FIELDS,
+  });
+
+  if (!targetUser) {
+    const err = new Error("User not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  await prisma.conversation_members.update({
+    where: {
+      conversation_id_user_id: {
+        conversation_id: groupId,
+        user_id: targetUserId,
+      },
+    },
+    data: { role: "admin" },
+  });
+
+  return { ...targetUser, role: "admin" };
+};
+
+/**
  * Remove a member from a group OR leave the group yourself.
  *
  * Rules:

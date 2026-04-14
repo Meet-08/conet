@@ -13,6 +13,11 @@ class EventCategory {
 
 const List<EventCategory> eventCategories = [
   EventCategory(
+    value: 'sports',
+    label: 'Sports',
+    description: 'Tournaments, matches, fitness events',
+  ),
+  EventCategory(
     value: 'tech',
     label: 'Tech',
     description: 'Hackathons, coding contests, tech talks',

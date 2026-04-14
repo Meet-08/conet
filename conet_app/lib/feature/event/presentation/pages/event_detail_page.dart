@@ -848,10 +848,7 @@ class _RegisterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final canRegister =
-        !showDashboardAction &&
-        !loading &&
-        !event.isRegistered &&
-        event.eventStatus == 'published';
+        !loading && !event.isRegistered && event.eventStatus == 'published';
 
     final buttonLabel = showDashboardAction
         ? 'Go to Dashboard'
@@ -902,11 +899,33 @@ class _RegisterBar extends StatelessWidget {
                       builder: (context, constraints) {
                         final compact = constraints.maxWidth < 420;
 
+                        Widget registerNowButton() {
+                          return OutlinedButton.icon(
+                            onPressed: canRegister ? onRegister : null,
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            icon: const FaIcon(
+                              FontAwesomeIcons.userCheck,
+                              size: 14,
+                            ),
+                            label: buttonText(
+                              event.isRegistered
+                                  ? 'Registered'
+                                  : 'Register Now',
+                            ),
+                          );
+                        }
+
                         if (compact) {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             mainAxisSize: MainAxisSize.min,
                             children: [
+                              if (canRegister) ...[
+                                registerNowButton(),
+                                const SizedBox(height: 8),
+                              ],
                               OutlinedButton.icon(
                                 onPressed: onRegisterParticipant,
                                 style: OutlinedButton.styleFrom(
@@ -940,6 +959,10 @@ class _RegisterBar extends StatelessWidget {
 
                         return Row(
                           children: [
+                            if (canRegister) ...[
+                              Expanded(child: registerNowButton()),
+                              const SizedBox(width: 8),
+                            ],
                             Expanded(
                               child: OutlinedButton.icon(
                                 onPressed: onRegisterParticipant,
@@ -976,7 +999,7 @@ class _RegisterBar extends StatelessWidget {
                       },
                     )
                   : FilledButton(
-                      onPressed: canRegister ? onRegister : null,
+                      onPressed: null,
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),

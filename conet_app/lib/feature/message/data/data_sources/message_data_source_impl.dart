@@ -259,6 +259,26 @@ class MessageDataSourceImpl implements MessageDataSource {
   }
 
   @override
+  Future<GroupMemberModel> promoteGroupMember({
+    required String groupId,
+    required String userId,
+  }) async {
+    try {
+      final res = await _dioClient.dio.patch(
+        "/groups/$groupId/members/$userId/role",
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to promote group member");
+      }
+      final data = res.data as Map<String, dynamic>;
+      return GroupMemberModel.fromJson(data['member'] as Map<String, dynamic>);
+    } catch (e) {
+      logger.e("Failed to promote group member: ${e.toString()}");
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
   Future<Unit> removeGroupMember({
     required String groupId,
     required String userId,

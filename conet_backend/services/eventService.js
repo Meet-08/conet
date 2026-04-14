@@ -1078,12 +1078,6 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     throw err;
   }
 
-  if (event.organizer_id === userId) {
-    const err = new Error("Organizer cannot register for their own event");
-    err.statusCode = 400;
-    throw err;
-  }
-
   if (
     event.registration_deadline &&
     new Date(event.registration_deadline).getTime() < Date.now()
@@ -1439,14 +1433,6 @@ export const registerParticipantForEventService = async (
 
   if (!hasValue(participantUserId)) {
     const err = new Error("participant_user_id is required");
-    err.statusCode = 400;
-    throw err;
-  }
-
-  if (participantUserId === requesterUserId) {
-    const err = new Error(
-      "participant_user_id must be different from requesting user",
-    );
     err.statusCode = 400;
     throw err;
   }

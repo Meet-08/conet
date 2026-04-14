@@ -7,29 +7,26 @@ class AuthConstants {
   static const String specialChars = '!@#\$%^&*()_+-=[]{}|;:,.<>?';
 
   static const List<String> collegeOptions = [
-    'Harvard University',
-    'Stanford University',
-    'MIT',
-    'University of California, Berkeley',
-    'Yale University',
+    'Vishwakarma Government Engineering College',
+    'Gujarat Technological University',
   ];
 
-  static const List<String> degreeOptions = [
-    'B.A (Bachelor of Arts)',
-    'B.S (Bachelor of Science)',
-    'B.B.A (Bachelor of Business Administration)',
-    'M.A (Master of Arts)',
-    'M.S (Master of Science)',
-  ];
+  static const List<String> degreeOptions = ['B.E', 'B.Tech'];
 
   static const List<String> courseOptions = [
-    'Economics',
-    'Psychology',
-    'English Literature',
-    'History',
-    'Political Science',
-    'Computer Science',
-    'Mathematics',
-    'Business Administration',
+    'Applied Mechanics',
+    'Chemical Engineering',
+    'Civil Engineering',
+    'Computer Engineering',
+    'Computer Science and Engineering (Data Science)',
+    'Electronics and Communication Engineering',
+    'Electronics and Instrumentation Engineering',
+    'Electrical Engineering',
+    'Information Technology',
+    'Information and Communication Technology',
+    'Instrumentation and Control Engineering',
+    'Mechanical Engineering',
+    'Power Electronics',
+    'Science and Humanities',
   ];
 }

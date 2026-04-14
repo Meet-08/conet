@@ -49,6 +49,11 @@ abstract interface class MessageDataSource {
     required String userId,
   });
 
+  Future<GroupMemberModel> promoteGroupMember({
+    required String groupId,
+    required String userId,
+  });
+
   Future<Unit> removeGroupMember({
     required String groupId,
     required String userId,

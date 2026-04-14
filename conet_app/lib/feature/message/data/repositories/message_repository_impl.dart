@@ -197,6 +197,19 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
+  Future<Either<AppFailure, GroupMember>> promoteGroupMember({
+    required String groupId,
+    required String userId,
+  }) {
+    return _getResult(
+      () => _messageDataSource.promoteGroupMember(
+        groupId: groupId,
+        userId: userId,
+      ),
+    );
+  }
+
+  @override
   Future<Either<AppFailure, Unit>> removeGroupMember({
     required String groupId,
     required String userId,

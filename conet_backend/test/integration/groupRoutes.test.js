@@ -7,6 +7,7 @@
  *  ✓ DELETE /api/groups/:groupId                 – delete group (admin only)
  *  ✓ GET    /api/groups/:groupId/members         – list members
  *  ✓ POST   /api/groups/:groupId/members         – add member (admin only)
+ *  ✓ PATCH  /api/groups/:groupId/members/:userId/role – promote member to admin
  *  ✓ DELETE /api/groups/:groupId/members/:userId – remove / leave
  *  ✓ GET    /api/conversations?type=group        – filter by type
  *  ✓ Auth required on every route
@@ -438,6 +439,58 @@ describe("POST /api/groups/:groupId/members", () => {
       .send({ userId: USER_C_ID });
 
     expect(res.status).toBe(401);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("PATCH /api/groups/:groupId/members/:userId/role", () => {
+  it("200 – admin can promote a member to admin", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue(
+      mockGroupConversation,
+    );
+    prismaMock.users.findUnique.mockResolvedValue(
+      mockGroupConversation.conversation_members[1].users,
+    );
+    prismaMock.conversation_members.update.mockResolvedValue({});
+
+    const res = await request(app)
+      .patch(`/api/groups/${GROUP_ID}/members/${TEST_USER_B.id}/role`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.member.id).toBe(TEST_USER_B.id);
+    expect(res.body.member.role).toBe("admin");
+  });
+
+  it("403 – non-admin cannot promote members", async () => {
+    const groupWhereAliceIsMember = {
+      ...mockGroupConversation,
+      conversation_members: mockGroupConversation.conversation_members.map(
+        (m) => (m.user_id === TEST_USER.id ? { ...m, role: "member" } : m),
+      ),
+    };
+    prismaMock.conversations.findUnique.mockResolvedValue(
+      groupWhereAliceIsMember,
+    );
+
+    const res = await request(app)
+      .patch(`/api/groups/${GROUP_ID}/members/${USER_C_ID}/role`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(403);
+  });
+
+  it("400 – rejects promoting yourself", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue(
+      mockGroupConversation,
+    );
+
+    const res = await request(app)
+      .patch(`/api/groups/${GROUP_ID}/members/${TEST_USER.id}/role`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(400);
   });
 });
 

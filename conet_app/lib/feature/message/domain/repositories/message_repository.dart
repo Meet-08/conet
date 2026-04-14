@@ -62,6 +62,11 @@ abstract interface class MessageRepository {
     required String userId,
   });
 
+  Future<Either<AppFailure, GroupMember>> promoteGroupMember({
+    required String groupId,
+    required String userId,
+  });
+
   Future<Either<AppFailure, Unit>> removeGroupMember({
     required String groupId,
     required String userId,

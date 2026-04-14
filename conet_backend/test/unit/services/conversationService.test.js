@@ -46,6 +46,7 @@ import {
   getConversationsService,
   getMessagesService,
   markAsReadService,
+  promoteGroupMemberService,
   searchUsersService,
   sendMessageService,
 } from "../../../services/conversationService.js";
@@ -89,6 +90,20 @@ const mockConversationRow = {
     },
   ],
   _count: { unreadMessages: 0 },
+};
+
+const mockGroupConversation = {
+  id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  type: "group",
+  name: "Study Crew",
+  group_image_url: null,
+  created_by: TEST_USER.id,
+  created_at: new Date("2025-01-01"),
+  updated_at: new Date("2025-01-02"),
+  conversation_members: [
+    { user_id: TEST_USER.id, role: "admin" },
+    { user_id: TEST_USER_B.id, role: "member" },
+  ],
 };
 
 beforeEach(() => {
@@ -564,5 +579,55 @@ describe("searchUsersService", () => {
     const result = await searchUsersService("zzz", 3, TEST_USER.id);
 
     expect(result).toEqual([]);
+  });
+});
+
+describe("promoteGroupMemberService", () => {
+  it("promotes a group member to admin", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue(
+      mockGroupConversation,
+    );
+    prismaMock.users.findUnique.mockResolvedValue(mockOtherUser);
+    prismaMock.conversation_members.update.mockResolvedValue({});
+
+    const result = await promoteGroupMemberService(
+      mockGroupConversation.id,
+      TEST_USER.id,
+      TEST_USER_B.id,
+    );
+
+    expect(prismaMock.conversation_members.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          conversation_id_user_id: {
+            conversation_id: mockGroupConversation.id,
+            user_id: TEST_USER_B.id,
+          },
+        },
+        data: { role: "admin" },
+      }),
+    );
+    expect(result.id).toBe(TEST_USER_B.id);
+    expect(result.role).toBe("admin");
+  });
+
+  it("rejects non-admin promotions", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      ...mockGroupConversation,
+      conversation_members: mockGroupConversation.conversation_members.map(
+        (member) =>
+          member.user_id === TEST_USER.id ?
+            { ...member, role: "member" }
+          : member,
+      ),
+    });
+
+    await expect(
+      promoteGroupMemberService(
+        mockGroupConversation.id,
+        TEST_USER.id,
+        TEST_USER_B.id,
+      ),
+    ).rejects.toMatchObject({ statusCode: 403 });
   });
 });

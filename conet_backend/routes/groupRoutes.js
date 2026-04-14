@@ -4,6 +4,7 @@ import {
   createGroup,
   deleteGroup,
   getGroupMembers,
+  promoteGroupMember,
   removeGroupMember,
   updateGroup,
 } from "../controllers/conversationController.js";
@@ -23,6 +24,7 @@ router.delete("/:groupId", deleteGroup);
 // Group members
 router.get("/:groupId/members", getGroupMembers);
 router.post("/:groupId/members", addGroupMember);
+router.patch("/:groupId/members/:userId/role", promoteGroupMember);
 router.delete("/:groupId/members/:userId", removeGroupMember);
 
 export default router;

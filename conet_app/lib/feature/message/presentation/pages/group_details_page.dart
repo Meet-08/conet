@@ -56,6 +56,23 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     return widget.conversation.members;
   }
 
+  List<GroupMember> _sortedMembers(List<GroupMember> members) {
+    final sortedMembers = List<GroupMember>.from(members);
+    sortedMembers.sort((left, right) {
+      if (left.isAdmin != right.isAdmin) {
+        return left.isAdmin ? -1 : 1;
+      }
+
+      final leftName = left.displayName.toLowerCase();
+      final rightName = right.displayName.toLowerCase();
+      final nameComparison = leftName.compareTo(rightName);
+      if (nameComparison != 0) return nameComparison;
+
+      return left.id.compareTo(right.id);
+    });
+    return sortedMembers;
+  }
+
   GroupMember? _findCreator(List<GroupMember> members, String? creatorId) {
     if (creatorId == null || creatorId.isEmpty) return null;
     for (final member in members) {
@@ -167,8 +184,11 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
         body: BlocBuilder<MessageBloc, MessageState>(
           builder: (context, state) {
             final conversation = _resolveConversation(state);
-            final members = _resolveMembers(state, conversation);
+            final members = _sortedMembers(
+              _resolveMembers(state, conversation),
+            );
             final creator = _findCreator(members, conversation.createdBy);
+            final currentUserId = state.currentUserId;
             final visibleMembers = _showAllMembers
                 ? members
                 : members.take(5).toList();
@@ -310,7 +330,20 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   ...visibleMembers.map(
                     (member) => _MemberTile(
                       member: member,
-                      showAdminBadge: member.role.toLowerCase() == 'admin',
+                      showAdminBadge: member.isAdmin,
+                      canPromote:
+                          conversation.isAdmin &&
+                          currentUserId != null &&
+                          member.id != currentUserId &&
+                          !member.isAdmin,
+                      onPromote: () {
+                        context.read<MessageBloc>().add(
+                          MessageGroupMemberPromoted(
+                            groupId: conversation.id,
+                            userId: member.id,
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -428,8 +461,15 @@ class _GroupAvatar extends StatelessWidget {
 class _MemberTile extends StatelessWidget {
   final GroupMember member;
   final bool showAdminBadge;
+  final bool canPromote;
+  final VoidCallback? onPromote;
 
-  const _MemberTile({required this.member, required this.showAdminBadge});
+  const _MemberTile({
+    required this.member,
+    required this.showAdminBadge,
+    this.canPromote = false,
+    this.onPromote,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -481,6 +521,27 @@ class _MemberTile extends StatelessWidget {
                 ),
               ),
             ),
+          if (canPromote) ...[
+            const SizedBox(width: 4),
+            PopupMenuButton<String>(
+              icon: FaIcon(
+                FontAwesomeIcons.ellipsisVertical,
+                size: 16,
+                color: colors.iconSecondary,
+              ),
+              onSelected: (value) {
+                if (value == 'promote') {
+                  onPromote?.call();
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem<String>(
+                  value: 'promote',
+                  child: Text('Promote to admin'),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

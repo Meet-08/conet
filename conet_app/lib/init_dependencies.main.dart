@@ -235,6 +235,9 @@ void _initMessage() {
     () => MessageAddGroupMember(messageRepository: serviceLocator()),
   );
   serviceLocator.registerFactory(
+    () => MessagePromoteGroupMember(messageRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
     () => MessageRemoveGroupMember(messageRepository: serviceLocator()),
   );
 
@@ -254,6 +257,7 @@ void _initMessage() {
       deleteGroup: serviceLocator(),
       getGroupMembers: serviceLocator(),
       addGroupMember: serviceLocator(),
+      promoteGroupMember: serviceLocator(),
       removeGroupMember: serviceLocator(),
     ),
   );
