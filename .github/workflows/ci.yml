@@ -2,7 +2,12 @@ name: ci
 
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "temp/vishwacup"]
+    paths:
+      - "conet_app/**"
+      - ".github/workflows/ci.yml"
+  pull_request:
+    branches: ["temp/vishwacup"]
     paths:
       - "conet_app/**"
       - ".github/workflows/ci.yml"
