@@ -25,12 +25,15 @@
 - **Email Login** — Email + password sign-in via Supabase Auth
 - **Email Sign Up** — Registration with OTP verification flow
 - **Google Sign-In** — OAuth flow via Supabase + Google
+- **Web Google Login Button** — Google OAuth entry point on the web login screen
+- **Web Google Add Details** — First-time Google users complete first name, last name, and username before entering events
 - **OTP Verification** — Email OTP dispatch and verification
 - **OTP Verification Page** — Dedicated full-screen OTP entry with resend cooldown after email sign-up
 - **Add Details** — First name, last name, username onboarding step
 - **Logout** — Signs out, deregisters FCM token, stops presence
 - **Auth Guard** — Router-level redirect for unauthenticated users
 - **Session Persistence** — Restores user session on app restart
+- **Web Session Bootstrap** — Restores the authenticated Supabase user and public `users` row on page load
 
 **Use Cases:** `UserLogin`, `UserSendOtp`, `UserVerifyOtp`, `UserSigninWithGoogle`, `UserCurrent`, `UserAddDetails`, `UserLogout`
 **Backend:** Fully delegated to Supabase Auth + `DELETE /devices/current` on logout
@@ -131,6 +134,17 @@
 
 **Use Cases:** `EventGetById`, `EventRegister`, `EventSave`
 **Backend Endpoints:** `GET /events/:id`, `POST /events/:id/register`, `POST /events/:id/save`
+
+---
+
+### Web Event Access
+
+> Web-only authenticated event list and ticket view.
+
+- **My Events Page** — Authenticated list of registered events with ticket entry points
+- **QR Ticket Page** — Renders the registration QR payload from backend ticket info for event check-in
+
+**Backend Endpoints:** `GET /events/my`, `GET /events/:id/registration-info`
 
 ---
 

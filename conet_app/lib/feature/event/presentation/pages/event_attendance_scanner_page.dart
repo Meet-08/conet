@@ -105,6 +105,12 @@ class _EventAttendanceScannerPageState
     }
   }
 
+  bool _shouldShowAlreadyRegisteredAsError(String message) {
+    final normalized = message.toLowerCase();
+    return normalized.contains('already') &&
+        (normalized.contains('register') || normalized.contains('attend'));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -130,10 +136,12 @@ class _EventAttendanceScannerPageState
           }
 
           if (state is EventRegistrationAttendanceSuccess) {
-            if (state.result.success) {
+            if (_shouldShowAlreadyRegisteredAsError(state.result.message)) {
+              AppToast.showError(context, state.result.message);
+            } else if (state.result.success) {
               AppToast.showSuccess(context, state.result.message);
             } else {
-              AppToast.showInfo(context, state.result.message);
+              AppToast.showError(context, state.result.message);
             }
             setState(() {
               _isProcessingScan = false;
