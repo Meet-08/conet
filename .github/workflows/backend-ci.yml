@@ -2,7 +2,7 @@ name: Backend CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, temp/vishwacup]
     paths:
       - "conet_backend/**"
       - ".github/workflows/backend-ci.yml"
