@@ -64,6 +64,15 @@ class _EventDetailPageState extends State<EventDetailPage> {
     }
   }
 
+  Future<void> _openCohostManagement(Event event) async {
+    await context.push(
+      '/event-cohosts/${event.id}?title=${Uri.encodeComponent(event.title)}',
+    );
+
+    if (!mounted) return;
+    context.read<EventBloc>().add(EventFetchByIdEvent(widget.eventId));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -139,9 +148,17 @@ class _EventDetailPageState extends State<EventDetailPage> {
         final currentUserId = appUserState is AppUserAuthenticated
             ? appUserState.user.id
             : null;
+        final hasOrganizerRole =
+          currentUserId != null &&
+          (event.organizerId == currentUserId ||
+            event.cohosts.any(
+              (cohost) =>
+                cohost.userId.trim() == currentUserId &&
+                cohost.role.trim().toLowerCase() == 'organizer',
+            ));
         final isOrganizerOrCohost =
             currentUserId != null &&
-            (event.organizerId == currentUserId ||
+          (hasOrganizerRole ||
                 event.cohosts.any(
                   (cohost) => cohost.userId.trim() == currentUserId,
                 ));
@@ -229,7 +246,10 @@ class _EventDetailPageState extends State<EventDetailPage> {
                   _PrizeSection(prizes: event.prizes),
                 ],
                 const SizedBox(height: 20),
-                _OrganizerSection(event: event),
+                _OrganizerSection(
+                  event: event,
+                  onManageCohosts: () => _openCohostManagement(event),
+                ),
                 if ((event.eligibility ?? '').trim().isNotEmpty) ...[
                   const SizedBox(height: 20),
                   _EligibilitySection(eligibility: event.eligibility!.trim()),
@@ -626,8 +646,9 @@ class _PrizeSection extends StatelessWidget {
 
 class _OrganizerSection extends StatelessWidget {
   final Event event;
+  final VoidCallback onManageCohosts;
 
-  const _OrganizerSection({required this.event});
+  const _OrganizerSection({required this.event, required this.onManageCohosts});
 
   @override
   Widget build(BuildContext context) {
@@ -642,6 +663,18 @@ class _OrganizerSection extends StatelessWidget {
         : '${organizer.firstName} ${organizer.lastName}'.trim();
     final canOpenProfile =
         context.read<AppUserCubit>().state is AppUserAuthenticated;
+    final currentUserState = context.read<AppUserCubit>().state;
+    final currentUserId = currentUserState is AppUserAuthenticated
+        ? currentUserState.user.id
+        : null;
+    final isOrganizer =
+        currentUserId != null &&
+        (event.organizerId == currentUserId ||
+            event.cohosts.any(
+              (cohost) =>
+                  cohost.userId.trim() == currentUserId &&
+                  cohost.role.trim().toLowerCase() == 'organizer',
+            ));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -725,6 +758,14 @@ class _OrganizerSection extends StatelessWidget {
                       ),
                     );
                   }).toList(),
+                ),
+              ],
+              if (isOrganizer) ...[
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: onManageCohosts,
+                  icon: const FaIcon(FontAwesomeIcons.userPlus, size: 14),
+                  label: const Text('Manage Co-hosts'),
                 ),
               ],
             ],

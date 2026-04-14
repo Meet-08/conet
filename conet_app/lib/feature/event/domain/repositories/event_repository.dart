@@ -2,6 +2,7 @@ import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_attendance_result.dart';
 import 'package:conet_app/feature/event/domain/entities/event_attendees.dart';
+import 'package:conet_app/feature/event/domain/entities/event_cohost.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_page.dart';
 import 'package:conet_app/feature/event/domain/entities/event_register_response.dart';
@@ -65,6 +66,23 @@ abstract interface class EventRepository {
   Future<Either<AppFailure, EventAttendees>> getEventAttendees({
     required String eventId,
     String? status,
+  });
+
+  Future<Either<AppFailure, List<EventCohost>>> getCohosts(String eventId);
+
+  Future<Either<AppFailure, EventCohost>> addCohost({
+    required String eventId,
+    required String userId,
+  });
+
+  Future<Either<AppFailure, String>> removeCohost({
+    required String eventId,
+    required String userId,
+  });
+
+  Future<Either<AppFailure, EventCohost>> promoteCohost({
+    required String eventId,
+    required String userId,
   });
 
   Future<Either<AppFailure, EventAttendanceResult>> markAttendance({

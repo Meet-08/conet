@@ -7,6 +7,8 @@ part 'event_list_item_model.g.dart';
 class EventListItemModel extends EventListItem {
   const EventListItemModel({
     required super.id,
+    super.organizerId,
+    super.isOrganizer,
     super.eventImageUrl,
     required super.title,
     required super.category,
@@ -28,6 +30,8 @@ class EventListItemModel extends EventListItem {
   factory EventListItemModel.fromEntity(EventListItem entity) {
     return EventListItemModel(
       id: entity.id,
+      organizerId: entity.organizerId,
+      isOrganizer: entity.isOrganizer,
       eventImageUrl: entity.eventImageUrl,
       title: entity.title,
       category: entity.category,

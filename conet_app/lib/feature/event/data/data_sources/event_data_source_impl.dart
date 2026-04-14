@@ -5,6 +5,7 @@ import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/event/data/data_sources/event_data_source.dart';
 import 'package:conet_app/feature/event/data/models/event_attendance_result_model.dart';
 import 'package:conet_app/feature/event/data/models/event_attendees_model.dart';
+import 'package:conet_app/feature/event/data/models/event_cohost_model.dart';
 import 'package:conet_app/feature/event/data/models/event_create_payload_model.dart';
 import 'package:conet_app/feature/event/data/models/event_model.dart';
 import 'package:conet_app/feature/event/data/models/event_page_model.dart';
@@ -38,6 +39,97 @@ class EventDataSourceImpl implements EventDataSource {
 
       final data = response.data as Map<String, dynamic>;
       return EventModel.fromJson(data['event'] as Map<String, dynamic>);
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<List<EventCohostModel>> getCohosts(String eventId) async {
+    try {
+      final response = await _dioClient.dio.get('/events/$eventId/cohosts');
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to fetch cohosts');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      final cohosts = data['cohosts'];
+      if (cohosts is! List) {
+        return const <EventCohostModel>[];
+      }
+
+      return cohosts
+          .whereType<Map<String, dynamic>>()
+          .map(EventCohostModel.fromJson)
+          .toList(growable: false);
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<EventCohostModel> addCohost({
+    required String eventId,
+    required String userId,
+  }) async {
+    try {
+      final response = await _dioClient.dio.post(
+        '/events/$eventId/cohosts',
+        data: {'user_id': userId},
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw ServerException('Failed to add cohost');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      return EventCohostModel.fromJson(data['cohost'] as Map<String, dynamic>);
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<String> removeCohost({
+    required String eventId,
+    required String userId,
+  }) async {
+    try {
+      final response = await _dioClient.dio.delete(
+        '/events/$eventId/cohosts/$userId',
+      );
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to remove cohost');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      final message = data['message']?.toString().trim();
+      return message == null || message.isEmpty
+          ? 'Co-host removed successfully'
+          : message;
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<EventCohostModel> promoteCohost({
+    required String eventId,
+    required String userId,
+  }) async {
+    try {
+      final response = await _dioClient.dio.patch(
+        '/events/$eventId/cohosts/$userId/promote',
+      );
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to promote cohost');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      return EventCohostModel.fromJson(data['cohost'] as Map<String, dynamic>);
     } catch (e) {
       throw ServerException(AppErrorHandler.handleException(e), e);
     }

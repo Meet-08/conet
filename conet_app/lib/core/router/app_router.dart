@@ -14,6 +14,7 @@ import 'package:conet_app/feature/event/presentation/constants/event_constants.d
 import 'package:conet_app/feature/event/presentation/pages/create_event_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_attendance_scanner_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_attendees_page.dart';
+import 'package:conet_app/feature/event/presentation/pages/event_cohost_management_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_dashboard_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_detail_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_page.dart';
@@ -391,6 +392,25 @@ class AppRouter {
       GoRoute(
         path: '/event-dashboard',
         builder: (_, _) => const EventDashboardPage(),
+      ),
+
+      GoRoute(
+        path: '/event-cohosts/:eventId',
+        builder: (context, state) {
+          final eventId = state.pathParameters['eventId']?.trim();
+          final eventTitle = state.uri.queryParameters['title']?.trim() ?? '';
+
+          if (eventId == null || eventId.isEmpty) {
+            return const Scaffold(
+              body: Center(child: Text('Invalid event id')),
+            );
+          }
+
+          return EventCohostManagementPage(
+            eventId: eventId,
+            eventTitle: eventTitle,
+          );
+        },
       ),
 
       GoRoute(

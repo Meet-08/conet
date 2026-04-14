@@ -12,6 +12,7 @@ import {
   listMyEventsService,
   listMyOrganizedEventsService,
   listPublishedEventsService,
+  promoteCohostService,
   publishEventService,
   registerEventService,
   registerParticipantForEventService,
@@ -258,6 +259,20 @@ export const removeCohost = asyncHandler(async (req, res) => {
   res
     .status(200)
     .json({ success: true, message: "Co-host removed successfully" });
+});
+
+export const promoteCohost = asyncHandler(async (req, res) => {
+  const cohost = await promoteCohostService(
+    req.params.id,
+    req.user.id,
+    req.params.userId,
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Co-host promoted to organizer successfully",
+    cohost,
+  });
 });
 
 export const listCohosts = asyncHandler(async (req, res) => {

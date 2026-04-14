@@ -19,6 +19,9 @@ class EventCohost extends Equatable {
   @JsonKey(name: 'profile_pic_url')
   final String? profilePicUrl;
 
+  @JsonKey(defaultValue: 'cohost')
+  final String role;
+
   const EventCohost({
     required this.id,
     required this.userId,
@@ -26,6 +29,7 @@ class EventCohost extends Equatable {
     this.firstName,
     this.lastName,
     this.profilePicUrl,
+    this.role = 'cohost',
   });
 
   String get displayName {
@@ -50,6 +54,7 @@ class EventCohost extends Equatable {
     String? firstName,
     String? lastName,
     String? profilePicUrl,
+    String? role,
   }) {
     return EventCohost(
       id: id ?? this.id,
@@ -58,6 +63,7 @@ class EventCohost extends Equatable {
       firstName: firstName ?? this.firstName,
       lastName: lastName ?? this.lastName,
       profilePicUrl: profilePicUrl ?? this.profilePicUrl,
+      role: role ?? this.role,
     );
   }
 
@@ -69,5 +75,6 @@ class EventCohost extends Equatable {
     firstName,
     lastName,
     profilePicUrl,
+    role,
   ];
 }

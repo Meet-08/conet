@@ -236,7 +236,12 @@ class _EventDashboardCard extends StatelessWidget {
 
   List<String> _actionLabels() {
     if (filterLabel == 'Drafts') return const ['Edit'];
-    return const ['Analytics', 'Attendees'];
+
+    if (event.isOrganizer) {
+      return const ['Co-hosts', 'Attendees'];
+    }
+
+    return const ['Attendees'];
   }
 
   String _priceLabel() {
@@ -249,6 +254,37 @@ class _EventDashboardCard extends StatelessWidget {
     return 'Rs ${value.toStringAsFixed(2)}';
   }
 
+  String? _normalizedBannerUrl() {
+    final url = event.eventImageUrl?.trim();
+    if (url == null || url.isEmpty) return null;
+    return Uri.encodeFull(url);
+  }
+
+  Widget _thumbnailPlaceholder(ColorScheme colorScheme) => Container(
+    color: colorScheme.surfaceContainerHighest,
+    alignment: Alignment.center,
+    child: FaIcon(
+      FontAwesomeIcons.calendar,
+      color: colorScheme.onSurfaceVariant,
+      size: 20,
+    ),
+  );
+
+  Widget _smallEventImage(ColorScheme colorScheme) => ClipRRect(
+    borderRadius: BorderRadius.circular(12),
+    child: SizedBox(
+      height: 82,
+      width: 82,
+      child: _normalizedBannerUrl() == null
+          ? _thumbnailPlaceholder(colorScheme)
+          : Image.network(
+              _normalizedBannerUrl()!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => _thumbnailPlaceholder(colorScheme),
+            ),
+    ),
+  );
+
   void _handleActionTap(BuildContext context, String action) {
     switch (action) {
       case 'Attendees':
@@ -258,8 +294,9 @@ class _EventDashboardCard extends StatelessWidget {
           extra: {'event': event},
         );
         return;
-      case 'Analytics':
-        AppToast.showInfo(context, 'Analytics dashboard is coming soon.');
+      case 'Co-hosts':
+        final encodedTitle = Uri.encodeComponent(event.title);
+        context.push('/event-cohosts/${event.id}?title=$encodedTitle');
         return;
       case 'Edit':
         AppToast.showInfo(context, 'Draft editing flow is not available yet.');
@@ -312,20 +349,37 @@ class _EventDashboardCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Text(
-            event.title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              height: 1.2,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _smallEventImage(colorScheme),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      event.title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _MetaRow(
+                      icon: FontAwesomeIcons.calendarDay,
+                      text: '$dateText - $timeText',
+                    ),
+                    const SizedBox(height: 4),
+                    _MetaRow(
+                      icon: FontAwesomeIcons.locationDot,
+                      text: location,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          _MetaRow(
-            icon: FontAwesomeIcons.calendarDay,
-            text: '$dateText - $timeText',
-          ),
-          const SizedBox(height: 4),
-          _MetaRow(icon: FontAwesomeIcons.locationDot, text: location),
           const SizedBox(height: 12),
           if (filterLabel == 'Active' || filterLabel == 'Drafts') ...[
             OutlinedButton(
@@ -403,8 +457,8 @@ class _ActionPill extends StatelessWidget {
 
   IconData _iconForLabel() {
     switch (label) {
-      case 'Analytics':
-        return FontAwesomeIcons.chartLine;
+      case 'Co-hosts':
+        return FontAwesomeIcons.userGroup;
       case 'Attendees':
         return FontAwesomeIcons.userGroup;
       case 'Edit':

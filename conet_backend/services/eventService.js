@@ -1940,7 +1940,7 @@ export const listPublishedEventsService = async ({
     : null;
 
   return {
-    events: rows.map(mapEventSummary),
+    events: rows.map((row) => mapEventSummary(row, viewerId)),
     nextCursor,
     hasMore,
     pageSize: safePageSize,
@@ -2008,7 +2008,7 @@ export const listMyOrganizedEventsService = async (
     : null;
 
   return {
-    events: rows.map(mapEventSummary),
+    events: rows.map((row) => mapEventSummary(row, organizerId)),
     nextCursor,
     hasMore,
     pageSize: safePageSize,
@@ -2114,7 +2114,7 @@ export const listMyEventsService = async (
 
   return {
     type,
-    events: rows.map(mapEventSummary),
+    events: rows.map((row) => mapEventSummary(row, userId)),
     nextCursor,
     hasMore,
     pageSize: safePageSize,
@@ -2184,6 +2184,64 @@ export const removeCohostService = async (
   await prisma.event_cohosts.delete({
     where: { event_id_user_id: { event_id: eventId, user_id: cohostUserId } },
   });
+};
+
+export const promoteCohostService = async (
+  eventId,
+  organizerId,
+  cohostUserId,
+) => {
+  const existing = await assertEventExists(eventId);
+  assertOrganizer(existing, organizerId);
+
+  if (cohostUserId === existing.organizer_id) {
+    const err = new Error("Organizer is already an organizer");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const cohost = await prisma.event_cohosts.findUnique({
+    where: { event_id_user_id: { event_id: eventId, user_id: cohostUserId } },
+    include: {
+      users: {
+        select: {
+          id: true,
+          username: true,
+          first_name: true,
+          last_name: true,
+          profile_pic_url: true,
+        },
+      },
+    },
+  });
+
+  if (!cohost) {
+    const err = new Error("Co-host not found for this event");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (cohost.role === "organizer") {
+    return mapCohost(cohost);
+  }
+
+  const updated = await prisma.event_cohosts.update({
+    where: { event_id_user_id: { event_id: eventId, user_id: cohostUserId } },
+    data: { role: "organizer" },
+    include: {
+      users: {
+        select: {
+          id: true,
+          username: true,
+          first_name: true,
+          last_name: true,
+          profile_pic_url: true,
+        },
+      },
+    },
+  });
+
+  return mapCohost(updated);
 };
 
 export const listCohostsService = async (eventId, requesterId) => {

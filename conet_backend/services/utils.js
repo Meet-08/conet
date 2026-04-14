@@ -18,6 +18,7 @@ export const jsonFieldToString = (value, fallback = "") => {
 export const mapCohost = (c) => ({
   id: c.id,
   user_id: c.user_id,
+  role: c.role ?? "cohost",
   username: c.users?.username ?? "",
   profile_pic_url: c.users?.profile_pic_url ?? null,
   first_name: c.users?.first_name ?? null,
@@ -67,8 +68,12 @@ export const mapEvent = (event, viewerId = null) => ({
     : false,
 });
 
-export const mapEventSummary = (event) => ({
+export const mapEventSummary = (event, viewerId = null) => ({
   id: event.id,
+  organizer_id: event.organizer_id,
+  is_organizer:
+    (viewerId ? event.organizer_id === viewerId : false) ||
+    (event.event_cohosts?.length ?? 0) > 0,
   event_image_url: event.event_image_url ?? null,
   title: event.title,
   category: event.category,
@@ -83,6 +88,7 @@ export const mapEventSummary = (event) => ({
 });
 
 export const eventSummarySelect = (viewerId = null) => ({
+  organizer_id: true,
   event_image_url: true,
   title: true,
   category: true,
@@ -97,6 +103,10 @@ export const eventSummarySelect = (viewerId = null) => ({
   created_at: true,
   ...(viewerId ?
     {
+      event_cohosts: {
+        where: { user_id: viewerId, role: "organizer" },
+        select: { user_id: true },
+      },
       event_bookmarks: {
         where: { user_id: viewerId },
         select: { user_id: true },

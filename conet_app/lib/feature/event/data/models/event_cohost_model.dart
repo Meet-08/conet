@@ -12,6 +12,7 @@ class EventCohostModel extends EventCohost {
     super.firstName,
     super.lastName,
     super.profilePicUrl,
+    super.role,
   });
 
   factory EventCohostModel.fromJson(Map<String, dynamic> json) =>
@@ -27,6 +28,7 @@ class EventCohostModel extends EventCohost {
       firstName: entity.firstName,
       lastName: entity.lastName,
       profilePicUrl: entity.profilePicUrl,
+      role: entity.role,
     );
   }
 }

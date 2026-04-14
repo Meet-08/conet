@@ -12,6 +12,7 @@ import {
   listMyEvents,
   listMyOrganizedEvents,
   listPublishedEvents,
+  promoteCohost,
   publishEvent,
   registerEvent,
   registerParticipant,
@@ -47,6 +48,7 @@ router.patch("/:id/cancel", cancelEvent);
 // Co-host management
 router.get("/:id/cohosts", listCohosts);
 router.post("/:id/cohosts", addCohost);
+router.patch("/:id/cohosts/:userId/promote", promoteCohost);
 router.delete("/:id/cohosts/:userId", removeCohost);
 
 export default router;

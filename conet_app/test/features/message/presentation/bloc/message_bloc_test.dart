@@ -13,6 +13,7 @@ import 'package:conet_app/feature/message/domain/usecases/message_get_conversati
 import 'package:conet_app/feature/message/domain/usecases/message_get_group_members.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_promote_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_remove_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
@@ -54,6 +55,9 @@ class MockMessageGetGroupMembers extends Mock
 
 class MockMessageAddGroupMember extends Mock implements MessageAddGroupMember {}
 
+class MockMessagePromoteGroupMember extends Mock
+    implements MessagePromoteGroupMember {}
+
 class MockMessageRemoveGroupMember extends Mock
     implements MessageRemoveGroupMember {}
 
@@ -72,6 +76,7 @@ void main() {
   late MockMessageDeleteGroup mockDeleteGroup;
   late MockMessageGetGroupMembers mockGetGroupMembers;
   late MockMessageAddGroupMember mockAddGroupMember;
+  late MockMessagePromoteGroupMember mockPromoteGroupMember;
   late MockMessageRemoveGroupMember mockRemoveGroupMember;
 
   const tUser = User(
@@ -118,6 +123,7 @@ void main() {
     mockDeleteGroup = MockMessageDeleteGroup();
     mockGetGroupMembers = MockMessageGetGroupMembers();
     mockAddGroupMember = MockMessageAddGroupMember();
+    mockPromoteGroupMember = MockMessagePromoteGroupMember();
     mockRemoveGroupMember = MockMessageRemoveGroupMember();
 
     // Stub global subscription
@@ -139,6 +145,7 @@ void main() {
       deleteGroup: mockDeleteGroup,
       getGroupMembers: mockGetGroupMembers,
       addGroupMember: mockAddGroupMember,
+      promoteGroupMember: mockPromoteGroupMember,
       removeGroupMember: mockRemoveGroupMember,
       getCurrentUserId: () => 'user-123',
     );

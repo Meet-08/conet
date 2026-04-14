@@ -401,6 +401,18 @@ void _initEvent() {
     () => EventGetAttendees(repository: serviceLocator<EventRepository>()),
   );
   serviceLocator.registerFactory(
+    () => EventGetCohosts(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
+    () => EventAddCohost(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
+    () => EventRemoveCohost(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
+    () => EventPromoteCohost(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
     () => EventMarkAttendance(repository: serviceLocator<EventRepository>()),
   );
 
@@ -425,6 +437,15 @@ void _initEvent() {
       getAttendees: serviceLocator(),
       getRegistrationInfo: serviceLocator(),
       markAttendance: serviceLocator(),
+    ),
+  );
+
+  serviceLocator.registerFactory(
+    () => EventCohostManagementCubit(
+      getCohosts: serviceLocator(),
+      addCohost: serviceLocator(),
+      promoteCohost: serviceLocator(),
+      removeCohost: serviceLocator(),
     ),
   );
 }

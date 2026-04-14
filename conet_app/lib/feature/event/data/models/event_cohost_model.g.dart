@@ -14,6 +14,7 @@ EventCohostModel _$EventCohostModelFromJson(Map<String, dynamic> json) =>
       firstName: json['first_name'] as String?,
       lastName: json['last_name'] as String?,
       profilePicUrl: json['profile_pic_url'] as String?,
+      role: json['role'] as String? ?? 'cohost',
     );
 
 Map<String, dynamic> _$EventCohostModelToJson(EventCohostModel instance) =>
@@ -24,4 +25,5 @@ Map<String, dynamic> _$EventCohostModelToJson(EventCohostModel instance) =>
       'first_name': instance.firstName,
       'last_name': instance.lastName,
       'profile_pic_url': instance.profilePicUrl,
+      'role': instance.role,
     };

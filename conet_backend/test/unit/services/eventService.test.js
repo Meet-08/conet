@@ -14,6 +14,7 @@ import {
   listMyEventsService,
   listMyOrganizedEventsService,
   listPublishedEventsService,
+  promoteCohostService,
   publishEventService,
   registerEventService,
   registerParticipantForEventService,
@@ -1371,6 +1372,7 @@ describe("cohost services", () => {
         id: "cohost-1",
         event_id: EVENT_ID,
         user_id: ATTENDEE_ID,
+        role: "cohost",
         users: {
           id: ATTENDEE_ID,
           username: "bob",
@@ -1387,11 +1389,63 @@ describe("cohost services", () => {
       {
         id: "cohost-1",
         user_id: ATTENDEE_ID,
+        role: "cohost",
         username: "bob",
         profile_pic_url: null,
         first_name: "Bob",
         last_name: "Jones",
       },
     ]);
+  });
+
+  it("promoteCohostService updates role to organizer and keeps event organizer unchanged", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(makeEventRow());
+    prismaMock.event_cohosts.findUnique.mockResolvedValue({
+      id: "cohost-1",
+      event_id: EVENT_ID,
+      user_id: ATTENDEE_ID,
+      role: "cohost",
+      users: {
+        id: ATTENDEE_ID,
+        username: "bob",
+        first_name: "Bob",
+        last_name: "Jones",
+        profile_pic_url: null,
+      },
+    });
+    prismaMock.event_cohosts.update.mockResolvedValue({
+      id: "cohost-1",
+      event_id: EVENT_ID,
+      user_id: ATTENDEE_ID,
+      role: "organizer",
+      users: {
+        id: ATTENDEE_ID,
+        username: "bob",
+        first_name: "Bob",
+        last_name: "Jones",
+        profile_pic_url: null,
+      },
+    });
+
+    const result = await promoteCohostService(
+      EVENT_ID,
+      ORGANIZER_ID,
+      ATTENDEE_ID,
+    );
+
+    expect(prismaMock.event_cohosts.update).toHaveBeenCalledWith({
+      where: { event_id_user_id: { event_id: EVENT_ID, user_id: ATTENDEE_ID } },
+      data: { role: "organizer" },
+      include: expect.any(Object),
+    });
+    expect(result).toEqual({
+      id: "cohost-1",
+      user_id: ATTENDEE_ID,
+      role: "organizer",
+      username: "bob",
+      profile_pic_url: null,
+      first_name: "Bob",
+      last_name: "Jones",
+    });
   });
 });

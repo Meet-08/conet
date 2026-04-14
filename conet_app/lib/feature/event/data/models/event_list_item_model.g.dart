@@ -9,6 +9,8 @@ part of 'event_list_item_model.dart';
 EventListItemModel _$EventListItemModelFromJson(Map<String, dynamic> json) =>
     EventListItemModel(
       id: json['id'] as String,
+      organizerId: json['organizer_id'] as String?,
+      isOrganizer: json['is_organizer'] as bool? ?? false,
       eventImageUrl: json['event_image_url'] as String?,
       title: json['title'] as String,
       category: json['category'] as String,
@@ -25,6 +27,8 @@ EventListItemModel _$EventListItemModelFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$EventListItemModelToJson(EventListItemModel instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'organizer_id': instance.organizerId,
+      'is_organizer': instance.isOrganizer,
       'event_image_url': instance.eventImageUrl,
       'title': instance.title,
       'category': instance.category,

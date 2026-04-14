@@ -1,8 +1,11 @@
+import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/file_download_open_button.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_attendees.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_get_by_id.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_registration_bloc.dart';
+import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -27,6 +30,18 @@ class EventAttendeesPage extends StatefulWidget {
 
 class _EventAttendeesPageState extends State<EventAttendeesPage> {
   String _selectedStatus = 'all';
+  bool _canExportXls = false;
+
+  bool _hasOrganizerRole(Event event, String userId) {
+    final normalizedUserId = userId.trim();
+    if (event.organizerId.trim() == normalizedUserId) return true;
+
+    return event.cohosts.any(
+      (cohost) =>
+          cohost.userId.trim() == normalizedUserId &&
+          cohost.role.trim().toLowerCase() == 'organizer',
+    );
+  }
 
   String _exportFileName() {
     final safeTitle = (widget.eventTitle ?? 'event_participants')
@@ -47,8 +62,49 @@ class _EventAttendeesPageState extends State<EventAttendeesPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _resolveExportPermission();
       _fetchAttendees();
     });
+  }
+
+  Future<void> _resolveExportPermission() async {
+    final appUserState = context.read<AppUserCubit>().state;
+    final currentUserId = appUserState is AppUserAuthenticated
+        ? appUserState.user.id.trim()
+        : '';
+
+    if (currentUserId.isEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _canExportXls = false;
+      });
+      return;
+    }
+
+    final currentEvent = widget.event;
+    if (currentEvent != null) {
+      if (!mounted) return;
+      setState(() {
+        _canExportXls = _hasOrganizerRole(currentEvent, currentUserId);
+      });
+      return;
+    }
+
+    final result = await serviceLocator<EventGetById>()(widget.eventId);
+    if (!mounted) return;
+
+    result.fold(
+      (_) {
+        setState(() {
+          _canExportXls = false;
+        });
+      },
+      (event) {
+        setState(() {
+          _canExportXls = _hasOrganizerRole(event, currentUserId);
+        });
+      },
+    );
   }
 
   void _fetchAttendees() {
@@ -72,12 +128,13 @@ class _EventAttendeesPageState extends State<EventAttendeesPage> {
               : 'Event Attendees',
         ),
         actions: [
-          FileDownloadOpenButton(
-            downloadUrl: '/events/${widget.eventId}/participants/export',
-            fileName: _exportFileName(),
-            allowRedownload: true,
-            subDirectory: 'event_exports',
-          ),
+          if (_canExportXls)
+            FileDownloadOpenButton(
+              downloadUrl: '/events/${widget.eventId}/participants/export',
+              fileName: _exportFileName(),
+              allowRedownload: true,
+              subDirectory: 'event_exports',
+            ),
         ],
       ),
       body: BlocConsumer<EventRegistrationBloc, EventRegistrationState>(

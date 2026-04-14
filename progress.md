@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-04-14
+> Last updated: 2026-04-15
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -135,6 +135,18 @@
 **Use Cases:** `EventGetById`, `EventRegister`, `EventSave`
 **Backend Endpoints:** `GET /events/:id`, `POST /events/:id/register`, `POST /events/:id/save`
 
+### Event Cohost Management
+
+> Promoted from Functionality Only on 2026-04-14
+
+- **Cohost Directory** — Organizer can review the current co-host list for an event
+- **Add Co-host** — Organizer can search for users and add them as co-hosts
+- **Remove Co-host** — Organizer can remove existing co-hosts from an event
+- **Promote Co-host to Organizer** — Organizer can promote a co-host to organizer role while the original organizer remains organizer
+
+**Use Cases:** `EventGetCohosts`, `EventAddCohost`, `EventRemoveCohost`, `EventPromoteCohost`
+**Backend Endpoints:** `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `PATCH /events/:id/cohosts/:userId/promote`, `DELETE /events/:id/cohosts/:userId`
+
 ---
 
 ### Web Event Access
@@ -247,13 +259,10 @@
 - **Attend Event (Scan Ticket)** — Organizer/co-host scans ticket payload and marks attendee as attended with live attendance summary
 - **Discover Events** — Paginated list of published events with category, location type, date range, and text search filters
 - **My Organized Events** — Organizer retrieves their own events, optionally filtered by status (draft/published/cancelled)
-- **Add Co-host** — Organizer adds another user as a co-host
-- **Remove Co-host** — Organizer removes a co-host
-- **List Co-hosts** — Retrieve all co-hosts for an event
 - **Organizer/Cohost Participant Registration** — Organizer or co-host can register another user/team to the event on their behalf
 
 **Use Cases:** `EventGetById`, `EventGetPublishedEvents`, `EventGetMyEvents`, `EventGetRegistrationInfo`, `EventMarkAttendance`
-**Backend Endpoints:** `GET /events`, `GET /events/my`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `POST /events/:id/register`, `POST /events/:id/register-participant`, `GET /events/:id/registration-info`, `POST /events/:id/attend`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
+**Backend Endpoints:** `GET /events`, `GET /events/my`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `POST /events/:id/register`, `POST /events/:id/register-participant`, `GET /events/:id/registration-info`, `POST /events/:id/attend`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`
 
 ---
 
