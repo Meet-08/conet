@@ -2188,11 +2188,29 @@ export const removeCohostService = async (
 
 export const promoteCohostService = async (
   eventId,
-  organizerId,
+  requesterId,
   cohostUserId,
 ) => {
   const existing = await assertEventExists(eventId);
-  assertOrganizer(existing, organizerId);
+
+  if (requesterId !== existing.organizer_id) {
+    const requesterCohost = await prisma.event_cohosts.findUnique({
+      where: {
+        event_id_user_id: {
+          event_id: eventId,
+          user_id: requesterId,
+        },
+      },
+    });
+
+    if (!requesterCohost || requesterCohost.role !== "organizer") {
+      const err = new Error(
+        "Only the organizer or organizer-role co-host can perform this action",
+      );
+      err.statusCode = 403;
+      throw err;
+    }
+  }
 
   if (cohostUserId === existing.organizer_id) {
     const err = new Error("Organizer is already an organizer");

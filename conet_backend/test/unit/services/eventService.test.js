@@ -1315,6 +1315,74 @@ describe("listMyEventsService", () => {
 });
 
 describe("cohost services", () => {
+  it("promoteCohostService allows organizer-role cohost requester", async () => {
+    const COHOST_ORGANIZER_ID = "cccccccc-cccc-cccc-cccc-cccccccccccc";
+
+    prismaMock.events.findUnique.mockResolvedValue(makeEventRow());
+    prismaMock.event_cohosts.findUnique
+      .mockResolvedValueOnce({
+        id: "cohost-organizer-1",
+        event_id: EVENT_ID,
+        user_id: COHOST_ORGANIZER_ID,
+        role: "organizer",
+      })
+      .mockResolvedValueOnce({
+        id: "cohost-1",
+        event_id: EVENT_ID,
+        user_id: ATTENDEE_ID,
+        role: "cohost",
+        users: {
+          id: ATTENDEE_ID,
+          username: "bob",
+          first_name: "Bob",
+          last_name: "Jones",
+          profile_pic_url: null,
+        },
+      });
+    prismaMock.event_cohosts.update.mockResolvedValue({
+      id: "cohost-1",
+      event_id: EVENT_ID,
+      user_id: ATTENDEE_ID,
+      role: "organizer",
+      users: {
+        id: ATTENDEE_ID,
+        username: "bob",
+        first_name: "Bob",
+        last_name: "Jones",
+        profile_pic_url: null,
+      },
+    });
+
+    const result = await promoteCohostService(
+      EVENT_ID,
+      COHOST_ORGANIZER_ID,
+      ATTENDEE_ID,
+    );
+
+    expect(result.role).toBe("organizer");
+    expect(prismaMock.event_cohosts.update).toHaveBeenCalledTimes(1);
+  });
+
+  it("promoteCohostService throws 403 for non-organizer-role cohost requester", async () => {
+    const COHOST_REQUESTER_ID = "dddddddd-dddd-dddd-dddd-dddddddddddd";
+
+    prismaMock.events.findUnique.mockResolvedValue(makeEventRow());
+    prismaMock.event_cohosts.findUnique.mockResolvedValue({
+      id: "cohost-member-1",
+      event_id: EVENT_ID,
+      user_id: COHOST_REQUESTER_ID,
+      role: "cohost",
+    });
+
+    await expect(
+      promoteCohostService(EVENT_ID, COHOST_REQUESTER_ID, ATTENDEE_ID),
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      message:
+        "Only the organizer or organizer-role co-host can perform this action",
+    });
+  });
+
   it("addCohostService throws 400 when organizer adds self", async () => {
     prismaMock.events.findUnique.mockResolvedValue(makeEventRow());
 
