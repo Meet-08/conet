@@ -2123,12 +2123,51 @@ export const listMyEventsService = async (
 
 // ─── Co-host management ───────────────────────────────────────────────────────
 
-export const addCohostService = async (eventId, organizerId, cohostUserId) => {
+const getCohostManagerAccess = async (eventId, requesterId) => {
   const existing = await assertEventExists(eventId);
-  assertOrganizer(existing, organizerId);
+
+  if (requesterId === existing.organizer_id) {
+    return { existing, isManager: true };
+  }
+
+  const requesterCohost = await prisma.event_cohosts.findUnique({
+    where: {
+      event_id_user_id: {
+        event_id: eventId,
+        user_id: requesterId,
+      },
+    },
+  });
+
+  if (requesterCohost?.role === "organizer") {
+    return { existing, isManager: true };
+  }
+
+  return { existing, isManager: false };
+};
+
+export const addCohostService = async (eventId, organizerId, cohostUserId) => {
+  const { existing, isManager } = await getCohostManagerAccess(
+    eventId,
+    organizerId,
+  );
+
+  if (!isManager) {
+    const err = new Error(
+      "Only the organizer or organizer-role co-host can perform this action",
+    );
+    err.statusCode = 403;
+    throw err;
+  }
 
   if (cohostUserId === organizerId) {
-    const err = new Error("Organizer cannot add themselves as a co-host");
+    const err = new Error("Requester cannot add themselves as a co-host");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  if (cohostUserId === existing.organizer_id) {
+    const err = new Error("Event organizer cannot be added as a co-host");
     err.statusCode = 400;
     throw err;
   }
@@ -2168,8 +2207,15 @@ export const removeCohostService = async (
   organizerId,
   cohostUserId,
 ) => {
-  const existing = await assertEventExists(eventId);
-  assertOrganizer(existing, organizerId);
+  const { isManager } = await getCohostManagerAccess(eventId, organizerId);
+
+  if (!isManager) {
+    const err = new Error(
+      "Only the organizer or organizer-role co-host can perform this action",
+    );
+    err.statusCode = 403;
+    throw err;
+  }
 
   const cohost = await prisma.event_cohosts.findUnique({
     where: { event_id_user_id: { event_id: eventId, user_id: cohostUserId } },
@@ -2191,25 +2237,17 @@ export const promoteCohostService = async (
   requesterId,
   cohostUserId,
 ) => {
-  const existing = await assertEventExists(eventId);
+  const { existing, isManager } = await getCohostManagerAccess(
+    eventId,
+    requesterId,
+  );
 
-  if (requesterId !== existing.organizer_id) {
-    const requesterCohost = await prisma.event_cohosts.findUnique({
-      where: {
-        event_id_user_id: {
-          event_id: eventId,
-          user_id: requesterId,
-        },
-      },
-    });
-
-    if (!requesterCohost || requesterCohost.role !== "organizer") {
-      const err = new Error(
-        "Only the organizer or organizer-role co-host can perform this action",
-      );
-      err.statusCode = 403;
-      throw err;
-    }
+  if (!isManager) {
+    const err = new Error(
+      "Only the organizer or organizer-role co-host can perform this action",
+    );
+    err.statusCode = 403;
+    throw err;
   }
 
   if (cohostUserId === existing.organizer_id) {
@@ -2263,13 +2301,13 @@ export const promoteCohostService = async (
 };
 
 export const listCohostsService = async (eventId, requesterId) => {
-  const existing = await assertEventExists(eventId);
+  const { existing, isManager } = await getCohostManagerAccess(
+    eventId,
+    requesterId,
+  );
 
   // Non-organizer can only see cohosts of published events
-  if (
-    existing.event_status !== "published" &&
-    existing.organizer_id !== requesterId
-  ) {
+  if (!isManager && existing.event_status !== "published") {
     const err = new Error("Event not found");
     err.statusCode = 404;
     throw err;

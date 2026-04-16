@@ -24,6 +24,8 @@ import {
 
 const ORGANIZER_ID = TEST_USER.id;
 const ATTENDEE_ID = TEST_USER_B.id;
+const COHOST_ORGANIZER_ID = "cccccccc-cccc-cccc-cccc-cccccccccccc";
+const COHOST_MEMBER_ID = "dddddddd-dddd-dddd-dddd-dddddddddddd";
 const EVENT_ID = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
 const REGISTRATION_ID = "rrrrrrrr-rrrr-rrrr-rrrr-rrrrrrrrrrrr";
 
@@ -1316,8 +1318,6 @@ describe("listMyEventsService", () => {
 
 describe("cohost services", () => {
   it("promoteCohostService allows organizer-role cohost requester", async () => {
-    const COHOST_ORGANIZER_ID = "cccccccc-cccc-cccc-cccc-cccccccccccc";
-
     prismaMock.events.findUnique.mockResolvedValue(makeEventRow());
     prismaMock.event_cohosts.findUnique
       .mockResolvedValueOnce({
@@ -1364,18 +1364,16 @@ describe("cohost services", () => {
   });
 
   it("promoteCohostService throws 403 for non-organizer-role cohost requester", async () => {
-    const COHOST_REQUESTER_ID = "dddddddd-dddd-dddd-dddd-dddddddddddd";
-
     prismaMock.events.findUnique.mockResolvedValue(makeEventRow());
     prismaMock.event_cohosts.findUnique.mockResolvedValue({
       id: "cohost-member-1",
       event_id: EVENT_ID,
-      user_id: COHOST_REQUESTER_ID,
+      user_id: COHOST_MEMBER_ID,
       role: "cohost",
     });
 
     await expect(
-      promoteCohostService(EVENT_ID, COHOST_REQUESTER_ID, ATTENDEE_ID),
+      promoteCohostService(EVENT_ID, COHOST_MEMBER_ID, ATTENDEE_ID),
     ).rejects.toMatchObject({
       statusCode: 403,
       message:
@@ -1390,7 +1388,58 @@ describe("cohost services", () => {
       addCohostService(EVENT_ID, ORGANIZER_ID, ORGANIZER_ID),
     ).rejects.toMatchObject({
       statusCode: 400,
-      message: "Organizer cannot add themselves as a co-host",
+      message: "Requester cannot add themselves as a co-host",
+    });
+  });
+
+  it("addCohostService allows organizer-role cohost requester", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(makeEventRow());
+    prismaMock.event_cohosts.findUnique.mockResolvedValue({
+      id: "cohost-organizer-1",
+      event_id: EVENT_ID,
+      user_id: COHOST_ORGANIZER_ID,
+      role: "organizer",
+    });
+    prismaMock.users.findUnique.mockResolvedValue({ id: ATTENDEE_ID });
+    prismaMock.event_cohosts.upsert.mockResolvedValue({
+      id: "cohost-2",
+      event_id: EVENT_ID,
+      user_id: ATTENDEE_ID,
+      role: "cohost",
+      users: {
+        id: ATTENDEE_ID,
+        username: "bob",
+        first_name: "Bob",
+        last_name: "Jones",
+        profile_pic_url: null,
+      },
+    });
+
+    const result = await addCohostService(
+      EVENT_ID,
+      COHOST_ORGANIZER_ID,
+      ATTENDEE_ID,
+    );
+
+    expect(result.user_id).toBe(ATTENDEE_ID);
+    expect(prismaMock.event_cohosts.upsert).toHaveBeenCalledTimes(1);
+  });
+
+  it("addCohostService throws 403 for regular cohost requester", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(makeEventRow());
+    prismaMock.event_cohosts.findUnique.mockResolvedValue({
+      id: "cohost-member-1",
+      event_id: EVENT_ID,
+      user_id: COHOST_MEMBER_ID,
+      role: "cohost",
+    });
+
+    await expect(
+      addCohostService(EVENT_ID, COHOST_MEMBER_ID, ATTENDEE_ID),
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      message:
+        "Only the organizer or organizer-role co-host can perform this action",
     });
   });
 
@@ -1406,6 +1455,47 @@ describe("cohost services", () => {
     });
   });
 
+  it("removeCohostService allows organizer-role cohost requester", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(makeEventRow());
+    prismaMock.event_cohosts.findUnique
+      .mockResolvedValueOnce({
+        id: "cohost-organizer-1",
+        event_id: EVENT_ID,
+        user_id: COHOST_ORGANIZER_ID,
+        role: "organizer",
+      })
+      .mockResolvedValueOnce({
+        id: "cohost-1",
+        event_id: EVENT_ID,
+        user_id: ATTENDEE_ID,
+        role: "cohost",
+      });
+
+    await removeCohostService(EVENT_ID, COHOST_ORGANIZER_ID, ATTENDEE_ID);
+
+    expect(prismaMock.event_cohosts.delete).toHaveBeenCalledWith({
+      where: { event_id_user_id: { event_id: EVENT_ID, user_id: ATTENDEE_ID } },
+    });
+  });
+
+  it("removeCohostService throws 403 for regular cohost requester", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(makeEventRow());
+    prismaMock.event_cohosts.findUnique.mockResolvedValue({
+      id: "cohost-member-1",
+      event_id: EVENT_ID,
+      user_id: COHOST_MEMBER_ID,
+      role: "cohost",
+    });
+
+    await expect(
+      removeCohostService(EVENT_ID, COHOST_MEMBER_ID, ATTENDEE_ID),
+    ).rejects.toMatchObject({
+      statusCode: 403,
+      message:
+        "Only the organizer or organizer-role co-host can perform this action",
+    });
+  });
+
   it("removeCohostService throws 404 when cohost is missing", async () => {
     prismaMock.events.findUnique.mockResolvedValue(makeEventRow());
     prismaMock.event_cohosts.findUnique.mockResolvedValue(null);
@@ -1418,13 +1508,36 @@ describe("cohost services", () => {
     });
   });
 
+  it("listCohostsService allows organizer-role cohost on draft event", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({ event_status: "draft" }),
+    );
+    prismaMock.event_cohosts.findUnique.mockResolvedValue({
+      id: "cohost-organizer-1",
+      event_id: EVENT_ID,
+      user_id: COHOST_ORGANIZER_ID,
+      role: "organizer",
+    });
+    prismaMock.event_cohosts.findMany.mockResolvedValue([]);
+
+    const result = await listCohostsService(EVENT_ID, COHOST_ORGANIZER_ID);
+
+    expect(result).toEqual([]);
+  });
+
   it("listCohostsService hides draft event from non-organizer", async () => {
     prismaMock.events.findUnique.mockResolvedValue(
       makeEventRow({ event_status: "draft" }),
     );
+    prismaMock.event_cohosts.findUnique.mockResolvedValue({
+      id: "cohost-member-1",
+      event_id: EVENT_ID,
+      user_id: COHOST_MEMBER_ID,
+      role: "cohost",
+    });
 
     await expect(
-      listCohostsService(EVENT_ID, ATTENDEE_ID),
+      listCohostsService(EVENT_ID, COHOST_MEMBER_ID),
     ).rejects.toMatchObject({
       statusCode: 404,
       message: "Event not found",

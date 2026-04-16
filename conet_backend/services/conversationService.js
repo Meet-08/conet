@@ -1,7 +1,5 @@
 import { USER_SELECT_FIELDS, UUID_REGEX } from "../config/constants.js";
-import logger from "../config/logger.js";
 import prisma from "../config/prisma.js";
-import notificationService from "./notificationService.js";
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
@@ -354,31 +352,6 @@ export const sendMessageService = async (
       content,
       media_urls: mediaUrls,
     },
-  });
-
-  // Notify all other participants (works for both direct and group).
-  const receivers = conversation.conversation_members
-    .filter((m) => m.user_id !== senderId)
-    .map((m) => m.user_id);
-
-  const notificationResults = await Promise.allSettled(
-    receivers.map((receiverId) =>
-      notificationService.createNotification({
-        receiverId,
-        actorId: senderId,
-        type: "NEW_MESSAGE",
-        referenceId: conversationId,
-        content: content ? content.substring(0, 100) : null,
-      }),
-    ),
-  );
-
-  notificationResults.forEach((result, index) => {
-    if (result.status === "rejected") {
-      logger.error(
-        `Failed to create NEW_MESSAGE notification for receiver ${receivers[index]} in conversation ${conversationId}: ${result.reason?.message ?? result.reason}`,
-      );
-    }
   });
 
   return {
