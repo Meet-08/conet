@@ -13,6 +13,8 @@ import {
   validateEventPayload,
 } from "./utils.js";
 
+const XLSX_DATE_FORMAT = "dd/mm/yyyy";
+
 const assertAttendanceScanner = async (eventId, scannerUserId) => {
   const event = await assertEventExists(eventId);
 
@@ -1706,6 +1708,7 @@ export const exportEventParticipationXlsxService = async (
     sheet.columns = [
       { header: "Team Name", key: "team_name", width: 28 },
       { header: "Leader Name", key: "leader_name", width: 28 },
+      { header: "Register Date", key: "register_date", width: 16 },
       ...memberColumns,
       ...customFieldColumns,
     ];
@@ -1720,6 +1723,7 @@ export const exportEventParticipationXlsxService = async (
           String(team?.team_name ?? "").trim() ||
           `Team-${registration.team_id ?? registration.id}`,
         leader_name: formatUserDisplayName(team?.users ?? registration.users),
+        register_date: registration.registered_at ?? null,
       };
 
       members.forEach((member, index) => {
@@ -1739,12 +1743,14 @@ export const exportEventParticipationXlsxService = async (
   } else {
     sheet.columns = [
       { header: "Name", key: "name", width: 28 },
+      { header: "Register Date", key: "register_date", width: 16 },
       ...customFieldColumns,
     ];
 
     for (const registration of registrations) {
       const row = {
         name: formatUserDisplayName(registration.users),
+        register_date: registration.registered_at ?? null,
       };
 
       customFieldDescriptors.forEach((descriptor, index) => {
@@ -1758,6 +1764,8 @@ export const exportEventParticipationXlsxService = async (
       sheet.addRow(row);
     }
   }
+
+  sheet.getColumn("register_date").numFmt = XLSX_DATE_FORMAT;
 
   sheet.getRow(1).font = { bold: true };
 

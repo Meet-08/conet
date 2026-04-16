@@ -24,6 +24,11 @@ class NotificationService {
       return null;
     }
 
+    // NEW_MESSAGE notifications are handled by realtime delivery and are not persisted here.
+    if (type === "NEW_MESSAGE") {
+      return null;
+    }
+
     try {
       const notification = await prisma.notifications.create({
         data: {
@@ -35,19 +40,16 @@ class NotificationService {
         },
       });
 
-      // NEW_MESSAGE relies on Supabase realtime and should not depend on Redis.
-      if (type !== "NEW_MESSAGE") {
-        try {
-          await notificationQueue.add("sendPushNotification", {
-            receiverId,
-            title: this.getNotificationTitle(type),
-            body: content || this.getNotificationBody(type),
-            type,
-            referenceId,
-          });
-        } catch (queueError) {
-          logger.error("Failed to enqueue notification push job:", queueError);
-        }
+      try {
+        await notificationQueue.add("sendPushNotification", {
+          receiverId,
+          title: this.getNotificationTitle(type),
+          body: content || this.getNotificationBody(type),
+          type,
+          referenceId,
+        });
+      } catch (queueError) {
+        logger.error("Failed to enqueue notification push job:", queueError);
       }
 
       return notification;

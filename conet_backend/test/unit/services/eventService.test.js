@@ -8,6 +8,7 @@ import {
   addCohostService,
   attendEventService,
   createEventService,
+  exportEventParticipationXlsxService,
   getEventAttendeesService,
   getRegistrationInfoService,
   listCohostsService,
@@ -1123,6 +1124,97 @@ describe("attendEventService", () => {
 
     expect(prismaMock.event_registrations.update).not.toHaveBeenCalled();
     expect(result.message).toBe("User already marked as attended");
+  });
+});
+
+describe("exportEventParticipationXlsxService", () => {
+  it("exports registered_at with DD/MM/YYYY formatting for individual attendees", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({
+        event_status: "published",
+        participation_type: "individual",
+      }),
+    );
+    prismaMock.event_registrations.findMany.mockResolvedValue([
+      {
+        id: "registration-1",
+        event_id: EVENT_ID,
+        user_id: ATTENDEE_ID,
+        registration_status: "registered",
+        registered_at: new Date("2026-04-01T10:00:00.000Z"),
+        users: {
+          id: ATTENDEE_ID,
+          username: "bob",
+          first_name: "Bob",
+          last_name: "Jones",
+          profile_pic_url: null,
+        },
+        event_teams: null,
+        custom_field_responses: {},
+      },
+    ]);
+
+    const result = await exportEventParticipationXlsxService(
+      EVENT_ID,
+      ORGANIZER_ID,
+    );
+
+    expect(result.fileName).toBe("Campus_Hack_Night_participants.xlsx");
+    const sheet = result.workbook.getWorksheet("Participants");
+    expect(sheet.getColumn("register_date").numFmt).toBe("dd/mm/yyyy");
+    expect(sheet.getRow(2).getCell("register_date").value).toEqual(
+      new Date("2026-04-01T10:00:00.000Z"),
+    );
+  });
+
+  it("exports registered_at with DD/MM/YYYY formatting for team attendees", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({
+        event_status: "published",
+        participation_type: "team",
+      }),
+    );
+    prismaMock.event_registrations.findMany.mockResolvedValue([
+      {
+        id: "registration-team-1",
+        event_id: EVENT_ID,
+        user_id: ATTENDEE_ID,
+        team_id: "team-1",
+        registration_status: "registered",
+        registered_at: new Date("2026-04-02T10:00:00.000Z"),
+        users: {
+          id: ATTENDEE_ID,
+          username: "bob",
+          first_name: "Bob",
+          last_name: "Jones",
+          profile_pic_url: null,
+        },
+        event_teams: {
+          id: "team-1",
+          team_name: "Alpha",
+          users: {
+            id: ATTENDEE_ID,
+            username: "bob",
+            first_name: "Bob",
+            last_name: "Jones",
+            profile_pic_url: null,
+          },
+          event_team_members: [],
+        },
+        custom_field_responses: {},
+      },
+    ]);
+
+    const result = await exportEventParticipationXlsxService(
+      EVENT_ID,
+      ORGANIZER_ID,
+    );
+
+    const sheet = result.workbook.getWorksheet("Participants");
+    expect(sheet.getColumn("register_date").numFmt).toBe("dd/mm/yyyy");
+    expect(sheet.getRow(2).getCell("register_date").value).toEqual(
+      new Date("2026-04-02T10:00:00.000Z"),
+    );
   });
 });
 

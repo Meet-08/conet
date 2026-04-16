@@ -115,17 +115,8 @@ describe("createNotification", () => {
     });
   });
 
-  it("does not enqueue push jobs for NEW_MESSAGE", async () => {
-    prismaMock.notifications.create.mockResolvedValue({
-      id: NOTIFICATION_ID,
-      receiver_id: TEST_USER.id,
-      actor_id: TEST_USER_B.id,
-      type: "NEW_MESSAGE",
-      reference_id: "conv-1",
-      content: "hello",
-    });
-
-    await notificationService.createNotification({
+  it("skips DB and queue work for NEW_MESSAGE", async () => {
+    const result = await notificationService.createNotification({
       receiverId: TEST_USER.id,
       actorId: TEST_USER_B.id,
       type: "NEW_MESSAGE",
@@ -133,6 +124,8 @@ describe("createNotification", () => {
       content: "hello",
     });
 
+    expect(result).toBeNull();
+    expect(prismaMock.notifications.create).not.toHaveBeenCalled();
     expect(queueAddMock).not.toHaveBeenCalled();
   });
 
@@ -167,7 +160,7 @@ describe("createNotification", () => {
       notificationService.createNotification({
         receiverId: TEST_USER.id,
         actorId: TEST_USER_B.id,
-        type: "NEW_MESSAGE",
+        type: "POST_COMMENT",
       }),
     ).rejects.toBe(dbError);
 
