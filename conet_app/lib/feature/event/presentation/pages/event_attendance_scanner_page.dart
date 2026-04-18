@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
@@ -27,22 +28,79 @@ class EventAttendanceScannerPage extends StatefulWidget {
 
 class _EventAttendanceScannerPageState
     extends State<EventAttendanceScannerPage> {
+  static const int _scanCooldownSeconds = 3;
+
   final MobileScannerController _scannerController = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
     facing: CameraFacing.back,
     torchEnabled: false,
   );
 
-  bool _isProcessingScan = false;
+  bool _isScanLocked = false;
+  bool _isAwaitingAttendanceResult = false;
+  int _cooldownSecondsLeft = 0;
+  Timer? _scanUnlockTimer;
+  Timer? _cooldownTickerTimer;
 
   @override
   void dispose() {
+    _scanUnlockTimer?.cancel();
+    _cooldownTickerTimer?.cancel();
     _scannerController.dispose();
     super.dispose();
   }
 
+  void _lockForCurrentScan() {
+    _scanUnlockTimer?.cancel();
+    _cooldownTickerTimer?.cancel();
+    _isScanLocked = true;
+    _isAwaitingAttendanceResult = true;
+    if (!mounted || _cooldownSecondsLeft == 0) return;
+    setState(() {
+      _cooldownSecondsLeft = 0;
+    });
+  }
+
+  void _startCooldown() {
+    _isAwaitingAttendanceResult = false;
+
+    _scanUnlockTimer?.cancel();
+    _cooldownTickerTimer?.cancel();
+
+    setState(() {
+      _cooldownSecondsLeft = _scanCooldownSeconds;
+    });
+
+    _cooldownTickerTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      if (_cooldownSecondsLeft <= 1) {
+        timer.cancel();
+        setState(() {
+          _cooldownSecondsLeft = 0;
+        });
+        return;
+      }
+      setState(() {
+        _cooldownSecondsLeft -= 1;
+      });
+    });
+
+    _scanUnlockTimer = Timer(const Duration(seconds: _scanCooldownSeconds), () {
+      _cooldownTickerTimer?.cancel();
+      _cooldownTickerTimer = null;
+      _isScanLocked = false;
+      if (!mounted) return;
+      setState(() {
+        _cooldownSecondsLeft = 0;
+      });
+    });
+  }
+
   void _onDetect(BarcodeCapture capture) {
-    if (_isProcessingScan) return;
+    if (_isScanLocked) return;
 
     final value = capture.barcodes.isNotEmpty
         ? capture.barcodes.first.rawValue
@@ -69,9 +127,7 @@ class _EventAttendanceScannerPageState
       return;
     }
 
-    setState(() {
-      _isProcessingScan = true;
-    });
+    _lockForCurrentScan();
 
     context.read<EventRegistrationBloc>().add(
       EventRegistrationMarkAttendanceEvent(
@@ -129,13 +185,13 @@ class _EventAttendanceScannerPageState
       body: BlocListener<EventRegistrationBloc, EventRegistrationState>(
         listener: (context, state) {
           if (state is EventRegistrationFailure) {
+            if (!_isAwaitingAttendanceResult) return;
             AppToast.showError(context, state.message);
-            setState(() {
-              _isProcessingScan = false;
-            });
+            _startCooldown();
           }
 
           if (state is EventRegistrationAttendanceSuccess) {
+            if (!_isAwaitingAttendanceResult) return;
             if (_shouldShowAlreadyRegisteredAsError(state.result.message)) {
               AppToast.showError(context, state.result.message);
             } else if (state.result.success) {
@@ -143,9 +199,7 @@ class _EventAttendanceScannerPageState
             } else {
               AppToast.showError(context, state.result.message);
             }
-            setState(() {
-              _isProcessingScan = false;
-            });
+            _startCooldown();
           }
         },
         child: Stack(
@@ -158,15 +212,39 @@ class _EventAttendanceScannerPageState
                   Theme.of(context).extension<AppSemanticColors>() ??
                   AppSemanticColors.light,
             ),
-            if (_isProcessingScan)
-              Container(
-                color:
-                    (Theme.of(context)
-                                .extension<AppSemanticColors>()
-                                ?.backgroundInverse ??
-                            AppSemanticColors.light.backgroundInverse)
-                        .withValues(alpha: 0.4),
-                child: const Center(child: CircularProgressIndicator()),
+            if (_cooldownSecondsLeft > 0)
+              Positioned(
+                top: 96,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          (Theme.of(context)
+                                      .extension<AppSemanticColors>()
+                                      ?.backgroundInverse ??
+                                  AppSemanticColors.light.backgroundInverse)
+                              .withValues(alpha: 0.78),
+                      borderRadius: AppRadius.mdAll,
+                    ),
+                    child: Text(
+                      'Cooldown: ${_cooldownSecondsLeft}s',
+                      style: AppTextStyles.caption.copyWith(
+                        color:
+                            Theme.of(
+                              context,
+                            ).extension<AppSemanticColors>()?.textInverse ??
+                            AppSemanticColors.light.textInverse,
+                        fontWeight: AppTypographyTokens.weightBold,
+                      ),
+                    ),
+                  ),
+                ),
               ),
           ],
         ),
