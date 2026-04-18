@@ -13,8 +13,7 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
 
   conet_backend:
-    image: meetjbhuva/conet_backend:latest
-    pull_policy: always
+    build: .
     ports:
       - "5000"
     env_file:

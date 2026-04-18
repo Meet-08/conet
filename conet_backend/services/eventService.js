@@ -1959,7 +1959,7 @@ export const listPublishedEventsService = async ({
 
 export const listMyOrganizedEventsService = async (
   organizerId,
-  { cursor, page_size = 20, status },
+  { cursor, page_size = 20, status, search },
 ) => {
   const safePageSize = Math.min(
     100,
@@ -1982,6 +1982,16 @@ export const listMyOrganizedEventsService = async (
           { event_cohosts: { some: { user_id: organizerId } } },
         ],
       },
+      ...(search && search.trim().length > 0 ?
+        [
+          {
+            title: {
+              contains: search.trim(),
+              mode: "insensitive",
+            },
+          },
+        ]
+      : []),
       ...(parsedCursor ?
         [
           {

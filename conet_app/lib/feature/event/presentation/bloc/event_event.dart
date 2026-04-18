@@ -46,11 +46,13 @@ final class EventFetchMoreMyEventsEvent extends EventEvent {
 final class EventFetchMyOrganizedEventsEvent extends EventEvent {
   final String? status;
   final String? cursor;
+  final String? search;
   final int limit;
 
   const EventFetchMyOrganizedEventsEvent({
     this.status,
     this.cursor,
+    this.search,
     this.limit = 20,
   });
 }

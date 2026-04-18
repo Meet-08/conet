@@ -18,9 +18,9 @@ import 'package:conet_app/feature/event/presentation/pages/event_cohost_manageme
 import 'package:conet_app/feature/event/presentation/pages/event_dashboard_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_detail_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_page.dart';
+import 'package:conet_app/feature/event/presentation/pages/event_registration_detail_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_search_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/my_events_page.dart';
-import 'package:conet_app/feature/event/presentation/pages/team_registration_detail_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/view_ticket.dart';
 import 'package:conet_app/feature/message/data/models/conversation_model.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
@@ -470,7 +470,44 @@ class AppRouter {
           final event = rawEvent is Event ? rawEvent : null;
 
           if (attendee is EventAttendee) {
-            return TeamRegistrationDetailPage(attendee: attendee, event: event);
+            return EventRegistrationDetailPage(
+              attendee: attendee,
+              event: event,
+            );
+          }
+
+          final eventId = state.uri.queryParameters['eventId']?.trim();
+          final eventTitle = state.uri.queryParameters['title']?.trim();
+
+          if (eventId != null && eventId.isNotEmpty) {
+            return EventAttendeesPage(
+              eventId: eventId,
+              eventTitle: eventTitle,
+              event: event,
+            );
+          }
+
+          return const Scaffold(
+            body: Center(child: Text('Invalid attendee data')),
+          );
+        },
+      ),
+
+      GoRoute(
+        path: '/registration-detail/:registrationId',
+        builder: (context, state) {
+          final rawExtra = state.extra;
+          final extras = rawExtra is Map ? rawExtra : null;
+
+          final attendee = extras?['attendee'];
+          final rawEvent = extras?['event'];
+          final event = rawEvent is Event ? rawEvent : null;
+
+          if (attendee is EventAttendee) {
+            return EventRegistrationDetailPage(
+              attendee: attendee,
+              event: event,
+            );
           }
 
           final eventId = state.uri.queryParameters['eventId']?.trim();

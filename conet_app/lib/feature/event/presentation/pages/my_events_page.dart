@@ -4,6 +4,7 @@ import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/event/presentation/constants/event_constants.dart';
+import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -375,7 +376,19 @@ class _MyEventCard extends StatelessWidget {
                   filled: false,
                   icon: FontAwesomeIcons.users,
                   label: 'Event Group',
-                  onTap: () {},
+                  onTap: event.conversationId == null
+                      ? null
+                      : () {
+                          context.push(
+                            '/chat-detail',
+                            extra: Conversation(
+                              id: event.conversationId!,
+                              type: ConversationType.group,
+                              name: event.title,
+                              groupImageUrl: event.eventImageUrl,
+                            ),
+                          );
+                        },
                 ),
               ),
             ],
@@ -432,7 +445,7 @@ class _ActionPill extends StatelessWidget {
   final bool filled;
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _ActionPill({
     required this.filled,
@@ -443,8 +456,14 @@ class _ActionPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDisabled = onTap == null;
+
     return Material(
-      color: filled ? const Color(0xFF111827) : const Color(0xFFF9FAFB),
+      color: filled
+          ? const Color(0xFF111827)
+          : isDisabled
+          ? const Color(0xFFF8FAFC)
+          : const Color(0xFFF9FAFB),
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
@@ -454,7 +473,13 @@ class _ActionPill extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            border: filled ? null : Border.all(color: const Color(0xFFD0D5DD)),
+            border: filled
+                ? null
+                : Border.all(
+                    color: isDisabled
+                        ? const Color(0xFFE4E7EC)
+                        : const Color(0xFFD0D5DD),
+                  ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -462,7 +487,11 @@ class _ActionPill extends StatelessWidget {
               FaIcon(
                 icon,
                 size: 12,
-                color: filled ? Colors.white : const Color(0xFF344054),
+                color: filled
+                    ? Colors.white
+                    : isDisabled
+                    ? const Color(0xFF98A2B3)
+                    : const Color(0xFF475467),
               ),
               const SizedBox(width: 8),
               Flexible(
@@ -473,7 +502,11 @@ class _ActionPill extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: filled ? Colors.white : const Color(0xFF344054),
+                    color: filled
+                        ? Colors.white
+                        : isDisabled
+                        ? const Color(0xFF98A2B3)
+                        : const Color(0xFF344054),
                   ),
                 ),
               ),

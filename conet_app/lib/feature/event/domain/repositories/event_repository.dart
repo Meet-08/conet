@@ -55,6 +55,7 @@ abstract interface class EventRepository {
 
   Future<Either<AppFailure, EventPage>> getMyOrganizedEvents({
     String? status,
+    String? search,
     int limit = 20,
     String? cursor,
   });

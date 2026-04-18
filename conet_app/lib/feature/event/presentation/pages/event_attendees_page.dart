@@ -240,7 +240,12 @@ class _EventAttendeesPageState extends State<EventAttendeesPage> {
                   ...attendees.attendees.map(
                     (attendee) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: _IndividualAttendeeCard(attendee: attendee),
+                      child: _IndividualAttendeeCard(
+                        attendee: attendee,
+                        event: widget.event,
+                        eventId: widget.eventId,
+                        eventTitle: widget.eventTitle,
+                      ),
                     ),
                   ),
               ],
@@ -320,24 +325,42 @@ class _SummaryCard extends StatelessWidget {
 
 class _IndividualAttendeeCard extends StatelessWidget {
   final EventAttendee attendee;
+  final Event? event;
+  final String eventId;
+  final String? eventTitle;
 
-  const _IndividualAttendeeCard({required this.attendee});
+  const _IndividualAttendeeCard({
+    required this.attendee,
+    this.event,
+    required this.eventId,
+    this.eventTitle,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: ListTile(
-        leading: const FaIcon(FontAwesomeIcons.user, size: 18),
-        title: Text(attendee.user?.displayName ?? 'Unknown attendee'),
-        subtitle: Text(_subtitle(attendee)),
-        trailing: _StatusPill(status: attendee.registrationStatus),
+    return InkWell(
+      onTap: () {
+        final encodedTitle = Uri.encodeComponent(eventTitle ?? '');
+        context.push(
+          '/registration-detail/${attendee.registrationId}?eventId=$eventId&title=$encodedTitle',
+          extra: {'attendee': attendee, 'event': event},
+        );
+      },
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          border: Border.all(color: colorScheme.outlineVariant),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: ListTile(
+          leading: const FaIcon(FontAwesomeIcons.user, size: 18),
+          title: Text(attendee.user?.displayName ?? 'Unknown attendee'),
+          subtitle: Text(_subtitle(attendee)),
+          trailing: _StatusPill(status: attendee.registrationStatus),
+        ),
       ),
     );
   }
@@ -382,7 +405,7 @@ class _TeamAttendeeCard extends StatelessWidget {
       onTap: () {
         final encodedTitle = Uri.encodeComponent(eventTitle ?? '');
         context.push(
-          '/team-registration-detail/${attendee.registrationId}?eventId=$eventId&title=$encodedTitle',
+          '/registration-detail/${attendee.registrationId}?eventId=$eventId&title=$encodedTitle',
           extra: {'attendee': attendee, 'event': event},
         );
       },

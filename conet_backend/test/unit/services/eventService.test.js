@@ -1368,6 +1368,32 @@ describe("listMyOrganizedEventsService", () => {
     });
     expect(arg.orderBy).toEqual([{ created_at: "desc" }, { id: "desc" }]);
   });
+
+  it("filters organized events by title only when search is provided", async () => {
+    prismaMock.events.findMany.mockResolvedValue([makeSummaryRow()]);
+
+    await listMyOrganizedEventsService(ORGANIZER_ID, {
+      search: "hackathon",
+      page_size: 10,
+    });
+
+    const arg = prismaMock.events.findMany.mock.calls[0][0];
+    expect(arg.where.AND).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: {
+            contains: "hackathon",
+            mode: "insensitive",
+          },
+        }),
+      ]),
+    );
+    expect(arg.where.AND).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ category: expect.anything() }),
+      ]),
+    );
+  });
 });
 
 describe("listMyEventsService", () => {

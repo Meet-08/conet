@@ -11,11 +11,13 @@ class EventGetMyOrganizedEvents {
 
   Future<Either<AppFailure, EventPage>> call({
     String? status,
+    String? search,
     int limit = 20,
     String? cursor,
   }) {
     return _repository.getMyOrganizedEvents(
       status: status,
+      search: search,
       limit: limit,
       cursor: cursor,
     );

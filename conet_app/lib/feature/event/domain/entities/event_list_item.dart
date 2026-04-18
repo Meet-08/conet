@@ -4,6 +4,9 @@ import 'package:json_annotation/json_annotation.dart';
 class EventListItem extends Equatable {
   final String id;
 
+  @JsonKey(name: 'conversation_id')
+  final String? conversationId;
+
   @JsonKey(name: 'organizer_id')
   final String? organizerId;
 
@@ -38,6 +41,7 @@ class EventListItem extends Equatable {
 
   const EventListItem({
     required this.id,
+    this.conversationId,
     this.organizerId,
     this.isOrganizer = false,
     this.eventImageUrl,
@@ -57,6 +61,7 @@ class EventListItem extends Equatable {
 
   EventListItem copyWith({
     String? id,
+    String? conversationId,
     String? organizerId,
     bool? isOrganizer,
     String? eventImageUrl,
@@ -73,6 +78,7 @@ class EventListItem extends Equatable {
   }) {
     return EventListItem(
       id: id ?? this.id,
+      conversationId: conversationId ?? this.conversationId,
       organizerId: organizerId ?? this.organizerId,
       isOrganizer: isOrganizer ?? this.isOrganizer,
       eventImageUrl: eventImageUrl ?? this.eventImageUrl,
@@ -92,6 +98,7 @@ class EventListItem extends Equatable {
   @override
   List<Object?> get props => [
     id,
+    conversationId,
     organizerId,
     isOrganizer,
     eventImageUrl,

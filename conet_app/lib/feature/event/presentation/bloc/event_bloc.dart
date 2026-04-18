@@ -38,6 +38,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   String _myEventsType = 'upcoming';
   String? _organizedNextCursor;
   String? _organizedStatus;
+  String? _organizedSearch;
 
   EventBloc({
     required EventGetById getById,
@@ -219,10 +220,12 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     emit(MyOrganizedEventsLoading());
 
     _organizedStatus = event.status;
+    _organizedSearch = event.search;
     _organizedNextCursor = null;
 
     final result = await _getMyOrganizedEvents(
       status: event.status,
+      search: event.search,
       cursor: event.cursor,
       limit: event.limit,
     );
@@ -258,6 +261,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
 
     final result = await _getMyOrganizedEvents(
       status: _organizedStatus,
+      search: _organizedSearch,
       cursor: _organizedNextCursor,
       limit: current.pageSize,
     );

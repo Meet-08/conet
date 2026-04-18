@@ -71,6 +71,7 @@ export const mapEvent = (event, viewerId = null) => ({
 export const mapEventSummary = (event, viewerId = null) => ({
   id: event.id,
   organizer_id: event.organizer_id,
+  conversation_id: event.conversation_id ?? null,
   is_organizer:
     (viewerId ? event.organizer_id === viewerId : false) ||
     (event.event_cohosts?.length ?? 0) > 0,
@@ -89,6 +90,7 @@ export const mapEventSummary = (event, viewerId = null) => ({
 
 export const eventSummarySelect = (viewerId = null) => ({
   organizer_id: true,
+  conversation_id: true,
   event_image_url: true,
   title: true,
   category: true,

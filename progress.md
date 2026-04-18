@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-04-15
+> Last updated: 2026-04-18
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -154,6 +154,7 @@
 > Web-only authenticated event list and ticket view.
 
 - **My Events Page** — Authenticated list of registered events with ticket entry points
+- **Event Chat Details Page** — Authenticated chat thread view for registered events, opened from My Events using `eventId` + `conversationId`
 - **QR Ticket Page** — Renders the registration QR payload from backend ticket info for event check-in
 
 **Backend Endpoints:** `GET /events/my`, `GET /events/:id/registration-info`
@@ -164,14 +165,16 @@
 
 - **Events Page** — Published events feed with pull-to-refresh and infinite scroll
 - **Event Search Page** — Dedicated search screen with debounced query over published events and quick access to event details
-- **Event Dashboard Page** — Organizer-style dashboard with filter tabs (`All`, `Active`, `Upcoming`, `Past`, `Drafts`) backed by live `/events/organized` data
+- **Event Dashboard Page** — Organizer-style dashboard with filter tabs (`All`, `Active`, `Upcoming`, `Past`, `Drafts`) and title-only search backed by live `/events/organized` data
 - **Attendance QR Scanner** — Organizer/co-host scans attendee QR using mobile camera and marks attendance via backend
 - **Event Attendees Page** — Organizer/co-host views individual attendee list or team roster with status filters (`All`, `Registered`, `Attended`, `Cancelled`)
+- **Registration Detail Page** — Opening a registration entry now shows attendee-level registration details with all submitted custom-field responses
 - **Participants XLS Export** — Attendees page downloads and opens event participation XLS with team/individual columns and custom-field responses (excluding image fields), with re-download support
 - **From Your Campus Section** — Reuses event cards to highlight campus-facing event list on top
 - **Discover Section** — Lists discoverable events with filter affordance and empty-state handling
 - **My Events Entry** — App bar quick action routes to `/my-events`
 - **My Events Page** — Redesigned chip-based list (`Upcoming`, `Past`, `Saved`) backed by filtered API fetching with pagination
+- **My Events Event Chat Action** — Event cards open the linked group chat via `/chat-detail` when a conversation is attached, with disabled state when unavailable
 
 **Use Cases:** `EventGetPublishedEvents`, `EventGetMyEvents`, `EventGetMyOrganizedEvents`, `EventGetAttendees`, `EventMarkAttendance`
 **Backend Endpoints:** `GET /events`, `GET /events/my`, `GET /events/organized`, `GET /events/:id/attendees`, `GET /events/:id/participants/export`, `POST /events/:id/attend`

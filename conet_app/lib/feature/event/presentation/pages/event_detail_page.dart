@@ -149,16 +149,16 @@ class _EventDetailPageState extends State<EventDetailPage> {
             ? appUserState.user.id
             : null;
         final hasOrganizerRole =
-          currentUserId != null &&
-          (event.organizerId == currentUserId ||
-            event.cohosts.any(
-              (cohost) =>
-                cohost.userId.trim() == currentUserId &&
-                cohost.role.trim().toLowerCase() == 'organizer',
-            ));
+            currentUserId != null &&
+            (event.organizerId == currentUserId ||
+                event.cohosts.any(
+                  (cohost) =>
+                      cohost.userId.trim() == currentUserId &&
+                      cohost.role.trim().toLowerCase() == 'organizer',
+                ));
         final isOrganizerOrCohost =
             currentUserId != null &&
-          (hasOrganizerRole ||
+            (hasOrganizerRole ||
                 event.cohosts.any(
                   (cohost) => cohost.userId.trim() == currentUserId,
                 ));
@@ -223,7 +223,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
               _onRegisterPressed(event);
             },
             onGoToDashboard: () {
-              context.push('/event-dashboard');
+              context.push('/event-attendees/${event.id}', extra: event);
             },
             onRegisterParticipant: () {
               _onRegisterParticipantPressed(event);

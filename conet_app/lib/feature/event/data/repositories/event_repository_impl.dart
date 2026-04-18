@@ -68,12 +68,14 @@ class EventRepositoryImpl implements EventRepository {
   @override
   Future<Either<AppFailure, EventPage>> getMyOrganizedEvents({
     String? status,
+    String? search,
     int limit = 20,
     String? cursor,
   }) {
     return _getResult<EventPage, EventPage>(
       () => _eventDataSource.getMyOrganizedEvents(
         status: status,
+        search: search,
         limit: limit,
         cursor: cursor,
       ),

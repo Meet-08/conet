@@ -201,6 +201,7 @@ class EventDataSourceImpl implements EventDataSource {
   @override
   Future<EventPageModel> getMyOrganizedEvents({
     String? status,
+    String? search,
     int limit = 20,
     String? cursor,
   }) async {
@@ -211,6 +212,8 @@ class EventDataSourceImpl implements EventDataSource {
           'page_size': limit,
           if (status != null && status.trim().isNotEmpty)
             'status': status.trim(),
+          if (search != null && search.trim().isNotEmpty)
+            'search': search.trim(),
           if (cursor != null && cursor.trim().isNotEmpty) 'cursor': cursor,
         },
       );

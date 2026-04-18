@@ -53,6 +53,7 @@ abstract class EventDataSource {
 
   Future<EventPageModel> getMyOrganizedEvents({
     String? status,
+    String? search,
     int limit = 20,
     String? cursor,
   });

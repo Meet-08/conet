@@ -212,6 +212,30 @@ describe("GET /api/events/organized", () => {
     );
   });
 
+  it("200 - searches organized events by title only", async () => {
+    prismaMock.events.findMany.mockResolvedValue([makeSummaryRow()]);
+
+    const res = await request(app)
+      .get("/api/events/organized?search=hackathon")
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.events.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            expect.objectContaining({
+              title: {
+                contains: "hackathon",
+                mode: "insensitive",
+              },
+            }),
+          ]),
+        }),
+      }),
+    );
+  });
+
   it("400 - rejects invalid page_size", async () => {
     const res = await request(app)
       .get("/api/events/organized?page_size=abc")

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
@@ -16,7 +18,10 @@ class EventDashboardPage extends StatefulWidget {
 
 class _EventDashboardPageState extends State<EventDashboardPage> {
   final _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _debounce;
   int _selectedFilterIndex = 0;
+  String? _searchQuery;
 
   static const _filters = [
     _DashboardFilter(label: 'Active', status: 'published'),
@@ -38,6 +43,8 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _searchController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -57,9 +64,27 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
     context.read<EventBloc>().add(
       EventFetchMyOrganizedEventsEvent(
         status: _selectedFilter.status,
+        search: _searchQuery,
         limit: 20,
       ),
     );
+  }
+
+  void _onSearchChanged(String value) {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      final query = value.trim();
+      _searchQuery = query.isEmpty ? null : query;
+      _fetchForSelectedFilter();
+    });
+  }
+
+  void _clearSearch() {
+    _debounce?.cancel();
+    _searchController.clear();
+    _searchQuery = null;
+    _fetchForSelectedFilter();
+    setState(() {});
   }
 
   Future<void> _onRefresh() async {
@@ -134,6 +159,15 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
               controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
               children: [
+                _DashboardSearchField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {});
+                    _onSearchChanged(value);
+                  },
+                  onClear: _clearSearch,
+                ),
+                const SizedBox(height: 12),
                 _FilterRow(
                   filters: _filters,
                   selectedIndex: _selectedFilterIndex,
@@ -152,7 +186,10 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
                     child: Center(child: CircularProgressIndicator()),
                   )
                 else if (events.isEmpty)
-                  _EmptyState(label: _selectedFilter.label)
+                  _EmptyState(
+                    label: _selectedFilter.label,
+                    query: _searchController.text.trim(),
+                  )
                 else
                   ...events.map(
                     (event) => Padding(
@@ -218,6 +255,79 @@ class _FilterRow extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _DashboardSearchField extends StatelessWidget {
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+  final VoidCallback onClear;
+
+  const _DashboardSearchField({
+    required this.controller,
+    required this.onChanged,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return TextField(
+      controller: controller,
+      onChanged: onChanged,
+      textAlignVertical: TextAlignVertical.center,
+      cursorColor: colorScheme.primary,
+      style: theme.textTheme.bodyMedium?.copyWith(color: colorScheme.onSurface),
+      decoration: InputDecoration(
+        hintText: 'Search organizer events by title only...',
+        filled: true,
+        fillColor: colorScheme.surfaceContainerHighest,
+        hintStyle: theme.textTheme.bodyMedium?.copyWith(
+          color: colorScheme.onSurfaceVariant,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 14,
+        ),
+        prefixIconConstraints: const BoxConstraints(
+          minWidth: 44,
+          maxWidth: 48,
+          minHeight: 44,
+          maxHeight: 44,
+        ),
+        prefixIcon: Padding(
+          padding: const EdgeInsetsDirectional.only(start: 12),
+          child: Center(
+            child: FaIcon(
+              FontAwesomeIcons.magnifyingGlass,
+              size: 16,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 44,
+          maxWidth: 48,
+          minHeight: 44,
+          maxHeight: 44,
+        ),
+        suffixIcon: controller.text.isNotEmpty
+            ? IconButton(
+                onPressed: onClear,
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                icon: FaIcon(
+                  FontAwesomeIcons.circleXmark,
+                  size: 16,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+                tooltip: 'Clear search',
+              )
+            : null,
       ),
     );
   }
@@ -312,111 +422,124 @@ class _EventDashboardCard extends StatelessWidget {
     final timeText = DateFormat('h:mm a').format(event.eventStartDate);
     final location = event.venue ?? event.location ?? 'Location TBA';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border.all(color: colorScheme.outlineVariant),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(16),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${event.category.toUpperCase()} - ${filterLabel.toUpperCase()}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                _priceLabel(),
-                style: theme.textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
+        onTap: () => context.push('/event-detail/${event.id}'),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            border: Border.all(color: colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(16),
           ),
-          const SizedBox(height: 10),
-          Row(
+          padding: const EdgeInsets.all(12),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _smallEventImage(colorScheme),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      event.title,
-                      style: theme.textTheme.titleMedium?.copyWith(
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      '${event.category.toUpperCase()} - ${filterLabel.toUpperCase()}',
+                      style: theme.textTheme.labelSmall?.copyWith(
                         fontWeight: FontWeight.w700,
-                        height: 1.2,
+                        letterSpacing: 0.2,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    _MetaRow(
-                      icon: FontAwesomeIcons.calendarDay,
-                      text: '$dateText - $timeText',
+                  ),
+                  const Spacer(),
+                  Text(
+                    _priceLabel(),
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: colorScheme.onSurfaceVariant,
                     ),
-                    const SizedBox(height: 4),
-                    _MetaRow(
-                      icon: FontAwesomeIcons.locationDot,
-                      text: location,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _smallEventImage(colorScheme),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          event.title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        _MetaRow(
+                          icon: FontAwesomeIcons.calendarDay,
+                          text: '$dateText - $timeText',
+                        ),
+                        const SizedBox(height: 4),
+                        _MetaRow(
+                          icon: FontAwesomeIcons.locationDot,
+                          text: location,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (filterLabel == 'Active' || filterLabel == 'Drafts') ...[
+                OutlinedButton(
+                  onPressed: filterLabel == 'Drafts'
+                      ? null
+                      : () {
+                          context.push(
+                            '/event-attendance-scan',
+                            extra: {
+                              'eventId': event.id,
+                              'eventTitle': event.title,
+                            },
+                          );
+                        },
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 40),
+                    side: BorderSide(color: colorScheme.outline),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: Text(
+                    filterLabel == 'Drafts' ? 'Complete Setup' : 'Scan Tickets',
+                  ),
                 ),
+                const SizedBox(height: 8),
+              ],
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: actions
+                    .map(
+                      (action) => _ActionPill(
+                        label: action,
+                        onTap: () => _handleActionTap(context, action),
+                      ),
+                    )
+                    .toList(),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          if (filterLabel == 'Active' || filterLabel == 'Drafts') ...[
-            OutlinedButton(
-              onPressed: filterLabel == 'Drafts'
-                  ? null
-                  : () {
-                      context.push(
-                        '/event-attendance-scan',
-                        extra: {'eventId': event.id, 'eventTitle': event.title},
-                      );
-                    },
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 40),
-                side: BorderSide(color: colorScheme.outline),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
-                ),
-              ),
-              child: Text(
-                filterLabel == 'Drafts' ? 'Complete Setup' : 'Scan Tickets',
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: actions
-                .map(
-                  (action) => _ActionPill(
-                    label: action,
-                    onTap: () => _handleActionTap(context, action),
-                  ),
-                )
-                .toList(),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -496,8 +619,9 @@ class _ActionPill extends StatelessWidget {
 
 class _EmptyState extends StatelessWidget {
   final String label;
+  final String query;
 
-  const _EmptyState({required this.label});
+  const _EmptyState({required this.label, required this.query});
 
   @override
   Widget build(BuildContext context) {
@@ -510,12 +634,16 @@ class _EmptyState extends StatelessWidget {
           const FaIcon(FontAwesomeIcons.calendarXmark, size: 32),
           const SizedBox(height: 12),
           Text(
-            'No $label events yet.',
+            query.isEmpty
+                ? 'No $label events yet.'
+                : 'No results for "$query" in $label events.',
             style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           Text(
-            'Events in this section will appear here once available.',
+            query.isEmpty
+                ? 'Events in this section will appear here once available.'
+                : 'Try a different keyword or clear search to see all events.',
             textAlign: TextAlign.center,
             style: textTheme.bodyMedium,
           ),

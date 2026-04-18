@@ -198,7 +198,7 @@ export const listPublishedEvents = asyncHandler(async (req, res) => {
 // ─── List organizer's own events ──────────────────────────────────────────────
 
 export const listMyOrganizedEvents = asyncHandler(async (req, res) => {
-  const { cursor, status } = req.query;
+  const { cursor, status, search } = req.query;
   const pageSizeInput = req.query.page_size;
   const rawPageSize = parseInt(pageSizeInput);
   if (pageSizeInput !== undefined && (isNaN(rawPageSize) || rawPageSize < 1)) {
@@ -211,6 +211,7 @@ export const listMyOrganizedEvents = asyncHandler(async (req, res) => {
     cursor: cursor || null,
     page_size,
     status,
+    search,
   });
 
   res.status(200).json({ success: true, ...result });
