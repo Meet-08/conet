@@ -29,6 +29,26 @@ class ChatMessageList extends StatelessWidget {
     this.isFetchingHistory = false,
   });
 
+  bool _isSameDate(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month && a.day == b.day;
+  }
+
+  String _formatDateHeading(DateTime dateTime) {
+    final localDate = dateTime.toLocal();
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final dateOnly = DateTime(localDate.year, localDate.month, localDate.day);
+
+    if (dateOnly == today) return 'Today';
+    if (dateOnly == yesterday) return 'Yesterday';
+
+    final day = localDate.day.toString().padLeft(2, '0');
+    final month = localDate.month.toString().padLeft(2, '0');
+    final year = localDate.year.toString();
+    return '$day/$month/$year';
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppSemanticColors>()!;
@@ -89,23 +109,54 @@ class ChatMessageList extends StatelessWidget {
         final message = sorted[index];
         final isMe = currentUserId != null && message.senderId == currentUserId;
         final sender = groupMembersById[message.senderId];
+        final hasOlderMessage = index < sorted.length - 1;
+        final shouldShowDateHeading =
+            !hasOlderMessage ||
+            !_isSameDate(message.createdAt, sorted[index + 1].createdAt);
         final time = TimeOfDay.fromDateTime(
           message.createdAt.toLocal(),
         ).format(context);
 
-        return ChatMessageBubble(
-          text: message.content,
-          time: time,
-          isMe: isMe,
-          mediaUrls: message.mediaUrls,
-          status: message.status,
-          senderName: sender?.displayName,
-          senderImageUrl: sender?.profilePicUrl,
-          showSeenStatus:
-              isDirectConversation &&
-              isMe &&
-              message.id == latestOutgoingMessageId,
-          isSeen: message.isRead,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (shouldShowDateHeading)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colors.backgroundSecondary,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      _formatDateHeading(message.createdAt),
+                      style: AppTextStyles.micro.copyWith(
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ChatMessageBubble(
+              text: message.content,
+              time: time,
+              isMe: isMe,
+              mediaUrls: message.mediaUrls,
+              status: message.status,
+              senderName: sender?.displayName,
+              senderImageUrl: sender?.profilePicUrl,
+              showSeenStatus:
+                  isDirectConversation &&
+                  isMe &&
+                  message.id == latestOutgoingMessageId,
+              isSeen: message.isRead,
+            ),
+          ],
         );
       },
     );

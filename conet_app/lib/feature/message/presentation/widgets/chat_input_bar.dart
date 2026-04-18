@@ -82,6 +82,10 @@ class ChatInputBar extends StatelessWidget {
                   child: TextField(
                     controller: controller,
                     enabled: canSendMessage,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    minLines: 1,
+                    maxLines: null,
                     decoration: InputDecoration(
                       hintText: canSendMessage
                           ? 'Type a message...'
@@ -92,6 +96,7 @@ class ChatInputBar extends StatelessWidget {
                           : colors.backgroundSecondary.withValues(alpha: 0.5),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16,
+                        vertical: 12,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24),
