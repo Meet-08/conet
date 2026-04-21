@@ -20,6 +20,8 @@ mock.module("../../config/queue.js", () => ({
 
 process.env.SUPABASE_JWT_SECRET = TEST_JWT_SECRET;
 process.env.NODE_ENV = "test";
+delete process.env.SUPABASE_URL;
+delete process.env.SUPABASE_JWT_ISSUER;
 
 import { createApp } from "../../app.js";
 
@@ -97,7 +99,7 @@ beforeEach(() => {
   prismaMock.event_registrations.findUnique.mockResolvedValue(null);
   prismaMock.event_registrations.findFirst.mockResolvedValue(null);
   prismaMock.event_registrations.findMany.mockResolvedValue([]);
-  prismaMock.event_registrations.upsert.mockResolvedValue({
+  prismaMock.event_registrations.create.mockResolvedValue({
     id: REGISTRATION_ID,
   });
   prismaMock.event_registrations.update.mockResolvedValue({
@@ -335,7 +337,7 @@ describe("Registration and attendance routes", () => {
       .set("Authorization", makeAuthHeader(TEST_USER_B));
 
     expect(res.status).toBe(200);
-    expect(prismaMock.event_registrations.upsert).toHaveBeenCalled();
+    expect(prismaMock.event_registrations.create).toHaveBeenCalled();
     expect(res.body.registration.id).toBe(REGISTRATION_ID);
     expect(res.body.registration.registration_id).toBe(REGISTRATION_ID);
   });
@@ -354,13 +356,15 @@ describe("Registration and attendance routes", () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.message).toBe("Participant registered successfully");
-    expect(prismaMock.event_registrations.upsert).toHaveBeenCalledWith(
+    expect(prismaMock.event_registrations.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: {
-          event_id_user_id: {
-            event_id: EVENT_ID,
-            user_id: TEST_USER_B.id,
-          },
+        data: {
+          event_id: EVENT_ID,
+          user_id: TEST_USER_B.id,
+          registration_status: "registered",
+          team_id: null,
+          transaction_id: null,
+          custom_field_responses: {},
         },
       }),
     );
@@ -452,7 +456,7 @@ describe("Registration and attendance routes", () => {
     );
 
     expect(prismaMock.event_team_members.createMany).not.toHaveBeenCalled();
-    expect(prismaMock.event_registrations.upsert).not.toHaveBeenCalled();
+    expect(prismaMock.event_registrations.create).not.toHaveBeenCalled();
   });
 
   it("200 - returns registration info", async () => {

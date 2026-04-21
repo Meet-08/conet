@@ -96,9 +96,10 @@ beforeEach(() => {
   prismaMock.events.update.mockResolvedValue(makeEventRow());
 
   prismaMock.event_registrations.count.mockResolvedValue(0);
-  prismaMock.event_registrations.upsert.mockResolvedValue({
+  prismaMock.event_registrations.create.mockResolvedValue({
     id: REGISTRATION_ID,
   });
+  prismaMock.event_registrations.updateMany.mockResolvedValue({ count: 1 });
   prismaMock.event_registrations.findUnique.mockResolvedValue(null);
   prismaMock.event_registrations.findFirst.mockResolvedValue(null);
   prismaMock.event_registrations.findMany.mockResolvedValue([]);
@@ -374,7 +375,7 @@ describe("registerEventService", () => {
     });
   });
 
-  it("upserts registration and returns mapped event", async () => {
+  it("creates registration and returns mapped event", async () => {
     prismaMock.events.findUnique
       .mockResolvedValueOnce(makeEventRow({ event_status: "published" }))
       .mockResolvedValueOnce(
@@ -387,14 +388,12 @@ describe("registerEventService", () => {
 
     const result = await registerEventService(EVENT_ID, ATTENDEE_ID);
 
-    expect(prismaMock.event_registrations.upsert).toHaveBeenCalledWith(
+    expect(prismaMock.event_registrations.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: {
-          event_id_user_id: {
-            event_id: EVENT_ID,
-            user_id: ATTENDEE_ID,
-          },
-        },
+        data: expect.objectContaining({
+          event_id: EVENT_ID,
+          user_id: ATTENDEE_ID,
+        }),
       }),
     );
     expect(result.event.is_registered).toBe(true);
@@ -570,7 +569,50 @@ describe("registerEventService", () => {
     });
 
     expect(prismaMock.event_team_members.createMany).not.toHaveBeenCalled();
-    expect(prismaMock.event_registrations.upsert).not.toHaveBeenCalled();
+    expect(prismaMock.event_registrations.create).not.toHaveBeenCalled();
+  });
+
+  it("throws 409 when user is already registered", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({ event_status: "published" }),
+    );
+    prismaMock.event_registrations.findUnique.mockResolvedValue({
+      id: REGISTRATION_ID,
+      registration_status: "registered",
+    });
+
+    await expect(
+      registerEventService(EVENT_ID, ATTENDEE_ID),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      message: "User is already registered for this event",
+    });
+
+    expect(prismaMock.event_registrations.create).not.toHaveBeenCalled();
+  });
+
+  it("throws 409 when registration already exists even with different custom_field_responses", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({ event_status: "published" }),
+    );
+    prismaMock.event_registrations.findUnique.mockResolvedValue({
+      id: REGISTRATION_ID,
+      registration_status: "cancelled",
+    });
+
+    await expect(
+      registerEventService(EVENT_ID, ATTENDEE_ID, {
+        custom_field_responses: {
+          college_id: "A-101",
+        },
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      message: "User is already registered for this event",
+    });
+
+    expect(prismaMock.event_registrations.create).not.toHaveBeenCalled();
+    expect(prismaMock.event_registrations.updateMany).not.toHaveBeenCalled();
   });
 
   it("throws 400 when required custom form fields are missing", async () => {
@@ -661,9 +703,9 @@ describe("registerEventService", () => {
     });
 
     expect(result.registration.id).toBe(REGISTRATION_ID);
-    expect(prismaMock.event_registrations.upsert).toHaveBeenCalledWith(
+    expect(prismaMock.event_registrations.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        create: expect.objectContaining({
+        data: expect.objectContaining({
           custom_field_responses: {},
         }),
       }),
@@ -706,9 +748,9 @@ describe("registerEventService", () => {
       total_amount: 40,
     });
     expect(result.registration.team_id).toBe("team-generated-1");
-    expect(prismaMock.event_registrations.upsert).toHaveBeenCalledWith(
+    expect(prismaMock.event_registrations.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        create: expect.objectContaining({
+        data: expect.objectContaining({
           team_id: "team-generated-1",
           transaction_id: null,
           custom_field_responses: {},
@@ -763,14 +805,12 @@ describe("registerParticipantForEventService", () => {
       },
     );
 
-    expect(prismaMock.event_registrations.upsert).toHaveBeenCalledWith(
+    expect(prismaMock.event_registrations.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: {
-          event_id_user_id: {
-            event_id: EVENT_ID,
-            user_id: ATTENDEE_ID,
-          },
-        },
+        data: expect.objectContaining({
+          event_id: EVENT_ID,
+          user_id: ATTENDEE_ID,
+        }),
       }),
     );
     expect(result.registration.id).toBe(REGISTRATION_ID);
@@ -796,17 +836,60 @@ describe("registerParticipantForEventService", () => {
       },
     );
 
-    expect(prismaMock.event_registrations.upsert).toHaveBeenCalledWith(
+    expect(prismaMock.event_registrations.create).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: {
-          event_id_user_id: {
-            event_id: EVENT_ID,
-            user_id: ORGANIZER_ID,
-          },
-        },
+        data: expect.objectContaining({
+          event_id: EVENT_ID,
+          user_id: ORGANIZER_ID,
+        }),
       }),
     );
     expect(result.registration.id).toBe(REGISTRATION_ID);
+  });
+
+  it("throws 409 when host tries to re-register the same participant", async () => {
+    prismaMock.events.findUnique
+      .mockResolvedValueOnce(makeEventRow({ event_status: "published" }))
+      .mockResolvedValueOnce(makeEventRow({ event_status: "published" }));
+    prismaMock.event_registrations.findUnique.mockResolvedValueOnce({
+      id: REGISTRATION_ID,
+      registration_status: "registered",
+    });
+
+    await expect(
+      registerParticipantForEventService(EVENT_ID, ORGANIZER_ID, {
+        participant_user_id: ATTENDEE_ID,
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      message: "User is already registered for this event",
+    });
+
+    expect(prismaMock.event_registrations.create).not.toHaveBeenCalled();
+  });
+
+  it("throws 409 for host registration when participant already has registration with different custom_field_responses", async () => {
+    prismaMock.events.findUnique
+      .mockResolvedValueOnce(makeEventRow({ event_status: "published" }))
+      .mockResolvedValueOnce(makeEventRow({ event_status: "published" }));
+    prismaMock.event_registrations.findUnique.mockResolvedValueOnce({
+      id: REGISTRATION_ID,
+      registration_status: "cancelled",
+    });
+
+    await expect(
+      registerParticipantForEventService(EVENT_ID, ORGANIZER_ID, {
+        participant_user_id: ATTENDEE_ID,
+        custom_field_responses: {
+          tshirt_size: "L",
+        },
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 409,
+      message: "User is already registered for this event",
+    });
+
+    expect(prismaMock.event_registrations.create).not.toHaveBeenCalled();
   });
 
   it("throws 403 when requester is not organizer or co-host", async () => {

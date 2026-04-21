@@ -1089,6 +1089,25 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     throw err;
   }
 
+  const existingRegistration = await prisma.event_registrations.findUnique({
+    where: {
+      event_id_user_id: {
+        event_id: eventId,
+        user_id: userId,
+      },
+    },
+    select: {
+      id: true,
+      registration_status: true,
+    },
+  });
+
+  if (existingRegistration) {
+    const err = new Error("User is already registered for this event");
+    err.statusCode = 409;
+    throw err;
+  }
+
   if (event.max_participant != null && event.max_participant > -1) {
     const registrationCount = await prisma.event_registrations.count({
       where: {
@@ -1313,7 +1332,6 @@ export const registerEventService = async (eventId, userId, body = {}) => {
       err.statusCode = 409;
       throw err;
     }
-
     try {
       await prisma.event_team_members.createMany({
         data: allTeamMemberIds.map((memberId) => ({
@@ -1349,26 +1367,14 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     custom_field_responses: normalizedCustomFieldResponses,
   };
 
-  const registrationUpdateData = {
-    registration_status: "registered",
-    registered_at: new Date(),
-    ...(resolvedTeamId !== undefined && { team_id: resolvedTeamId }),
-    ...(transactionId !== undefined && { transaction_id: transactionId }),
-    ...(payload.custom_field_responses !== undefined ?
-      { custom_field_responses: normalizedCustomFieldResponses }
-    : {}),
-  };
-
   let registrationRecord;
   try {
-    registrationRecord = await prisma.event_registrations.upsert({
-      where: { event_id_user_id: { event_id: eventId, user_id: userId } },
-      create: registrationCreateData,
-      update: registrationUpdateData,
+    registrationRecord = await prisma.event_registrations.create({
+      data: registrationCreateData,
     });
   } catch (error) {
     if (error?.code === "P2002") {
-      const err = new Error("Registration already exists for this user");
+      const err = new Error("User is already registered for this event");
       err.statusCode = 409;
       throw err;
     }

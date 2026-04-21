@@ -28,7 +28,7 @@ class EventAttendanceScannerPage extends StatefulWidget {
 
 class _EventAttendanceScannerPageState
     extends State<EventAttendanceScannerPage> {
-  static const int _scanCooldownSeconds = 3;
+  static const int _scanCooldownSeconds = 5;
 
   final MobileScannerController _scannerController = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,

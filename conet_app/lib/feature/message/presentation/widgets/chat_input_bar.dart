@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ChatInputBar extends StatelessWidget {
+  static const int _maxComposerLines = 5;
+
   final TextEditingController controller;
   final VoidCallback onSend;
   final VoidCallback onFilesSelected;
@@ -85,7 +87,7 @@ class ChatInputBar extends StatelessWidget {
                     keyboardType: TextInputType.multiline,
                     textInputAction: TextInputAction.newline,
                     minLines: 1,
-                    maxLines: null,
+                    maxLines: _maxComposerLines,
                     decoration: InputDecoration(
                       hintText: canSendMessage
                           ? 'Type a message...'
