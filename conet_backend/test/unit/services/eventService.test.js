@@ -1248,6 +1248,7 @@ describe("exportEventParticipationXlsxService", () => {
     expect(sheet.getRow(2).getCell("register_date").value).toEqual(
       new Date("2026-04-01T10:00:00.000Z"),
     );
+    expect(sheet.getRow(2).getCell("status").value).toBe("registered");
   });
 
   it("exports registered_at with DD/MM/YYYY formatting for team attendees", async () => {
@@ -1297,6 +1298,27 @@ describe("exportEventParticipationXlsxService", () => {
     expect(sheet.getColumn("register_date").numFmt).toBe("dd/mm/yyyy");
     expect(sheet.getRow(2).getCell("register_date").value).toEqual(
       new Date("2026-04-02T10:00:00.000Z"),
+    );
+    expect(sheet.getRow(2).getCell("status").value).toBe("registered");
+  });
+
+  it("uses event title for filename when title is non-ASCII", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({
+        event_status: "published",
+        participation_type: "individual",
+        title: "\u0939\u0948\u0915\u093E\u0925\u0949\u0928 2026",
+      }),
+    );
+    prismaMock.event_registrations.findMany.mockResolvedValue([]);
+
+    const result = await exportEventParticipationXlsxService(
+      EVENT_ID,
+      ORGANIZER_ID,
+    );
+
+    expect(result.fileName).toBe(
+      "\u0939\u0948\u0915\u093E\u0925\u0949\u0928_2026_participants.xlsx",
     );
   });
 });

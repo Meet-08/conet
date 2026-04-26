@@ -31,6 +31,20 @@ class EventAttendeesPage extends StatefulWidget {
 class _EventAttendeesPageState extends State<EventAttendeesPage> {
   String _selectedStatus = 'all';
   bool _canExportXls = false;
+  String? _resolvedEventTitle;
+
+  String? get _effectiveEventTitle {
+    final explicitTitle = widget.eventTitle?.trim();
+    if (explicitTitle != null && explicitTitle.isNotEmpty) return explicitTitle;
+
+    final eventTitle = widget.event?.title.trim() ?? '';
+    if (eventTitle.isNotEmpty) return eventTitle;
+
+    final resolvedTitle = _resolvedEventTitle?.trim();
+    if (resolvedTitle != null && resolvedTitle.isNotEmpty) return resolvedTitle;
+
+    return null;
+  }
 
   bool _hasOrganizerRole(Event event, String userId) {
     final normalizedUserId = userId.trim();
@@ -44,7 +58,7 @@ class _EventAttendeesPageState extends State<EventAttendeesPage> {
   }
 
   String _exportFileName() {
-    final safeTitle = (widget.eventTitle ?? 'event_participants')
+    final safeTitle = (_effectiveEventTitle ?? 'event_participants')
         .trim()
         .replaceAll(RegExp(r'[^a-zA-Z0-9-_ ]'), '')
         .replaceAll(RegExp(r'\s+'), '_');
@@ -86,6 +100,7 @@ class _EventAttendeesPageState extends State<EventAttendeesPage> {
       if (!mounted) return;
       setState(() {
         _canExportXls = _hasOrganizerRole(currentEvent, currentUserId);
+        _resolvedEventTitle = currentEvent.title.trim();
       });
       return;
     }
@@ -102,6 +117,7 @@ class _EventAttendeesPageState extends State<EventAttendeesPage> {
       (event) {
         setState(() {
           _canExportXls = _hasOrganizerRole(event, currentUserId);
+          _resolvedEventTitle = event.title.trim();
         });
       },
     );
@@ -123,7 +139,7 @@ class _EventAttendeesPageState extends State<EventAttendeesPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.eventTitle?.isNotEmpty == true
+          _effectiveEventTitle?.isNotEmpty == true
               ? 'Attendees'
               : 'Event Attendees',
         ),
@@ -172,11 +188,11 @@ class _EventAttendeesPageState extends State<EventAttendeesPage> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               children: [
-                if (widget.eventTitle?.trim().isNotEmpty ?? false)
+                if (_effectiveEventTitle?.isNotEmpty ?? false)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
                     child: Text(
-                      widget.eventTitle!.trim(),
+                      _effectiveEventTitle!,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),

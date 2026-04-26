@@ -87,12 +87,23 @@ const formatUserDisplayName = (user) => {
   return "Unknown attendee";
 };
 
-const sanitizeXlsxFileName = (value) =>
-  String(value ?? "participants")
+const sanitizeXlsxFileName = (value) => {
+  const sanitized = String(value ?? "participants")
     .trim()
-    .replace(/[^a-zA-Z0-9-_ ]+/g, "")
+    // Remove characters invalid for Windows/macOS/Linux file names.
+    .replace(/[<>:"/\\|?*\u0000-\u001F]/g, "")
     .replace(/\s+/g, "_")
-    .slice(0, 60) || "participants";
+    .replace(/\.+$/, "")
+    .slice(0, 60);
+
+  if (!sanitized) return "participants";
+
+  if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\..*)?$/i.test(sanitized)) {
+    return `event_${sanitized}`;
+  }
+
+  return sanitized;
+};
 
 const normalizeCellValue = (value) => {
   if (value === null || value === undefined) return "";
@@ -1715,6 +1726,7 @@ export const exportEventParticipationXlsxService = async (
       { header: "Team Name", key: "team_name", width: 28 },
       { header: "Leader Name", key: "leader_name", width: 28 },
       { header: "Register Date", key: "register_date", width: 16 },
+      { header: "Status", key: "status", width: 14 },
       ...memberColumns,
       ...customFieldColumns,
     ];
@@ -1730,6 +1742,7 @@ export const exportEventParticipationXlsxService = async (
           `Team-${registration.team_id ?? registration.id}`,
         leader_name: formatUserDisplayName(team?.users ?? registration.users),
         register_date: registration.registered_at ?? null,
+        status: registration.registration_status ?? "",
       };
 
       members.forEach((member, index) => {
@@ -1750,6 +1763,7 @@ export const exportEventParticipationXlsxService = async (
     sheet.columns = [
       { header: "Name", key: "name", width: 28 },
       { header: "Register Date", key: "register_date", width: 16 },
+      { header: "Status", key: "status", width: 14 },
       ...customFieldColumns,
     ];
 
@@ -1757,6 +1771,7 @@ export const exportEventParticipationXlsxService = async (
       const row = {
         name: formatUserDisplayName(registration.users),
         register_date: registration.registered_at ?? null,
+        status: registration.registration_status ?? "",
       };
 
       customFieldDescriptors.forEach((descriptor, index) => {

@@ -80,6 +80,51 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
     }
   }
 
+  String _sanitizeFileName(String value) {
+    return value
+        .replaceAll(RegExp(r'[<>:"/\\|?*]'), '')
+        .replaceAll(RegExp(r'[\x00-\x1F]'), '')
+        .trim();
+  }
+
+  String? _extractFileNameFromContentDisposition(String? headerValue) {
+    if (headerValue == null || headerValue.trim().isEmpty) return null;
+
+    final encodedMatch = RegExp(
+      r"filename\*=UTF-8''([^;]+)",
+      caseSensitive: false,
+    ).firstMatch(headerValue);
+
+    if (encodedMatch != null) {
+      final encoded = encodedMatch.group(1)?.trim();
+      if (encoded != null && encoded.isNotEmpty) {
+        String decoded;
+        try {
+          decoded = Uri.decodeComponent(encoded);
+        } catch (_) {
+          decoded = encoded;
+        }
+        final cleaned = _sanitizeFileName(decoded);
+        if (cleaned.isNotEmpty) return cleaned;
+      }
+    }
+
+    final quotedMatch = RegExp(
+      r'filename="([^"]+)"',
+      caseSensitive: false,
+    ).firstMatch(headerValue);
+    final unquotedMatch = RegExp(
+      r'filename=([^;]+)',
+      caseSensitive: false,
+    ).firstMatch(headerValue);
+
+    final fileName = quotedMatch?.group(1) ?? unquotedMatch?.group(1);
+    if (fileName == null || fileName.trim().isEmpty) return null;
+
+    final cleaned = _sanitizeFileName(fileName.trim());
+    return cleaned.isEmpty ? null : cleaned;
+  }
+
   Future<void> _download({required bool force}) async {
     if (_isLoading) return;
 
@@ -96,7 +141,7 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
     });
 
     try {
-      await serviceLocator<DioClient>().dio.download(
+      final response = await serviceLocator<DioClient>().dio.download(
         widget.downloadUrl,
         path,
         options: Options(headers: widget.headers),
@@ -110,13 +155,31 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
         },
       );
 
+      var finalPath = path;
+      final headerFileName = _extractFileNameFromContentDisposition(
+        response.headers.value('content-disposition'),
+      );
+
+      if (headerFileName != null) {
+        final targetPath = '${file.parent.path}/$headerFileName';
+        if (targetPath != path) {
+          final targetFile = File(targetPath);
+          if (targetFile.existsSync()) {
+            await targetFile.delete();
+          }
+          final renamed = await file.rename(targetPath);
+          finalPath = renamed.path;
+        }
+      }
+
       if (!mounted) return;
       setState(() {
+        _filePath = finalPath;
         _isDownloaded = true;
       });
 
       if (widget.openAfterDownload) {
-        await _openFile(path);
+        await _openFile(finalPath);
       }
     } on DioException catch (error) {
       if (!mounted) return;
