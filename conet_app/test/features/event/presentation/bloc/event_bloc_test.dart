@@ -10,11 +10,12 @@ import 'package:conet_app/feature/event/domain/usecases/event_get_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_organized_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
-import 'package:conet_app/feature/event/domain/usecases/event_update_conversation.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_setup_organizer_resources.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_group.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -33,14 +34,16 @@ class MockEventGetMyOrganizedEvents extends Mock
 
 class MockEventPublishById extends Mock implements EventPublishById {}
 
+class MockEventPublish extends Mock implements EventPublish {}
+
 class MockEventRegister extends Mock implements EventRegister {}
 
 class MockEventSave extends Mock implements EventSave {}
 
 class MockEventSaveDraft extends Mock implements EventSaveDraft {}
 
-class MockEventUpdateConversation extends Mock
-    implements EventUpdateConversation {}
+class MockEventSetupOrganizerResources extends Mock
+    implements EventSetupOrganizerResources {}
 
 class MockMessageCreateGroup extends Mock implements MessageCreateGroup {}
 
@@ -50,11 +53,11 @@ void main() {
   late MockEventGetPublishedEvents mockGetPublishedEvents;
   late MockEventGetMyEvents mockGetMyEvents;
   late MockEventGetMyOrganizedEvents mockGetMyOrganizedEvents;
-  late MockEventPublishById mockPublishById;
+  late MockEventPublish mockPublish;
   late MockEventRegister mockRegister;
   late MockEventSave mockSave;
   late MockEventSaveDraft mockSaveDraft;
-  late MockEventUpdateConversation mockUpdateConversation;
+  late MockEventSetupOrganizerResources mockSetupOrganizerResources;
   late MockMessageCreateGroup mockCreateGroup;
 
   final tEventListItem1 = EventListItem(
@@ -124,11 +127,11 @@ void main() {
     mockGetPublishedEvents = MockEventGetPublishedEvents();
     mockGetMyEvents = MockEventGetMyEvents();
     mockGetMyOrganizedEvents = MockEventGetMyOrganizedEvents();
-    mockPublishById = MockEventPublishById();
+    mockPublish = MockEventPublish();
     mockRegister = MockEventRegister();
     mockSave = MockEventSave();
     mockSaveDraft = MockEventSaveDraft();
-    mockUpdateConversation = MockEventUpdateConversation();
+    mockSetupOrganizerResources = MockEventSetupOrganizerResources();
     mockCreateGroup = MockMessageCreateGroup();
 
     bloc = EventBloc(
@@ -136,11 +139,11 @@ void main() {
       getPublishedEvents: mockGetPublishedEvents,
       getMyEvents: mockGetMyEvents,
       getMyOrganizedEvents: mockGetMyOrganizedEvents,
-      publishDraftById: mockPublishById,
+      publish: mockPublish,
       registerEvent: mockRegister,
       saveEvent: mockSave,
       saveDraft: mockSaveDraft,
-      updateEventConversation: mockUpdateConversation,
+      setupOrganizerResources: mockSetupOrganizerResources,
       createGroup: mockCreateGroup,
     );
   });
@@ -375,10 +378,7 @@ void main() {
       'emits [EventCreateLoading, EventCreateSuccess(isDraft: false)] on success',
       build: () {
         when(
-          () => mockSaveDraft(tPayload),
-        ).thenAnswer((_) async => Right(tEvent));
-        when(
-          () => mockPublishById('event-1'),
+          () => mockPublish(tPayload),
         ).thenAnswer((_) async => Right(tEvent));
         return bloc;
       },
@@ -390,8 +390,7 @@ void main() {
             .having((s) => s.isDraft, 'isDraft', false),
       ],
       verify: (_) {
-        verify(() => mockSaveDraft(tPayload)).called(1);
-        verify(() => mockPublishById('event-1')).called(1);
+        verify(() => mockPublish(tPayload)).called(1);
       },
     );
 
@@ -399,10 +398,7 @@ void main() {
       'emits [EventCreateLoading, EventCreateFailure] on failure',
       build: () {
         when(
-          () => mockSaveDraft(tPayload),
-        ).thenAnswer((_) async => Right(tEvent));
-        when(
-          () => mockPublishById('event-1'),
+          () => mockPublish(tPayload),
         ).thenAnswer((_) async => Left(AppFailure('Publish failed')));
         return bloc;
       },
