@@ -266,20 +266,7 @@ class EventDataSourceImpl implements EventDataSource {
   @override
   Future<Event> publishEvent(EventCreatePayload payload) async {
     try {
-      // Step 1: create as draft to obtain the event id
-      final draft = await _createDraft(payload);
-
-      // Step 2: publish the draft
-      final response = await _dioClient.dio.patch(
-        '/events/${draft.id}/publish',
-      );
-
-      if (response.statusCode != 200) {
-        throw ServerException('Failed to publish event');
-      }
-
-      final data = response.data as Map<String, dynamic>;
-      return EventModel.fromJson(data['event'] as Map<String, dynamic>);
+      return await _createEvent(payload, publish: true, syncCohosts: false);
     } catch (e) {
       logger.e('publishEvent failed', error: e);
       if (e is ServerException) rethrow;
@@ -328,7 +315,7 @@ class EventDataSourceImpl implements EventDataSource {
   @override
   Future<Event> saveEventDraft(EventCreatePayload payload) async {
     try {
-      return await _createDraft(payload);
+      return await _createEvent(payload, publish: false, syncCohosts: true);
     } catch (e) {
       logger.e('saveEventDraft failed', error: e);
       if (e is ServerException) rethrow;
@@ -336,8 +323,37 @@ class EventDataSourceImpl implements EventDataSource {
     }
   }
 
-  /// Creates the event as a draft and returns the persisted [EventModel].
-  Future<EventModel> _createDraft(EventCreatePayload payload) async {
+  @override
+  Future<void> setupOrganizerResources({
+    required String eventId,
+    required List<String> cohostUserIds,
+    required bool createEventConversation,
+    String? conversationId,
+  }) async {
+    try {
+      final response = await _dioClient.dio.post(
+        '/events/$eventId/organizer-setup',
+        data: {
+          'cohost_user_ids': cohostUserIds,
+          'create_event_conversation': createEventConversation,
+          if (conversationId != null && conversationId.trim().isNotEmpty)
+            'conversation_id': conversationId.trim(),
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to configure organizer resources');
+      }
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  Future<EventModel> _createEvent(
+    EventCreatePayload payload, {
+    required bool publish,
+    required bool syncCohosts,
+  }) async {
     if (payload.eventImage == null) {
       throw ServerException('Event banner image is required');
     }
@@ -361,7 +377,7 @@ class EventDataSourceImpl implements EventDataSource {
 
     final requestBody = EventCreatePayloadModel.fromEntity(
       payloadWithUploadedFieldImages,
-      publish: false,
+      publish: publish,
     ).toJson();
 
     if (imageUrl != null) requestBody['event_image_url'] = imageUrl;
@@ -377,10 +393,12 @@ class EventDataSourceImpl implements EventDataSource {
       data['event'] as Map<String, dynamic>,
     );
 
-    await _syncCohostsForEvent(
-      eventId: createdEvent.id,
-      cohostUserIds: payload.cohostUserIds,
-    );
+    if (syncCohosts) {
+      await _syncCohostsForEvent(
+        eventId: createdEvent.id,
+        cohostUserIds: payload.cohostUserIds,
+      );
+    }
 
     return createdEvent;
   }

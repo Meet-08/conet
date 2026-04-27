@@ -16,6 +16,7 @@ import {
   registerEvent,
   removeCohost,
   saveEvent,
+  setupOrganizerResources,
   updateEvent,
 } from "../controllers/eventController.js";
 import validateSupabaseToken from "../middleware/validateSupabaseToken.js";
@@ -35,6 +36,7 @@ router.get("/:id/attendees", getEventAttendees);
 router.get("/:id/participants/export", exportEventParticipationXlsx);
 router.post("/:id/attend", attendEvent);
 router.post("/:id/save", saveEvent);
+router.post("/:id/organizer-setup", setupOrganizerResources);
 
 // Organizer lifecycle
 router.post("/", createEvent);

@@ -30,6 +30,13 @@ abstract interface class EventRepository {
 
   Future<Either<AppFailure, Event>> saveEventDraft(EventCreatePayload payload);
 
+  Future<Either<AppFailure, Unit>> setupOrganizerResources({
+    required String eventId,
+    required List<String> cohostUserIds,
+    required bool createEventConversation,
+    String? conversationId,
+  });
+
   Future<Either<AppFailure, EventPage>> getPublishedEvents({
     int limit = 20,
     String? cursor,

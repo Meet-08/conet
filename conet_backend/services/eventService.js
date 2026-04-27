@@ -1,6 +1,8 @@
 import ExcelJS from "exceljs";
 import prisma from "../config/prisma.js";
+import { createGroupService } from "./conversationService.js";
 import {
+  assertAttendanceScanner,
   assertEndAfterStart,
   assertEventExists,
   assertOrganizer,
@@ -12,37 +14,6 @@ import {
   parseTimeString,
   validateEventPayload,
 } from "./utils.js";
-
-const assertAttendanceScanner = async (eventId, scannerUserId) => {
-  const event = await assertEventExists(eventId);
-
-  if (event.event_status !== "published") {
-    const err = new Error("Only published events can accept attendance");
-    err.statusCode = 409;
-    throw err;
-  }
-
-  if (event.organizer_id === scannerUserId) {
-    return event;
-  }
-
-  const cohost = await prisma.event_cohosts.findUnique({
-    where: {
-      event_id_user_id: {
-        event_id: eventId,
-        user_id: scannerUserId,
-      },
-    },
-  });
-
-  if (!cohost) {
-    const err = new Error("Only organizer or co-host can scan tickets");
-    err.statusCode = 403;
-    throw err;
-  }
-
-  return event;
-};
 
 const attendeeUserSelect = {
   id: true,
@@ -608,8 +579,6 @@ const normalizeActivityEntries = (activity, fieldName = "activity") => {
   });
 };
 
-// ─── Create event (draft or publish) ─────────────────────────────────────────
-
 export const createEventService = async (organizerId, body) => {
   const {
     title,
@@ -770,8 +739,6 @@ export const createEventService = async (organizerId, body) => {
 
   return mapEvent(event, organizerId);
 };
-
-// ─── Update event (organizer only) ───────────────────────────────────────────
 
 export const updateEventService = async (eventId, organizerId, body) => {
   const existing = await assertEventExists(eventId);
@@ -992,8 +959,6 @@ export const updateEventService = async (eventId, organizerId, body) => {
   return mapEvent(updated, organizerId);
 };
 
-// ─── Publish event ────────────────────────────────────────────────────────────
-
 export const publishEventService = async (eventId, organizerId) => {
   const existing = await assertEventExists(eventId);
   assertOrganizer(existing, organizerId);
@@ -1017,8 +982,6 @@ export const publishEventService = async (eventId, organizerId) => {
 
   return mapEvent(event, organizerId);
 };
-
-// ─── Cancel event ─────────────────────────────────────────────────────────────
 
 export const cancelEventService = async (eventId, organizerId) => {
   const existing = await assertEventExists(eventId);
@@ -1990,8 +1953,6 @@ export const listMyOrganizedEventsService = async (
   };
 };
 
-// ─── List current user's events by chip type ────────────────────────────────
-
 export const listMyEventsService = async (
   userId,
   { type = "upcoming", cursor, page_size = 20 },
@@ -2096,7 +2057,102 @@ export const listMyEventsService = async (
   };
 };
 
-// ─── Co-host management ───────────────────────────────────────────────────────
+const normalizeCohostUserIds = (value) => {
+  if (value === undefined || value === null) {
+    return [];
+  }
+
+  if (!Array.isArray(value)) {
+    const err = new Error("cohost_user_ids must be an array");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  return [...new Set(value.map((entry) => String(entry ?? "").trim()))].filter(
+    Boolean,
+  );
+};
+
+export const setupEventOrganizerResourcesService = async (
+  eventId,
+  organizerId,
+  body = {},
+) => {
+  const existing = await assertEventExists(eventId);
+  assertOrganizer(existing, organizerId);
+
+  if (existing.event_status === "cancelled") {
+    const err = new Error(
+      "Cannot configure organizer resources for a cancelled event",
+    );
+    err.statusCode = 409;
+    throw err;
+  }
+
+  const normalizedCohostUserIds = normalizeCohostUserIds(
+    body.cohost_user_ids,
+  ).filter((id) => id !== organizerId);
+
+  if (normalizedCohostUserIds.length) {
+    const existingUsers = await prisma.users.findMany({
+      where: { id: { in: normalizedCohostUserIds } },
+      select: { id: true },
+    });
+
+    if (existingUsers.length !== normalizedCohostUserIds.length) {
+      const err = new Error("One or more co-host users not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    await prisma.event_cohosts.createMany({
+      data: normalizedCohostUserIds.map((userId) => ({
+        event_id: eventId,
+        user_id: userId,
+      })),
+      skipDuplicates: true,
+    });
+  }
+
+  const shouldCreateOrganizerConversation =
+    body.create_event_conversation === true;
+  const providedConversationId = normalizeOptionalString(
+    body.conversation_id,
+    "conversation_id",
+  );
+
+  let linkedConversationId = providedConversationId;
+
+  if (!linkedConversationId && shouldCreateOrganizerConversation) {
+    if (!normalizedCohostUserIds.length) {
+      const err = new Error(
+        "Publishing with organizer conversation requires at least one co-host",
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const conversation = await createGroupService(organizerId, {
+      name: String(existing.title ?? "").trim() || "Event organizers",
+      memberIds: normalizedCohostUserIds,
+      groupImageUrl: existing.event_image_url ?? undefined,
+    });
+    linkedConversationId = conversation.id;
+  }
+
+  if (linkedConversationId) {
+    await prisma.events.update({
+      where: { id: eventId },
+      data: { conversation_id: linkedConversationId },
+    });
+  }
+
+  return {
+    event_id: eventId,
+    cohosts_synced: normalizedCohostUserIds.length,
+    conversation_id: linkedConversationId ?? existing.conversation_id ?? null,
+  };
+};
 
 export const addCohostService = async (eventId, organizerId, cohostUserId) => {
   const existing = await assertEventExists(eventId);

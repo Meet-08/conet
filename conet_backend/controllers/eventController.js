@@ -16,6 +16,7 @@ import {
   registerEventService,
   removeCohostService,
   saveEventService,
+  setupEventOrganizerResourcesService,
   updateEventService,
 } from "../services/eventService.js";
 
@@ -132,6 +133,20 @@ export const attendEvent = asyncHandler(async (req, res) => {
 export const saveEvent = asyncHandler(async (req, res) => {
   const result = await saveEventService(req.params.id, req.user.id);
   res.status(200).json(result);
+});
+
+export const setupOrganizerResources = asyncHandler(async (req, res) => {
+  const result = await setupEventOrganizerResourcesService(
+    req.params.id,
+    req.user.id,
+    req.body,
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Organizer resources configured successfully",
+    ...result,
+  });
 });
 
 // ─── List published events ────────────────────────────────────────────────────

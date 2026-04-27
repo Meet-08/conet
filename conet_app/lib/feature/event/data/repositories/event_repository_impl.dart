@@ -130,6 +130,24 @@ class EventRepositoryImpl implements EventRepository {
   }
 
   @override
+  Future<Either<AppFailure, Unit>> setupOrganizerResources({
+    required String eventId,
+    required List<String> cohostUserIds,
+    required bool createEventConversation,
+    String? conversationId,
+  }) {
+    return _getResult<Unit, Unit>(() async {
+      await _eventDataSource.setupOrganizerResources(
+        eventId: eventId,
+        cohostUserIds: cohostUserIds,
+        createEventConversation: createEventConversation,
+        conversationId: conversationId,
+      );
+      return unit;
+    });
+  }
+
+  @override
   Future<Either<AppFailure, EventRegistrationTicket>> getRegistrationInfo(
     String eventId,
   ) {

@@ -7,11 +7,11 @@ import 'package:conet_app/feature/event/domain/usecases/event_get_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_organized_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
-import 'package:conet_app/feature/event/domain/usecases/event_publish_by_id.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
-import 'package:conet_app/feature/event/domain/usecases/event_update_conversation.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_setup_organizer_resources.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_group.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -24,11 +24,11 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   final EventGetPublishedEvents _getPublishedEvents;
   final EventGetMyEvents _getMyEvents;
   final EventGetMyOrganizedEvents _getMyOrganizedEvents;
-  final EventPublishById _publishDraftById;
+  final EventPublish _publish;
   final EventRegister _registerEvent;
   final EventSave _saveEvent;
   final EventSaveDraft _saveDraft;
-  final EventUpdateConversation _updateEventConversation;
+  final EventSetupOrganizerResources _setupOrganizerResources;
   final MessageCreateGroup _createGroup;
 
   String? _nextCursor;
@@ -42,21 +42,21 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     required EventGetPublishedEvents getPublishedEvents,
     required EventGetMyEvents getMyEvents,
     required EventGetMyOrganizedEvents getMyOrganizedEvents,
-    required EventPublishById publishDraftById,
+    required EventPublish publish,
     required EventRegister registerEvent,
     required EventSave saveEvent,
     required EventSaveDraft saveDraft,
-    required EventUpdateConversation updateEventConversation,
+    required EventSetupOrganizerResources setupOrganizerResources,
     required MessageCreateGroup createGroup,
   }) : _getById = getById,
        _getPublishedEvents = getPublishedEvents,
        _getMyEvents = getMyEvents,
        _getMyOrganizedEvents = getMyOrganizedEvents,
-       _publishDraftById = publishDraftById,
+       _publish = publish,
        _registerEvent = registerEvent,
        _saveEvent = saveEvent,
        _saveDraft = saveDraft,
-       _updateEventConversation = updateEventConversation,
+       _setupOrganizerResources = setupOrganizerResources,
        _createGroup = createGroup,
        super(EventInitial()) {
     on<EventFetchByIdEvent>(_onFetchById);
@@ -275,94 +275,53 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   ) async {
     emit(EventCreateLoading());
 
-    final draftResult = await _saveDraft(event.payload);
-
-    String? draftFailureMessage;
-    Event? draftEvent;
-    draftResult.fold(
-      (failure) => draftFailureMessage = failure.message,
-      (createdDraft) => draftEvent = createdDraft,
-    );
-
-    if (draftFailureMessage != null || draftEvent == null) {
-      emit(EventCreateFailure(draftFailureMessage ?? 'Failed to save draft'));
-      return;
-    }
-
-    String? conversationId = event.payload.conversationId?.trim();
-    if ((conversationId == null || conversationId.isEmpty) &&
-        event.shouldCreateOrganizerConversation) {
-      final cohostIds = event.payload.cohostUserIds
-          .map((id) => id.trim())
-          .where((id) => id.isNotEmpty)
-          .toSet()
-          .toList(growable: false);
-
-      if (cohostIds.isEmpty) {
-        emit(
-          const EventCreateFailure(
-            'Draft saved, but publishing requires at least one co-host to create organizer conversation',
-          ),
-        );
-        return;
-      }
-
-      final title = event.payload.title.trim();
-      final createGroupResult = await _createGroup(
-        name: title,
-        memberIds: cohostIds,
-        groupImageFile: event.payload.eventImage,
-      );
-
-      String? createGroupFailure;
-      createGroupResult.fold(
-        (failure) => createGroupFailure = failure.message,
-        (conversation) => conversationId = conversation.id,
-      );
-
-      if (createGroupFailure != null ||
-          conversationId == null ||
-          conversationId!.isEmpty) {
-        emit(
-          EventCreateFailure(
-            createGroupFailure ??
-                'Draft saved, but failed to create organizer conversation',
-          ),
-        );
-        return;
-      }
-    }
-
-    // Best effort: only update when backend supports conversation_id updates.
-    final conversationIdToLink = conversationId?.trim();
-    if (conversationIdToLink != null && conversationIdToLink.isNotEmpty) {
-      final updateResult = await _updateEventConversation(
-        eventId: draftEvent!.id,
-        conversationId: conversationIdToLink,
-      );
-      updateResult.fold(
-        (failure) => debugPrint(
-          'Event conversation_id update skipped/failed before publish: ${failure.message}',
-        ),
-        (_) => null,
-      );
-    }
-
-    final result = await _publishDraftById(draftEvent!.id);
+    final result = await _publish(event.payload);
 
     String? failureMessage;
-    Event? created;
+    Event? publishedEvent;
 
     result.fold(
       (failure) => failureMessage = failure.message,
-      (e) => created = e,
+      (e) => publishedEvent = e,
     );
 
     if (failureMessage != null) {
       emit(EventCreateFailure(failureMessage!));
-    } else {
-      emit(EventCreateSuccess(event: created!, isDraft: false));
+      return;
     }
+
+    final cohostIds = event.payload.cohostUserIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+    final conversationId = event.payload.conversationId?.trim();
+    final shouldRunOrganizerSetup =
+        cohostIds.isNotEmpty ||
+        event.shouldCreateOrganizerConversation ||
+        (conversationId != null && conversationId.isNotEmpty);
+
+    if (shouldRunOrganizerSetup) {
+      final setupResult = await _setupOrganizerResources(
+        eventId: publishedEvent!.id,
+        cohostUserIds: cohostIds,
+        createEventConversation: event.shouldCreateOrganizerConversation,
+        conversationId: conversationId,
+      );
+
+      String? setupFailure;
+      setupResult.fold(
+        (failure) => setupFailure = failure.message,
+        (_) => null,
+      );
+
+      if (setupFailure != null) {
+        emit(EventCreateFailure(setupFailure!));
+        return;
+      }
+    }
+
+    emit(EventCreateSuccess(event: publishedEvent!, isDraft: false));
   }
 
   Future<void> _onRegister(

@@ -1,7 +1,5 @@
 import prisma from "../config/prisma.js";
 
-// ─── Shared mappers ──────────────────────────────────────────────────────────
-
 export const EMPTY_QUILL_DELTA_JSON = '{"ops":[]}';
 
 export const jsonFieldToString = (value, fallback = "") => {
@@ -48,7 +46,6 @@ export const mapEvent = (event, viewerId = null) => ({
   participation_type: event.participation_type ?? null,
   min_team_size: event.min_team_size ?? null,
   max_team_size: event.max_team_size ?? null,
-  upi_id: event.upi_id ?? null,
   conversation_id: event.conversation_id ?? null,
   custom_fields: Array.isArray(event.custom_fields) ? event.custom_fields : [],
   created_at: event.created_at,
@@ -146,8 +143,6 @@ export const eventInclude = (viewerId = null) => ({
   : {}),
 });
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 export const assertEventExists = async (eventId) => {
   const event = await prisma.events.findUnique({ where: { id: eventId } });
   if (!event) {
@@ -164,6 +159,37 @@ export const assertOrganizer = (event, userId) => {
     err.statusCode = 403;
     throw err;
   }
+};
+
+export const assertAttendanceScanner = async (eventId, scannerUserId) => {
+  const event = await assertEventExists(eventId);
+
+  if (event.event_status !== "published") {
+    const err = new Error("Only published events can accept attendance");
+    err.statusCode = 409;
+    throw err;
+  }
+
+  if (event.organizer_id === scannerUserId) {
+    return event;
+  }
+
+  const cohost = await prisma.event_cohosts.findUnique({
+    where: {
+      event_id_user_id: {
+        event_id: eventId,
+        user_id: scannerUserId,
+      },
+    },
+  });
+
+  if (!cohost) {
+    const err = new Error("Only organizer or co-host can scan tickets");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  return event;
 };
 
 export const validateEventPayload = ({

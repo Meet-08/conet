@@ -38,11 +38,10 @@ import 'package:conet_app/feature/event/domain/usecases/event_get_published_even
 import 'package:conet_app/feature/event/domain/usecases/event_get_registration_info.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_mark_attendance.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
-import 'package:conet_app/feature/event/domain/usecases/event_publish_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
-import 'package:conet_app/feature/event/domain/usecases/event_update_conversation.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_setup_organizer_resources.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_registration_bloc.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source.dart';
@@ -135,16 +134,13 @@ Future<void> initDependencies() async {
   await Hive.initFlutter();
   await Hive.openBox(PostBookmarkLocalDataSourceImpl.boxName);
 
-  // Register Supabase client first (required by other dependencies)
   serviceLocator.registerLazySingleton<SupabaseClient>(
     () => Supabase.instance.client,
   );
 
-  // Core
   serviceLocator.registerLazySingleton<AppUserCubit>(() => AppUserCubit());
   serviceLocator.registerLazySingleton<PresenceCubit>(() => PresenceCubit());
 
-  // Presence tracking
   serviceLocator.registerLazySingleton<PresenceDataSource>(
     () => SupabasePresenceDataSource(
       supabaseClient: serviceLocator<SupabaseClient>(),

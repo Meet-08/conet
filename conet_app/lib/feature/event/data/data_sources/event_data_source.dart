@@ -26,6 +26,13 @@ abstract class EventDataSource {
     required String conversationId,
   });
 
+  Future<void> setupOrganizerResources({
+    required String eventId,
+    required List<String> cohostUserIds,
+    required bool createEventConversation,
+    String? conversationId,
+  });
+
   Future<Event> saveEventDraft(EventCreatePayload payload);
 
   Future<EventPageModel> getPublishedEvents({
