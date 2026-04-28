@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class CreateGroupSheet extends StatefulWidget {
   const CreateGroupSheet({super.key});
@@ -51,7 +52,7 @@ class _CreateGroupSheetState extends State<CreateGroupSheet> {
     if (_selectedUsers.isEmpty) return;
     final groupName = _groupNameController.text.trim();
     if (groupName.isEmpty) return;
-    Navigator.of(context).pop();
+    context.pop();
     context.read<MessageBloc>().add(
       MessageGroupCreated(
         name: groupName,
@@ -288,10 +289,13 @@ class _CreateGroupSheetState extends State<CreateGroupSheet> {
                   },
                   decoration: InputDecoration(
                     prefixIcon: Padding(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 12,
+                      ),
                       child: FaIcon(
                         FontAwesomeIcons.magnifyingGlass,
-                        size: 16,
+                        size: 18,
                         color: colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                     ),

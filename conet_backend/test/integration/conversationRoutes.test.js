@@ -169,6 +169,24 @@ describe("GET /api/conversations", () => {
     expect(Array.isArray(res.body)).toBe(true);
   });
 
+  it("200 – accepts search query and forwards it to the service", async () => {
+    prismaMock.conversations.findMany.mockResolvedValue([mockConversation]);
+    prismaMock.messages.groupBy.mockResolvedValue([]);
+
+    const res = await request(app)
+      .get("/api/conversations?search=bob")
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(prismaMock.conversations.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          AND: expect.any(Array),
+        }),
+      }),
+    );
+  });
+
   it("200 – returns empty array when user has no conversations", async () => {
     prismaMock.conversations.findMany.mockResolvedValue([]);
     prismaMock.messages.groupBy.mockResolvedValue([]);

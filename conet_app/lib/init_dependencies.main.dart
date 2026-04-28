@@ -62,6 +62,10 @@ void _initPost() {
         DioClient(dio: Dio(), supabaseClient: serviceLocator<SupabaseClient>()),
   );
 
+  serviceLocator.registerFactory(
+    () => UserSearchUsers(dioClient: serviceLocator<DioClient>()),
+  );
+
   // Core - File Upload
   serviceLocator.registerFactory<FileUploadDataSource>(
     () => SupabaseFileUploadDataSource(
@@ -210,9 +214,7 @@ void _initMessage() {
   serviceLocator.registerFactory(
     () => MessageMarkAsRead(messageRepository: serviceLocator()),
   );
-  serviceLocator.registerFactory(
-    () => MessageSearchUsers(messageRepository: serviceLocator()),
-  );
+
   serviceLocator.registerFactory(
     () => MessageWatchMessages(messageRepository: serviceLocator()),
   );

@@ -2,8 +2,6 @@ import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/theme/app_tokens.dart';
 import 'package:conet_app/core/widgets/user_selector_bottom_sheet.dart';
-import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
-import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -148,24 +146,15 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
         ? appUserState.user.id
         : null;
 
-    final searchUsers = serviceLocator<MessageSearchUsers>();
     final selectedUsers = await showUserSelectorBottomSheet(
       context: context,
       title: 'Add Co-hosts',
       searchHint: 'Search users to add as co-host',
-      emptyMessage: 'Search by name or username',
+      emptyMessage: 'Search by name, username, or email',
       noResultsMessage: 'No matching users found',
       actionLabel: 'Done',
       excludedUserId: currentUserId,
       initialSelectedUsers: _coOrganizerUsers,
-      searchUsers: (query, limit) async {
-        final result = await searchUsers(query: query, limit: limit);
-        return result.fold((failure) => throw Exception(failure.message), (
-          users,
-        ) {
-          return users;
-        });
-      },
     );
 
     if (selectedUsers == null) return;

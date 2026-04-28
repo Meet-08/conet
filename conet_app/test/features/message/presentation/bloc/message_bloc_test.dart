@@ -1,5 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:conet_app/core/common/entities/user.dart';
+import 'package:conet_app/core/common/usecases/user_search_users.dart';
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
@@ -14,7 +15,6 @@ import 'package:conet_app/feature/message/domain/usecases/message_get_group_memb
 import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_remove_group_member.dart';
-import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_update_group.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_watch_conversation_updates.dart';
@@ -41,7 +41,7 @@ class MockMessageWatchMessages extends Mock implements MessageWatchMessages {}
 class MockMessageWatchConversationUpdates extends Mock
     implements MessageWatchConversationUpdates {}
 
-class MockMessageSearchUsers extends Mock implements MessageSearchUsers {}
+class MockUserSearchUsers extends Mock implements UserSearchUsers {}
 
 class MockMessageCreateGroup extends Mock implements MessageCreateGroup {}
 
@@ -66,7 +66,7 @@ void main() {
   late MockMessageMarkAsRead mockMarkAsRead;
   late MockMessageWatchMessages mockWatchMessages;
   late MockMessageWatchConversationUpdates mockWatchConversationUpdates;
-  late MockMessageSearchUsers mockSearchUsers;
+  late MockUserSearchUsers mockSearchUsers;
   late MockMessageCreateGroup mockCreateGroup;
   late MockMessageUpdateGroup mockUpdateGroup;
   late MockMessageDeleteGroup mockDeleteGroup;
@@ -112,7 +112,7 @@ void main() {
     mockMarkAsRead = MockMessageMarkAsRead();
     mockWatchMessages = MockMessageWatchMessages();
     mockWatchConversationUpdates = MockMessageWatchConversationUpdates();
-    mockSearchUsers = MockMessageSearchUsers();
+    mockSearchUsers = MockUserSearchUsers();
     mockCreateGroup = MockMessageCreateGroup();
     mockUpdateGroup = MockMessageUpdateGroup();
     mockDeleteGroup = MockMessageDeleteGroup();

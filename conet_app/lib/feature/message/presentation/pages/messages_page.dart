@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
@@ -20,10 +22,22 @@ class MessagesPage extends StatefulWidget {
 }
 
 class _MessagesPageState extends State<MessagesPage> {
+  final TextEditingController _searchController = TextEditingController();
+  Timer? _searchDebounce;
+  bool _isSearchMode = false;
+  String _searchQuery = '';
+
   @override
   void initState() {
     super.initState();
     context.read<MessageBloc>().add(MessageConversationsRequested());
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _showCreateConversationDialog() async {
@@ -39,8 +53,45 @@ class _MessagesPageState extends State<MessagesPage> {
     );
   }
 
+  void _toggleSearchMode() {
+    setState(() {
+      _isSearchMode = !_isSearchMode;
+      if (!_isSearchMode) {
+        _searchDebounce?.cancel();
+        _searchController.clear();
+        _searchQuery = '';
+        context.read<MessageBloc>().add(
+          MessageConversationsRequested(searchQuery: ''),
+        );
+      }
+    });
+  }
+
+  void _onSearchChanged(String value) {
+    final query = value.trim();
+    setState(() {
+      _searchQuery = query;
+    });
+
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      context.read<MessageBloc>().add(
+        MessageConversationsRequested(searchQuery: query),
+      );
+    });
+  }
+
+  void _clearSearch() {
+    _searchController.clear();
+    _searchDebounce?.cancel();
+    _onSearchChanged('');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final normalizedQuery = _searchQuery.toLowerCase();
+
     return MultiBlocListener(
       listeners: [
         BlocListener<MessageBloc, MessageState>(
@@ -65,9 +116,55 @@ class _MessagesPageState extends State<MessagesPage> {
         ),
       ],
       child: Scaffold(
-        appBar: MessageAppBar(onAddPressed: _showCreateConversationDialog),
+        appBar: MessageAppBar(
+          onSearchPressed: _toggleSearchMode,
+          onAddPressed: _showCreateConversationDialog,
+          isSearching: _isSearchMode,
+        ),
         body: Column(
           children: [
+            if (_isSearchMode)
+              Container(
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.borderSubtle,
+                    ),
+                  ),
+                ),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: _onSearchChanged,
+                  autofocus: true,
+                  textInputAction: TextInputAction.search,
+                  decoration: InputDecoration(
+                    hintText: 'Search conversations',
+                    prefixIcon: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: FaIcon(
+                        FontAwesomeIcons.magnifyingGlass,
+                        size: 16,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: FaIcon(
+                              FontAwesomeIcons.xmark,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                            onPressed: _clearSearch,
+                          )
+                        : null,
+                  ),
+                ),
+              ),
             const MessageFilters(),
             Expanded(
               child: BlocBuilder<MessageBloc, MessageState>(
@@ -92,7 +189,9 @@ class _MessagesPageState extends State<MessagesPage> {
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'No conversations yet',
+                            normalizedQuery.isNotEmpty
+                                ? 'No matching conversations'
+                                : 'No conversations yet',
                             style: AppTextStyles.bodyDefault.copyWith(
                               color: colors.textSecondary,
                               fontWeight: AppTypographyTokens.weightMedium,
@@ -100,7 +199,9 @@ class _MessagesPageState extends State<MessagesPage> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Tap + to start a new conversation',
+                            normalizedQuery.isNotEmpty
+                                ? 'Try a different name or message preview'
+                                : 'Tap + to start a new conversation',
                             style: AppTextStyles.bodySmall.copyWith(
                               color: colors.textTertiary,
                             ),

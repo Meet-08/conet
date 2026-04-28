@@ -10,6 +10,7 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 /**
  * Factory function that creates and configures the Express app.
@@ -29,6 +30,7 @@ export function createApp() {
   );
 
   app.use("/api/posts", postRoutes);
+  app.use("/api/users", userRoutes);
   app.use("/api/conversations", conversationRoutes);
   app.use("/api/groups", groupRoutes);
   app.use("/api/profile", profileRoutes);

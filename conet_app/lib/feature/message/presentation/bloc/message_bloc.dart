@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:conet_app/core/common/entities/user.dart';
+import 'package:conet_app/core/common/usecases/user_search_users.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/group_member.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
@@ -14,7 +15,6 @@ import 'package:conet_app/feature/message/domain/usecases/message_get_group_memb
 import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_remove_group_member.dart';
-import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_update_group.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_watch_conversation_updates.dart';
@@ -40,7 +40,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   final MessageMarkAsRead _markAsRead;
   final MessageWatchMessages _watchMessages;
   final MessageWatchConversationUpdates _watchConversationUpdates;
-  final MessageSearchUsers _searchUsers;
+  final UserSearchUsers _searchUsers;
   final MessageCreateGroup _createGroup;
   final MessageUpdateGroup _updateGroup;
   final MessageDeleteGroup _deleteGroup;
@@ -63,7 +63,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     required MessageMarkAsRead markAsRead,
     required MessageWatchMessages watchMessages,
     required MessageWatchConversationUpdates watchConversationUpdates,
-    required MessageSearchUsers searchUsers,
+    required UserSearchUsers searchUsers,
     required MessageCreateGroup createGroup,
     required MessageUpdateGroup updateGroup,
     required MessageDeleteGroup deleteGroup,
@@ -158,6 +158,18 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   ) async {
     _initGlobalSubscription();
 
+    final hasExplicitSearchQuery = event.searchQuery != null;
+    final normalizedSearchQuery = event.searchQuery?.trim();
+    final searchQuery = hasExplicitSearchQuery
+        ? (normalizedSearchQuery == null || normalizedSearchQuery.isEmpty
+              ? null
+              : normalizedSearchQuery)
+        : state.conversationSearchQuery;
+
+    if (hasExplicitSearchQuery) {
+      emit(state.copyWith(conversationSearchQuery: searchQuery));
+    }
+
     final shouldShowLoading =
         state.conversations.isEmpty &&
         state.conversationStatus != MessageStatus.success;
@@ -165,9 +177,12 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
       emit(state.copyWith(conversationStatus: MessageStatus.loading));
     }
 
-    final result = await _getConversationsUsecase(
-      type: state.conversationFilter,
-    );
+    final result = searchQuery == null
+        ? await _getConversationsUsecase(type: state.conversationFilter)
+        : await _getConversationsUsecase(
+            type: state.conversationFilter,
+            search: searchQuery,
+          );
     result.fold(
       (l) {
         if (state.conversations.isNotEmpty) {
@@ -185,6 +200,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
         state.copyWith(
           conversationStatus: MessageStatus.success,
           conversations: r,
+          conversationSearchQuery: searchQuery,
         ),
       ),
     );

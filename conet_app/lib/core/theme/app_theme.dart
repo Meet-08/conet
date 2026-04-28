@@ -119,6 +119,16 @@ final class AppTheme {
           horizontal: AppSpace.s12,
           vertical: AppSpace.s12,
         ),
+        prefixIconColor: semantic.iconSecondary,
+        suffixIconColor: semantic.iconSecondary,
+        prefixIconConstraints: const BoxConstraints(
+          minWidth: 40,
+          minHeight: 40,
+        ),
+        suffixIconConstraints: const BoxConstraints(
+          minWidth: 40,
+          minHeight: 40,
+        ),
         hintStyle: AppTextStyles.bodyDefault.copyWith(
           color: semantic.textTertiary,
         ),

@@ -24,12 +24,12 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
   }
 
   void _onUserTap(User user) {
-    Navigator.of(context).pop();
+    context.pop();
     context.read<MessageBloc>().add(MessageConversationCreated(user.id));
   }
 
   void _openCreateGroupSheet() {
-    Navigator.of(context).pop();
+    context.pop();
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -106,10 +106,13 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
                   },
                   decoration: InputDecoration(
                     prefixIcon: Padding(
-                      padding: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 12,
+                      ),
                       child: FaIcon(
                         FontAwesomeIcons.magnifyingGlass,
-                        size: 16,
+                        size: 18,
                         color: colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
                     ),
@@ -130,8 +133,6 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
               ),
 
               const SizedBox(height: 8),
-
-              // Static options
               _SheetOption(
                 icon: FontAwesomeIcons.userGroup,
                 label: 'Create Group',
@@ -261,10 +262,9 @@ class _UserTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayName = '${user.firstName} ${user.lastName}'.trim();
-    final subtitle = user.email.isNotEmpty
-        ? user.email
-        : (user.username.isNotEmpty ? '@${user.username}' : '');
-    final avatarName = displayName.isNotEmpty ? displayName : user.username;
+    final username = user.username.trim();
+    final subtitle = username;
+    final avatarName = displayName.isNotEmpty ? displayName : username;
 
     return ListTile(
       leading: CustomCircleAvatar(
@@ -276,7 +276,7 @@ class _UserTile extends StatelessWidget {
       title: Text(
         displayName.isNotEmpty
             ? displayName
-            : (user.username.isNotEmpty ? user.username : 'User'),
+            : (username.isNotEmpty ? username : 'User'),
       ),
       subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
       onTap: onTap,

@@ -62,7 +62,11 @@ class MessageGroupCreated extends MessageEvent {
   });
 }
 
-class MessageConversationsRequested extends MessageEvent {}
+class MessageConversationsRequested extends MessageEvent {
+  final String? searchQuery;
+
+  MessageConversationsRequested({this.searchQuery});
+}
 
 class MessageFilterChanged extends MessageEvent {
   final String filter;

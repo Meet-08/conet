@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-04-14
+> Last updated: 2026-04-28
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -81,7 +81,10 @@
 ### Messaging (DM + Groups)
 
 - **Conversations List** — All DMs and group chats with unread badges
+- **Conversation Search** — Search bar queries the backend and filters conversations by chat name, participant name, or message content
 - **Chat Page** — Real-time message thread with full history
+- **Chat Search** — In-chat search bar filters loaded messages by text with inline clear/toggle controls
+- **Direct Message Picker** — Shared user selector starts one-on-one chats from the new message sheet
 - **Send Message** — Text messages + file/image attachments
 - **Image Viewer** — Full-screen image viewer from chat
 - **Online Indicator** — Shows if recipient is currently online
@@ -160,6 +163,7 @@
 - **Organizer Conversation Linking** — Organizer can auto-create and attach a new organizer/co-host group conversation during event submission
 - **Registration Form Page** — Event detail registration opens a dedicated dynamic page with required custom field validation and payload mapping, while image-type fields are read-only organizer content
 - **Team Registration UI** — Team events collect captain enrollment/semester/branch, enforce team-size limits, and allow searchable optional team member selection
+- **Shared User Selector** — Backend-backed picker reuses the same user search flow for team members and co-host selection
 - **Paid Registration QR Flow** — Paid events generate UPI QR with per-member amount and team-size-based total, plus transaction ID and payment proof upload support
 
 **Use Cases:** `EventPublish`, `EventSaveDraft`, `EventRegister`, `MessageCreateGroup`, `MessageSearchUsers`

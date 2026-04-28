@@ -16,6 +16,7 @@ class ChatMessageList extends StatelessWidget {
   final ScrollController? scrollController;
   final bool isFetchingHistory;
   final MessageStatus messageStatus;
+  final String emptyMessage;
 
   const ChatMessageList({
     super.key,
@@ -27,6 +28,7 @@ class ChatMessageList extends StatelessWidget {
     this.scrollController,
     required this.messageStatus,
     this.isFetchingHistory = false,
+    this.emptyMessage = 'No messages yet',
   });
 
   @override
@@ -40,7 +42,7 @@ class ChatMessageList extends StatelessWidget {
     if (messageStatus == MessageStatus.success && messages.isEmpty) {
       return Center(
         child: Text(
-          'No messages yet',
+          emptyMessage,
           style: AppTextStyles.bodyDefault.copyWith(
             color: colors.textSecondary,
           ),

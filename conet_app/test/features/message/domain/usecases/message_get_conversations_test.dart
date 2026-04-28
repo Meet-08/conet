@@ -43,6 +43,24 @@ void main() {
       verify(() => mockMessageRepository.getConversations()).called(1);
     });
 
+    test('should forward search query when provided', () async {
+      when(
+        () => mockMessageRepository.getConversations(
+          type: any(named: 'type'),
+          search: any(named: 'search'),
+        ),
+      ).thenAnswer((_) async => Right(tConversationList));
+
+      await usecase(search: 'bob');
+
+      verify(
+        () => mockMessageRepository.getConversations(
+          type: any(named: 'type'),
+          search: 'bob',
+        ),
+      ).called(1);
+    });
+
     test('should return Right<List<Conversation>> on success', () async {
       when(
         () => mockMessageRepository.getConversations(),

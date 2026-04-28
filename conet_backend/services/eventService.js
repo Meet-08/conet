@@ -709,7 +709,6 @@ export const createEventService = async (organizerId, body) => {
       participation_type: normalizedParticipationType,
       min_team_size: resolvedMinTeamSize,
       max_team_size: resolvedMaxTeamSize,
-      upi_id: null,
       custom_fields: normalizedCustomFields ?? [],
       ...(normalizedConversationId !== undefined && {
         conversation_id: normalizedConversationId,

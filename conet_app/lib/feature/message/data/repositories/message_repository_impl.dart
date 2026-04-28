@@ -99,8 +99,19 @@ class MessageRepositoryImpl implements MessageRepository {
   @override
   Future<Either<AppFailure, List<Conversation>>> getConversations({
     String type = 'all',
+    String? search,
   }) {
-    return _getResult(() => _messageDataSource.getConversations(type: type));
+    return _getResult(() {
+      final normalizedSearch = search?.trim();
+      if (normalizedSearch == null || normalizedSearch.isEmpty) {
+        return _messageDataSource.getConversations(type: type);
+      }
+
+      return _messageDataSource.getConversations(
+        type: type,
+        search: normalizedSearch,
+      );
+    });
   }
 
   @override

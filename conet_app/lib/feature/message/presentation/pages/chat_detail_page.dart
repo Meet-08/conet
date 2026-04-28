@@ -181,6 +181,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                     scrollController: _scrollController,
                     isFetchingHistory: state.isFetchingHistory,
                     messageStatus: state.messageStatus,
+                    emptyMessage: 'No messages yet',
                   );
                 },
               ),

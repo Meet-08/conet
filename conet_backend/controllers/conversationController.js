@@ -38,14 +38,18 @@ export const createConversation = asyncHandler(async (req, res) => {
 // GET /api/conversations?type=all|direct|group
 export const getConversations = asyncHandler(async (req, res) => {
   const currentUserId = req.user.id;
-  const { type = "all" } = req.query;
+  const { type = "all", search } = req.query;
 
   if (!["all", "direct", "group"].includes(type)) {
     res.status(400);
     throw new Error("type must be one of: all, direct, group");
   }
 
-  const conversations = await getConversationsService(currentUserId, type);
+  const conversations = await getConversationsService(
+    currentUserId,
+    type,
+    search,
+  );
 
   res.status(200).json(conversations);
 });

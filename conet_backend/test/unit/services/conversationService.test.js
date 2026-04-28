@@ -271,6 +271,22 @@ describe("getConversationsService", () => {
     expect(result[0].last_message_media_urls).toEqual([]);
     expect(result[0].unread_count).toBe(0);
   });
+
+  it("applies DB search conditions when a search term is provided", async () => {
+    prismaMock.conversations.findMany.mockResolvedValue([mockConversationRow]);
+    prismaMock.messages.groupBy.mockResolvedValue([]);
+
+    const result = await getConversationsService(TEST_USER.id, "all", "bob");
+
+    expect(result).toHaveLength(1);
+    expect(prismaMock.conversations.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          AND: expect.any(Array),
+        }),
+      }),
+    );
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -540,13 +556,31 @@ describe("markAsReadService", () => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 describe("searchUsersService", () => {
-  it("returns users matching the query", async () => {
+  it("returns users matching a full name query", async () => {
     prismaMock.users.findMany.mockResolvedValue([mockOtherUser]);
 
-    const result = await searchUsersService("bo", 3, TEST_USER.id);
+    const result = await searchUsersService("Bob Jones", 3, TEST_USER.id);
 
     expect(result).toHaveLength(1);
     expect(result[0].username).toBe("bob");
+
+    const call = prismaMock.users.findMany.mock.calls[0][0];
+    expect(call.where.AND[1]).toEqual({
+      OR: [
+        { first_name: { contains: "Bob", mode: "insensitive" } },
+        { last_name: { contains: "Bob", mode: "insensitive" } },
+        { username: { contains: "Bob", mode: "insensitive" } },
+        { email: { contains: "Bob", mode: "insensitive" } },
+      ],
+    });
+    expect(call.where.AND[2]).toEqual({
+      OR: [
+        { first_name: { contains: "Jones", mode: "insensitive" } },
+        { last_name: { contains: "Jones", mode: "insensitive" } },
+        { username: { contains: "Jones", mode: "insensitive" } },
+        { email: { contains: "Jones", mode: "insensitive" } },
+      ],
+    });
   });
 
   it("excludes the current user from results", async () => {
@@ -556,6 +590,25 @@ describe("searchUsersService", () => {
 
     const call = prismaMock.users.findMany.mock.calls[0][0];
     expect(call.where.AND[0]).toEqual({ id: { not: TEST_USER.id } });
+  });
+
+  it("matches username and email query parts", async () => {
+    prismaMock.users.findMany.mockResolvedValue([mockOtherUser]);
+
+    await searchUsersService("bob@example.com", 3, TEST_USER.id);
+
+    const call = prismaMock.users.findMany.mock.calls[0][0];
+    expect(call.where.AND).toEqual([
+      { id: { not: TEST_USER.id } },
+      {
+        OR: [
+          { first_name: { contains: "bob@example.com", mode: "insensitive" } },
+          { last_name: { contains: "bob@example.com", mode: "insensitive" } },
+          { username: { contains: "bob@example.com", mode: "insensitive" } },
+          { email: { contains: "bob@example.com", mode: "insensitive" } },
+        ],
+      },
+    ]);
   });
 
   it("returns empty array when no users match", async () => {

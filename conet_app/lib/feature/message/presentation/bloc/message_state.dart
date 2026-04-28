@@ -20,6 +20,7 @@ class MessageState {
   final String? activeConversationId;
   final DateTime? lastConversationRealtimeAt;
   final String conversationFilter; // 'all', 'direct', 'group'
+  final String? conversationSearchQuery;
 
   MessageState({
     this.messages = const [],
@@ -39,6 +40,7 @@ class MessageState {
     this.activeConversationId,
     this.lastConversationRealtimeAt,
     this.conversationFilter = 'all',
+    this.conversationSearchQuery,
   });
 
   MessageState copyWith({
@@ -61,6 +63,7 @@ class MessageState {
     DateTime? lastConversationRealtimeAt,
     bool clearNextBeforeCursor = false,
     String? conversationFilter,
+    String? conversationSearchQuery,
   }) {
     return MessageState(
       messages: messages ?? this.messages,
@@ -85,6 +88,8 @@ class MessageState {
       lastConversationRealtimeAt:
           lastConversationRealtimeAt ?? this.lastConversationRealtimeAt,
       conversationFilter: conversationFilter ?? this.conversationFilter,
+      conversationSearchQuery:
+          conversationSearchQuery ?? this.conversationSearchQuery,
     );
   }
 }

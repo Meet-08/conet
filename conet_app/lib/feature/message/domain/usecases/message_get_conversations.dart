@@ -11,7 +11,16 @@ class MessageGetConversations {
 
   Future<Either<AppFailure, List<Conversation>>> call({
     String type = 'all',
+    String? search,
   }) async {
-    return _messageRepository.getConversations(type: type);
+    final normalizedSearch = search?.trim();
+    if (normalizedSearch == null || normalizedSearch.isEmpty) {
+      return _messageRepository.getConversations(type: type);
+    }
+
+    return _messageRepository.getConversations(
+      type: type,
+      search: normalizedSearch,
+    );
   }
 }

@@ -31,6 +31,7 @@ abstract interface class MessageRepository {
 
   Future<Either<AppFailure, List<Conversation>>> getConversations({
     String type = 'all',
+    String? search,
   });
 
   Future<Either<AppFailure, List<User>>> searchUsers(

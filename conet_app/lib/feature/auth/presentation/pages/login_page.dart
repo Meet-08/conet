@@ -63,12 +63,13 @@ class _LoginPageState extends State<LoginPage> {
       child: Scaffold(
         appBar: AppBar(
           automaticallyImplyLeading: false,
-          titleSpacing: AppSpace.s16,
+          titleSpacing: AppSpace.s0,
           title: Row(
+            mainAxisAlignment: .start,
             children: [
               SizedBox(
-                width: 44,
-                height: 44,
+                width: 36,
+                height: 36,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     padding: EdgeInsets.zero,

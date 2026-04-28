@@ -1,23 +1,23 @@
 import 'dart:async';
 
 import 'package:conet_app/core/common/entities/user.dart';
+import 'package:conet_app/core/common/usecases/user_search_users.dart';
+import 'package:conet_app/init_dependencies.dart';
+import 'package:conet_app/main.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
-typedef UserSearchDelegate =
-    Future<List<User>> Function(String query, int limit);
-
 Future<List<User>?> showUserSelectorBottomSheet({
   required BuildContext context,
-  required UserSearchDelegate searchUsers,
-  required List<User> initialSelectedUsers,
+  List<User> initialSelectedUsers = const [],
   String title = 'Select Users',
   String searchHint = 'Search users...',
   String actionLabel = 'Done',
-  String emptyMessage = 'Search to find users',
+  String emptyMessage = 'Search by name, username, or email',
   String noResultsMessage = 'No users found',
   String? excludedUserId,
+  bool allowMultipleSelection = true,
   int searchLimit = 8,
 }) {
   return showModalBottomSheet<List<User>>(
@@ -25,7 +25,6 @@ Future<List<User>?> showUserSelectorBottomSheet({
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (_) => _UserSelectorBottomSheet(
-      searchUsers: searchUsers,
       initialSelectedUsers: initialSelectedUsers,
       title: title,
       searchHint: searchHint,
@@ -33,13 +32,13 @@ Future<List<User>?> showUserSelectorBottomSheet({
       emptyMessage: emptyMessage,
       noResultsMessage: noResultsMessage,
       excludedUserId: excludedUserId,
+      allowMultipleSelection: allowMultipleSelection,
       searchLimit: searchLimit,
     ),
   );
 }
 
 class _UserSelectorBottomSheet extends StatefulWidget {
-  final UserSearchDelegate searchUsers;
   final List<User> initialSelectedUsers;
   final String title;
   final String searchHint;
@@ -47,10 +46,10 @@ class _UserSelectorBottomSheet extends StatefulWidget {
   final String emptyMessage;
   final String noResultsMessage;
   final String? excludedUserId;
+  final bool allowMultipleSelection;
   final int searchLimit;
 
   const _UserSelectorBottomSheet({
-    required this.searchUsers,
     required this.initialSelectedUsers,
     required this.title,
     required this.searchHint,
@@ -58,6 +57,7 @@ class _UserSelectorBottomSheet extends StatefulWidget {
     required this.emptyMessage,
     required this.noResultsMessage,
     required this.excludedUserId,
+    required this.allowMultipleSelection,
     required this.searchLimit,
   });
 
@@ -79,6 +79,9 @@ class _UserSelectorBottomSheetState extends State<_UserSelectorBottomSheet> {
   void initState() {
     super.initState();
     for (final user in widget.initialSelectedUsers) {
+      if (!widget.allowMultipleSelection && _selectedUsers.isNotEmpty) {
+        break;
+      }
       _selectedUsers[user.id] = user;
     }
   }
@@ -94,6 +97,10 @@ class _UserSelectorBottomSheetState extends State<_UserSelectorBottomSheet> {
     setState(() {
       if (_selectedUsers.containsKey(user.id)) {
         _selectedUsers.remove(user.id);
+      } else if (!widget.allowMultipleSelection) {
+        _selectedUsers
+          ..clear()
+          ..[user.id] = user;
       } else {
         _selectedUsers[user.id] = user;
       }
@@ -126,7 +133,13 @@ class _UserSelectorBottomSheetState extends State<_UserSelectorBottomSheet> {
     });
 
     try {
-      final users = await widget.searchUsers(query, widget.searchLimit);
+      final searchUsers = serviceLocator<UserSearchUsers>();
+      final result = await searchUsers(query: query, limit: widget.searchLimit);
+      final users = result.fold((failure) => throw Exception(failure.message), (
+        users,
+      ) {
+        return users;
+      });
       if (!mounted || token != _searchToken) return;
 
       final filtered = users.where((user) {
@@ -398,10 +411,13 @@ class _SelectableUserTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final displayName = '${user.firstName} ${user.lastName}'.trim();
-    final subtitle = user.email.isNotEmpty
-        ? user.email
-        : (user.username.isNotEmpty ? '@${user.username}' : '');
+    final username = user.username.trim();
+    final subtitle = username;
     final initials = _initials(displayName, user.username);
+
+    logger.d(
+      'Building user tile for ${user.id} - $displayName ($subtitle), selected: $isSelected username: ${user.username}, email: ${user.email}',
+    );
 
     return ListTile(
       leading: CircleAvatar(
@@ -416,7 +432,7 @@ class _SelectableUserTile extends StatelessWidget {
       title: Text(
         displayName.isNotEmpty
             ? displayName
-            : (user.username.isNotEmpty ? user.username : 'User'),
+            : (username.isNotEmpty ? username : 'User'),
       ),
       subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
       trailing: isSelected

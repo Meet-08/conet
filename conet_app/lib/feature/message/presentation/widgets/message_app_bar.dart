@@ -5,8 +5,14 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 class MessageAppBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onSearchPressed;
   final VoidCallback? onAddPressed;
+  final bool isSearching;
 
-  const MessageAppBar({super.key, this.onSearchPressed, this.onAddPressed});
+  const MessageAppBar({
+    super.key,
+    this.onSearchPressed,
+    this.onAddPressed,
+    this.isSearching = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +25,11 @@ class MessageAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         IconButton(
-          icon: const FaIcon(FontAwesomeIcons.magnifyingGlass),
+          icon: FaIcon(
+            isSearching
+                ? FontAwesomeIcons.xmark
+                : FontAwesomeIcons.magnifyingGlass,
+          ),
           onPressed: onSearchPressed,
         ),
         IconButton(

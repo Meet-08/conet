@@ -118,11 +118,20 @@ class MessageDataSourceImpl implements MessageDataSource {
   }
 
   @override
-  Future<List<Conversation>> getConversations({String type = 'all'}) async {
+  Future<List<Conversation>> getConversations({
+    String type = 'all',
+    String? search,
+  }) async {
     try {
+      final queryParameters = <String, dynamic>{'type': type};
+      final normalizedSearch = search?.trim();
+      if (normalizedSearch != null && normalizedSearch.isNotEmpty) {
+        queryParameters['search'] = normalizedSearch;
+      }
+
       final res = await _dioClient.dio.get(
         "/conversations",
-        queryParameters: {'type': type},
+        queryParameters: queryParameters,
       );
       if (res.statusCode != 200) {
         throw ServerException("Failed to get conversations");

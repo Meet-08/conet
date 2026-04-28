@@ -17,7 +17,6 @@ class FeedPage extends StatefulWidget {
 
 class _FeedPageState extends State<FeedPage> {
   final ScrollController _scrollController = ScrollController();
-
   @override
   void initState() {
     super.initState();
@@ -55,22 +54,26 @@ class _FeedPageState extends State<FeedPage> {
 
           final posts = state.posts;
 
-          return ResponsiveCenterScrollable(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                context.read<PostBloc>().add(
-                  const PostGetPostsEvent(page: 1, limit: 20),
-                );
-              },
-              child: ListView.builder(
-                controller: _scrollController,
-                cacheExtent: 400,
-                itemCount: posts.length,
-                itemBuilder: (context, index) {
-                  return PostCard(post: posts[index]);
-                },
+          return Stack(
+            children: [
+              ResponsiveCenterScrollable(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    context.read<PostBloc>().add(
+                      const PostGetPostsEvent(page: 1, limit: 20),
+                    );
+                  },
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    cacheExtent: 400,
+                    itemCount: posts.length,
+                    itemBuilder: (context, index) {
+                      return PostCard(post: posts[index]);
+                    },
+                  ),
+                ),
               ),
-            ),
+            ],
           );
         },
       ),

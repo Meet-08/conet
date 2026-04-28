@@ -36,25 +36,36 @@ class PostAppBar extends StatelessWidget implements PreferredSizeWidget {
         ],
       ),
       actions: [
+        IconButton(
+          icon: FaIcon(
+            FontAwesomeIcons.magnifyingGlass,
+            color: semantic.iconPrimary,
+          ),
+          onPressed: () => context.push('/search'),
+        ),
         BlocSelector<NotificationBloc, NotificationState, int>(
           selector: (state) => state.unseenCount,
           builder: (context, count) {
-            return Stack(
-              clipBehavior: Clip.none,
+            return Row(
               children: [
-                IconButton(
-                  icon: FaIcon(
-                    FontAwesomeIcons.bell,
-                    color: semantic.iconPrimary,
-                  ),
-                  onPressed: () => context.push('/notifications'),
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      icon: FaIcon(
+                        FontAwesomeIcons.bell,
+                        color: semantic.iconPrimary,
+                      ),
+                      onPressed: () => context.push('/notifications'),
+                    ),
+                    if (count > 0)
+                      Positioned(
+                        right: 6,
+                        top: 6,
+                        child: NotificationBadge(count: count),
+                      ),
+                  ],
                 ),
-                if (count > 0)
-                  Positioned(
-                    right: 6,
-                    top: 6,
-                    child: NotificationBadge(count: count),
-                  ),
               ],
             );
           },

@@ -70,12 +70,72 @@ const mapConversation = (row, currentUserId) => {
   return mapDirectConversation(row, currentUserId);
 };
 
-// ─── Direct conversation ──────────────────────────────────────────────────────
+const buildUserSearchConditions = (part) => [
+  { first_name: { contains: part, mode: "insensitive" } },
+  { last_name: { contains: part, mode: "insensitive" } },
+  { username: { contains: part, mode: "insensitive" } },
+  { email: { contains: part, mode: "insensitive" } },
+];
 
-/**
- * Create or retrieve a 1-to-1 direct conversation.
- * otherUserId may be a UUID, username, or email.
- */
+const buildConversationSearchWhere = (currentUserId, search) => {
+  const normalizedQuery = String(search ?? "").trim();
+
+  if (!normalizedQuery) {
+    return { conversation_members: { some: { user_id: currentUserId } } };
+  }
+
+  const queryParts = normalizedQuery
+    .split(/\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return {
+    AND: [
+      { conversation_members: { some: { user_id: currentUserId } } },
+      ...queryParts.map((part) => ({
+        OR: [
+          {
+            type: "group",
+            name: { contains: part, mode: "insensitive" },
+          },
+          {
+            type: "group",
+            messages: {
+              some: { content: { contains: part, mode: "insensitive" } },
+            },
+          },
+          {
+            type: "direct",
+            OR: [
+              {
+                users_conversations_user_oneTousers: {
+                  is: {
+                    id: { not: currentUserId },
+                    OR: buildUserSearchConditions(part),
+                  },
+                },
+              },
+              {
+                users_conversations_user_twoTousers: {
+                  is: {
+                    id: { not: currentUserId },
+                    OR: buildUserSearchConditions(part),
+                  },
+                },
+              },
+            ],
+          },
+          {
+            messages: {
+              some: { content: { contains: part, mode: "insensitive" } },
+            },
+          },
+        ],
+      })),
+    ],
+  };
+};
+
 export const createConversationService = async (currentUserId, otherUserId) => {
   let targetUserId = otherUserId;
 
@@ -155,17 +215,6 @@ export const createConversationService = async (currentUserId, otherUserId) => {
   };
 };
 
-// ─── Group conversation ───────────────────────────────────────────────────────
-
-/**
- * Create a new group conversation.
- *
- * @param {string}   currentUserId      – creator (automatically assigned admin role)
- * @param {object}   data
- * @param {string}   data.name          – required
- * @param {string[]} data.memberIds     – additional member UUIDs (creator added automatically)
- * @param {string}   [data.groupImageUrl]
- */
 export const createGroupService = async (
   currentUserId,
   { name, memberIds = [], groupImageUrl } = {},
@@ -220,22 +269,17 @@ export const createGroupService = async (
 };
 
 // ─── List conversations ───────────────────────────────────────────────────────
-
-/**
- * Get all conversations for a user.
- *
- * @param {string} currentUserId
- * @param {"all"|"direct"|"group"} [type="all"] – filter by conversation type
- */
-export const getConversationsService = async (currentUserId, type = "all") => {
+export const getConversationsService = async (
+  currentUserId,
+  type = "all",
+  search,
+) => {
   const typeFilter =
     type === "all" ? {} : { type: type === "group" ? "group" : "direct" };
 
   const rows = await prisma.conversations.findMany({
     where: {
-      conversation_members: {
-        some: { user_id: currentUserId },
-      },
+      ...buildConversationSearchWhere(currentUserId, search),
       ...typeFilter,
     },
     include: {
@@ -431,10 +475,6 @@ export const markAsReadService = async (conversationId, currentUserId) => {
 };
 
 // ─── Group management ────────────────────────────────────────────────────────
-
-/**
- * Get all members of a group. Requester must be a member.
- */
 export const getGroupMembersService = async (groupId, currentUserId) => {
   const conversation = await prisma.conversations.findUnique({
     where: { id: groupId },
@@ -468,9 +508,6 @@ export const getGroupMembersService = async (groupId, currentUserId) => {
   }));
 };
 
-/**
- * Add a new member to a group. Only admins may do this.
- */
 export const addGroupMemberService = async (
   groupId,
   currentUserId,
@@ -685,19 +722,31 @@ export const deleteGroupService = async (groupId, currentUserId) => {
   await prisma.conversations.delete({ where: { id: groupId } });
 };
 
-// ─── Search users by username or email ──────────────────────────────────────
-
 export const searchUsersService = async (query, limit = 3, currentUserId) => {
+  const normalizedQuery = String(query ?? "").trim();
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  const queryParts = normalizedQuery
+    .split(/\s+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
   const users = await prisma.users.findMany({
     where: {
       AND: [
         { id: { not: currentUserId } },
-        {
-          OR: [
-            { username: { contains: query, mode: "insensitive" } },
-            { email: { contains: query, mode: "insensitive" } },
-          ],
-        },
+        ...(queryParts.length > 0 ? queryParts : [normalizedQuery]).map(
+          (part) => ({
+            OR: [
+              { first_name: { contains: part, mode: "insensitive" } },
+              { last_name: { contains: part, mode: "insensitive" } },
+              { username: { contains: part, mode: "insensitive" } },
+              { email: { contains: part, mode: "insensitive" } },
+            ],
+          }),
+        ),
       ],
     },
     select: USER_SELECT_FIELDS,

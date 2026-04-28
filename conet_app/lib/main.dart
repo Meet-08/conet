@@ -25,7 +25,7 @@ var logger = Logger(level: kDebugMode ? .debug : .error);
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Trigger CI
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   await dotenv.load();

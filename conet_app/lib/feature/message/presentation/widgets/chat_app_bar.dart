@@ -166,12 +166,6 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             ),
         ],
       ),
-      actions: [
-        IconButton(
-          icon: const FaIcon(FontAwesomeIcons.ellipsisVertical),
-          onPressed: () {},
-        ),
-      ],
     );
   }
 

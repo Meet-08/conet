@@ -5,6 +5,7 @@ import 'package:conet_app/core/common/data_sources/file_upload_data_source.dart'
 import 'package:conet_app/core/common/data_sources/presence_data_source.dart';
 import 'package:conet_app/core/common/data_sources/supabase_file_upload_data_source.dart';
 import 'package:conet_app/core/common/data_sources/supabase_presence_data_source.dart';
+import 'package:conet_app/core/common/usecases/user_search_users.dart';
 import 'package:conet_app/core/router/app_router.dart';
 import 'package:conet_app/core/services/device_service.dart';
 import 'package:conet_app/core/services/notification_config_service.dart';
@@ -59,7 +60,6 @@ import 'package:conet_app/feature/message/domain/usecases/message_get_group_memb
 import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_remove_group_member.dart';
-import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_update_group.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_watch_conversation_updates.dart';

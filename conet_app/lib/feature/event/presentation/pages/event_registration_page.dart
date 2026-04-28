@@ -8,11 +8,9 @@ import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_custom_field.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
-import 'package:conet_app/feature/message/domain/usecases/message_search_users.dart';
 import 'package:conet_app/feature/message/presentation/pages/image_viewer_page.dart';
 import 'package:conet_app/feature/payment/domain/entities/payment_initiate_response.dart';
 import 'package:conet_app/feature/payment/presentation/bloc/payment_bloc.dart';
-import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -217,8 +215,8 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
 
   void _navigateToDetail() {
     if (!mounted) return;
-    if (Navigator.of(context).canPop()) {
-      Navigator.of(context).pop(true);
+    if (context.canPop()) {
+      context.pop(true);
       return;
     }
     context.go('/event-detail/${widget.event.id}');
@@ -230,24 +228,15 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
         ? appUserState.user.id
         : null;
 
-    final searchUsers = serviceLocator<MessageSearchUsers>();
     final selected = await showUserSelectorBottomSheet(
       context: context,
       title: 'Add Team Members',
       searchHint: 'Search users to add in team',
-      emptyMessage: 'Search by name or username',
+      emptyMessage: 'Search by name, username, or email',
       noResultsMessage: 'No matching users found',
       actionLabel: 'Done',
       excludedUserId: currentUserId,
       initialSelectedUsers: _selectedMembers,
-      searchUsers: (query, limit) async {
-        final result = await searchUsers(query: query, limit: limit);
-        return result.fold((failure) => throw Exception(failure.message), (
-          users,
-        ) {
-          return users;
-        });
-      },
     );
 
     if (!mounted || selected == null) return;

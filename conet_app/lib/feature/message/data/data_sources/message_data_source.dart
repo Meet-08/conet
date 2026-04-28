@@ -22,7 +22,10 @@ abstract interface class MessageDataSource {
 
   Future<Unit> markAsRead({required String conversationId});
 
-  Future<List<Conversation>> getConversations({String type = 'all'});
+  Future<List<Conversation>> getConversations({
+    String type = 'all',
+    String? search,
+  });
 
   Future<List<User>> searchUsers({required String query, int limit = 3});
 

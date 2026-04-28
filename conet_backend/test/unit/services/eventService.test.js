@@ -48,7 +48,6 @@ const makeEventRow = (override = {}) => ({
   participation_type: "individual",
   min_team_size: 1,
   max_team_size: 1,
-  upi_id: null,
   custom_fields: [],
   created_at: new Date("2026-03-28T00:00:00.000Z"),
   users: {
