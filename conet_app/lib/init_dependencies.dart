@@ -121,6 +121,12 @@ import 'package:conet_app/feature/profile/domain/usecases/profile_update_persona
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_pictures.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_social_links.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
+import 'package:conet_app/feature/report/data/data_sources/report_data_source.dart';
+import 'package:conet_app/feature/report/data/data_sources/report_data_source_impl.dart';
+import 'package:conet_app/feature/report/data/repositories/report_repository_impl.dart';
+import 'package:conet_app/feature/report/domain/repositories/report_repository.dart';
+import 'package:conet_app/feature/report/domain/usecases/create_report.dart';
+import 'package:conet_app/feature/report/presentation/bloc/report_bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -157,6 +163,7 @@ Future<void> initDependencies() async {
   // Initialize features after core dependencies are registered
   _initAuth();
   _initPost();
+  _initReport();
   _initMessage();
   _initProfile();
   _initDevice();

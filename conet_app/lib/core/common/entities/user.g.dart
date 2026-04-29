@@ -20,6 +20,7 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
   unseenNotificationCount:
       (json['unseen_notification_count'] as num?)?.toInt() ?? 0,
   isOnline: json['is_online'] as bool? ?? false,
+  isFollowing: json['is_following'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
@@ -33,6 +34,7 @@ Map<String, dynamic> _$UserToJson(User instance) => <String, dynamic>{
   'user_role': _$UserRoleEnumMap[instance.userRole]!,
   'unseen_notification_count': instance.unseenNotificationCount,
   'is_online': instance.isOnline,
+  'is_following': instance.isFollowing,
 };
 
 const _$UserRoleEnumMap = {UserRole.user: 'user', UserRole.admin: 'admin'};

@@ -117,6 +117,7 @@ class ChatMessageList extends StatelessWidget {
               isMe: isMe,
               mediaUrls: message.mediaUrls,
               status: message.status,
+              senderId: sender?.id,
               senderName: sender?.displayName,
               senderImageUrl: sender?.profilePicUrl,
               showSeenStatus:

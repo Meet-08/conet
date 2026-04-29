@@ -175,6 +175,18 @@ void _initPost() {
   );
 }
 
+void _initReport() {
+  serviceLocator
+    ..registerFactory<ReportDataSource>(
+      () => ReportDataSourceImpl(dioClient: serviceLocator<DioClient>()),
+    )
+    ..registerLazySingleton<ReportRepository>(
+      () => ReportRepositoryImpl(reportDataSource: serviceLocator()),
+    )
+    ..registerFactory(() => CreateReport(reportRepository: serviceLocator()))
+    ..registerFactory(() => ReportBloc(createReport: serviceLocator()));
+}
+
 void _initMessage() {
   // Data Source
   serviceLocator.registerFactory<MessageDataSource>(
