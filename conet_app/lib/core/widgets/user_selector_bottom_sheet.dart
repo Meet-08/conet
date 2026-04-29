@@ -19,6 +19,7 @@ Future<List<User>?> showUserSelectorBottomSheet({
   String? excludedUserId,
   bool allowMultipleSelection = true,
   int searchLimit = 8,
+  void Function(BuildContext parentContext, User user)? onUserTap,
 }) {
   return showModalBottomSheet<List<User>>(
     context: context,
@@ -34,6 +35,8 @@ Future<List<User>?> showUserSelectorBottomSheet({
       excludedUserId: excludedUserId,
       allowMultipleSelection: allowMultipleSelection,
       searchLimit: searchLimit,
+      onUserTap: onUserTap,
+      parentContext: context,
     ),
   );
 }
@@ -48,6 +51,8 @@ class _UserSelectorBottomSheet extends StatefulWidget {
   final String? excludedUserId;
   final bool allowMultipleSelection;
   final int searchLimit;
+  final void Function(BuildContext parentContext, User user)? onUserTap;
+  final BuildContext parentContext;
 
   const _UserSelectorBottomSheet({
     required this.initialSelectedUsers,
@@ -59,6 +64,8 @@ class _UserSelectorBottomSheet extends StatefulWidget {
     required this.excludedUserId,
     required this.allowMultipleSelection,
     required this.searchLimit,
+    this.onUserTap,
+    required this.parentContext,
   });
 
   @override
@@ -215,17 +222,18 @@ class _UserSelectorBottomSheetState extends State<_UserSelectorBottomSheet> {
                         ),
                       ),
                     ),
-                    TextButton(
-                      onPressed: _done,
-                      child: Text(
-                        widget.actionLabel,
-                        style: const TextStyle(fontWeight: FontWeight.w700),
+                    if (widget.onUserTap == null)
+                      TextButton(
+                        onPressed: _done,
+                        child: Text(
+                          widget.actionLabel,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
-              if (selectedUsers.isNotEmpty)
+              if (widget.onUserTap == null && selectedUsers.isNotEmpty)
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
@@ -361,7 +369,16 @@ class _UserSelectorBottomSheetState extends State<_UserSelectorBottomSheet> {
                         return _SelectableUserTile(
                           user: user,
                           isSelected: isSelected,
-                          onTap: () => _toggleUser(user),
+                          showSelection: widget.onUserTap == null,
+                          onTap: () {
+                            if (widget.onUserTap != null) {
+                              // Close the sheet first, then invoke the callback
+                              context.pop();
+                              widget.onUserTap!(widget.parentContext, user);
+                            } else {
+                              _toggleUser(user);
+                            }
+                          },
                         );
                       },
                     );
@@ -399,11 +416,13 @@ class _UserSelectorBottomSheetState extends State<_UserSelectorBottomSheet> {
 class _SelectableUserTile extends StatelessWidget {
   final User user;
   final bool isSelected;
+  final bool showSelection;
   final VoidCallback onTap;
 
   const _SelectableUserTile({
     required this.user,
     required this.isSelected,
+    required this.showSelection,
     required this.onTap,
   });
 
@@ -435,20 +454,24 @@ class _SelectableUserTile extends StatelessWidget {
             : (username.isNotEmpty ? username : 'User'),
       ),
       subtitle: subtitle.isNotEmpty ? Text(subtitle) : null,
-      trailing: isSelected
-          ? CircleAvatar(
-              radius: 12,
-              backgroundColor: colorScheme.primary,
-              child: const FaIcon(
-                FontAwesomeIcons.check,
-                size: 12,
-                color: Colors.white,
-              ),
-            )
-          : CircleAvatar(
-              radius: 12,
-              backgroundColor: colorScheme.onSurface.withValues(alpha: 0.08),
-            ),
+      trailing: showSelection
+          ? (isSelected
+                ? CircleAvatar(
+                    radius: 12,
+                    backgroundColor: colorScheme.primary,
+                    child: const FaIcon(
+                      FontAwesomeIcons.check,
+                      size: 12,
+                      color: Colors.white,
+                    ),
+                  )
+                : CircleAvatar(
+                    radius: 12,
+                    backgroundColor: colorScheme.onSurface.withValues(
+                      alpha: 0.08,
+                    ),
+                  ))
+          : null,
       onTap: onTap,
     );
   }

@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-04-28
+> Last updated: 2026-04-29
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -51,6 +51,7 @@
 - **Typed Media Rendering** — Post card renders image (tap-to-view), muted autoplay video (tap to unmute), audio banner controls, and per-media download option
 - **Create Post Mixed Media Picker** — Post creation accepts mixed media attachments (image/video/audio/doc), shows typed previews, and supports per-item removal
 - **Create Post Rich Text Controls** — Composer formatting buttons now apply Quill styles (bold, italic, bullet list) while preserving existing layout
+- **User Search from Feed App Bar** — Searches users from the feed app bar and opens the selected public profile
 
 **Use Cases:** `PostCreate`, `PostDelete`, `PostGetPosts`, `PostGetUserPosts`, `PostGetPost`, `PostGetPostComments`, `PostWatchPostComments`, `PostToggleLike`, `PostComment`, `PostBookmark`, `PostRemoveBookmark`, `PostGetBookmarks`, `PostGetLikedPosts`, `PostIsBookmarked`
 **Backend Endpoints:** `GET/POST /posts`, `GET/PUT/DELETE /posts/:id`, `GET /posts/liked`, `GET /posts/user/:userId`, `GET /posts/:id/comments`, `PUT /posts/like/:id`, `POST /posts/comment/:id`, `PUT/DELETE /posts/:postId/comment/:commentId`

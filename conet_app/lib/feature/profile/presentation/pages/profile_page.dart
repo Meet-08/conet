@@ -119,13 +119,13 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: Text(
                       'Posts',
                       style: AppTextStyles.headingH3.copyWith(
+                        decoration: .underline,
                         color: Theme.of(
                           context,
                         ).extension<AppSemanticColors>()!.textPrimary,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
                   BlocBuilder<PostBloc, PostState>(
                     builder: (context, postState) {
                       if (postState is PostLoading) {

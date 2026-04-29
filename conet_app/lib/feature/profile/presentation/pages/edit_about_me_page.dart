@@ -80,7 +80,7 @@ class _EditAboutMePageState extends State<EditAboutMePage> {
                   child: FilledButton(
                     onPressed: isLoading ? null : () => _save(context),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.black,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),

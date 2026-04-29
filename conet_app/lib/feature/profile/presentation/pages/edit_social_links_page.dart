@@ -177,8 +177,16 @@ class _EditSocialLinksPageState extends State<EditSocialLinksPage> {
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: FaIcon(icon),
+        prefixIcon: Padding(
+          padding: const EdgeInsets.only(left: 14, right: 10),
+          child: FaIcon(icon, size: 18),
+        ),
+        prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
       ),
       keyboardType: TextInputType.url,
     );

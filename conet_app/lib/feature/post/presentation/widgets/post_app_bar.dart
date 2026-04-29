@@ -1,5 +1,6 @@
 import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/widgets/notification_badge.dart';
+import 'package:conet_app/core/widgets/user_selector_bottom_sheet.dart';
 import 'package:conet_app/feature/notification/presentation/bloc/notification_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -41,7 +42,17 @@ class PostAppBar extends StatelessWidget implements PreferredSizeWidget {
             FontAwesomeIcons.magnifyingGlass,
             color: semantic.iconPrimary,
           ),
-          onPressed: () => context.push('/search'),
+          onPressed: () {
+            showUserSelectorBottomSheet(
+              context: context,
+              title: 'Search users',
+              searchHint: 'Search by name, username, or email',
+              actionLabel: 'View profile',
+              allowMultipleSelection: false,
+              onUserTap: (parentContext, user) =>
+                  parentContext.push('/user-profile', extra: user.id),
+            );
+          },
         ),
         BlocSelector<NotificationBloc, NotificationState, int>(
           selector: (state) => state.unseenCount,

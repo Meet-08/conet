@@ -17,6 +17,9 @@ class ChatMessageList extends StatelessWidget {
   final bool isFetchingHistory;
   final MessageStatus messageStatus;
   final String emptyMessage;
+  final void Function(Message) onMessageLongPress;
+  final void Function(Message)? onMessageTap;
+  final Set<String> selectedMessageIds;
 
   const ChatMessageList({
     super.key,
@@ -29,6 +32,9 @@ class ChatMessageList extends StatelessWidget {
     required this.messageStatus,
     this.isFetchingHistory = false,
     this.emptyMessage = 'No messages yet',
+    required this.onMessageLongPress,
+    this.onMessageTap,
+    this.selectedMessageIds = const {},
   });
 
   @override
@@ -52,6 +58,7 @@ class ChatMessageList extends StatelessWidget {
 
     final sorted = [...messages]
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
     final groupMembersById = {
       for (final member in groupMembers) member.id: member,
     };
@@ -94,20 +101,31 @@ class ChatMessageList extends StatelessWidget {
         final time = TimeOfDay.fromDateTime(
           message.createdAt.toLocal(),
         ).format(context);
+        final isSelected = selectedMessageIds.contains(message.id);
 
-        return ChatMessageBubble(
-          text: message.content,
-          time: time,
-          isMe: isMe,
-          mediaUrls: message.mediaUrls,
-          status: message.status,
-          senderName: sender?.displayName,
-          senderImageUrl: sender?.profilePicUrl,
-          showSeenStatus:
-              isDirectConversation &&
-              isMe &&
-              message.id == latestOutgoingMessageId,
-          isSeen: message.isRead,
+        return GestureDetector(
+          onLongPress: () => onMessageLongPress(message),
+          onTap: onMessageTap != null ? () => onMessageTap!(message) : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            color: isSelected
+                ? colors.backgroundTertiary.withValues(alpha: 0.5)
+                : Colors.transparent,
+            child: ChatMessageBubble(
+              text: message.content,
+              time: time,
+              isMe: isMe,
+              mediaUrls: message.mediaUrls,
+              status: message.status,
+              senderName: sender?.displayName,
+              senderImageUrl: sender?.profilePicUrl,
+              showSeenStatus:
+                  isDirectConversation &&
+                  isMe &&
+                  message.id == latestOutgoingMessageId,
+              isSeen: message.isRead,
+            ),
+          ),
         );
       },
     );

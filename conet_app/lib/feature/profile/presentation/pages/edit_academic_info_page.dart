@@ -42,7 +42,9 @@ class _EditAcademicInfoPageState extends State<EditAcademicInfoPage> {
     final formState = _academicFormStateKey.currentState as dynamic;
     final values = formState.getValues();
 
-    if (values.college == null || values.degree == null || values.course == null) {
+    if (values.college == null ||
+        values.degree == null ||
+        values.course == null) {
       AppToast.showError(context, 'Please fill all required fields');
       return;
     }
@@ -96,7 +98,7 @@ class _EditAcademicInfoPageState extends State<EditAcademicInfoPage> {
                   child: FilledButton(
                     onPressed: isLoading ? null : () => _save(context),
                     style: FilledButton.styleFrom(
-                      backgroundColor: Colors.black,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -124,15 +126,16 @@ class _EditAcademicInfoPageState extends State<EditAcademicInfoPage> {
                 initialEndYear: firstAcademic?.endYear,
                 isCreationMode: false,
                 isLoading: isLoading,
-                onChanged: ({
-                  required college,
-                  required degree,
-                  required course,
-                  required startYear,
-                  required endYear,
-                }) {
-                  // No-op for changes, data is managed by AcademicInfoForm state
-                },
+                onChanged:
+                    ({
+                      required college,
+                      required degree,
+                      required course,
+                      required startYear,
+                      required endYear,
+                    }) {
+                      // No-op for changes, data is managed by AcademicInfoForm state
+                    },
               ),
             ),
           ),

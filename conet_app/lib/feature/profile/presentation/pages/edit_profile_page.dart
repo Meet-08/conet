@@ -177,7 +177,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     final result = await context.push(path, extra: user);
     if (result == true) {
       if (mounted) {
-        AppToast.showSuccess(context, 'Profile updated successfully');
         _refreshProfile();
       }
     }
