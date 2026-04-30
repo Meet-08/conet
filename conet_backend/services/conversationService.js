@@ -50,8 +50,13 @@ const mapGroupConversation = (row, currentUserId) => {
     id: row.id,
     type: "group",
     name: row.name ?? null,
+    description: row.description ?? null,
     group_image_url: row.group_image_url ?? null,
     created_by: row.created_by ?? null,
+    only_admin_add_members: row.only_admin_add_members ?? true,
+    only_admin_remove_members: row.only_admin_remove_members ?? true,
+    only_admin_edit_group: row.only_admin_edit_group ?? true,
+    only_admin_send_messages: row.only_admin_send_messages ?? true,
     current_user_role: selfMember?.role ?? "member",
     members,
     last_message:
@@ -217,7 +222,16 @@ export const createConversationService = async (currentUserId, otherUserId) => {
 
 export const createGroupService = async (
   currentUserId,
-  { name, memberIds = [], groupImageUrl } = {},
+  {
+    name,
+    description,
+    memberIds = [],
+    groupImageUrl,
+    onlyAdminAddMembers = true,
+    onlyAdminRemoveMembers = true,
+    onlyAdminEditGroup = true,
+    onlyAdminSendMessages = true,
+  } = {},
 ) => {
   if (!name || name.trim().length === 0) {
     const err = new Error("Group name is required");
@@ -248,7 +262,12 @@ export const createGroupService = async (
     data: {
       type: "group",
       name: name.trim(),
+      description: description?.trim() || null,
       group_image_url: groupImageUrl ?? null,
+      only_admin_add_members: onlyAdminAddMembers,
+      only_admin_remove_members: onlyAdminRemoveMembers,
+      only_admin_edit_group: onlyAdminEditGroup,
+      only_admin_send_messages: onlyAdminSendMessages,
       created_by: currentUserId,
       conversation_members: {
         create: allMemberIds.map((userId) => ({
@@ -391,6 +410,16 @@ export const sendMessageService = async (
     throw err;
   }
 
+  if (
+    conversation.type === "group" &&
+    (conversation.only_admin_send_messages ?? true) &&
+    self?.role !== "admin"
+  ) {
+    const err = new Error("Only group admins can send messages");
+    err.statusCode = 403;
+    throw err;
+  }
+
   const message = await prisma.messages.create({
     data: {
       conversation_id: conversationId,
@@ -528,7 +557,15 @@ export const addGroupMemberService = async (
     (m) => m.user_id === currentUserId,
   );
 
-  if (!self || self.role !== "admin") {
+  const onlyAdminsCanAdd = conversation.only_admin_add_members ?? true;
+
+  if (!self) {
+    const err = new Error("Not a member of this group");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  if (onlyAdminsCanAdd && self.role !== "admin") {
     const err = new Error("Only group admins can add members");
     err.statusCode = 403;
     throw err;
@@ -608,7 +645,9 @@ export const removeGroupMemberService = async (
 
   const isSelf = currentUserId === targetUserId;
 
-  if (!isSelf && self.role !== "admin") {
+  const onlyAdminsCanRemove = conversation.only_admin_remove_members ?? true;
+
+  if (!isSelf && onlyAdminsCanRemove && self.role !== "admin") {
     const err = new Error("Only group admins can remove other members");
     err.statusCode = 403;
     throw err;
@@ -646,12 +685,20 @@ export const removeGroupMemberService = async (
 };
 
 /**
- * Update a group's name and/or image. Only admins may do this.
+ * Update group details and permissions.
  */
 export const updateGroupService = async (
   groupId,
   currentUserId,
-  { name, groupImageUrl },
+  {
+    name,
+    description,
+    groupImageUrl,
+    onlyAdminAddMembers,
+    onlyAdminRemoveMembers,
+    onlyAdminEditGroup,
+    onlyAdminSendMessages,
+  },
 ) => {
   const conversation = await prisma.conversations.findUnique({
     where: { id: groupId },
@@ -668,7 +715,14 @@ export const updateGroupService = async (
     (m) => m.user_id === currentUserId,
   );
 
-  if (!self || self.role !== "admin") {
+  if (!self) {
+    const err = new Error("Not a member of this group");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const restrictedToAdmins = conversation.only_admin_edit_group ?? true;
+  if (restrictedToAdmins && self.role !== "admin") {
     const err = new Error("Only group admins can update group details");
     err.statusCode = 403;
     throw err;
@@ -676,7 +730,20 @@ export const updateGroupService = async (
 
   const data = {};
   if (name !== undefined) data.name = name.trim();
+  if (description !== undefined) data.description = description?.trim() || null;
   if (groupImageUrl !== undefined) data.group_image_url = groupImageUrl;
+  if (onlyAdminAddMembers !== undefined) {
+    data.only_admin_add_members = onlyAdminAddMembers;
+  }
+  if (onlyAdminRemoveMembers !== undefined) {
+    data.only_admin_remove_members = onlyAdminRemoveMembers;
+  }
+  if (onlyAdminEditGroup !== undefined) {
+    data.only_admin_edit_group = onlyAdminEditGroup;
+  }
+  if (onlyAdminSendMessages !== undefined) {
+    data.only_admin_send_messages = onlyAdminSendMessages;
+  }
 
   if (Object.keys(data).length === 0) {
     const err = new Error("No fields to update");

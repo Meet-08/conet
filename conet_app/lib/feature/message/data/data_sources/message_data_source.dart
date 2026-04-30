@@ -34,13 +34,23 @@ abstract interface class MessageDataSource {
   Future<Conversation> createGroup({
     required String name,
     required List<String> memberIds,
+    String? description,
     String? groupImageUrl,
+    bool onlyAdminAddMembers = true,
+    bool onlyAdminRemoveMembers = true,
+    bool onlyAdminEditGroup = true,
+    bool onlyAdminSendMessages = true,
   });
 
   Future<Conversation> updateGroup({
     required String groupId,
     String? name,
+    String? description,
     String? groupImageUrl,
+    bool? onlyAdminAddMembers,
+    bool? onlyAdminRemoveMembers,
+    bool? onlyAdminEditGroup,
+    bool? onlyAdminSendMessages,
   });
 
   Future<Unit> deleteGroup({required String groupId});

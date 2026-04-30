@@ -51,12 +51,22 @@ class MessageConversationCreated extends MessageEvent {
 
 class MessageGroupCreated extends MessageEvent {
   final String name;
+  final String? description;
   final List<String> userIds;
+  final bool onlyAdminAddMembers;
+  final bool onlyAdminRemoveMembers;
+  final bool onlyAdminEditGroup;
+  final bool onlyAdminSendMessages;
   final String? groupImageUrl;
   final PlatformFile? groupImageFile;
   MessageGroupCreated({
     required this.name,
+    this.description,
     required this.userIds,
+    this.onlyAdminAddMembers = true,
+    this.onlyAdminRemoveMembers = true,
+    this.onlyAdminEditGroup = true,
+    this.onlyAdminSendMessages = true,
     this.groupImageUrl,
     this.groupImageFile,
   });
@@ -89,12 +99,22 @@ class MessageConversationRealtimePinged extends MessageEvent {}
 class MessageGroupUpdated extends MessageEvent {
   final String groupId;
   final String? name;
+  final String? description;
   final String? groupImageUrl;
+  final bool? onlyAdminAddMembers;
+  final bool? onlyAdminRemoveMembers;
+  final bool? onlyAdminEditGroup;
+  final bool? onlyAdminSendMessages;
   final PlatformFile? groupImageFile;
   MessageGroupUpdated({
     required this.groupId,
     this.name,
+    this.description,
     this.groupImageUrl,
+    this.onlyAdminAddMembers,
+    this.onlyAdminRemoveMembers,
+    this.onlyAdminEditGroup,
+    this.onlyAdminSendMessages,
     this.groupImageFile,
   });
 }

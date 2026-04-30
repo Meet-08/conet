@@ -13,11 +13,21 @@ class MessageCreateGroup {
   Future<Either<AppFailure, Conversation>> call({
     required String name,
     required List<String> memberIds,
+    String? description,
+    bool onlyAdminAddMembers = true,
+    bool onlyAdminRemoveMembers = true,
+    bool onlyAdminEditGroup = true,
+    bool onlyAdminSendMessages = true,
     PlatformFile? groupImageFile,
   }) {
     return _messageRepository.createGroup(
       name: name,
       memberIds: memberIds,
+      description: description,
+      onlyAdminAddMembers: onlyAdminAddMembers,
+      onlyAdminRemoveMembers: onlyAdminRemoveMembers,
+      onlyAdminEditGroup: onlyAdminEditGroup,
+      onlyAdminSendMessages: onlyAdminSendMessages,
       groupImageFile: groupImageFile,
     );
   }

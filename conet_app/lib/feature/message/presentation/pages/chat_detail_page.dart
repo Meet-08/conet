@@ -408,6 +408,10 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
               onSend: _sendMessage,
               onFilesSelected: _pickFiles,
               selectedFilesCount: _selectedFiles.length,
+              enabled:
+                  !widget.conversation.isGroup ||
+                  !widget.conversation.onlyAdminSendMessages ||
+                  widget.conversation.isAdmin,
             ),
           ],
         ),

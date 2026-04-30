@@ -61,7 +61,12 @@ const mockGroupConversation = {
   id: GROUP_ID,
   type: "group",
   name: "Study Crew",
+  description: "Core semester prep group",
   group_image_url: null,
+  only_admin_add_members: true,
+  only_admin_remove_members: true,
+  only_admin_edit_group: true,
+  only_admin_send_messages: true,
   created_by: TEST_USER.id,
   created_at: new Date(),
   updated_at: new Date(),
@@ -135,6 +140,41 @@ describe("POST /api/groups", () => {
     expect(res.body.group.name).toBe("Study Crew");
   });
 
+  it("201 – accepts optional description and permissions", async () => {
+    prismaMock.users.findMany.mockResolvedValue([
+      { id: TEST_USER.id },
+      { id: TEST_USER_B.id },
+    ]);
+    prismaMock.conversations.create.mockResolvedValue({
+      ...mockGroupConversation,
+      description: "Open group",
+      only_admin_add_members: false,
+      only_admin_remove_members: false,
+      only_admin_edit_group: false,
+      only_admin_send_messages: false,
+    });
+
+    const res = await request(app)
+      .post("/api/groups")
+      .set("Authorization", makeAuthHeader())
+      .send({
+        name: "Study Crew",
+        description: "Open group",
+        memberIds: [TEST_USER_B.id],
+        onlyAdminAddMembers: false,
+        onlyAdminRemoveMembers: false,
+        onlyAdminEditGroup: false,
+        onlyAdminSendMessages: false,
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.group.description).toBe("Open group");
+    expect(res.body.group.only_admin_add_members).toBe(false);
+    expect(res.body.group.only_admin_remove_members).toBe(false);
+    expect(res.body.group.only_admin_edit_group).toBe(false);
+    expect(res.body.group.only_admin_send_messages).toBe(false);
+  });
+
   it("400 – rejects missing name", async () => {
     const res = await request(app)
       .post("/api/groups")
@@ -202,6 +242,38 @@ describe("PATCH /api/groups/:groupId", () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.group.name).toBe("Updated Crew");
+  });
+
+  it("200 – updates description and permission flags", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue(
+      mockGroupConversation,
+    );
+    prismaMock.conversations.update.mockResolvedValue({
+      ...mockGroupConversation,
+      description: "Open collaboration",
+      only_admin_add_members: false,
+      only_admin_remove_members: false,
+      only_admin_edit_group: false,
+      only_admin_send_messages: false,
+    });
+
+    const res = await request(app)
+      .patch(`/api/groups/${GROUP_ID}`)
+      .set("Authorization", makeAuthHeader())
+      .send({
+        description: "Open collaboration",
+        onlyAdminAddMembers: false,
+        onlyAdminRemoveMembers: false,
+        onlyAdminEditGroup: false,
+        onlyAdminSendMessages: false,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.group.description).toBe("Open collaboration");
+    expect(res.body.group.only_admin_add_members).toBe(false);
+    expect(res.body.group.only_admin_remove_members).toBe(false);
+    expect(res.body.group.only_admin_edit_group).toBe(false);
+    expect(res.body.group.only_admin_send_messages).toBe(false);
   });
 
   it("403 – non-admin cannot update group", async () => {
@@ -407,6 +479,34 @@ describe("POST /api/groups/:groupId/members", () => {
     expect(res.status).toBe(403);
   });
 
+  it("201 – non-admin can add members when permission allows members", async () => {
+    const openAddPermissionsGroup = {
+      ...mockGroupConversation,
+      only_admin_add_members: false,
+      conversation_members: mockGroupConversation.conversation_members.map(
+        (m) => (m.user_id === TEST_USER.id ? { ...m, role: "member" } : m),
+      ),
+    };
+
+    prismaMock.conversations.findUnique.mockResolvedValue(
+      openAddPermissionsGroup,
+    );
+    prismaMock.users.findUnique.mockResolvedValue(mockUserC);
+    prismaMock.conversation_members.create.mockResolvedValue({
+      conversation_id: GROUP_ID,
+      user_id: USER_C_ID,
+      role: "member",
+    });
+
+    const res = await request(app)
+      .post(`/api/groups/${GROUP_ID}/members`)
+      .set("Authorization", makeAuthHeader())
+      .send({ userId: USER_C_ID });
+
+    expect(res.status).toBe(201);
+    expect(res.body.success).toBe(true);
+  });
+
   it("409 – rejects adding an existing member", async () => {
     prismaMock.conversations.findUnique.mockResolvedValue(
       mockGroupConversation,
@@ -499,6 +599,28 @@ describe("DELETE /api/groups/:groupId/members/:userId", () => {
       .set("Authorization", makeAuthHeader());
 
     expect(res.status).toBe(403);
+  });
+
+  it("200 – non-admin can remove another member when permission allows members", async () => {
+    const openRemovePermissionsGroup = {
+      ...mockGroupConversation,
+      only_admin_remove_members: false,
+      conversation_members: mockGroupConversation.conversation_members.map(
+        (m) => (m.user_id === TEST_USER.id ? { ...m, role: "member" } : m),
+      ),
+    };
+
+    prismaMock.conversations.findUnique.mockResolvedValue(
+      openRemovePermissionsGroup,
+    );
+    prismaMock.conversation_members.delete.mockResolvedValue({});
+
+    const res = await request(app)
+      .delete(`/api/groups/${GROUP_ID}/members/${TEST_USER_B.id}`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
   });
 
   it("400 – last admin cannot leave without promoting first", async () => {
@@ -600,6 +722,7 @@ describe("Group messaging via /api/conversations/:id/messages", () => {
     prismaMock.conversations.findUnique.mockResolvedValue({
       id: GROUP_ID,
       type: "group",
+      only_admin_send_messages: false,
       conversation_members: mockGroupConversation.conversation_members,
     });
     prismaMock.messages.create.mockResolvedValue({

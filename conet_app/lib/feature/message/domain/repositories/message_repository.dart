@@ -44,13 +44,23 @@ abstract interface class MessageRepository {
   Future<Either<AppFailure, Conversation>> createGroup({
     required String name,
     required List<String> memberIds,
+    String? description,
+    bool onlyAdminAddMembers = true,
+    bool onlyAdminRemoveMembers = true,
+    bool onlyAdminEditGroup = true,
+    bool onlyAdminSendMessages = true,
     PlatformFile? groupImageFile,
   });
 
   Future<Either<AppFailure, Conversation>> updateGroup({
     required String groupId,
     String? name,
+    String? description,
     String? groupImageUrl,
+    bool? onlyAdminAddMembers,
+    bool? onlyAdminRemoveMembers,
+    bool? onlyAdminEditGroup,
+    bool? onlyAdminSendMessages,
     PlatformFile? groupImageFile,
   });
 

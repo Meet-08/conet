@@ -58,6 +58,7 @@ const mockConversation = {
   id: CONV_ID,
   user_one: TEST_USER.id,
   user_two: TEST_USER_B.id,
+  type: "direct",
   created_at: new Date(),
   updated_at: new Date(),
   messages_conversations_last_message_idTomessages: null,
@@ -289,6 +290,25 @@ describe("POST /api/conversations/:conversationId/messages", () => {
       .post(`/api/conversations/${CONV_ID}/messages`)
       .set("Authorization", makeAuthHeader())
       .send({ content: "Intrude!" });
+
+    expect(res.status).toBe(403);
+  });
+
+  it("403 – rejects group message from non-admin when send messages are restricted", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      type: "group",
+      only_admin_send_messages: true,
+      conversation_members: [
+        { user_id: TEST_USER.id, role: "member" },
+        { user_id: TEST_USER_B.id, role: "admin" },
+      ],
+    });
+
+    const res = await request(app)
+      .post(`/api/conversations/${CONV_ID}/messages`)
+      .set("Authorization", makeAuthHeader())
+      .send({ content: "Should not send" });
 
     expect(res.status).toBe(403);
   });

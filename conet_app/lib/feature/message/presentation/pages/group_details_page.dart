@@ -25,6 +25,14 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   bool _showAllMembers = false;
   bool _isUploadingGroupImage = false;
 
+  bool _canEditGroupDetails(Conversation conversation) {
+    return !conversation.onlyAdminEditGroup || conversation.isAdmin;
+  }
+
+  bool _canManageGroupMembers(Conversation conversation) {
+    return !conversation.onlyAdminAddMembers || conversation.isAdmin;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -90,8 +98,11 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   }
 
   Future<void> _pickAndUploadGroupImage(Conversation conversation) async {
-    if (!conversation.isAdmin) {
-      AppToast.showInfo(context, 'Only group admins can update group image.');
+    if (!_canEditGroupDetails(conversation)) {
+      AppToast.showInfo(
+        context,
+        'You do not have permission to update group details.',
+      );
       return;
     }
 
@@ -121,18 +132,95 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
   }
 
   Future<void> _openGroupPermissionsDialog({
-    required bool canManageMembers,
-    required bool canEditGroup,
-    required bool canDeleteGroup,
+    required Conversation conversation,
   }) {
+    final canEditPermissions = _canEditGroupDetails(conversation);
+
     return showDialog<void>(
       context: context,
       builder: (_) => GroupPermissionsDialog(
-        canManageMembers: canManageMembers,
-        canEditGroup: canEditGroup,
-        canDeleteGroup: canDeleteGroup,
+        onlyAdminsCanAddMembers: conversation.onlyAdminAddMembers,
+        onlyAdminsCanRemoveMembers: conversation.onlyAdminRemoveMembers,
+        onlyAdminsCanEditGroup: conversation.onlyAdminEditGroup,
+        onlyAdminsCanSendMessages: conversation.onlyAdminSendMessages,
+        canEditPermissions: canEditPermissions,
+        onSave:
+            ({
+              required onlyAdminsCanAddMembers,
+              required onlyAdminsCanRemoveMembers,
+              required onlyAdminsCanEditGroup,
+              required onlyAdminsCanSendMessages,
+            }) async {
+              if (!canEditPermissions) return;
+              context.read<MessageBloc>().add(
+                MessageGroupUpdated(
+                  groupId: conversation.id,
+                  onlyAdminAddMembers: onlyAdminsCanAddMembers,
+                  onlyAdminRemoveMembers: onlyAdminsCanRemoveMembers,
+                  onlyAdminEditGroup: onlyAdminsCanEditGroup,
+                  onlyAdminSendMessages: onlyAdminsCanSendMessages,
+                ),
+              );
+              AppToast.showSuccess(
+                context,
+                'Group permissions update requested.',
+              );
+            },
       ),
     );
+  }
+
+  Future<void> _openEditDescriptionDialog(Conversation conversation) async {
+    if (!_canEditGroupDetails(conversation)) {
+      AppToast.showInfo(
+        context,
+        'You do not have permission to update group details.',
+      );
+      return;
+    }
+
+    final controller = TextEditingController(
+      text: conversation.description ?? '',
+    );
+
+    final newDescription = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Edit Group Description'),
+        content: TextField(
+          controller: controller,
+          minLines: 3,
+          maxLines: 5,
+          maxLength: 400,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(
+            hintText: 'Tell members what this group is about',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => context.pop(controller.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || newDescription == null) {
+      return;
+    }
+
+    context.read<MessageBloc>().add(
+      MessageGroupUpdated(
+        groupId: conversation.id,
+        description: newDescription,
+      ),
+    );
+    AppToast.showSuccess(context, 'Group description update requested.');
   }
 
   @override
@@ -172,12 +260,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
             final visibleMembers = _showAllMembers
                 ? members
                 : members.take(5).toList();
-            final canManageMembers = conversation.isAdmin;
-            final canEditGroup = conversation.isAdmin;
-            final canDeleteGroup =
-                state.currentUserId != null &&
-                conversation.createdBy != null &&
-                conversation.createdBy == state.currentUserId;
+            final canManageMembers = _canManageGroupMembers(conversation);
 
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -212,16 +295,35 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    'Group Description',
-                    style: AppTextStyles.label.copyWith(
-                      color: colors.textPrimary,
-                      fontWeight: AppTypographyTokens.weightBold,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        'Group Description',
+                        style: AppTextStyles.label.copyWith(
+                          color: colors.textPrimary,
+                          fontWeight: AppTypographyTokens.weightBold,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        tooltip: 'Edit description',
+                        onPressed: () =>
+                            _openEditDescriptionDialog(conversation),
+                        icon: FaIcon(
+                          FontAwesomeIcons.penToSquare,
+                          size: 14,
+                          color: _canEditGroupDetails(conversation)
+                              ? colors.iconSecondary
+                              : colors.iconDisabled,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Group description is not available from backend yet.',
+                    conversation.description?.trim().isNotEmpty == true
+                        ? conversation.description!.trim()
+                        : 'No group description yet.',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: colors.textSecondary,
                     ),
@@ -271,7 +373,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                         ? () => _openAddMembersSheet(members)
                         : () => AppToast.showInfo(
                             context,
-                            'Only group admins can add members.',
+                            'You do not have permission to add members.',
                           ),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -325,11 +427,8 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   ),
                   _GroupSettingTile(
                     title: 'Group Permissions',
-                    onTap: () => _openGroupPermissionsDialog(
-                      canManageMembers: canManageMembers,
-                      canEditGroup: canEditGroup,
-                      canDeleteGroup: canDeleteGroup,
-                    ),
+                    onTap: () =>
+                        _openGroupPermissionsDialog(conversation: conversation),
                   ),
                   _GroupSettingTile(
                     title: 'Notification',

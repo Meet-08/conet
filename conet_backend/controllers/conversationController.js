@@ -14,6 +14,14 @@ import {
   updateGroupService,
 } from "../services/conversationService.js";
 
+const assertOptionalBoolean = (value, fieldName) => {
+  if (value !== undefined && typeof value !== "boolean") {
+    const err = new Error(`${fieldName} must be a boolean when provided`);
+    err.statusCode = 400;
+    throw err;
+  }
+};
+
 // POST /api/conversations?other_user={userId}
 export const createConversation = asyncHandler(async (req, res) => {
   const otherUserId = req.query.other_user;
@@ -132,10 +140,19 @@ export const searchUsers = asyncHandler(async (req, res) => {
 // ─── Group conversations ────────────────────────────────────────────────────────
 
 // POST /api/groups
-// Body: { name, memberIds: string[], groupImageUrl? }
+// Body: { name, memberIds: string[], groupImageUrl?, description?, onlyAdminAddMembers?, onlyAdminRemoveMembers?, onlyAdminEditGroup? }
 export const createGroup = asyncHandler(async (req, res) => {
   const currentUserId = req.user.id;
-  const { name, memberIds, groupImageUrl } = req.body;
+  const {
+    name,
+    memberIds,
+    groupImageUrl,
+    description,
+    onlyAdminAddMembers,
+    onlyAdminRemoveMembers,
+    onlyAdminEditGroup,
+    onlyAdminSendMessages,
+  } = req.body;
 
   if (!name) {
     res.status(400);
@@ -147,10 +164,25 @@ export const createGroup = asyncHandler(async (req, res) => {
     throw new Error("memberIds must be a non-empty array");
   }
 
+  if (description !== undefined && typeof description !== "string") {
+    res.status(400);
+    throw new Error("description must be a string when provided");
+  }
+
+  assertOptionalBoolean(onlyAdminAddMembers, "onlyAdminAddMembers");
+  assertOptionalBoolean(onlyAdminRemoveMembers, "onlyAdminRemoveMembers");
+  assertOptionalBoolean(onlyAdminEditGroup, "onlyAdminEditGroup");
+  assertOptionalBoolean(onlyAdminSendMessages, "onlyAdminSendMessages");
+
   const group = await createGroupService(currentUserId, {
     name,
     memberIds,
     groupImageUrl,
+    description,
+    onlyAdminAddMembers,
+    onlyAdminRemoveMembers,
+    onlyAdminEditGroup,
+    onlyAdminSendMessages,
   });
 
   res.status(201).json({ success: true, group });
@@ -192,15 +224,38 @@ export const removeGroupMember = asyncHandler(async (req, res) => {
   res.status(200).json({ success: true });
 });
 
-// PATCH /api/groups/:groupId  { name?, groupImageUrl? }
+// PATCH /api/groups/:groupId  { name?, description?, groupImageUrl?, onlyAdminAddMembers?, onlyAdminRemoveMembers?, onlyAdminEditGroup?, onlyAdminSendMessages? }
 export const updateGroup = asyncHandler(async (req, res) => {
   const { groupId } = req.params;
   const currentUserId = req.user.id;
-  const { name, groupImageUrl } = req.body;
+  const {
+    name,
+    description,
+    groupImageUrl,
+    onlyAdminAddMembers,
+    onlyAdminRemoveMembers,
+    onlyAdminEditGroup,
+    onlyAdminSendMessages,
+  } = req.body;
+
+  if (description !== undefined && typeof description !== "string") {
+    res.status(400);
+    throw new Error("description must be a string when provided");
+  }
+
+  assertOptionalBoolean(onlyAdminAddMembers, "onlyAdminAddMembers");
+  assertOptionalBoolean(onlyAdminRemoveMembers, "onlyAdminRemoveMembers");
+  assertOptionalBoolean(onlyAdminEditGroup, "onlyAdminEditGroup");
+  assertOptionalBoolean(onlyAdminSendMessages, "onlyAdminSendMessages");
 
   const group = await updateGroupService(groupId, currentUserId, {
     name,
+    description,
     groupImageUrl,
+    onlyAdminAddMembers,
+    onlyAdminRemoveMembers,
+    onlyAdminEditGroup,
+    onlyAdminSendMessages,
   });
 
   res.status(200).json({ success: true, group });

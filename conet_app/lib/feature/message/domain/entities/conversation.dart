@@ -15,9 +15,20 @@ class Conversation extends Equatable {
   /// Only present for group conversations.
   final String? name;
 
+  /// Only present for group conversations.
+  final String? description;
+
   final String? groupImageUrl;
 
   final String? createdBy;
+
+  final bool onlyAdminAddMembers;
+
+  final bool onlyAdminRemoveMembers;
+
+  final bool onlyAdminEditGroup;
+
+  final bool onlyAdminSendMessages;
 
   final String? currentUserRole;
 
@@ -37,8 +48,13 @@ class Conversation extends Equatable {
     this.type = ConversationType.direct,
     this.otherUser,
     this.name,
+    this.description,
     this.groupImageUrl,
     this.createdBy,
+    this.onlyAdminAddMembers = true,
+    this.onlyAdminRemoveMembers = true,
+    this.onlyAdminEditGroup = true,
+    this.onlyAdminSendMessages = true,
     this.currentUserRole,
     this.members = const [],
     this.lastMessage,
@@ -73,8 +89,13 @@ class Conversation extends Equatable {
     type,
     otherUser,
     name,
+    description,
     groupImageUrl,
     createdBy,
+    onlyAdminAddMembers,
+    onlyAdminRemoveMembers,
+    onlyAdminEditGroup,
+    onlyAdminSendMessages,
     currentUserRole,
     members,
     lastMessage,

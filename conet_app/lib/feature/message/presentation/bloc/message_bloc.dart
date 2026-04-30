@@ -248,7 +248,11 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     emit(state.copyWith(conversationStatus: MessageStatus.loading));
     final result = await _createGroup(
       name: event.name,
+      description: event.description,
       memberIds: event.userIds,
+      onlyAdminAddMembers: event.onlyAdminAddMembers,
+      onlyAdminRemoveMembers: event.onlyAdminRemoveMembers,
+      onlyAdminEditGroup: event.onlyAdminEditGroup,
       groupImageFile: event.groupImageFile,
     );
     result.fold(
@@ -288,7 +292,12 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     final result = await _updateGroup(
       groupId: event.groupId,
       name: event.name,
+      description: event.description,
       groupImageUrl: event.groupImageUrl,
+      onlyAdminAddMembers: event.onlyAdminAddMembers,
+      onlyAdminRemoveMembers: event.onlyAdminRemoveMembers,
+      onlyAdminEditGroup: event.onlyAdminEditGroup,
+      onlyAdminSendMessages: event.onlyAdminSendMessages,
       groupImageFile: event.groupImageFile,
     );
     result.fold(

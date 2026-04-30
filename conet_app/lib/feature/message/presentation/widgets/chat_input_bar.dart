@@ -8,6 +8,7 @@ class ChatInputBar extends StatelessWidget {
   final VoidCallback onSend;
   final VoidCallback onFilesSelected;
   final int selectedFilesCount;
+  final bool enabled;
 
   const ChatInputBar({
     super.key,
@@ -15,6 +16,7 @@ class ChatInputBar extends StatelessWidget {
     required this.onSend,
     required this.onFilesSelected,
     this.selectedFilesCount = 0,
+    this.enabled = true,
   });
 
   @override
@@ -30,7 +32,7 @@ class ChatInputBar extends StatelessWidget {
               children: [
                 IconButton(
                   icon: const FaIcon(FontAwesomeIcons.paperclip),
-                  onPressed: onFilesSelected,
+                  onPressed: enabled ? onFilesSelected : null,
                 ),
                 if (selectedFilesCount > 0)
                   Positioned(
@@ -62,8 +64,11 @@ class ChatInputBar extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: controller,
+                enabled: enabled,
                 decoration: InputDecoration(
-                  hintText: 'Type a message...',
+                  hintText: enabled
+                      ? 'Type a message...'
+                      : 'Only admins can send messages',
                   filled: true,
                   fillColor: colors.backgroundSecondary,
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -83,7 +88,7 @@ class ChatInputBar extends StatelessWidget {
                   color: colors.textInverse,
                   size: 20,
                 ),
-                onPressed: onSend,
+                onPressed: enabled ? onSend : null,
               ),
             ),
           ],

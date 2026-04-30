@@ -172,13 +172,25 @@ class MessageDataSourceImpl implements MessageDataSource {
   Future<Conversation> createGroup({
     required String name,
     required List<String> memberIds,
+    String? description,
     String? groupImageUrl,
+    bool onlyAdminAddMembers = true,
+    bool onlyAdminRemoveMembers = true,
+    bool onlyAdminEditGroup = true,
+    bool onlyAdminSendMessages = true,
   }) async {
     try {
       final body = <String, dynamic>{'name': name, 'memberIds': memberIds};
+      if (description != null) {
+        body['description'] = description;
+      }
       if (groupImageUrl != null) {
         body['groupImageUrl'] = groupImageUrl;
       }
+      body['onlyAdminAddMembers'] = onlyAdminAddMembers;
+      body['onlyAdminRemoveMembers'] = onlyAdminRemoveMembers;
+      body['onlyAdminEditGroup'] = onlyAdminEditGroup;
+      body['onlyAdminSendMessages'] = onlyAdminSendMessages;
       final res = await _dioClient.dio.post("/groups", data: body);
       if (res.statusCode != 201) {
         throw ServerException("Failed to create group");
@@ -195,12 +207,30 @@ class MessageDataSourceImpl implements MessageDataSource {
   Future<Conversation> updateGroup({
     required String groupId,
     String? name,
+    String? description,
     String? groupImageUrl,
+    bool? onlyAdminAddMembers,
+    bool? onlyAdminRemoveMembers,
+    bool? onlyAdminEditGroup,
+    bool? onlyAdminSendMessages,
   }) async {
     try {
       final body = <String, dynamic>{};
       if (name != null) body['name'] = name;
+      if (description != null) body['description'] = description;
       if (groupImageUrl != null) body['groupImageUrl'] = groupImageUrl;
+      if (onlyAdminAddMembers != null) {
+        body['onlyAdminAddMembers'] = onlyAdminAddMembers;
+      }
+      if (onlyAdminRemoveMembers != null) {
+        body['onlyAdminRemoveMembers'] = onlyAdminRemoveMembers;
+      }
+      if (onlyAdminEditGroup != null) {
+        body['onlyAdminEditGroup'] = onlyAdminEditGroup;
+      }
+      if (onlyAdminSendMessages != null) {
+        body['onlyAdminSendMessages'] = onlyAdminSendMessages;
+      }
 
       final res = await _dioClient.dio.patch("/groups/$groupId", data: body);
       if (res.statusCode != 200) {

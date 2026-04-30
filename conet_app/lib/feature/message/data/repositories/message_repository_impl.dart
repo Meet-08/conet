@@ -130,6 +130,11 @@ class MessageRepositoryImpl implements MessageRepository {
   Future<Either<AppFailure, Conversation>> createGroup({
     required String name,
     required List<String> memberIds,
+    String? description,
+    bool onlyAdminAddMembers = true,
+    bool onlyAdminRemoveMembers = true,
+    bool onlyAdminEditGroup = true,
+    bool onlyAdminSendMessages = true,
     PlatformFile? groupImageFile,
   }) {
     return _getResult(() async {
@@ -149,7 +154,12 @@ class MessageRepositoryImpl implements MessageRepository {
       return _messageDataSource.createGroup(
         name: name,
         memberIds: memberIds,
+        description: description,
         groupImageUrl: uploadedImageUrl,
+        onlyAdminAddMembers: onlyAdminAddMembers,
+        onlyAdminRemoveMembers: onlyAdminRemoveMembers,
+        onlyAdminEditGroup: onlyAdminEditGroup,
+        onlyAdminSendMessages: onlyAdminSendMessages,
       );
     });
   }
@@ -158,7 +168,12 @@ class MessageRepositoryImpl implements MessageRepository {
   Future<Either<AppFailure, Conversation>> updateGroup({
     required String groupId,
     String? name,
+    String? description,
     String? groupImageUrl,
+    bool? onlyAdminAddMembers,
+    bool? onlyAdminRemoveMembers,
+    bool? onlyAdminEditGroup,
+    bool? onlyAdminSendMessages,
     PlatformFile? groupImageFile,
   }) {
     return _getResult(() async {
@@ -178,7 +193,12 @@ class MessageRepositoryImpl implements MessageRepository {
       return _messageDataSource.updateGroup(
         groupId: groupId,
         name: name,
+        description: description,
         groupImageUrl: uploadedImageUrl,
+        onlyAdminAddMembers: onlyAdminAddMembers,
+        onlyAdminRemoveMembers: onlyAdminRemoveMembers,
+        onlyAdminEditGroup: onlyAdminEditGroup,
+        onlyAdminSendMessages: onlyAdminSendMessages,
       );
     });
   }

@@ -21,6 +21,8 @@ class CreateGroupSheet extends StatefulWidget {
 class _CreateGroupSheetState extends State<CreateGroupSheet> {
   final TextEditingController _searchController = TextEditingController();
   final TextEditingController _groupNameController = TextEditingController();
+  final TextEditingController _groupDescriptionController =
+      TextEditingController();
   final List<User> _selectedUsers = [];
   PlatformFile? _groupImageFile;
 
@@ -28,6 +30,7 @@ class _CreateGroupSheetState extends State<CreateGroupSheet> {
   void dispose() {
     _searchController.dispose();
     _groupNameController.dispose();
+    _groupDescriptionController.dispose();
     super.dispose();
   }
 
@@ -56,6 +59,7 @@ class _CreateGroupSheetState extends State<CreateGroupSheet> {
     context.read<MessageBloc>().add(
       MessageGroupCreated(
         name: groupName,
+        description: _groupDescriptionController.text.trim(),
         userIds: _selectedUsers.map((u) => u.id).toList(),
         groupImageFile: _groupImageFile,
       ),
@@ -217,6 +221,34 @@ class _CreateGroupSheetState extends State<CreateGroupSheet> {
                   textCapitalization: TextCapitalization.words,
                   decoration: InputDecoration(
                     hintText: 'Group name',
+                    hintStyle: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.4),
+                      fontSize: 14,
+                    ),
+                    filled: true,
+                    fillColor: colorScheme.onSurface.withValues(alpha: 0.06),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextField(
+                  controller: _groupDescriptionController,
+                  textCapitalization: TextCapitalization.sentences,
+                  minLines: 2,
+                  maxLines: 3,
+                  maxLength: 400,
+                  decoration: InputDecoration(
+                    hintText: 'Group description (optional)',
                     hintStyle: TextStyle(
                       color: colorScheme.onSurface.withValues(alpha: 0.4),
                       fontSize: 14,
