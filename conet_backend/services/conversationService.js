@@ -145,7 +145,7 @@ export const createConversationService = async (currentUserId, otherUserId) => {
   let targetUserId = otherUserId;
 
   if (!UUID_REGEX.test(otherUserId)) {
-    const user = await prisma.users.findFirst({
+    const user = await prisma.public_users.findFirst({
       where: {
         OR: [{ username: otherUserId }, { email: otherUserId }],
       },
@@ -169,7 +169,7 @@ export const createConversationService = async (currentUserId, otherUserId) => {
 
   const pair = normalizePair(currentUserId, targetUserId);
 
-  const otherUser = await prisma.users.findUnique({
+  const otherUser = await prisma.public_users.findUnique({
     where: { id: targetUserId },
     select: USER_SELECT_FIELDS,
   });
@@ -247,7 +247,7 @@ export const createGroupService = async (
     throw err;
   }
 
-  const existingUsers = await prisma.users.findMany({
+  const existingUsers = await prisma.public_users.findMany({
     where: { id: { in: allMemberIds } },
     select: { id: true },
   });
@@ -581,7 +581,7 @@ export const addGroupMemberService = async (
     throw err;
   }
 
-  const targetUser = await prisma.users.findUnique({
+  const targetUser = await prisma.public_users.findUnique({
     where: { id: newMemberId },
     select: USER_SELECT_FIELDS,
   });
@@ -800,7 +800,7 @@ export const searchUsersService = async (query, limit = 3, currentUserId) => {
     .map((part) => part.trim())
     .filter(Boolean);
 
-  const users = await prisma.users.findMany({
+  const users = await prisma.public_users.findMany({
     where: {
       AND: [
         { id: { not: currentUserId } },

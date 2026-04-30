@@ -60,7 +60,7 @@ const reportInclude = {
 };
 
 const findCurrentUser = async (userId) => {
-  const user = await prisma.users.findUnique({
+  const user = await prisma.public_users.findUnique({
     where: { id: userId },
     select: { id: true, user_role: true },
   });

@@ -1203,7 +1203,7 @@ export const registerEventService = async (eventId, userId, body = {}) => {
     const requestedMemberIds = memberUserIds ?? [];
     const allTeamMemberIds = [userId, ...requestedMemberIds];
 
-    const usersCount = await prisma.users.count({
+    const usersCount = await prisma.public_users.count({
       where: {
         id: { in: allTeamMemberIds },
       },
@@ -2093,7 +2093,7 @@ export const setupEventOrganizerResourcesService = async (
   ).filter((id) => id !== organizerId);
 
   if (normalizedCohostUserIds.length) {
-    const existingUsers = await prisma.users.findMany({
+    const existingUsers = await prisma.public_users.findMany({
       where: { id: { in: normalizedCohostUserIds } },
       select: { id: true },
     });
@@ -2164,7 +2164,7 @@ export const addCohostService = async (eventId, organizerId, cohostUserId) => {
   }
 
   // Verify the target user exists
-  const targetUser = await prisma.users.findUnique({
+  const targetUser = await prisma.public_users.findUnique({
     where: { id: cohostUserId },
   });
   if (!targetUser) {

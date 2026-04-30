@@ -19,7 +19,7 @@ export const searchUsersService = async (query, limit = 3, currentUserId) => {
     .map((part) => part.trim())
     .filter(Boolean);
 
-  return prisma.users.findMany({
+  return prisma.public_users.findMany({
     where: {
       AND: [
         { id: { not: currentUserId } },

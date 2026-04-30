@@ -126,7 +126,7 @@ class NotificationService {
 
       const [notifications, user] = await Promise.all([
         prisma.notifications.findMany(query),
-        prisma.users.findUnique({
+        prisma.public_users.findUnique({
           where: { id: userId },
           select: { unseen_notification_count: true },
         }),

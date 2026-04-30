@@ -17,7 +17,7 @@ const PROFILE_SELECT_FIELDS = {
 // ─── Get user profile by ID ────────────────────────────────────────────────
 
 export const getUserProfileService = async (uid, viewerId = null) => {
-  const user = await prisma.users.findUnique({
+  const user = await prisma.public_users.findUnique({
     where: { id: uid },
     select: {
       ...PROFILE_SELECT_FIELDS,
@@ -92,7 +92,7 @@ export const followUserService = async (followerId, followingId) => {
   }
 
   // Verify target user exists
-  const target = await prisma.users.findUnique({
+  const target = await prisma.public_users.findUnique({
     where: { id: followingId },
     select: { id: true },
   });
@@ -139,7 +139,7 @@ export const unfollowUserService = async (followerId, followingId) => {
 // ─── Update about me ───────────────────────────────────────────────────────
 
 export const updateAboutMeService = async (userId, aboutMe) => {
-  const user = await prisma.users.update({
+  const user = await prisma.public_users.update({
     where: { id: userId },
     data: { about_me: aboutMe },
     select: USER_SELECT_FIELDS,
@@ -183,7 +183,7 @@ export const updateAcademicInfoService = async (
     });
   }
 
-  const user = await prisma.users.findUnique({
+  const user = await prisma.public_users.findUnique({
     where: { id: userId },
     select: USER_SELECT_FIELDS,
   });
@@ -194,7 +194,7 @@ export const updateAcademicInfoService = async (
 // ─── Update interests ──────────────────────────────────────────────────────
 
 export const updateInterestsService = async (userId, interests) => {
-  const user = await prisma.users.update({
+  const user = await prisma.public_users.update({
     where: { id: userId },
     data: { interests },
     select: USER_SELECT_FIELDS,
@@ -214,7 +214,7 @@ export const updatePersonalInfoService = async (
   if (last_name !== undefined) data.last_name = last_name;
   if (date_of_birth !== undefined) data.date_of_birth = new Date(date_of_birth);
 
-  const user = await prisma.users.update({
+  const user = await prisma.public_users.update({
     where: { id: userId },
     data,
     select: USER_SELECT_FIELDS,
@@ -233,7 +233,7 @@ export const updatePicturesService = async (
   if (profile_pic_url !== undefined) data.profile_pic_url = profile_pic_url;
   if (banner_url !== undefined) data.banner_image_url = banner_url;
 
-  const user = await prisma.users.update({
+  const user = await prisma.public_users.update({
     where: { id: userId },
     data,
     select: USER_SELECT_FIELDS,
@@ -245,7 +245,7 @@ export const updatePicturesService = async (
 // ─── Update social links ──────────────────────────────────────────────────
 
 export const updateSocialLinksService = async (userId, socialLinks) => {
-  const user = await prisma.users.update({
+  const user = await prisma.public_users.update({
     where: { id: userId },
     data: { social_links: socialLinks },
     select: USER_SELECT_FIELDS,

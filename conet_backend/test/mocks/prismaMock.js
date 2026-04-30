@@ -34,8 +34,11 @@ const makeMethods = () => ({
   count: mock(() => Promise.resolve(0)),
 });
 
+const publicUsersMethods = makeMethods();
+
 export const prismaMock = {
-  users: makeMethods(),
+  users: publicUsersMethods,
+  public_users: publicUsersMethods,
   user_follows: makeMethods(),
   user_academics: makeMethods(),
   posts: makeMethods(),
