@@ -66,7 +66,7 @@ export const prismaMock = {
  * Call this in `beforeEach` to prevent state leaking between tests.
  */
 export const resetPrismaMocks = () => {
-  for (const model of Object.values(prismaMock)) {
+  for (const [key, model] of Object.entries(prismaMock)) {
     if (typeof model === "object" && model !== null) {
       for (const method of Object.values(model)) {
         if (typeof method?.mockReset === "function") {
@@ -92,6 +92,19 @@ export const resetPrismaMocks = () => {
             method.mockResolvedValue({});
           }
         }
+      }
+      continue;
+    }
+
+    if (typeof model?.mockReset === "function") {
+      model.mockReset();
+
+      if (key === "$transaction") {
+        model.mockImplementation((fn) =>
+          typeof fn === "function" ? fn(prismaMock) : Promise.all(fn),
+        );
+      } else if (key === "$disconnect") {
+        model.mockImplementation(() => Promise.resolve());
       }
     }
   }

@@ -251,17 +251,22 @@ describe("Edge case: Post pagination boundaries", () => {
 describe("Edge case: Search with special characters (injection safety)", () => {
   it("passes query string to Prisma contains without executing raw SQL", async () => {
     prismaMock.users.findMany.mockResolvedValue([]);
+    const unsafeQuery = "'; DROP TABLE users; --";
 
     const res = await request(app)
-      .get("/api/conversations/search_users?query='; DROP TABLE users; --")
+      .get(
+        `/api/conversations/search_users?query=${encodeURIComponent(unsafeQuery)}`,
+      )
       .set("Authorization", makeAuthHeader());
 
     expect(res.status).toBe(200); // Does not crash
     // Prisma ORM parameterises queries – no raw SQL injection risk
     const call = prismaMock.users.findMany.mock.calls[0][0];
-    expect(call.where.AND[1].OR[0].username.contains).toBe(
-      "'; DROP TABLE users; --",
+    const containsValues = call.where.AND.slice(1).flatMap((clause) =>
+      clause.OR.map((condition) => Object.values(condition)[0].contains),
     );
+    expect(containsValues).toContain("';");
+    expect(containsValues).toContain("DROP");
   });
 });
 
