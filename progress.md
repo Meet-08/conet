@@ -124,6 +124,16 @@
 **Backend Endpoints:** `GET /notifications`, `POST /notifications/mark-seen`
 **BullMQ Worker:** `notificationWorker.js` — processes queued FCM push jobs via Firebase Admin SDK
 
+### Reports
+
+- **Report Submission** — Authenticated users can file reports against posts, comments, conversations, events, or users
+- **Report Inbox** — Admins can list and review submitted reports with status updates
+- **Report Detail** — Reporters and admins can fetch a single report record
+
+**Backend Endpoints:** `POST /reports`, `GET /reports/mine`, `GET /reports/admin`, `GET /reports/:id`, `PATCH /reports/:id/review`
+
+> ⚠️ UI not built yet.
+
 ---
 
 ### Event Detail (Discover)

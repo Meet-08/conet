@@ -13,6 +13,7 @@ class ChatMessageBubble extends StatelessWidget {
   final bool isMe;
   final List<String> mediaUrls;
   final MessageDeliveryStatus status;
+  final String? senderId;
   final String? senderName;
   final String? senderImageUrl;
   final bool showSeenStatus;
@@ -25,6 +26,7 @@ class ChatMessageBubble extends StatelessWidget {
     required this.isMe,
     this.mediaUrls = const [],
     this.status = MessageDeliveryStatus.sent,
+    this.senderId,
     this.senderName,
     this.senderImageUrl,
     this.showSeenStatus = false,
@@ -147,6 +149,7 @@ class ChatMessageBubble extends StatelessWidget {
                 children: [
                   CustomCircleAvatar(
                     size: CustomCircleAvatarSize.small,
+                    userId: senderId,
                     imageUrl: senderImageUrl,
                     displayName: senderName,
                   ),

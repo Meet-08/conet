@@ -8,6 +8,9 @@ import 'package:conet_app/core/widgets/quill_read_only_view.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/media/post_media_item.dart';
+import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
+import 'package:conet_app/feature/report/domain/entities/report_target_type.dart';
+import 'package:conet_app/feature/report/presentation/widgets/report_bottom_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -156,9 +159,86 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ),
                 ),
-                InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () {},
+                PopupMenuButton<_PostActionMenuItem>(
+                  position: PopupMenuPosition.under,
+                  padding: EdgeInsets.zero,
+                  color: semantic.surfaceBase,
+                  offset: const Offset(0, 10),
+                  onSelected: (value) {
+                    switch (value) {
+                      case _PostActionMenuItem.follow:
+                        context.read<ProfileBloc>().add(
+                          ProfileFollowUserEvent(
+                            targetUid: widget.post.user.id,
+                          ),
+                        );
+                        break;
+                      case _PostActionMenuItem.unfollow:
+                        context.read<ProfileBloc>().add(
+                          ProfileUnfollowUserEvent(
+                            targetUid: widget.post.user.id,
+                          ),
+                        );
+                        break;
+                      case _PostActionMenuItem.report:
+                        showReportBottomSheet(
+                          context: context,
+                          targetId: widget.post.id,
+                          targetType: ReportTargetType.post,
+                          targetLabel: 'Post',
+                          targetSubtitle: '$displayName · $handle',
+                        );
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem<_PostActionMenuItem>(
+                      value: widget.post.user.isFollowing
+                          ? _PostActionMenuItem.unfollow
+                          : _PostActionMenuItem.follow,
+                      child: Row(
+                        children: [
+                          FaIcon(
+                            widget.post.user.isFollowing
+                                ? FontAwesomeIcons.userMinus
+                                : FontAwesomeIcons.userPlus,
+                            size: 15,
+                            color: semantic.iconSecondary,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            widget.post.user.isFollowing
+                                ? 'Unfollow'
+                                : 'Follow',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: semantic.textPrimary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem<_PostActionMenuItem>(
+                      value: _PostActionMenuItem.report,
+                      child: Row(
+                        children: [
+                          FaIcon(
+                            FontAwesomeIcons.flag,
+                            size: 15,
+                            color: semantic.textError,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Report',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: semantic.textError,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
                     child: Icon(
@@ -481,3 +561,5 @@ class _ActionItem extends StatelessWidget {
     );
   }
 }
+
+enum _PostActionMenuItem { follow, unfollow, report }

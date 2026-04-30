@@ -10,6 +10,7 @@ import notificationRoutes from "./routes/notificationRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import postRoutes from "./routes/postRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 
 /**
@@ -36,6 +37,7 @@ export function createApp() {
   app.use("/api/profile", profileRoutes);
   app.use("/api/devices", deviceRoutes);
   app.use("/api/notifications", notificationRoutes);
+  app.use("/api/reports", reportRoutes);
   app.use("/api/events", eventRoutes);
   app.use("/api/payments", paymentRoutes);
 
