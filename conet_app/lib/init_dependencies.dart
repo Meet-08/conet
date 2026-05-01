@@ -55,10 +55,12 @@ import 'package:conet_app/feature/message/domain/usecases/message_add_group_memb
 import 'package:conet_app/feature/message/domain/usecases/message_create_conversation.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_group.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_delete_group.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_demote_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_conversations.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_group_members.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_promote_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_remove_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_update_group.dart';

@@ -140,3 +140,15 @@ class MessageGroupMemberRemoved extends MessageEvent {
   final String userId;
   MessageGroupMemberRemoved({required this.groupId, required this.userId});
 }
+
+class MessageGroupMemberPromoted extends MessageEvent {
+  final String groupId;
+  final String userId;
+  MessageGroupMemberPromoted({required this.groupId, required this.userId});
+}
+
+class MessageGroupMemberDemoted extends MessageEvent {
+  final String groupId;
+  final String userId;
+  MessageGroupMemberDemoted({required this.groupId, required this.userId});
+}

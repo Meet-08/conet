@@ -599,6 +599,111 @@ export const addGroupMemberService = async (
   return { ...targetUser, role: "member" };
 };
 
+const updateGroupMemberRoleService = async (
+  groupId,
+  currentUserId,
+  targetUserId,
+  nextRole,
+) => {
+  const conversation = await prisma.conversations.findUnique({
+    where: { id: groupId },
+    include: { conversation_members: true },
+  });
+
+  if (!conversation || conversation.type !== "group") {
+    const err = new Error("Group not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const self = conversation.conversation_members.find(
+    (m) => m.user_id === currentUserId,
+  );
+
+  if (!self) {
+    const err = new Error("Not a member of this group");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  if (self.role !== "admin") {
+    const err = new Error("Only group admins can change member roles");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  const targetMember = conversation.conversation_members.find(
+    (m) => m.user_id === targetUserId,
+  );
+
+  if (!targetMember) {
+    const err = new Error("Target user is not a member of this group");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (targetMember.role === nextRole) {
+    const err = new Error(
+      nextRole === "admin" ?
+        "User is already an admin"
+      : "User is already a member",
+    );
+    err.statusCode = 409;
+    throw err;
+  }
+
+  if (nextRole === "member" && targetMember.role === "admin") {
+    const adminCount = conversation.conversation_members.filter(
+      (member) => member.role === "admin",
+    ).length;
+
+    if (adminCount === 1) {
+      const err = new Error(
+        "You are the last admin. Promote another member before demoting the last admin.",
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+  }
+
+  await prisma.conversation_members.update({
+    where: {
+      conversation_id_user_id: {
+        conversation_id: groupId,
+        user_id: targetUserId,
+      },
+    },
+    data: { role: nextRole },
+  });
+
+  const targetUser = await prisma.public_users.findUnique({
+    where: { id: targetUserId },
+    select: USER_SELECT_FIELDS,
+  });
+
+  if (!targetUser) {
+    const err = new Error("Target user not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  return { ...targetUser, role: nextRole };
+};
+
+export const promoteGroupMemberService = async (
+  groupId,
+  currentUserId,
+  targetUserId,
+) =>
+  updateGroupMemberRoleService(groupId, currentUserId, targetUserId, "admin");
+
+export const demoteGroupMemberService = async (
+  groupId,
+  currentUserId,
+  targetUserId,
+) =>
+  updateGroupMemberRoleService(groupId, currentUserId, targetUserId, "member");
+
 /**
  * Remove a member from a group OR leave the group yourself.
  *

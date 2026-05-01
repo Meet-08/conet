@@ -8,6 +8,8 @@
  *  ✓ GET    /api/groups/:groupId/members         – list members
  *  ✓ POST   /api/groups/:groupId/members         – add member (admin only)
  *  ✓ DELETE /api/groups/:groupId/members/:userId – remove / leave
+ *  ✓ POST   /api/groups/:groupId/members/:userId/promote – promote member to admin
+ *  ✓ POST   /api/groups/:groupId/members/:userId/demote  – demote admin to member
  *  ✓ GET    /api/conversations?type=group        – filter by type
  *  ✓ Auth required on every route
  *  ✓ Authorization rules (non-admin rejection)
@@ -114,6 +116,17 @@ const mockGroupWithMessage = {
     content: "Hey everyone!",
     media_urls: [],
   },
+};
+
+const mockGroupWithBobAsAdmin = {
+  ...mockGroupConversation,
+  conversation_members: [
+    mockGroupConversation.conversation_members[0],
+    {
+      ...mockGroupConversation.conversation_members[1],
+      role: "admin",
+    },
+  ],
 };
 
 beforeEach(() => {
@@ -649,6 +662,94 @@ describe("DELETE /api/groups/:groupId/members/:userId", () => {
   it("401 – requires authentication", async () => {
     const res = await request(app).delete(
       `/api/groups/${GROUP_ID}/members/${TEST_USER_B.id}`,
+    );
+
+    expect(res.status).toBe(401);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("POST /api/groups/:groupId/members/:userId/promote", () => {
+  it("200 – admin can promote a member to admin", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue(
+      mockGroupConversation,
+    );
+    prismaMock.users.findUnique.mockResolvedValue(
+      mockGroupConversation.conversation_members[1].users,
+    );
+    prismaMock.conversation_members.update.mockResolvedValue({});
+
+    const res = await request(app)
+      .post(`/api/groups/${GROUP_ID}/members/${TEST_USER_B.id}/promote`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.member.role).toBe("admin");
+  });
+
+  it("403 – non-admin cannot promote members", async () => {
+    const groupWhereAliceIsMember = {
+      ...mockGroupConversation,
+      conversation_members: mockGroupConversation.conversation_members.map(
+        (m) => (m.user_id === TEST_USER.id ? { ...m, role: "member" } : m),
+      ),
+    };
+    prismaMock.conversations.findUnique.mockResolvedValue(
+      groupWhereAliceIsMember,
+    );
+
+    const res = await request(app)
+      .post(`/api/groups/${GROUP_ID}/members/${TEST_USER_B.id}/promote`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(403);
+  });
+
+  it("401 – requires authentication", async () => {
+    const res = await request(app).post(
+      `/api/groups/${GROUP_ID}/members/${TEST_USER_B.id}/promote`,
+    );
+
+    expect(res.status).toBe(401);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("POST /api/groups/:groupId/members/:userId/demote", () => {
+  it("200 – admin can demote another admin to member", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue(
+      mockGroupWithBobAsAdmin,
+    );
+    prismaMock.users.findUnique.mockResolvedValue(
+      mockGroupConversation.conversation_members[1].users,
+    );
+    prismaMock.conversation_members.update.mockResolvedValue({});
+
+    const res = await request(app)
+      .post(`/api/groups/${GROUP_ID}/members/${TEST_USER_B.id}/demote`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.member.role).toBe("member");
+  });
+
+  it("400 – last admin cannot demote themselves", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue(
+      mockGroupConversation,
+    );
+
+    const res = await request(app)
+      .post(`/api/groups/${GROUP_ID}/members/${TEST_USER.id}/demote`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(400);
+  });
+
+  it("401 – requires authentication", async () => {
+    const res = await request(app).post(
+      `/api/groups/${GROUP_ID}/members/${TEST_USER_B.id}/demote`,
     );
 
     expect(res.status).toBe(401);

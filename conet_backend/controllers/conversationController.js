@@ -4,10 +4,12 @@ import {
   createConversationService,
   createGroupService,
   deleteGroupService,
+  demoteGroupMemberService,
   getConversationsService,
   getGroupMembersService,
   getMessagesService,
   markAsReadService,
+  promoteGroupMemberService,
   removeGroupMemberService,
   searchUsersService,
   sendMessageService,
@@ -222,6 +224,30 @@ export const removeGroupMember = asyncHandler(async (req, res) => {
   await removeGroupMemberService(groupId, currentUserId, userId);
 
   res.status(200).json({ success: true });
+});
+
+// POST /api/groups/:groupId/members/:userId/promote
+export const promoteGroupMember = asyncHandler(async (req, res) => {
+  const { groupId, userId } = req.params;
+  const currentUserId = req.user.id;
+
+  const member = await promoteGroupMemberService(
+    groupId,
+    currentUserId,
+    userId,
+  );
+
+  res.status(200).json({ success: true, member });
+});
+
+// POST /api/groups/:groupId/members/:userId/demote
+export const demoteGroupMember = asyncHandler(async (req, res) => {
+  const { groupId, userId } = req.params;
+  const currentUserId = req.user.id;
+
+  const member = await demoteGroupMemberService(groupId, currentUserId, userId);
+
+  res.status(200).json({ success: true, member });
 });
 
 // PATCH /api/groups/:groupId  { name?, description?, groupImageUrl?, onlyAdminAddMembers?, onlyAdminRemoveMembers?, onlyAdminEditGroup?, onlyAdminSendMessages? }

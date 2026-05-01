@@ -3,6 +3,7 @@ import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/common/usecases/user_search_users.dart';
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
+import 'package:conet_app/feature/message/domain/entities/group_member.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/domain/entities/message_page.dart';
 import 'package:conet_app/feature/message/domain/entities/message_realtime_event.dart';
@@ -10,10 +11,12 @@ import 'package:conet_app/feature/message/domain/usecases/message_add_group_memb
 import 'package:conet_app/feature/message/domain/usecases/message_create_conversation.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_group.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_delete_group.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_demote_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_conversations.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_group_members.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_promote_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_remove_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_update_group.dart';
@@ -57,6 +60,12 @@ class MockMessageAddGroupMember extends Mock implements MessageAddGroupMember {}
 class MockMessageRemoveGroupMember extends Mock
     implements MessageRemoveGroupMember {}
 
+class MockMessagePromoteGroupMember extends Mock
+    implements MessagePromoteGroupMember {}
+
+class MockMessageDemoteGroupMember extends Mock
+    implements MessageDemoteGroupMember {}
+
 void main() {
   late MessageBloc messageBloc;
   late MockMessageCreateConversation mockCreateConversation;
@@ -73,6 +82,8 @@ void main() {
   late MockMessageGetGroupMembers mockGetGroupMembers;
   late MockMessageAddGroupMember mockAddGroupMember;
   late MockMessageRemoveGroupMember mockRemoveGroupMember;
+  late MockMessagePromoteGroupMember mockPromoteGroupMember;
+  late MockMessageDemoteGroupMember mockDemoteGroupMember;
 
   const tUser = User(
     id: 'user-123',
@@ -85,6 +96,16 @@ void main() {
   );
 
   const tConversation = Conversation(id: 'conversation-123', otherUser: tUser);
+
+  const tGroupMember = GroupMember(
+    id: 'user-123',
+    email: 'test@example.com',
+    firstName: 'John',
+    lastName: 'Doe',
+    username: 'johndoe',
+    profilePicUrl: '',
+    role: 'admin',
+  );
 
   final tMessage = Message(
     id: 'message-123',
@@ -119,6 +140,8 @@ void main() {
     mockGetGroupMembers = MockMessageGetGroupMembers();
     mockAddGroupMember = MockMessageAddGroupMember();
     mockRemoveGroupMember = MockMessageRemoveGroupMember();
+    mockPromoteGroupMember = MockMessagePromoteGroupMember();
+    mockDemoteGroupMember = MockMessageDemoteGroupMember();
 
     // Stub global subscription
     when(
@@ -140,6 +163,8 @@ void main() {
       getGroupMembers: mockGetGroupMembers,
       addGroupMember: mockAddGroupMember,
       removeGroupMember: mockRemoveGroupMember,
+      promoteGroupMember: mockPromoteGroupMember,
+      demoteGroupMember: mockDemoteGroupMember,
       getCurrentUserId: () => 'user-123',
     );
   });
@@ -772,6 +797,62 @@ void main() {
             .having((s) => s.userSearchError, 'userSearchError', null)
             .having((s) => s.isSearchingUsers, 'isSearchingUsers', false),
       ],
+    );
+  });
+
+  group('MessageGroupMemberPromoted and MessageGroupMemberDemoted', () {
+    blocTest<MessageBloc, MessageState>(
+      'promotes a member and refreshes group members on success',
+      build: () {
+        when(
+          () => mockPromoteGroupMember(
+            groupId: any(named: 'groupId'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer((_) async => const Right(tGroupMember));
+        when(
+          () => mockGetGroupMembers(groupId: any(named: 'groupId')),
+        ).thenAnswer((_) async => const Right([]));
+        return messageBloc;
+      },
+      act: (bloc) => bloc.add(
+        MessageGroupMemberPromoted(groupId: 'group-1', userId: tUser.id),
+      ),
+      wait: const Duration(milliseconds: 10),
+      expect: () => [isA<MessageState>()],
+      verify: (_) {
+        verify(
+          () => mockPromoteGroupMember(groupId: 'group-1', userId: tUser.id),
+        ).called(1);
+        verify(() => mockGetGroupMembers(groupId: 'group-1')).called(1);
+      },
+    );
+
+    blocTest<MessageBloc, MessageState>(
+      'demotes a member and refreshes group members on success',
+      build: () {
+        when(
+          () => mockDemoteGroupMember(
+            groupId: any(named: 'groupId'),
+            userId: any(named: 'userId'),
+          ),
+        ).thenAnswer((_) async => const Right(tGroupMember));
+        when(
+          () => mockGetGroupMembers(groupId: any(named: 'groupId')),
+        ).thenAnswer((_) async => const Right([]));
+        return messageBloc;
+      },
+      act: (bloc) => bloc.add(
+        MessageGroupMemberDemoted(groupId: 'group-1', userId: tUser.id),
+      ),
+      wait: const Duration(milliseconds: 10),
+      expect: () => [isA<MessageState>()],
+      verify: (_) {
+        verify(
+          () => mockDemoteGroupMember(groupId: 'group-1', userId: tUser.id),
+        ).called(1);
+        verify(() => mockGetGroupMembers(groupId: 'group-1')).called(1);
+      },
     );
   });
 }

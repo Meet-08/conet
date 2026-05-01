@@ -251,6 +251,12 @@ void _initMessage() {
   serviceLocator.registerFactory(
     () => MessageRemoveGroupMember(messageRepository: serviceLocator()),
   );
+  serviceLocator.registerFactory(
+    () => MessagePromoteGroupMember(messageRepository: serviceLocator()),
+  );
+  serviceLocator.registerFactory(
+    () => MessageDemoteGroupMember(messageRepository: serviceLocator()),
+  );
 
   // Bloc
   serviceLocator.registerLazySingleton(
@@ -269,6 +275,8 @@ void _initMessage() {
       getGroupMembers: serviceLocator(),
       addGroupMember: serviceLocator(),
       removeGroupMember: serviceLocator(),
+      promoteGroupMember: serviceLocator(),
+      demoteGroupMember: serviceLocator(),
     ),
   );
 }

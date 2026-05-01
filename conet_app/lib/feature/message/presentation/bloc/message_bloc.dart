@@ -10,10 +10,12 @@ import 'package:conet_app/feature/message/domain/usecases/message_add_group_memb
 import 'package:conet_app/feature/message/domain/usecases/message_create_conversation.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_group.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_delete_group.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_demote_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_conversations.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_group_members.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_get_messages.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_mark_as_read.dart';
+import 'package:conet_app/feature/message/domain/usecases/message_promote_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_remove_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_send_message.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_update_group.dart';
@@ -47,6 +49,8 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   final MessageGetGroupMembers _getGroupMembers;
   final MessageAddGroupMember _addGroupMember;
   final MessageRemoveGroupMember _removeGroupMember;
+  final MessagePromoteGroupMember _promoteGroupMember;
+  final MessageDemoteGroupMember _demoteGroupMember;
   final String? Function() _getCurrentUserId;
   StreamSubscription<MessageRealtimeEvent>? _messagesSubscription;
   StreamSubscription<void>? _globalSubscription;
@@ -70,6 +74,8 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     required MessageGetGroupMembers getGroupMembers,
     required MessageAddGroupMember addGroupMember,
     required MessageRemoveGroupMember removeGroupMember,
+    required MessagePromoteGroupMember promoteGroupMember,
+    required MessageDemoteGroupMember demoteGroupMember,
     String? Function()? getCurrentUserId,
   }) : _createConversation = createConversation,
        _getConversationsUsecase = getConversationsUsecase,
@@ -85,6 +91,8 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
        _getGroupMembers = getGroupMembers,
        _addGroupMember = addGroupMember,
        _removeGroupMember = removeGroupMember,
+       _promoteGroupMember = promoteGroupMember,
+       _demoteGroupMember = demoteGroupMember,
        _getCurrentUserId =
            (getCurrentUserId ??
            (() => Supabase.instance.client.auth.currentUser?.id)),
@@ -114,6 +122,8 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     on<MessageGroupMembersRequested>(_onGroupMembersRequested);
     on<MessageGroupMemberAdded>(_onGroupMemberAdded);
     on<MessageGroupMemberRemoved>(_onGroupMemberRemoved);
+    on<MessageGroupMemberPromoted>(_onGroupMemberPromoted);
+    on<MessageGroupMemberDemoted>(_onGroupMemberDemoted);
 
     // Initial global subscription setup
     _initGlobalSubscription();
@@ -347,6 +357,34 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     Emitter<MessageState> emit,
   ) async {
     final result = await _removeGroupMember(
+      groupId: event.groupId,
+      userId: event.userId,
+    );
+    result.fold(
+      (l) => emit(state.copyWith(errorMessage: l.message)),
+      (r) => add(MessageGroupMembersRequested(event.groupId)),
+    );
+  }
+
+  Future<void> _onGroupMemberPromoted(
+    MessageGroupMemberPromoted event,
+    Emitter<MessageState> emit,
+  ) async {
+    final result = await _promoteGroupMember(
+      groupId: event.groupId,
+      userId: event.userId,
+    );
+    result.fold(
+      (l) => emit(state.copyWith(errorMessage: l.message)),
+      (r) => add(MessageGroupMembersRequested(event.groupId)),
+    );
+  }
+
+  Future<void> _onGroupMemberDemoted(
+    MessageGroupMemberDemoted event,
+    Emitter<MessageState> emit,
+  ) async {
+    final result = await _demoteGroupMember(
       groupId: event.groupId,
       userId: event.userId,
     );

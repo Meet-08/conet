@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-04-30
+> Last updated: 2026-05-01
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -101,6 +101,7 @@
 - **Group Image Upload** — Create-group and group-details flows now support image picker upload before persisting group metadata
 - **Group Description** — Group details now reads and updates server-backed group description text
 - **Group Permissions Dialog** — Group permissions modal now persists add/remove/edit permission toggles to backend with access control enforcement
+- **Group Member Roles** — Group admins can promote or demote members from the group details page
 
 **Use Cases:** `MessageCreateConversation`, `MessageGetConversations`, `MessageGetMessages`, `MessageSendMessage`, `MessageMarkAsRead`, `MessageWatchMessages`, `MessageWatchConversationUpdates`, `MessageSearchUsers`, `MessageCreateGroup`, `MessageUpdateGroup`, `MessageDeleteGroup`, `MessageGetGroupMembers`, `MessageAddGroupMember`, `MessageRemoveGroupMember`
 **Backend Endpoints:** `POST/GET /conversations`, `GET/POST /conversations/:id/messages`, `POST /conversations/:id/mark_as_read`, `GET /conversations/search_users`, `POST/PATCH/DELETE /groups/:id`, `GET/POST /groups/:id/members`, `DELETE /groups/:id/members/:userId`

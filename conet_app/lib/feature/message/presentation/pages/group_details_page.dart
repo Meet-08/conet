@@ -3,6 +3,7 @@ import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/utils/pick_files.dart';
 import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
+import 'package:conet_app/core/widgets/user_selector_bottom_sheet.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/group_member.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
@@ -81,20 +82,40 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     return '$day/$month/$year';
   }
 
-  Future<void> _openAddMembersSheet(List<GroupMember> members) async {
-    final existingIds = members.map((member) => member.id).toSet();
-    await showModalBottomSheet<void>(
+  Future<void> _openAddMembersSheet() async {
+    showUserSelectorBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => BlocProvider.value(
-        value: context.read<MessageBloc>(),
-        child: _AddGroupMemberSheet(
+      title: 'Add Members',
+      searchHint: 'Search by name, username, or email',
+      actionLabel: 'Add to Group',
+      allowMultipleSelection: false,
+      onUserTap: (parentContext, user) => context.read<MessageBloc>().add(
+        MessageGroupMemberAdded(
           groupId: widget.conversation.id,
-          existingMemberIds: existingIds,
+          userId: user.id,
         ),
       ),
     );
+  }
+
+  void _promoteMember(String userId) {
+    context.read<MessageBloc>().add(
+      MessageGroupMemberPromoted(
+        groupId: widget.conversation.id,
+        userId: userId,
+      ),
+    );
+    AppToast.showSuccess(context, 'Promote request sent.');
+  }
+
+  void _demoteMember(String userId) {
+    context.read<MessageBloc>().add(
+      MessageGroupMemberDemoted(
+        groupId: widget.conversation.id,
+        userId: userId,
+      ),
+    );
+    AppToast.showSuccess(context, 'Demote request sent.');
   }
 
   Future<void> _pickAndUploadGroupImage(Conversation conversation) async {
@@ -261,6 +282,8 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                 ? members
                 : members.take(5).toList();
             final canManageMembers = _canManageGroupMembers(conversation);
+            final canManageMemberRoles = conversation.isAdmin;
+            final currentUserId = state.currentUserId;
 
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -370,7 +393,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   InkWell(
                     borderRadius: BorderRadius.circular(12),
                     onTap: canManageMembers
-                        ? () => _openAddMembersSheet(members)
+                        ? () => _openAddMembersSheet()
                         : () => AppToast.showInfo(
                             context,
                             'You do not have permission to add members.',
@@ -413,6 +436,11 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                     (member) => _MemberTile(
                       member: member,
                       showAdminBadge: member.role.toLowerCase() == 'admin',
+                      canManageRoles: canManageMemberRoles,
+                      isSelf:
+                          currentUserId != null && member.id == currentUserId,
+                      onPromote: () => _promoteMember(member.id),
+                      onDemote: () => _demoteMember(member.id),
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -527,8 +555,19 @@ class _GroupAvatar extends StatelessWidget {
 class _MemberTile extends StatelessWidget {
   final GroupMember member;
   final bool showAdminBadge;
+  final bool canManageRoles;
+  final bool isSelf;
+  final VoidCallback? onPromote;
+  final VoidCallback? onDemote;
 
-  const _MemberTile({required this.member, required this.showAdminBadge});
+  const _MemberTile({
+    required this.member,
+    required this.showAdminBadge,
+    required this.canManageRoles,
+    required this.isSelf,
+    this.onPromote,
+    this.onDemote,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -579,6 +618,54 @@ class _MemberTile extends StatelessWidget {
                   fontWeight: AppTypographyTokens.weightMedium,
                 ),
               ),
+            ),
+          if (canManageRoles && !isSelf)
+            PopupMenuButton<String>(
+              icon: FaIcon(
+                FontAwesomeIcons.ellipsisVertical,
+                size: 14,
+                color: colors.iconSecondary,
+              ),
+              onSelected: (action) {
+                if (action == 'promote') {
+                  onPromote?.call();
+                } else if (action == 'demote') {
+                  onDemote?.call();
+                }
+              },
+              itemBuilder: (context) => member.isAdmin
+                  ? [
+                      PopupMenuItem<String>(
+                        value: 'demote',
+                        child: Row(
+                          children: [
+                            FaIcon(
+                              FontAwesomeIcons.userMinus,
+                              size: 14,
+                              color: colors.iconSecondary,
+                            ),
+                            const SizedBox(width: 10),
+                            const Text('Demote to member'),
+                          ],
+                        ),
+                      ),
+                    ]
+                  : [
+                      PopupMenuItem<String>(
+                        value: 'promote',
+                        child: Row(
+                          children: [
+                            FaIcon(
+                              FontAwesomeIcons.userPlus,
+                              size: 14,
+                              color: colors.iconSecondary,
+                            ),
+                            const SizedBox(width: 10),
+                            const Text('Promote to admin'),
+                          ],
+                        ),
+                      ),
+                    ],
             ),
         ],
       ),

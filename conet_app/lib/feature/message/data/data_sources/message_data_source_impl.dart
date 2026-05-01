@@ -315,4 +315,44 @@ class MessageDataSourceImpl implements MessageDataSource {
       throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
+
+  @override
+  Future<GroupMemberModel> promoteGroupMember({
+    required String groupId,
+    required String userId,
+  }) async {
+    try {
+      final res = await _dioClient.dio.post(
+        "/groups/$groupId/members/$userId/promote",
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to promote group member");
+      }
+      final data = res.data as Map<String, dynamic>;
+      return GroupMemberModel.fromJson(data['member'] as Map<String, dynamic>);
+    } catch (e) {
+      logger.e("Failed to promote group member: ${e.toString()}");
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<GroupMemberModel> demoteGroupMember({
+    required String groupId,
+    required String userId,
+  }) async {
+    try {
+      final res = await _dioClient.dio.post(
+        "/groups/$groupId/members/$userId/demote",
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to demote group member");
+      }
+      final data = res.data as Map<String, dynamic>;
+      return GroupMemberModel.fromJson(data['member'] as Map<String, dynamic>);
+    } catch (e) {
+      logger.e("Failed to demote group member: ${e.toString()}");
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
 }
