@@ -6,7 +6,7 @@ import { EMPTY_QUILL_DELTA_JSON, jsonFieldToString } from "./utils.js";
 
 const mapPost = (post, viewerId = null) => ({
   id: post.id,
-  user: post.user,
+  user: post.users ?? post.user ?? null,
   content: jsonFieldToString(post.content, EMPTY_QUILL_DELTA_JSON),
   media_urls: post.media_urls ?? [],
   like_count: post._count?.post_likes ?? post.like_count ?? 0,
@@ -19,11 +19,11 @@ const mapComment = (comment) => ({
   id: comment.id,
   post_id: comment.post_id,
   user_id: comment.user_id,
-  username: comment.user?.username ?? null,
-  profile_pic_url: comment.user?.profile_pic_url ?? null,
+  username: (comment.users ?? comment.user)?.username ?? null,
+  profile_pic_url: (comment.users ?? comment.user)?.profile_pic_url ?? null,
   content: comment.content,
   created_at: comment.created_at,
-  user: comment.user,
+  user: comment.users ?? comment.user ?? null,
 });
 
 // ─── Create post ─────────────────────────────────────────────────────────
@@ -38,7 +38,7 @@ export const createPostService = async (
       media_urls,
       user_id: userId,
     },
-    include: { user: true },
+    include: { users: true },
   });
 
   return mapPost(post, userId);
@@ -58,7 +58,7 @@ export const getAllPostsService = async (
     take: limit,
     orderBy: { created_at: "desc" },
     include: {
-      user: true,
+      users: true,
       _count: {
         select: { post_likes: true, post_comments: true },
       },
@@ -78,7 +78,7 @@ export const getPostService = async (postId, viewerId = null) => {
   const post = await prisma.posts.findUnique({
     where: { id: postId },
     include: {
-      user: true,
+      users: true,
       _count: {
         select: { post_likes: true, post_comments: true },
       },
@@ -115,7 +115,7 @@ export const getUserPostsService = async (
       take: limit,
       orderBy: { created_at: "desc" },
       include: {
-        user: true,
+        users: true,
         _count: {
           select: { post_likes: true, post_comments: true },
         },
@@ -153,9 +153,9 @@ export const getLikedPostsService = async (
       take: limit,
       orderBy: { created_at: "desc" },
       include: {
-        post: {
+        posts: {
           include: {
-            user: true,
+            users: true,
             _count: {
               select: { post_likes: true, post_comments: true },
             },
@@ -171,7 +171,7 @@ export const getLikedPostsService = async (
   ]);
 
   return {
-    posts: likes.map((like) => mapPost(like.post, viewerId)),
+    posts: likes.map((like) => mapPost(like.posts ?? like.post, viewerId)),
     total,
     page,
     totalPages: Math.ceil(total / limit),
@@ -206,7 +206,7 @@ export const updatePostService = async (
       media_urls,
       updated_at: new Date(),
     },
-    include: { user: true },
+    include: { users: true },
   });
 
   return mapPost(post, userId);
@@ -289,7 +289,7 @@ export const addCommentService = async (postId, userId, content) => {
 
   const comment = await prisma.post_comments.create({
     data: { post_id: postId, user_id: userId, content },
-    include: { user: true },
+    include: { users: true },
   });
 
   // Send notification
@@ -318,7 +318,7 @@ export const getPostCommentsService = async (postId) => {
   const comments = await prisma.post_comments.findMany({
     where: { post_id: postId },
     orderBy: { created_at: "desc" },
-    include: { user: true },
+    include: { users: true },
   });
 
   return comments.map(mapComment);
@@ -351,7 +351,7 @@ export const editCommentService = async (
   const updated = await prisma.post_comments.update({
     where: { id: commentId },
     data: { content },
-    include: { user: true },
+    include: { users: true },
   });
 
   return mapComment(updated);
