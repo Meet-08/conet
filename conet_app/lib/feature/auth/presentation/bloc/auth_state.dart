@@ -7,7 +7,21 @@ sealed class AuthState {
 
 final class AuthInitial extends AuthState {}
 
-final class AuthLoading extends AuthState {}
+enum AuthLoadingAction {
+  login,
+  sendOtp,
+  verifyOtp,
+  googleSignIn,
+  addDetails,
+  currentUser,
+  logout,
+}
+
+final class AuthLoading extends AuthState {
+  final AuthLoadingAction action;
+
+  const AuthLoading(this.action);
+}
 
 final class AuthOtpSentSuccess extends AuthState {}
 

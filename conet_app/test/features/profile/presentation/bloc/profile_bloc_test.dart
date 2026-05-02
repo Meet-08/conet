@@ -467,10 +467,18 @@ void main() {
     const tTargetUid = 'target-user-456';
 
     blocTest<ProfileBloc, ProfileState>(
-      'does nothing when state is not ProfileLoaded',
-      build: () => profileBloc,
+      'calls follow even when state is not ProfileLoaded',
+      build: () {
+        when(
+          () => mockFollowUser(any()),
+        ).thenAnswer((_) async => const Right(unit));
+        return profileBloc;
+      },
       act: (bloc) => bloc.add(ProfileFollowUserEvent(targetUid: tTargetUid)),
       expect: () => [],
+      verify: (_) {
+        verify(() => mockFollowUser(tTargetUid)).called(1);
+      },
     );
 
     blocTest<ProfileBloc, ProfileState>(
@@ -588,10 +596,18 @@ void main() {
     );
 
     blocTest<ProfileBloc, ProfileState>(
-      'does nothing when state is not ProfileLoaded',
-      build: () => profileBloc,
+      'calls unfollow even when state is not ProfileLoaded',
+      build: () {
+        when(
+          () => mockUnfollowUser(any()),
+        ).thenAnswer((_) async => const Right(unit));
+        return profileBloc;
+      },
       act: (bloc) => bloc.add(ProfileUnfollowUserEvent(targetUid: tTargetUid)),
       expect: () => [],
+      verify: (_) {
+        verify(() => mockUnfollowUser(tTargetUid)).called(1);
+      },
     );
 
     blocTest<ProfileBloc, ProfileState>(

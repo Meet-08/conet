@@ -530,11 +530,37 @@ export const getGroupMembersService = async (groupId, currentUserId) => {
     throw err;
   }
 
-  return conversation.conversation_members.map((m) => ({
-    ...m.users,
-    role: m.role ?? "member",
-    joined_at: m.joined_at?.toISOString() ?? null,
-  }));
+  return conversation.conversation_members
+    .map((m) => ({
+      ...m.users,
+      role: m.role ?? "member",
+      joined_at: m.joined_at?.toISOString() ?? null,
+    }))
+    .sort(compareGroupMembers);
+};
+
+const compareGroupMembers = (a, b) => {
+  const adminRank = (member) => (member.role === "admin" ? 0 : 1);
+  const adminCompare = adminRank(a) - adminRank(b);
+  if (adminCompare !== 0) return adminCompare;
+
+  const firstNameCompare = sortText(a.first_name).localeCompare(
+    sortText(b.first_name),
+  );
+  if (firstNameCompare !== 0) return firstNameCompare;
+
+  return sortText(displayName(a)).localeCompare(sortText(displayName(b)));
+};
+
+const displayName = (member) =>
+  [member.first_name, member.last_name].filter(Boolean).join(" ").trim() ||
+  member.username ||
+  member.email ||
+  "";
+
+const sortText = (value) => {
+  const normalized = (value ?? "").trim().toLowerCase();
+  return normalized || "~";
 };
 
 export const addGroupMemberService = async (

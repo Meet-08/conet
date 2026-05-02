@@ -4,9 +4,35 @@ import { EMPTY_QUILL_DELTA_JSON, jsonFieldToString } from "./utils.js";
 
 // ─── Shared response mappings ─────────────────────────────────────────────
 
+const authorFollowRelation = "user_follows_user_follows_following_idTousers";
+
+const authorInclude = (viewerId) =>
+  viewerId ?
+    {
+      include: {
+        [authorFollowRelation]: {
+          where: { follower_id: viewerId },
+          select: { follower_id: true },
+        },
+      },
+    }
+  : true;
+
+const mapPostAuthor = (post, viewerId = null) => {
+  const user = post.users ?? post.user ?? null;
+  if (!user) return null;
+
+  const { [authorFollowRelation]: follows, ...author } = user;
+  return {
+    ...author,
+    is_following:
+      Boolean(viewerId) && user.id !== viewerId && (follows?.length ?? 0) > 0,
+  };
+};
+
 const mapPost = (post, viewerId = null) => ({
   id: post.id,
-  user: post.users ?? post.user ?? null,
+  user: mapPostAuthor(post, viewerId),
   content: jsonFieldToString(post.content, EMPTY_QUILL_DELTA_JSON),
   media_urls: post.media_urls ?? [],
   like_count: post._count?.post_likes ?? post.like_count ?? 0,
@@ -38,7 +64,7 @@ export const createPostService = async (
       media_urls,
       user_id: userId,
     },
-    include: { users: true },
+    include: { users: authorInclude(userId) },
   });
 
   return mapPost(post, userId);
@@ -58,7 +84,7 @@ export const getAllPostsService = async (
     take: limit,
     orderBy: { created_at: "desc" },
     include: {
-      users: true,
+      users: authorInclude(viewerId),
       _count: {
         select: { post_likes: true, post_comments: true },
       },
@@ -78,7 +104,7 @@ export const getPostService = async (postId, viewerId = null) => {
   const post = await prisma.posts.findUnique({
     where: { id: postId },
     include: {
-      users: true,
+      users: authorInclude(viewerId),
       _count: {
         select: { post_likes: true, post_comments: true },
       },
@@ -115,7 +141,7 @@ export const getUserPostsService = async (
       take: limit,
       orderBy: { created_at: "desc" },
       include: {
-        users: true,
+        users: authorInclude(viewerId),
         _count: {
           select: { post_likes: true, post_comments: true },
         },
@@ -155,7 +181,7 @@ export const getLikedPostsService = async (
       include: {
         posts: {
           include: {
-            users: true,
+            users: authorInclude(viewerId),
             _count: {
               select: { post_likes: true, post_comments: true },
             },
@@ -206,7 +232,7 @@ export const updatePostService = async (
       media_urls,
       updated_at: new Date(),
     },
-    include: { users: true },
+    include: { users: authorInclude(userId) },
   });
 
   return mapPost(post, userId);

@@ -160,7 +160,14 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   ) async {
     final currentState = state;
-    if (currentState is! ProfileLoaded) return;
+    if (currentState is! ProfileLoaded) {
+      final result = await _followUser(event.targetUid);
+      result.fold(
+        (failure) => emit(ProfileUpdateFailure(error: failure.message)),
+        (_) {},
+      );
+      return;
+    }
 
     // Optimistic update
     final optimistic = currentState.userProfile.copyWith(
@@ -187,7 +194,14 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     Emitter<ProfileState> emit,
   ) async {
     final currentState = state;
-    if (currentState is! ProfileLoaded) return;
+    if (currentState is! ProfileLoaded) {
+      final result = await _unfollowUser(event.targetUid);
+      result.fold(
+        (failure) => emit(ProfileUpdateFailure(error: failure.message)),
+        (_) {},
+      );
+      return;
+    }
 
     // Optimistic update
     final optimistic = currentState.userProfile.copyWith(

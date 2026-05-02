@@ -147,6 +147,42 @@ describe("getAllPostsService", () => {
     });
   });
 
+  it("includes filtered author follow relation when viewerId is provided", async () => {
+    prismaMock.posts.findMany.mockResolvedValue([]);
+
+    await getAllPostsService(1, 20, TEST_USER.id);
+
+    const arg = prismaMock.posts.findMany.mock.calls[0][0];
+    expect(
+      arg.include.users.include.user_follows_user_follows_following_idTousers,
+    ).toMatchObject({
+      where: { follower_id: TEST_USER.id },
+      select: { follower_id: true },
+    });
+  });
+
+  it("maps author is_following from the filtered relation", async () => {
+    const followedAuthorPost = {
+      ...mockPost,
+      user_id: TEST_USER_B.id,
+      users: {
+        ...mockUser,
+        id: TEST_USER_B.id,
+        user_follows_user_follows_following_idTousers: [
+          { follower_id: TEST_USER.id },
+        ],
+      },
+    };
+    prismaMock.posts.findMany.mockResolvedValue([followedAuthorPost]);
+
+    const result = await getAllPostsService(1, 20, TEST_USER.id);
+
+    expect(result[0].user.is_following).toBe(true);
+    expect(
+      result[0].user.user_follows_user_follows_following_idTousers,
+    ).toBeUndefined();
+  });
+
   it("excludes post_likes include when viewerId is null (public feed)", async () => {
     prismaMock.posts.findMany.mockResolvedValue([]);
 

@@ -32,6 +32,7 @@ class _PostCardState extends State<PostCard> {
   final PageController _pageController = PageController();
   late bool _isLiked;
   late int _likeCount;
+  late bool _isFollowingAuthor;
 
   static const _avatarColors = [
     Color(0xFFF7E6E6),
@@ -46,6 +47,7 @@ class _PostCardState extends State<PostCard> {
     super.initState();
     _isLiked = widget.post.isLiked;
     _likeCount = widget.post.likeCount;
+    _isFollowingAuthor = widget.post.user.isFollowing;
     context.read<PostBloc>().add(
       PostCheckBookmarkStatusEvent(postId: widget.post.id),
     );
@@ -57,6 +59,7 @@ class _PostCardState extends State<PostCard> {
     if (oldWidget.post != widget.post) {
       _isLiked = widget.post.isLiked;
       _likeCount = widget.post.likeCount;
+      _isFollowingAuthor = widget.post.user.isFollowing;
     }
   }
 
@@ -70,6 +73,18 @@ class _PostCardState extends State<PostCard> {
     if (username.isEmpty) return _avatarColors[0];
     final hash = username.codeUnits.fold<int>(0, (prev, c) => prev + c);
     return _avatarColors[hash % _avatarColors.length];
+  }
+
+  void _toggleFollowAuthor() {
+    final nextValue = !_isFollowingAuthor;
+    setState(() => _isFollowingAuthor = nextValue);
+
+    final profileBloc = context.read<ProfileBloc>();
+    if (nextValue) {
+      profileBloc.add(ProfileFollowUserEvent(targetUid: widget.post.user.id));
+    } else {
+      profileBloc.add(ProfileUnfollowUserEvent(targetUid: widget.post.user.id));
+    }
   }
 
   @override
@@ -159,94 +174,91 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ),
                 ),
-                PopupMenuButton<_PostActionMenuItem>(
-                  position: PopupMenuPosition.under,
-                  padding: EdgeInsets.zero,
-                  color: semantic.surfaceBase,
-                  offset: const Offset(0, 10),
-                  onSelected: (value) {
-                    switch (value) {
-                      case _PostActionMenuItem.follow:
-                        context.read<ProfileBloc>().add(
-                          ProfileFollowUserEvent(
-                            targetUid: widget.post.user.id,
-                          ),
-                        );
-                        break;
-                      case _PostActionMenuItem.unfollow:
-                        context.read<ProfileBloc>().add(
-                          ProfileUnfollowUserEvent(
-                            targetUid: widget.post.user.id,
-                          ),
-                        );
-                        break;
-                      case _PostActionMenuItem.report:
-                        showReportBottomSheet(
-                          context: context,
-                          targetId: widget.post.id,
-                          targetType: ReportTargetType.post,
-                          targetLabel: 'Post',
-                          targetSubtitle: '$displayName · $handle',
-                        );
-                        break;
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem<_PostActionMenuItem>(
-                      value: widget.post.user.isFollowing
-                          ? _PostActionMenuItem.unfollow
-                          : _PostActionMenuItem.follow,
-                      child: Row(
-                        children: [
-                          FaIcon(
-                            widget.post.user.isFollowing
-                                ? FontAwesomeIcons.userMinus
-                                : FontAwesomeIcons.userPlus,
-                            size: 15,
-                            color: semantic.iconSecondary,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            widget.post.user.isFollowing
-                                ? 'Unfollow'
-                                : 'Follow',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: semantic.textPrimary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _FollowButton(
+                      isFollowing: _isFollowingAuthor,
+                      onTap: _toggleFollowAuthor,
                     ),
-                    PopupMenuItem<_PostActionMenuItem>(
-                      value: _PostActionMenuItem.report,
-                      child: Row(
-                        children: [
-                          FaIcon(
-                            FontAwesomeIcons.flag,
-                            size: 15,
-                            color: semantic.textError,
+                    PopupMenuButton<_PostActionMenuItem>(
+                      position: PopupMenuPosition.under,
+                      padding: EdgeInsets.zero,
+                      color: semantic.surfaceBase,
+                      offset: const Offset(0, 10),
+                      onSelected: (value) {
+                        switch (value) {
+                          case _PostActionMenuItem.follow:
+                          case _PostActionMenuItem.unfollow:
+                            _toggleFollowAuthor();
+                            break;
+                          case _PostActionMenuItem.report:
+                            showReportBottomSheet(
+                              context: context,
+                              targetId: widget.post.id,
+                              targetType: ReportTargetType.post,
+                              targetLabel: 'Post',
+                              targetSubtitle: '$displayName · $handle',
+                            );
+                            break;
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem<_PostActionMenuItem>(
+                          value: _isFollowingAuthor
+                              ? _PostActionMenuItem.unfollow
+                              : _PostActionMenuItem.follow,
+                          child: Row(
+                            children: [
+                              FaIcon(
+                                _isFollowingAuthor
+                                    ? FontAwesomeIcons.userMinus
+                                    : FontAwesomeIcons.userPlus,
+                                size: 15,
+                                color: semantic.iconSecondary,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                _isFollowingAuthor ? 'Unfollow' : 'Follow',
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: semantic.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Report',
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: semantic.textError,
-                              fontWeight: FontWeight.w600,
-                            ),
+                        ),
+                        PopupMenuItem<_PostActionMenuItem>(
+                          value: _PostActionMenuItem.report,
+                          child: Row(
+                            children: [
+                              FaIcon(
+                                FontAwesomeIcons.flag,
+                                size: 15,
+                                color: semantic.textError,
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Report',
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: semantic.textError,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
+                      ],
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
+                        child: Icon(
+                          FontAwesomeIcons.ellipsisVertical,
+                          color: semantic.iconSecondary,
+                          size: 16,
+                        ),
                       ),
                     ),
                   ],
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
-                    child: Icon(
-                      FontAwesomeIcons.ellipsisVertical,
-                      color: semantic.iconSecondary,
-                      size: 16,
-                    ),
-                  ),
                 ),
               ],
             ),
@@ -527,6 +539,44 @@ class _TagChip extends StatelessWidget {
       child: Text(
         text,
         style: textTheme.labelSmall?.copyWith(color: semantic.textSecondary),
+      ),
+    );
+  }
+}
+
+class _FollowButton extends StatelessWidget {
+  final bool isFollowing;
+  final VoidCallback onTap;
+
+  const _FollowButton({required this.isFollowing, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: AppRadius.fullAll,
+      child: Container(
+        height: 30,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: isFollowing ? semantic.surfaceBase : semantic.backgroundBrand,
+          borderRadius: AppRadius.fullAll,
+          border: Border.all(
+            color: isFollowing
+                ? semantic.borderDefault
+                : semantic.backgroundBrand,
+          ),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          isFollowing ? 'Following' : 'Follow',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: isFollowing ? semantic.textPrimary : semantic.textOnBrand,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ),
     );
   }

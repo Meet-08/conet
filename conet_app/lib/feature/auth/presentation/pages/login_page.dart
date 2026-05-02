@@ -51,8 +51,11 @@ class _LoginPageState extends State<LoginPage> {
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        if (state is AuthLoading) {
+        if (state is AuthLoading &&
+            state.action == AuthLoadingAction.login) {
           setState(() => _isLoading = true);
+        } else if (state is AuthLoading) {
+          setState(() => _isLoading = false);
         } else if (state is AuthSuccess) {
           setState(() => _isLoading = false);
         } else if (state is AuthFailure) {

@@ -7,6 +7,7 @@
  *  ✓ getMessagesService        – returns paged messages, supports cursor pagination
  *  ✓ sendMessageService        – success, not a participant, conversation not found
  *  ✓ markAsReadService         – updates unread messages belonging to other user
+ *  ✓ getGroupMembersService    – authorization and stable member ordering
  *  ✓ searchUsersService        – returns filtered results, excludes self
  */
 
@@ -44,6 +45,7 @@ mock.module("../../../config/logger.js", () => ({
 import {
   createConversationService,
   getConversationsService,
+  getGroupMembersService,
   getMessagesService,
   markAsReadService,
   searchUsersService,
@@ -549,6 +551,105 @@ describe("markAsReadService", () => {
       markAsReadService(CONV_ID, "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
     ).rejects.toMatchObject({
       message: "Not a participant of this conversation",
+      statusCode: 403,
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("getGroupMembersService", () => {
+  it("returns admins first, then members sorted by first name", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      type: "group",
+      conversation_members: [
+        {
+          user_id: TEST_USER.id,
+          role: "member",
+          joined_at: new Date("2026-01-01T00:00:00.000Z"),
+          users: {
+            id: TEST_USER.id,
+            email: TEST_USER.email,
+            first_name: "Charlie",
+            last_name: "Member",
+            username: "charlie",
+            profile_pic_url: null,
+            user_role: "user",
+            is_verified: false,
+          },
+        },
+        {
+          user_id: "admin-2",
+          role: "admin",
+          joined_at: new Date("2026-01-02T00:00:00.000Z"),
+          users: {
+            id: "admin-2",
+            email: "zoe@example.com",
+            first_name: "Zoe",
+            last_name: "Admin",
+            username: "zoe",
+            profile_pic_url: null,
+            user_role: "user",
+            is_verified: false,
+          },
+        },
+        {
+          user_id: "admin-1",
+          role: "admin",
+          joined_at: new Date("2026-01-03T00:00:00.000Z"),
+          users: {
+            id: "admin-1",
+            email: "amy@example.com",
+            first_name: "Amy",
+            last_name: "Admin",
+            username: "amy",
+            profile_pic_url: null,
+            user_role: "user",
+            is_verified: false,
+          },
+        },
+        {
+          user_id: TEST_USER_B.id,
+          role: "member",
+          joined_at: new Date("2026-01-04T00:00:00.000Z"),
+          users: mockOtherUser,
+        },
+      ],
+    });
+
+    const result = await getGroupMembersService(CONV_ID, TEST_USER.id);
+
+    expect(result.map((member) => member.first_name)).toEqual([
+      "Amy",
+      "Zoe",
+      "Bob",
+      "Charlie",
+    ]);
+    expect(result.map((member) => member.role)).toEqual([
+      "admin",
+      "admin",
+      "member",
+      "member",
+    ]);
+  });
+
+  it("throws 403 when current user is not a member", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      type: "group",
+      conversation_members: [
+        {
+          user_id: TEST_USER_B.id,
+          role: "member",
+          users: mockOtherUser,
+        },
+      ],
+    });
+
+    await expect(
+      getGroupMembersService(CONV_ID, TEST_USER.id),
+    ).rejects.toMatchObject({
+      message: "Not a member of this group",
       statusCode: 403,
     });
   });

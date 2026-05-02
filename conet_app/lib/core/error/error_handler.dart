@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,6 +13,10 @@ class AppErrorHandler {
     }
     if (e is StorageException) {
       return e.message;
+    }
+    if (e is TimeoutException) {
+      return e.message ??
+          'This is taking longer than expected. Please check your connection and try again.';
     }
     if (e is DioException) {
       switch (e.type) {
@@ -36,6 +42,24 @@ class AppErrorHandler {
           return "Something went wrong";
       }
     }
-    return e.toString();
+    return _cleanMessage(e.toString());
+  }
+
+  static String _cleanMessage(String message) {
+    final trimmed = message.trim();
+    if (trimmed.isEmpty) return 'Something went wrong';
+
+    final withoutPrefixes = trimmed
+        .replaceFirst(RegExp(r'^Exception:\s*'), '')
+        .replaceFirst(RegExp(r'^ServerException:\s*'), '')
+        .replaceFirst(RegExp(r'^AuthException:\s*'), '');
+
+    if (withoutPrefixes.length > 140 ||
+        withoutPrefixes.contains('originalError') ||
+        withoutPrefixes.contains('StackTrace')) {
+      return 'Something went wrong. Please try again.';
+    }
+
+    return withoutPrefixes;
   }
 }

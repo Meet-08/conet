@@ -135,7 +135,11 @@ void main() {
       },
       act: (bloc) => bloc.add(AuthLogin(email: tEmail, password: tPassword)),
       expect: () => [
-        isA<AuthLoading>(),
+        isA<AuthLoading>().having(
+          (s) => s.action,
+          'action',
+          AuthLoadingAction.login,
+        ),
         isA<AuthSuccess>().having((s) => s.user, 'user', tUser),
       ],
       verify: (_) {
@@ -180,7 +184,11 @@ void main() {
       },
       act: (bloc) => bloc.add(AuthSigninWithGoogle()),
       expect: () => [
-        isA<AuthLoading>(),
+        isA<AuthLoading>().having(
+          (s) => s.action,
+          'action',
+          AuthLoadingAction.googleSignIn,
+        ),
         isA<AuthSuccess>().having((s) => s.user, 'user', tUser),
       ],
       verify: (_) {

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:conet_app/core/theme/theme.dart';
+import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:conet_app/feature/auth/presentation/widgets/welcome/welcome_actions.dart';
@@ -73,7 +74,9 @@ class _WelcomePageState extends State<WelcomePage> {
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
-        // Intentionally no-op: auth side effects are handled by route guards.
+        if (state is AuthFailure) {
+          AppToast.showError(context, state.message);
+        }
       },
       child: Scaffold(
         body: Stack(
@@ -167,7 +170,8 @@ class _WelcomePageState extends State<WelcomePage> {
             ),
             BlocBuilder<AuthBloc, AuthState>(
               builder: (context, state) {
-                if (state is AuthLoading) {
+                if (state is AuthLoading &&
+                    state.action == AuthLoadingAction.googleSignIn) {
                   return const Center(child: Loader());
                 }
                 return const SizedBox.shrink();

@@ -56,13 +56,18 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     MessageState state,
     Conversation conversation,
   ) {
-    if (state.groupMembers.isNotEmpty) {
-      return state.groupMembers;
-    }
-    if (conversation.members.isNotEmpty) {
-      return conversation.members;
-    }
-    return widget.conversation.members;
+    final members = switch ((
+      state.groupMembers,
+      conversation.members,
+      widget.conversation.members,
+    )) {
+      (final stateMembers, _, _) when stateMembers.isNotEmpty => stateMembers,
+      (_, final conversationMembers, _) when conversationMembers.isNotEmpty =>
+        conversationMembers,
+      (_, _, final fallbackMembers) => fallbackMembers,
+    };
+
+    return members;
   }
 
   GroupMember? _findCreator(List<GroupMember> members, String? creatorId) {

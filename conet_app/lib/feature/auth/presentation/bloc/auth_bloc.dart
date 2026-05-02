@@ -1,5 +1,6 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/common/entities/user.dart';
+import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/core/router/app_router.dart';
 import 'package:conet_app/core/services/device_service.dart';
 import 'package:conet_app/core/services/presence_service.dart';
@@ -13,11 +14,14 @@ import 'package:conet_app/feature/auth/domain/usecases/user_verify_otp.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_academic_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:fpdart/fpdart.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
+  static const _authTimeout = Duration(seconds: 30);
+
   final UserLogin _userLogin;
   final UserSendOtp _userSendOtp;
   final UserSigninWithGoogle _userSigninWithGoogle;
@@ -69,10 +73,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onAuthLogout(AuthLogout event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
-    _presenceService.dispose();
-    await _deviceService.removeCurrentDevice();
-    final res = await _userLogout();
+    emit(const AuthLoading(AuthLoadingAction.logout));
+    final res = await _withAuthTimeout<Unit>(() async {
+      _presenceService.dispose();
+      await _deviceService.removeCurrentDevice();
+      return _userLogout();
+    });
     res.fold((l) => emit(AuthFailure(l.message)), (r) {
       _appUserCubit.logout();
       emit(AuthInitial());
@@ -81,10 +87,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onAuthLogin(AuthLogin event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
-    final loginResult = await _userLogin(
-      email: event.email,
-      password: event.password,
+    emit(const AuthLoading(AuthLoadingAction.login));
+    final loginResult = await _withAuthTimeout<User>(
+      () => _userLogin(email: event.email, password: event.password),
     );
 
     loginResult.fold(
@@ -94,10 +99,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onAuthVerifyOtp(AuthVerifyOtp event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
-    final verifyResult = await _userVerifyOtp(
-      email: event.email,
-      otp: event.otp,
+    emit(const AuthLoading(AuthLoadingAction.verifyOtp));
+    final verifyResult = await _withAuthTimeout<User>(
+      () => _userVerifyOtp(email: event.email, otp: event.otp),
     );
 
     verifyResult.fold(
@@ -107,11 +111,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onAuthSendOtp(AuthSendOtp event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
-    final otpResult = await _userSendOtp(
-      email: event.email,
-      firstName: event.firstName,
-      lastName: event.lastName,
+    emit(const AuthLoading(AuthLoadingAction.sendOtp));
+    final otpResult = await _withAuthTimeout<bool>(
+      () => _userSendOtp(
+        email: event.email,
+        firstName: event.firstName,
+        lastName: event.lastName,
+      ),
     );
 
     otpResult.fold(
@@ -121,12 +127,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   void _onAuthAddDetails(AuthAddDetails event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
-    final addDetailsResult = await _userAddDetails(
-      username: event.username,
-      firstName: event.firstName,
-      lastName: event.lastName,
-      password: event.password,
+    emit(const AuthLoading(AuthLoadingAction.addDetails));
+    final addDetailsResult = await _withAuthTimeout<User>(
+      () => _userAddDetails(
+        username: event.username,
+        firstName: event.firstName,
+        lastName: event.lastName,
+        password: event.password,
+      ),
     );
 
     await addDetailsResult.fold(
@@ -154,8 +162,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthSigninWithGoogle event,
     Emitter<AuthState> emit,
   ) async {
-    emit(AuthLoading());
-    final result = await _userSigninWithGoogle();
+    emit(const AuthLoading(AuthLoadingAction.googleSignIn));
+    final result = await _withAuthTimeout<User>(
+      () => _userSigninWithGoogle(),
+    );
     result.fold(
       (failure) => emit(AuthFailure(failure.message)),
       (user) => _emitAuthSuccess(user, emit),
@@ -166,8 +176,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthIsUserLoggedIn event,
     Emitter<AuthState> emit,
   ) async {
-    emit(AuthLoading());
-    final res = await _userCurrent();
+    emit(const AuthLoading(AuthLoadingAction.currentUser));
+    final res = await _withAuthTimeout<User>(() => _userCurrent());
 
     res.fold((l) {
       _appUserCubit.updateUser(null);
@@ -180,5 +190,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     _presenceService.start(user.id);
     _deviceService.init();
     emit(AuthSuccess(user, isNewUser: user.username.isEmpty));
+  }
+
+  Future<Either<AppFailure, T>> _withAuthTimeout<T>(
+    Future<Either<AppFailure, T>> Function() operation,
+  ) {
+    final future = operation().then<Either<AppFailure, T>>((result) => result);
+
+    return future.timeout(
+      _authTimeout,
+      onTimeout: () {
+        return left<AppFailure, T>(
+          AppFailure(
+            'This is taking longer than expected. Please check your connection and try again.',
+          ),
+        );
+      },
+    );
   }
 }
