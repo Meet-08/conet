@@ -12,6 +12,7 @@ class CustomCircleAvatar extends StatelessWidget {
   final Color? backgroundColor;
   final Color? foregroundColor;
   final double? radius;
+  final Function(String userId)? onTap;
 
   const CustomCircleAvatar({
     super.key,
@@ -22,6 +23,7 @@ class CustomCircleAvatar extends StatelessWidget {
     this.backgroundColor,
     this.foregroundColor,
     this.radius,
+    this.onTap,
   });
 
   double get _effectiveRadius {
@@ -77,7 +79,9 @@ class CustomCircleAvatar extends StatelessWidget {
 
     if (userId != null) {
       return GestureDetector(
-        onTap: () => context.push('/user-profile', extra: userId),
+        onTap: onTap != null
+            ? () => onTap!(userId!)
+            : () => context.push('/profile/$userId'),
         child: avatar,
       );
     }

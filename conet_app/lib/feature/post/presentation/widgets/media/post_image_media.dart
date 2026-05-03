@@ -17,8 +17,7 @@ class PostImageMedia extends StatelessWidget {
 
   void _openViewer(BuildContext context) {
     final initialIndex = imageUrlsForViewer.indexOf(imageUrl);
-    Navigator.push(
-      context,
+    Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => PostImageViewerPage(
           imageUrls: imageUrlsForViewer,

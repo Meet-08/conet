@@ -105,7 +105,7 @@ const buildConversationSearchWhere = (currentUserId, search) => {
           },
           {
             type: "group",
-            messages: {
+            messages_messages_conversation_idToconversations: {
               some: { content: { contains: part, mode: "insensitive" } },
             },
           },
@@ -131,7 +131,7 @@ const buildConversationSearchWhere = (currentUserId, search) => {
             ],
           },
           {
-            messages: {
+            messages_messages_conversation_idToconversations: {
               some: { content: { contains: part, mode: "insensitive" } },
             },
           },

@@ -15,14 +15,17 @@ class MessageFilters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+    return SizedBox(
+      width: double.infinity,
       child: BlocSelector<MessageBloc, MessageState, String>(
         selector: (state) => state.conversationFilter,
         builder: (context, activeFilter) {
           return SingleChildScrollView(
             scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              spacing: 8,
               children: _filters.map((f) {
                 return _FilterChip(
                   label: f['label']!,
@@ -53,27 +56,24 @@ class _FilterChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppSemanticColors>()!;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: isActive ? colors.backgroundBrand : colors.backgroundPrimary,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isActive ? colors.borderBrand : colors.borderDefault,
-            ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? colors.backgroundBrand : colors.backgroundPrimary,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isActive ? colors.borderBrand : colors.borderDefault,
           ),
-          child: Text(
-            label,
-            style: AppTextStyles.caption.copyWith(
-              color: isActive ? colors.textOnBrand : colors.textPrimary,
-              fontWeight: isActive
-                  ? AppTypographyTokens.weightSemibold
-                  : AppTypographyTokens.weightRegular,
-            ),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.caption.copyWith(
+            color: isActive ? colors.textOnBrand : colors.textPrimary,
+            fontWeight: isActive
+                ? AppTypographyTokens.weightSemibold
+                : AppTypographyTokens.weightRegular,
           ),
         ),
       ),

@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class PostShareSheet extends StatefulWidget {
   final BuildContext parentContext;
@@ -76,12 +77,12 @@ class _PostShareSheetState extends State<PostShareSheet> {
     ).toString();
     await Clipboard.setData(ClipboardData(text: deepLink));
     if (!mounted) return;
-    Navigator.of(context).pop();
+    context.pop();
     AppToast.showSuccess(widget.parentContext, 'Post link copied');
   }
 
   Future<void> _shareVia() async {
-    Navigator.of(context).pop();
+    context.pop();
     await PostShareHelper.sharePost(
       postId: widget.postId,
       username: widget.username,
@@ -93,7 +94,7 @@ class _PostShareSheetState extends State<PostShareSheet> {
     context.read<MessageBloc>().add(
       MessageSent(conversationId: conversationId, content: _buildShareText()),
     );
-    Navigator.of(context).pop();
+    context.pop();
     AppToast.showSuccess(widget.parentContext, 'Sent to $displayName');
   }
 
@@ -278,7 +279,6 @@ class _PostShareSheetState extends State<PostShareSheet> {
                   ),
                 ),
 
-                // ── Pinned bottom — always visible ──
                 Divider(height: 1, color: semantic.borderSubtle),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,

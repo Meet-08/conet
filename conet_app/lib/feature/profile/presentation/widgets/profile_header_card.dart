@@ -67,6 +67,7 @@ class ProfileHeaderCard extends StatelessWidget {
                   imageUrl: userProfile.profilePicUrl,
                   displayName: _fullName,
                   userId: userProfile.id,
+                  onTap: (userId) => null,
                   backgroundColor: Theme.of(
                     context,
                   ).extension<AppSemanticColors>()!.backgroundTertiary,
@@ -147,12 +148,7 @@ class ProfileHeaderCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               userProfile.aboutMe!,
-              style: AppTextStyles.bodySmall.copyWith(
-                height: 1.5,
-                color: Theme.of(
-                  context,
-                ).extension<AppSemanticColors>()!.textBrand,
-              ),
+              style: AppTextStyles.bodySmall.copyWith(height: 1.5),
             ),
           ),
         ],

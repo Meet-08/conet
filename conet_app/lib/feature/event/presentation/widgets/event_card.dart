@@ -257,8 +257,8 @@ class _EventCardState extends State<EventCard> {
   Widget _coverImage(ColorScheme colorScheme) => ClipRRect(
     borderRadius: BorderRadius.circular(12),
     child: SizedBox(
-      width: 82,
-      height: 82,
+      width: 96,
+      height: 96,
       child: widget.event.eventImageUrl != null
           ? Image.network(
               widget.event.eventImageUrl!,
