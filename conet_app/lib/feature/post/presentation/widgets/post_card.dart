@@ -1,13 +1,13 @@
 import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/date_formatter.dart';
 import 'package:conet_app/core/utils/media_type_utils.dart';
-import 'package:conet_app/core/utils/post_share_helper.dart';
 import 'package:conet_app/core/utils/quill_content_utils.dart';
 import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/core/widgets/quill_read_only_view.dart';
 import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/media/post_media_item.dart';
+import 'package:conet_app/feature/post/presentation/widgets/post_share_sheet.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
 import 'package:conet_app/feature/report/domain/entities/report_target_type.dart';
 import 'package:conet_app/feature/report/presentation/widgets/report_bottom_sheet.dart';
@@ -85,6 +85,19 @@ class _PostCardState extends State<PostCard> {
     } else {
       profileBloc.add(ProfileUnfollowUserEvent(targetUid: widget.post.user.id));
     }
+  }
+
+  Future<void> _openPostShareSheet(String contentPreview) {
+    return showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => PostShareSheet(
+        parentContext: context,
+        postId: widget.post.id,
+        username: widget.post.user.username,
+        contentPreview: contentPreview,
+      ),
+    );
   }
 
   @override
@@ -402,17 +415,12 @@ class _PostCardState extends State<PostCard> {
                 InkWell(
                   borderRadius: BorderRadius.circular(8),
                   onTap: () async {
-                    await PostShareHelper.sharePost(
-                      postId: widget.post.id,
-                      username: widget.post.user.username,
-                      content: renderedContent,
-                    );
+                    await _openPostShareSheet(renderedContent);
                   },
                   child: Padding(
                     padding: const EdgeInsets.all(4),
                     child: Icon(
                       CupertinoIcons.arrowshape_turn_up_right,
-                      fontWeight: const FontWeight(500),
                       size: 20,
                       color: semantic.iconSecondary,
                     ),
