@@ -527,6 +527,7 @@ model conversations {
   only_admin_remove_members                        Boolean                @default(true)
   only_admin_edit_group                            Boolean                @default(true)
   only_admin_send_messages                         Boolean                @default(true)
+  is_event                                         Boolean?               @default(false)
   conversation_members                             conversation_members[]
   users_conversations_created_byTousers            public_users?          @relation("conversations_created_byTousers", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
   messages_conversations_last_message_idTomessages messages?              @relation("conversations_last_message_idTomessages", fields: [last_message_id], references: [id], onUpdate: NoAction, map: "conversations_last_message_fkey")

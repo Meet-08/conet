@@ -43,6 +43,8 @@ class Conversation extends Equatable {
 
   final List<String> lastMessageMediaUrls;
 
+  final bool isEvent;
+
   const Conversation({
     required this.id,
     this.type = ConversationType.direct,
@@ -61,6 +63,7 @@ class Conversation extends Equatable {
     this.updatedAt,
     this.unreadCount = 0,
     this.lastMessageMediaUrls = const [],
+    this.isEvent = false,
   });
 
   bool get isGroup => type == ConversationType.group;
@@ -102,5 +105,6 @@ class Conversation extends Equatable {
     updatedAt,
     unreadCount,
     lastMessageMediaUrls,
+    isEvent,
   ];
 }

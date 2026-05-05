@@ -178,6 +178,7 @@ class MessageDataSourceImpl implements MessageDataSource {
     bool onlyAdminRemoveMembers = true,
     bool onlyAdminEditGroup = true,
     bool onlyAdminSendMessages = true,
+    bool isEvent = false,
   }) async {
     try {
       final body = <String, dynamic>{'name': name, 'memberIds': memberIds};
@@ -191,6 +192,7 @@ class MessageDataSourceImpl implements MessageDataSource {
       body['onlyAdminRemoveMembers'] = onlyAdminRemoveMembers;
       body['onlyAdminEditGroup'] = onlyAdminEditGroup;
       body['onlyAdminSendMessages'] = onlyAdminSendMessages;
+      body['isEvent'] = isEvent;
       final res = await _dioClient.dio.post("/groups", data: body);
       if (res.statusCode != 201) {
         throw ServerException("Failed to create group");

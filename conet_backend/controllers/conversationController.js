@@ -142,7 +142,7 @@ export const searchUsers = asyncHandler(async (req, res) => {
 // ─── Group conversations ────────────────────────────────────────────────────────
 
 // POST /api/groups
-// Body: { name, memberIds: string[], groupImageUrl?, description?, onlyAdminAddMembers?, onlyAdminRemoveMembers?, onlyAdminEditGroup? }
+// Body: { name, memberIds: string[], groupImageUrl?, description?, onlyAdminAddMembers?, onlyAdminRemoveMembers?, onlyAdminEditGroup?, onlyAdminSendMessages?, isEvent? }
 export const createGroup = asyncHandler(async (req, res) => {
   const currentUserId = req.user.id;
   const {
@@ -154,6 +154,8 @@ export const createGroup = asyncHandler(async (req, res) => {
     onlyAdminRemoveMembers,
     onlyAdminEditGroup,
     onlyAdminSendMessages,
+    isEvent,
+    is_event,
   } = req.body;
 
   if (!name) {
@@ -176,6 +178,10 @@ export const createGroup = asyncHandler(async (req, res) => {
   assertOptionalBoolean(onlyAdminEditGroup, "onlyAdminEditGroup");
   assertOptionalBoolean(onlyAdminSendMessages, "onlyAdminSendMessages");
 
+  // Accept both camelCase and snake_case for compatibility.
+  const normalizedIsEvent = isEvent ?? is_event;
+  assertOptionalBoolean(normalizedIsEvent, "isEvent");
+
   const group = await createGroupService(currentUserId, {
     name,
     memberIds,
@@ -185,6 +191,7 @@ export const createGroup = asyncHandler(async (req, res) => {
     onlyAdminRemoveMembers,
     onlyAdminEditGroup,
     onlyAdminSendMessages,
+    isEvent: normalizedIsEvent,
   });
 
   res.status(201).json({ success: true, group });

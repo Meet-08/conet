@@ -87,18 +87,18 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
     return '$day/$month/$year';
   }
 
-  Future<void> _openAddMembersSheet() async {
+  Future<void> _openAddMembersSheet(Conversation conversation) async {
+    final addMembersTitle = conversation.isEvent
+        ? 'Add Event Members'
+        : 'Add Members';
     showUserSelectorBottomSheet(
       context: context,
-      title: 'Add Members',
+      title: addMembersTitle,
       searchHint: 'Search by name, username, or email',
       actionLabel: 'Add to Group',
       allowMultipleSelection: false,
       onUserTap: (parentContext, user) => context.read<MessageBloc>().add(
-        MessageGroupMemberAdded(
-          groupId: widget.conversation.id,
-          userId: user.id,
-        ),
+        MessageGroupMemberAdded(groupId: conversation.id, userId: user.id),
       ),
     );
   }
@@ -314,7 +314,9 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '${members.length} members',
+                          conversation.isEvent
+                              ? '${members.length} Event Members'
+                              : '${members.length} Members',
                           style: AppTextStyles.bodySmall.copyWith(
                             color: colors.textSecondary,
                           ),
@@ -360,7 +362,9 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   Row(
                     children: [
                       Text(
-                        '${members.length} Members',
+                        conversation.isEvent
+                            ? '${members.length} Event Members'
+                            : '${members.length} Members',
                         style: AppTextStyles.headingH3.copyWith(
                           color: colors.textPrimary,
                           fontWeight: AppTypographyTokens.weightBold,
@@ -398,7 +402,7 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   InkWell(
                     borderRadius: BorderRadius.circular(12),
                     onTap: canManageMembers
-                        ? () => _openAddMembersSheet()
+                        ? () => _openAddMembersSheet(conversation)
                         : () => AppToast.showInfo(
                             context,
                             'You do not have permission to add members.',
@@ -424,7 +428,9 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            'Add Members',
+                            conversation.isEvent
+                                ? 'Add Event Members'
+                                : 'Add Members',
                             style: AppTextStyles.bodyDefault.copyWith(
                               color: canManageMembers
                                   ? colors.textPrimary

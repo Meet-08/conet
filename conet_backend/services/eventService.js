@@ -2135,6 +2135,7 @@ export const setupEventOrganizerResourcesService = async (
       name: String(existing.title ?? "").trim() || "Event organizers",
       memberIds: normalizedCohostUserIds,
       groupImageUrl: existing.event_image_url ?? undefined,
+      isEvent: true,
     });
     linkedConversationId = conversation.id;
   }

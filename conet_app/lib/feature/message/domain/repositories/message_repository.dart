@@ -49,6 +49,7 @@ abstract interface class MessageRepository {
     bool onlyAdminRemoveMembers = true,
     bool onlyAdminEditGroup = true,
     bool onlyAdminSendMessages = true,
+    bool isEvent = false,
     PlatformFile? groupImageFile,
   });
 

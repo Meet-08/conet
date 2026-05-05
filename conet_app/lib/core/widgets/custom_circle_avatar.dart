@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 enum CustomCircleAvatarSize { small, medium }
 
+enum AvatarShape { circle, square }
+
 class CustomCircleAvatar extends StatelessWidget {
   final CustomCircleAvatarSize size;
   final String? imageUrl;
@@ -13,6 +15,7 @@ class CustomCircleAvatar extends StatelessWidget {
   final Color? foregroundColor;
   final double? radius;
   final Function(String userId)? onTap;
+  final AvatarShape shape;
 
   const CustomCircleAvatar({
     super.key,
@@ -24,6 +27,7 @@ class CustomCircleAvatar extends StatelessWidget {
     this.foregroundColor,
     this.radius,
     this.onTap,
+    this.shape = AvatarShape.circle,
   });
 
   double get _effectiveRadius {
@@ -51,6 +55,60 @@ class CustomCircleAvatar extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final semantics = context.semanticColors;
 
+    if (shape == AvatarShape.square) {
+      // Square shape for event groups
+      final effectiveSize = _effectiveRadius * 2;
+      if (imageUrl != null && imageUrl!.isNotEmpty) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            width: effectiveSize,
+            height: effectiveSize,
+            color: backgroundColor ?? colorScheme.surface,
+            child: Image.network(
+              imageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: backgroundColor ?? colorScheme.primaryContainer,
+                  child: Center(
+                    child: Text(
+                      _initials,
+                      style: TextStyle(
+                        color: semantics.textOnBrand,
+                        fontSize: effectiveSize * 0.35,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      }
+
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          width: effectiveSize,
+          height: effectiveSize,
+          color: backgroundColor ?? colorScheme.primaryContainer,
+          child: Center(
+            child: Text(
+              _initials,
+              style: TextStyle(
+                color: semantics.textOnBrand,
+                fontSize: effectiveSize * 0.35,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Circle shape (default)
     if (imageUrl != null && imageUrl!.isNotEmpty) {
       return CircleAvatar(
         radius: _effectiveRadius,

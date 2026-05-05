@@ -135,6 +135,7 @@ class MessageRepositoryImpl implements MessageRepository {
     bool onlyAdminRemoveMembers = true,
     bool onlyAdminEditGroup = true,
     bool onlyAdminSendMessages = true,
+    bool isEvent = false,
     PlatformFile? groupImageFile,
   }) {
     return _getResult(() async {
@@ -160,6 +161,7 @@ class MessageRepositoryImpl implements MessageRepository {
         onlyAdminRemoveMembers: onlyAdminRemoveMembers,
         onlyAdminEditGroup: onlyAdminEditGroup,
         onlyAdminSendMessages: onlyAdminSendMessages,
+        isEvent: isEvent,
       );
     });
   }

@@ -24,6 +24,7 @@ const mapDirectConversation = (row, currentUserId) => {
   return {
     id: row.id,
     type: "direct",
+    is_event: false,
     other_user: otherMember?.users ?? null,
     last_message:
       row.messages_conversations_last_message_idTomessages?.content ?? null,
@@ -49,6 +50,7 @@ const mapGroupConversation = (row, currentUserId) => {
   return {
     id: row.id,
     type: "group",
+    is_event: row.is_event ?? false,
     name: row.name ?? null,
     description: row.description ?? null,
     group_image_url: row.group_image_url ?? null,
@@ -231,6 +233,7 @@ export const createGroupService = async (
     onlyAdminRemoveMembers = true,
     onlyAdminEditGroup = true,
     onlyAdminSendMessages = true,
+    isEvent = false,
   } = {},
 ) => {
   if (!name || name.trim().length === 0) {
@@ -268,6 +271,7 @@ export const createGroupService = async (
       only_admin_remove_members: onlyAdminRemoveMembers,
       only_admin_edit_group: onlyAdminEditGroup,
       only_admin_send_messages: onlyAdminSendMessages,
+      is_event: isEvent,
       created_by: currentUserId,
       conversation_members: {
         create: allMemberIds.map((userId) => ({

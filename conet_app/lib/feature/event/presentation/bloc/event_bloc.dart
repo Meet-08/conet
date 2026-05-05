@@ -443,6 +443,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     final createGroupResult = await _createGroup(
       name: title,
       memberIds: cohostIds,
+      isEvent: true,
       groupImageFile: payload.eventImage,
     );
 

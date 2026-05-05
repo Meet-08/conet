@@ -29,6 +29,8 @@ class ChatDetailPage extends StatefulWidget {
 }
 
 class _ChatDetailPageState extends State<ChatDetailPage> {
+  static const Duration _watchRestartDebounce = Duration(milliseconds: 1000);
+
   final TextEditingController _controller = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   List<PlatformFile> _selectedFiles = [];
@@ -37,6 +39,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   List<Message> _selectedMessages = [];
 
   late MessageBloc _messageBloc;
+  DateTime? _lastWatchRestart;
 
   bool get _isSelectionMode => _selectedMessages.isNotEmpty;
 
@@ -116,10 +119,14 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     _restoreConversationSearch(previousSearchQuery);
 
     if (targetConversation == null) {
+      // User cancelled forward — clear selection and return.
+      if (_isSelectionMode) _clearSelection();
       return;
     }
 
+    // Forward selected messages, then clear selection and navigate.
     _forwardSelectedMessages(targetConversation.id);
+    if (_isSelectionMode) _clearSelection();
     context.push('/chat-detail', extra: targetConversation);
   }
 
@@ -309,6 +316,28 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppSemanticColors>()!;
 
+    // If this route is now current again (returned to via pop), ensure
+    // the bloc is watching this conversation. Schedule after build to
+    // avoid mutating state during build. Debounce to prevent rapid repeated
+    // restarts on quick push/pop navigation.
+    final isCurrentRoute = ModalRoute.of(context)?.isCurrent ?? true;
+    if (isCurrentRoute &&
+        _messageBloc.state.activeConversationId != widget.conversation.id) {
+      final now = DateTime.now();
+      final lastRestart = _lastWatchRestart;
+      final canRestart =
+          lastRestart == null ||
+          now.difference(lastRestart) >= _watchRestartDebounce;
+
+      if (canRestart) {
+        _lastWatchRestart = now;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _messageBloc.add(MessageWatchStarted(widget.conversation.id));
+        });
+      }
+    }
+
     return PopScope(
       // Pressing system back clears selection instead of popping the route
       canPop: !_isSelectionMode,
@@ -323,8 +352,12 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           children: [
             Expanded(
               child: BlocListener<MessageBloc, MessageState>(
+                // Only scroll to bottom on initial message fetch (transition to success),
+                // not on subsequent history fetches or updates.
                 listenWhen: (previous, current) =>
-                    previous.messages.length != current.messages.length,
+                    previous.messageStatus != MessageStatus.success &&
+                    current.messageStatus == MessageStatus.success &&
+                    current.messages.isNotEmpty,
                 listener: (context, state) => _scrollToBottom(),
                 child: BlocBuilder<MessageBloc, MessageState>(
                   builder: (context, state) {

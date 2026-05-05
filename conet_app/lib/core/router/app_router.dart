@@ -53,6 +53,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+// Route observer used by pages that need to know when they become visible again
+final RouteObserver<ModalRoute<void>> routeObserver =
+    RouteObserver<ModalRoute<void>>();
+
 class AppRouter {
   static String? _pendingRedirectLocation;
 

@@ -18,6 +18,7 @@ class MessageCreateGroup {
     bool onlyAdminRemoveMembers = true,
     bool onlyAdminEditGroup = true,
     bool onlyAdminSendMessages = true,
+    bool isEvent = false,
     PlatformFile? groupImageFile,
   }) {
     return _messageRepository.createGroup(
@@ -28,6 +29,7 @@ class MessageCreateGroup {
       onlyAdminRemoveMembers: onlyAdminRemoveMembers,
       onlyAdminEditGroup: onlyAdminEditGroup,
       onlyAdminSendMessages: onlyAdminSendMessages,
+      isEvent: isEvent,
       groupImageFile: groupImageFile,
     );
   }

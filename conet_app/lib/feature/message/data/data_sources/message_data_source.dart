@@ -40,6 +40,7 @@ abstract interface class MessageDataSource {
     bool onlyAdminRemoveMembers = true,
     bool onlyAdminEditGroup = true,
     bool onlyAdminSendMessages = true,
+    bool isEvent = false,
   });
 
   Future<Conversation> updateGroup({

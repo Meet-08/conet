@@ -22,6 +22,7 @@ class ConversationModel extends Conversation {
     super.updatedAt,
     super.unreadCount,
     super.lastMessageMediaUrls,
+    super.isEvent,
   });
 
   factory ConversationModel.fromJson(Map<String, dynamic> json) {
@@ -69,6 +70,7 @@ class ConversationModel extends Conversation {
               ?.map((e) => e as String)
               .toList() ??
           [],
+      isEvent: json['is_event'] as bool? ?? false,
     );
   }
 
@@ -103,5 +105,6 @@ class ConversationModel extends Conversation {
     'updated_at': updatedAt?.toIso8601String(),
     'unread_count': unreadCount,
     'last_message_media_urls': lastMessageMediaUrls,
+    'is_event': isEvent,
   };
 }
