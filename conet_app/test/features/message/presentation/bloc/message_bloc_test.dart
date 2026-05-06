@@ -813,18 +813,26 @@ void main() {
         when(
           () => mockGetGroupMembers(groupId: any(named: 'groupId')),
         ).thenAnswer((_) async => const Right([]));
+        when(
+          () => mockGetConversations(type: any(named: 'type')),
+        ).thenAnswer((_) async => Right(tConversationList));
         return messageBloc;
       },
       act: (bloc) => bloc.add(
         MessageGroupMemberPromoted(groupId: 'group-1', userId: tUser.id),
       ),
       wait: const Duration(milliseconds: 10),
-      expect: () => [isA<MessageState>()],
+      expect: () => [
+        isA<MessageState>(),
+        isA<MessageState>(),
+        isA<MessageState>(),
+      ],
       verify: (_) {
         verify(
           () => mockPromoteGroupMember(groupId: 'group-1', userId: tUser.id),
         ).called(1);
         verify(() => mockGetGroupMembers(groupId: 'group-1')).called(1);
+        verify(() => mockGetConversations(type: any(named: 'type'))).called(1);
       },
     );
 
@@ -840,18 +848,26 @@ void main() {
         when(
           () => mockGetGroupMembers(groupId: any(named: 'groupId')),
         ).thenAnswer((_) async => const Right([]));
+        when(
+          () => mockGetConversations(type: any(named: 'type')),
+        ).thenAnswer((_) async => Right(tConversationList));
         return messageBloc;
       },
       act: (bloc) => bloc.add(
         MessageGroupMemberDemoted(groupId: 'group-1', userId: tUser.id),
       ),
       wait: const Duration(milliseconds: 10),
-      expect: () => [isA<MessageState>()],
+      expect: () => [
+        isA<MessageState>(),
+        isA<MessageState>(),
+        isA<MessageState>(),
+      ],
       verify: (_) {
         verify(
           () => mockDemoteGroupMember(groupId: 'group-1', userId: tUser.id),
         ).called(1);
         verify(() => mockGetGroupMembers(groupId: 'group-1')).called(1);
+        verify(() => mockGetConversations(type: any(named: 'type'))).called(1);
       },
     );
   });
