@@ -1,4 +1,5 @@
 import 'package:conet_app/core/common/entities/social_links.dart';
+import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/feature/auth/data/model/user_model.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:file_picker/file_picker.dart';
@@ -34,4 +35,8 @@ abstract interface class ProfileDataSource {
   Future<void> followUser(String targetUid);
 
   Future<void> unfollowUser(String targetUid);
+
+  Future<List<User>> getFollowers(String uid);
+
+  Future<List<User>> getFollowing(String uid);
 }

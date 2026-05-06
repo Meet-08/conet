@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-05-03
+> Last updated: 2026-05-06
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -70,10 +70,11 @@
 - **Edit Social Links** — GitHub, LinkedIn, Twitter, etc.
 - **Edit Profile Pictures** — Avatar and banner image upload to Supabase Storage
 - **Follow / Unfollow** — Follow other users with follower/following counts
+- **Followers / Following Page** — Dedicated connections screen with tabs to browse follower and following user lists from profile stats
 - **Settings Page** — Logout entry point + settings scaffold
 
-**Use Cases:** `ProfileGetUser`, `ProfileUpdatePersonalInfo`, `ProfileUpdateAboutMe`, `ProfileUpdateInterests`, `ProfileUpdateAcademicInfo`, `ProfileUpdateSocialLinks`, `ProfileUpdatePictures`, `ProfileFollowUser`, `ProfileUnfollowUser`
-**Backend Endpoints:** `GET /profile/:uid`, `PUT /profile/about-me`, `PUT /profile/academic-info`, `PUT /profile/interests`, `PUT /profile/personal-info`, `PUT /profile/pictures`, `PUT /profile/social-links`, `POST/DELETE /profile/:uid/follow`
+**Use Cases:** `ProfileGetUser`, `ProfileGetFollowers`, `ProfileGetFollowing`, `ProfileUpdatePersonalInfo`, `ProfileUpdateAboutMe`, `ProfileUpdateInterests`, `ProfileUpdateAcademicInfo`, `ProfileUpdateSocialLinks`, `ProfileUpdatePictures`, `ProfileFollowUser`, `ProfileUnfollowUser`
+**Backend Endpoints:** `GET /profile/:uid`, `GET /profile/:uid/followers`, `GET /profile/:uid/following`, `PUT /profile/about-me`, `PUT /profile/academic-info`, `PUT /profile/interests`, `PUT /profile/personal-info`, `PUT /profile/pictures`, `PUT /profile/social-links`, `POST/DELETE /profile/:uid/follow`
 **Implementation Notes:**
 
 - Academic Info Form (`AcademicInfoForm` in `core/widgets/academic_info_form.dart`) extracted as a reusable widget and is now used across both **Add Details (Auth)** onboarding and **Edit Academic Info (Profile)** screens with mode-based label rendering.

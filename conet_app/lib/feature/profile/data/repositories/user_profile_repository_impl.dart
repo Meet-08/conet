@@ -117,6 +117,30 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
     }
   }
 
+  @override
+  Future<Either<AppFailure, List<User>>> getFollowers(String uid) async {
+    try {
+      final users = await profileDataSource.getFollowers(uid);
+      return right(users);
+    } on ServerException catch (e) {
+      return left(AppFailure(e.message));
+    } catch (e) {
+      return left(AppFailure(e.toString()));
+    }
+  }
+
+  @override
+  Future<Either<AppFailure, List<User>>> getFollowing(String uid) async {
+    try {
+      final users = await profileDataSource.getFollowing(uid);
+      return right(users);
+    } on ServerException catch (e) {
+      return left(AppFailure(e.message));
+    } catch (e) {
+      return left(AppFailure(e.toString()));
+    }
+  }
+
   Future<Either<AppFailure, Unit>> _performUpdate(
     Future<User> Function() updateAction,
   ) async {

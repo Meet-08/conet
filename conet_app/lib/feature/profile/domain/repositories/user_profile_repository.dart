@@ -1,4 +1,5 @@
 import 'package:conet_app/core/common/entities/social_links.dart';
+import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/error/app_failure.dart';
 import 'package:conet_app/feature/profile/domain/entities/user_profile.dart';
 import 'package:file_picker/file_picker.dart';
@@ -37,4 +38,8 @@ abstract interface class UserProfileRepository {
   Future<Either<AppFailure, Unit>> followUser(String targetUid);
 
   Future<Either<AppFailure, Unit>> unfollowUser(String targetUid);
+
+  Future<Either<AppFailure, List<User>>> getFollowers(String uid);
+
+  Future<Either<AppFailure, List<User>>> getFollowing(String uid);
 }

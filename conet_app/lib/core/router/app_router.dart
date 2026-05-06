@@ -43,6 +43,7 @@ import 'package:conet_app/feature/profile/presentation/pages/edit_personal_info_
 import 'package:conet_app/feature/profile/presentation/pages/edit_profile_page.dart';
 import 'package:conet_app/feature/profile/presentation/pages/edit_profile_pictures_page.dart';
 import 'package:conet_app/feature/profile/presentation/pages/edit_social_links_page.dart';
+import 'package:conet_app/feature/profile/presentation/pages/followers_following_page.dart';
 import 'package:conet_app/feature/profile/presentation/pages/profile_page.dart';
 import 'package:conet_app/feature/profile/presentation/pages/saved/liked_post.dart';
 import 'package:conet_app/feature/profile/presentation/pages/saved/saved_post.dart';
@@ -293,6 +294,33 @@ class AppRouter {
         builder: (context, state) {
           final userId = state.extra as String;
           return UserProfilePage(userId: userId);
+        },
+      ),
+
+      GoRoute(
+        path: '/profile-connections',
+        builder: (context, state) {
+          final extra = state.extra;
+          if (extra is! Map<String, dynamic>) {
+            return const Scaffold(
+              body: Center(child: Text('Invalid profile connections payload')),
+            );
+          }
+
+          final userId = extra['userId']?.toString();
+          if (userId == null || userId.isEmpty) {
+            return const Scaffold(
+              body: Center(child: Text('Invalid profile connections payload')),
+            );
+          }
+
+          final tabValue =
+              extra['tab']?.toString().toLowerCase() ?? 'followers';
+          final initialTab = tabValue == 'following'
+              ? ProfileConnectionsInitialTab.following
+              : ProfileConnectionsInitialTab.followers;
+
+          return FollowersFollowingPage(userId: userId, initialTab: initialTab);
         },
       ),
 

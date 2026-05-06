@@ -67,6 +67,13 @@ class _OtherUserProfileView extends StatefulWidget {
 class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
   bool _isCreatingConversation = false;
 
+  void _openConnections(String tab) {
+    context.push(
+      '/profile-connections',
+      extra: {'userId': widget.userId, 'tab': tab},
+    );
+  }
+
   void _onChatTapped(String profileId) {
     final messageBloc = context.read<MessageBloc>();
     final conv = messageBloc.state.conversations
@@ -508,41 +515,55 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Row(
                             children: [
-                              Text(
-                                '${profile.followingCount}',
-                                style: AppTextStyles.bodyDefault.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: Theme.of(
-                                    context,
-                                  ).extension<AppSemanticColors>()!.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Following',
-                                style: AppTextStyles.bodyDefault.copyWith(
-                                  color: Theme.of(context)
-                                      .extension<AppSemanticColors>()!
-                                      .textSecondary,
+                              GestureDetector(
+                                onTap: () => _openConnections('following'),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      '${profile.followingCount}',
+                                      style: AppTextStyles.bodyDefault.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: Theme.of(context)
+                                            .extension<AppSemanticColors>()!
+                                            .textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Following',
+                                      style: AppTextStyles.bodyDefault.copyWith(
+                                        color: Theme.of(context)
+                                            .extension<AppSemanticColors>()!
+                                            .textSecondary,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                               const SizedBox(width: 20),
-                              Text(
-                                '${profile.followerCount}',
-                                style: AppTextStyles.bodyDefault.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  color: Theme.of(
-                                    context,
-                                  ).extension<AppSemanticColors>()!.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Followers',
-                                style: AppTextStyles.bodyDefault.copyWith(
-                                  color: Theme.of(context)
-                                      .extension<AppSemanticColors>()!
-                                      .textSecondary,
+                              GestureDetector(
+                                onTap: () => _openConnections('followers'),
+                                child: Row(
+                                  children: [
+                                    Text(
+                                      '${profile.followerCount}',
+                                      style: AppTextStyles.bodyDefault.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: Theme.of(context)
+                                            .extension<AppSemanticColors>()!
+                                            .textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      'Followers',
+                                      style: AppTextStyles.bodyDefault.copyWith(
+                                        color: Theme.of(context)
+                                            .extension<AppSemanticColors>()!
+                                            .textSecondary,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -578,6 +599,7 @@ class _OtherUserProfileViewState extends State<_OtherUserProfileView> {
                           child: Text(
                             'Posts',
                             style: AppTextStyles.headingH3.copyWith(
+                              decoration: TextDecoration.underline,
                               color: Theme.of(
                                 context,
                               ).extension<AppSemanticColors>()!.textPrimary,

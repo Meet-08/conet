@@ -182,6 +182,66 @@ describe("DELETE /api/profile/:uid/follow", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+describe("GET /api/profile/:uid/followers", () => {
+  it("200 – returns follower user list", async () => {
+    prismaMock.users.findMany.mockResolvedValue([
+      {
+        id: TEST_USER_B.id,
+        email: TEST_USER_B.email,
+        first_name: "Bob",
+        last_name: "Jones",
+        username: "bobj",
+        profile_pic_url: null,
+        user_role: "user",
+        is_verified: false,
+        user_follows_user_follows_following_idTousers: [
+          { follower_id: TEST_USER.id },
+        ],
+      },
+    ]);
+
+    const res = await request(app)
+      .get(`/api/profile/${TEST_USER.id}/followers`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.users)).toBe(true);
+    expect(res.body.users[0].id).toBe(TEST_USER_B.id);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("GET /api/profile/:uid/following", () => {
+  it("200 – returns following user list", async () => {
+    prismaMock.users.findMany.mockResolvedValue([
+      {
+        id: TEST_USER_B.id,
+        email: TEST_USER_B.email,
+        first_name: "Bob",
+        last_name: "Jones",
+        username: "bobj",
+        profile_pic_url: null,
+        user_role: "user",
+        is_verified: false,
+        user_follows_user_follows_following_idTousers: [
+          { follower_id: TEST_USER.id },
+        ],
+      },
+    ]);
+
+    const res = await request(app)
+      .get(`/api/profile/${TEST_USER.id}/following`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.users)).toBe(true);
+    expect(res.body.users[0].id).toBe(TEST_USER_B.id);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 describe("PUT /api/profile/about-me", () => {
   it("200 – updates about_me successfully", async () => {
     prismaMock.users.update.mockResolvedValue({

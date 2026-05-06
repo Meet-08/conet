@@ -1,6 +1,7 @@
 import 'package:conet_app/core/api/dio_client.dart';
 import 'package:conet_app/core/common/data_sources/file_upload_data_source.dart';
 import 'package:conet_app/core/common/entities/social_links.dart';
+import 'package:conet_app/core/common/entities/user.dart';
 import 'package:conet_app/core/error/error_handler.dart';
 import 'package:conet_app/core/error/server_exception.dart';
 import 'package:conet_app/feature/auth/data/model/user_model.dart';
@@ -217,6 +218,44 @@ class ProfileDataSourceImpl implements ProfileDataSource {
       }
     } catch (e) {
       logger.e("Failed to unfollow user", error: e);
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<List<User>> getFollowers(String uid) async {
+    try {
+      final res = await dioClient.dio.get('/profile/$uid/followers');
+      if (res.statusCode != 200) {
+        throw ServerException('Failed to fetch followers');
+      }
+
+      final data = res.data as Map<String, dynamic>;
+      final users = data['users'] as List<dynamic>? ?? const [];
+      return users
+          .map((item) => User.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false);
+    } catch (e) {
+      logger.e('Failed to fetch followers', error: e);
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<List<User>> getFollowing(String uid) async {
+    try {
+      final res = await dioClient.dio.get('/profile/$uid/following');
+      if (res.statusCode != 200) {
+        throw ServerException('Failed to fetch following users');
+      }
+
+      final data = res.data as Map<String, dynamic>;
+      final users = data['users'] as List<dynamic>? ?? const [];
+      return users
+          .map((item) => User.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false);
+    } catch (e) {
+      logger.e('Failed to fetch following users', error: e);
       throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }

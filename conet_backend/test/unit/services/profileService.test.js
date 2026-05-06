@@ -26,6 +26,8 @@ mock.module("../../../config/prisma.js", () => ({ default: prismaMock }));
 
 import {
   followUserService,
+  getFollowersService,
+  getFollowingService,
   getUserProfileService,
   unfollowUserService,
   updateAboutMeService,
@@ -229,6 +231,58 @@ describe("unfollowUserService", () => {
     await expect(
       unfollowUserService(TEST_USER.id, TEST_USER_B.id),
     ).resolves.toBeUndefined();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("getFollowersService", () => {
+  it("returns followers with viewer-aware is_following", async () => {
+    prismaMock.users.findMany.mockResolvedValue([
+      {
+        ...TEST_USER_B,
+        first_name: "Bob",
+        last_name: "Jones",
+        username: "bobj",
+        profile_pic_url: null,
+        user_role: "user",
+        is_verified: false,
+        user_follows_user_follows_following_idTousers: [
+          { follower_id: TEST_USER.id },
+        ],
+      },
+    ]);
+
+    const result = await getFollowersService(TEST_USER.id, TEST_USER.id);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe(TEST_USER_B.id);
+    expect(result[0].is_following).toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("getFollowingService", () => {
+  it("returns followed users with viewer-aware is_following", async () => {
+    prismaMock.users.findMany.mockResolvedValue([
+      {
+        ...TEST_USER_B,
+        first_name: "Bob",
+        last_name: "Jones",
+        username: "bobj",
+        profile_pic_url: null,
+        user_role: "user",
+        is_verified: false,
+        user_follows_user_follows_following_idTousers: [
+          { follower_id: TEST_USER.id },
+        ],
+      },
+    ]);
+
+    const result = await getFollowingService(TEST_USER.id, TEST_USER.id);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe(TEST_USER_B.id);
+    expect(result[0].is_following).toBe(true);
   });
 });
 

@@ -316,6 +316,8 @@ void _initProfile() {
     ..registerFactory(
       () => ProfileGetUser(userProfileRepository: serviceLocator()),
     )
+    ..registerFactory(() => ProfileGetFollowers(repository: serviceLocator()))
+    ..registerFactory(() => ProfileGetFollowing(repository: serviceLocator()))
     ..registerFactory(() => ProfileFollowUser(repository: serviceLocator()))
     ..registerFactory(() => ProfileUnfollowUser(repository: serviceLocator()))
     // Bloc
@@ -330,6 +332,12 @@ void _initProfile() {
         getUser: serviceLocator(),
         followUser: serviceLocator(),
         unfollowUser: serviceLocator(),
+      ),
+    )
+    ..registerFactory(
+      () => ProfileConnectionsBloc(
+        getFollowers: serviceLocator(),
+        getFollowing: serviceLocator(),
       ),
     );
 }

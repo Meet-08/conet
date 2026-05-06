@@ -12,6 +12,7 @@ import 'package:conet_app/feature/profile/presentation/widgets/profile_stats_car
 import 'package:conet_app/feature/profile/presentation/widgets/social_links_section.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -21,6 +22,16 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  void _openConnections(String tab) {
+    final appUserState = context.read<AppUserCubit>().state;
+    if (appUserState is! AppUserAuthenticated) return;
+
+    context.push(
+      '/profile-connections',
+      extra: {'userId': appUserState.user.id, 'tab': tab},
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -111,6 +122,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     child: ProfileStatsCard(
                       followingCount: profile.followingCount,
                       followerCount: profile.followerCount,
+                      onFollowingTap: () => _openConnections('following'),
+                      onFollowersTap: () => _openConnections('followers'),
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -124,6 +137,15 @@ class _ProfilePageState extends State<ProfilePage> {
                           context,
                         ).extension<AppSemanticColors>()!.textPrimary,
                       ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Divider(
+                      color: Theme.of(
+                        context,
+                      ).extension<AppSemanticColors>()!.borderSubtle,
+                      thickness: 0.4,
                     ),
                   ),
                   BlocBuilder<PostBloc, PostState>(

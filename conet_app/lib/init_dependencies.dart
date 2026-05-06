@@ -114,6 +114,8 @@ import 'package:conet_app/feature/profile/data/data_sources/profile_data_source_
 import 'package:conet_app/feature/profile/data/repositories/user_profile_repository_impl.dart';
 import 'package:conet_app/feature/profile/domain/repositories/user_profile_repository.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_follow_user.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_get_followers.dart';
+import 'package:conet_app/feature/profile/domain/usecases/profile_get_following.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_get_user.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_unfollow_user.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_about_me.dart';
@@ -123,6 +125,7 @@ import 'package:conet_app/feature/profile/domain/usecases/profile_update_persona
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_pictures.dart';
 import 'package:conet_app/feature/profile/domain/usecases/profile_update_social_links.dart';
 import 'package:conet_app/feature/profile/presentation/bloc/profile_bloc.dart';
+import 'package:conet_app/feature/profile/presentation/bloc/profile_connections_bloc.dart';
 import 'package:conet_app/feature/report/data/data_sources/report_data_source.dart';
 import 'package:conet_app/feature/report/data/data_sources/report_data_source_impl.dart';
 import 'package:conet_app/feature/report/data/repositories/report_repository_impl.dart';

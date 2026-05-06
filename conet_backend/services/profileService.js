@@ -1,8 +1,6 @@
 import { USER_SELECT_FIELDS } from "../config/constants.js";
 import prisma from "../config/prisma.js";
 
-// ─── Full profile select fields (extends USER_SELECT_FIELDS) ────────────────
-
 const PROFILE_SELECT_FIELDS = {
   ...USER_SELECT_FIELDS,
   about_me: true,
@@ -12,6 +10,30 @@ const PROFILE_SELECT_FIELDS = {
   date_of_birth: true,
   gender: true,
   user_academics: true,
+};
+
+const FOLLOW_RELATION = "user_follows_user_follows_following_idTousers";
+
+const userFollowInclude = (viewerId) =>
+  viewerId ?
+    {
+      include: {
+        [FOLLOW_RELATION]: {
+          where: { follower_id: viewerId },
+          select: { follower_id: true },
+        },
+      },
+    }
+  : true;
+
+const mapFollowUser = (user, viewerId = null) => {
+  const { [FOLLOW_RELATION]: follows, ...mappedUser } = user;
+
+  return {
+    ...mappedUser,
+    is_following:
+      Boolean(viewerId) && user.id !== viewerId && (follows?.length ?? 0) > 0,
+  };
 };
 
 // ─── Get user profile by ID ────────────────────────────────────────────────
@@ -134,6 +156,38 @@ export const unfollowUserService = async (followerId, followingId) => {
       following_id: followingId,
     },
   });
+};
+
+// ─── Get followers list ───────────────────────────────────────────────────
+
+export const getFollowersService = async (uid, viewerId = null) => {
+  const users = await prisma.public_users.findMany({
+    where: {
+      user_follows_user_follows_follower_idTousers: {
+        some: { following_id: uid },
+      },
+    },
+    orderBy: { first_name: "asc" },
+    ...userFollowInclude(viewerId),
+  });
+
+  return users.map((user) => mapFollowUser(user, viewerId));
+};
+
+// ─── Get following list ───────────────────────────────────────────────────
+
+export const getFollowingService = async (uid, viewerId = null) => {
+  const users = await prisma.public_users.findMany({
+    where: {
+      user_follows_user_follows_following_idTousers: {
+        some: { follower_id: uid },
+      },
+    },
+    orderBy: { first_name: "asc" },
+    ...userFollowInclude(viewerId),
+  });
+
+  return users.map((user) => mapFollowUser(user, viewerId));
 };
 
 // ─── Update about me ───────────────────────────────────────────────────────
