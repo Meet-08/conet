@@ -44,10 +44,12 @@ mock.module("../../../config/logger.js", () => ({
 
 import {
   createConversationService,
+  demoteGroupMemberService,
   getConversationsService,
   getGroupMembersService,
   getMessagesService,
   markAsReadService,
+  promoteGroupMemberService,
   searchUsersService,
   sendMessageService,
 } from "../../../services/conversationService.js";
@@ -491,6 +493,62 @@ describe("sendMessageService", () => {
 
     expect(result.media_urls).toHaveLength(1);
   });
+
+  it("allows admin to send in group when only_admin_send_messages is true", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      type: "group",
+      only_admin_send_messages: true,
+      conversation_members: [
+        { user_id: TEST_USER.id, role: "admin" },
+        { user_id: TEST_USER_B.id, role: "member" },
+      ],
+    });
+    prismaMock.messages.create.mockResolvedValue({
+      id: "msg-admin-group",
+      conversation_id: CONV_ID,
+      sender_id: TEST_USER.id,
+      content: "admin message",
+      created_at: new Date(),
+      is_read: false,
+      media_urls: [],
+    });
+
+    const result = await sendMessageService(
+      CONV_ID,
+      TEST_USER.id,
+      "admin message",
+    );
+
+    expect(result.content).toBe("admin message");
+    expect(prismaMock.messages.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          conversation_id: CONV_ID,
+          sender_id: TEST_USER.id,
+        }),
+      }),
+    );
+  });
+
+  it("blocks non-admin member in group when only_admin_send_messages is true", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      type: "group",
+      only_admin_send_messages: true,
+      conversation_members: [
+        { user_id: TEST_USER.id, role: "member" },
+        { user_id: TEST_USER_B.id, role: "admin" },
+      ],
+    });
+
+    await expect(
+      sendMessageService(CONV_ID, TEST_USER.id, "should fail"),
+    ).rejects.toMatchObject({
+      message: "Only group admins can send messages",
+      statusCode: 403,
+    });
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -652,6 +710,99 @@ describe("getGroupMembersService", () => {
       message: "Not a member of this group",
       statusCode: 403,
     });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("updateGroupMemberRoleService (promote/demote)", () => {
+  const GROUP_ID = "gggggggg-gggg-gggg-gggg-gggggggggggg";
+  const TARGET_ID = "22222222-2222-2222-2222-222222222222";
+
+  it("promotes a member and touches conversation updated_at", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: GROUP_ID,
+      type: "group",
+      conversation_members: [
+        { user_id: TEST_USER.id, role: "admin" },
+        { user_id: TARGET_ID, role: "member" },
+      ],
+    });
+
+    prismaMock.conversation_members.update.mockResolvedValue({});
+    prismaMock.public_users.findUnique.mockResolvedValue({
+      id: TARGET_ID,
+      username: "target",
+      email: "target@example.com",
+    });
+    prismaMock.conversations.update.mockResolvedValue({});
+
+    const result = await promoteGroupMemberService(
+      GROUP_ID,
+      TEST_USER.id,
+      TARGET_ID,
+    );
+
+    expect(prismaMock.conversation_members.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          conversation_id_user_id: {
+            conversation_id: GROUP_ID,
+            user_id: TARGET_ID,
+          },
+        },
+        data: { role: "admin" },
+      }),
+    );
+
+    expect(prismaMock.conversations.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: GROUP_ID } }),
+    );
+
+    expect(result.role).toBe("admin");
+  });
+
+  it("demotes an admin and touches conversation updated_at", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: GROUP_ID,
+      type: "group",
+      conversation_members: [
+        { user_id: TEST_USER.id, role: "admin" },
+        { user_id: TARGET_ID, role: "admin" },
+        { user_id: "other", role: "member" },
+      ],
+    });
+
+    prismaMock.conversation_members.update.mockResolvedValue({});
+    prismaMock.public_users.findUnique.mockResolvedValue({
+      id: TARGET_ID,
+      username: "target",
+      email: "target@example.com",
+    });
+    prismaMock.conversations.update.mockResolvedValue({});
+
+    const result = await demoteGroupMemberService(
+      GROUP_ID,
+      TEST_USER.id,
+      TARGET_ID,
+    );
+
+    expect(prismaMock.conversation_members.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          conversation_id_user_id: {
+            conversation_id: GROUP_ID,
+            user_id: TARGET_ID,
+          },
+        },
+        data: { role: "member" },
+      }),
+    );
+
+    expect(prismaMock.conversations.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: GROUP_ID } }),
+    );
+
+    expect(result.role).toBe("member");
   });
 });
 

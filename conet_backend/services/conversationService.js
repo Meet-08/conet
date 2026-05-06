@@ -182,7 +182,6 @@ export const createConversationService = async (currentUserId, otherUserId) => {
     throw err;
   }
 
-  // Prisma upsert cannot target a partial unique index, so use findFirst + create.
   const existing = await prisma.conversations.findFirst({
     where: { type: "direct", user_one: pair.user_one, user_two: pair.user_two },
     select: { id: true, updated_at: true },
@@ -408,6 +407,10 @@ export const sendMessageService = async (
     (m) => m.user_id === senderId,
   );
 
+  const selfMember = conversation.conversation_members.find(
+    (m) => m.user_id === senderId,
+  );
+
   if (!isParticipant) {
     const err = new Error("Not a participant of this conversation");
     err.statusCode = 403;
@@ -417,7 +420,7 @@ export const sendMessageService = async (
   if (
     conversation.type === "group" &&
     (conversation.only_admin_send_messages ?? true) &&
-    self?.role !== "admin"
+    selfMember?.role !== "admin"
   ) {
     const err = new Error("Only group admins can send messages");
     err.statusCode = 403;
@@ -626,6 +629,17 @@ export const addGroupMemberService = async (
     data: { conversation_id: groupId, user_id: newMemberId, role: "member" },
   });
 
+  try {
+    await prisma.conversations.update({
+      where: { id: groupId },
+      data: { updated_at: new Date() },
+    });
+  } catch (err) {
+    logger.error(
+      `Failed to touch conversation ${groupId} after adding member: ${err.message}`,
+    );
+  }
+
   return { ...targetUser, role: "member" };
 };
 
@@ -715,6 +729,17 @@ const updateGroupMemberRoleService = async (
     const err = new Error("Target user not found");
     err.statusCode = 404;
     throw err;
+  }
+
+  try {
+    await prisma.conversations.update({
+      where: { id: groupId },
+      data: { updated_at: new Date() },
+    });
+  } catch (err) {
+    logger.error(
+      `Failed to touch conversation ${groupId} after role update: ${err.message}`,
+    );
   }
 
   return { ...targetUser, role: nextRole };
@@ -817,6 +842,17 @@ export const removeGroupMemberService = async (
       },
     },
   });
+
+  try {
+    await prisma.conversations.update({
+      where: { id: groupId },
+      data: { updated_at: new Date() },
+    });
+  } catch (err) {
+    logger.error(
+      `Failed to touch conversation ${groupId} after removing member: ${err.message}`,
+    );
+  }
 };
 
 /**

@@ -374,10 +374,10 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
       groupId: event.groupId,
       userId: event.userId,
     );
-    result.fold(
-      (l) => emit(state.copyWith(errorMessage: l.message)),
-      (r) => add(MessageGroupMembersRequested(event.groupId)),
-    );
+    result.fold((l) => emit(state.copyWith(errorMessage: l.message)), (r) {
+      add(MessageGroupMembersRequested(event.groupId));
+      add(MessageConversationsRequested());
+    });
   }
 
   Future<void> _onGroupMemberDemoted(
@@ -388,10 +388,10 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
       groupId: event.groupId,
       userId: event.userId,
     );
-    result.fold(
-      (l) => emit(state.copyWith(errorMessage: l.message)),
-      (r) => add(MessageGroupMembersRequested(event.groupId)),
-    );
+    result.fold((l) => emit(state.copyWith(errorMessage: l.message)), (r) {
+      add(MessageGroupMembersRequested(event.groupId));
+      add(MessageConversationsRequested());
+    });
   }
 
   Future<void> _onWatchStarted(

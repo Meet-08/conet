@@ -52,6 +52,9 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
               backgroundColor: Colors
                   .primaries[displayName.hashCode % Colors.primaries.length]
                   .shade100,
+              shape: conversation.isEvent
+                  ? AvatarShape.square
+                  : AvatarShape.circle,
             ),
             const SizedBox(width: 8),
             Column(
