@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:flutter/material.dart';
 
 class Loader extends StatelessWidget {
@@ -20,7 +21,8 @@ class Loader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = color ?? Theme.of(context).primaryColor;
+    final semantic = context.semanticColors;
+    final effectiveColor = color ?? semantic.backgroundBrand;
     final double effectiveSize = size ?? 50;
 
     final Widget loaderWidget = SizedBox(
@@ -47,11 +49,10 @@ class Loader extends StatelessWidget {
               label!,
               style:
                   labelStyle ??
-                  TextStyle(
-                    fontSize: 14,
+                  Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: semantic.textSecondary,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade600,
-                    letterSpacing: 0.5,
+                    letterSpacing: 0.2,
                   ),
             ),
           ],

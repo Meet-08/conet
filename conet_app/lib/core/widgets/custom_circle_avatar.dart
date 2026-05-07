@@ -139,7 +139,7 @@ class CustomCircleAvatar extends StatelessWidget {
       return GestureDetector(
         onTap: onTap != null
             ? () => onTap!(userId!)
-            : () => context.push('/profile', extra: userId),
+            : () => context.push('/user-profile', extra: userId),
         child: avatar,
       );
     }

@@ -29,27 +29,29 @@ class GoogleAuthButton extends StatelessWidget {
 
     return SizedBox(
       width: double.infinity,
-      height: 52,
+      height: AppSpace.s48,
       child: ElevatedButton.icon(
         style: ElevatedButton.styleFrom(
-          shape: RoundedRectangleBorder(
-            borderRadius: isPrimary ? AppRadius.fullAll : AppRadius.mdAll,
-          ),
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
           backgroundColor: isPrimary
               ? semantic.backgroundBrand
               : semantic.surfaceBase,
           foregroundColor: isPrimary
               ? semantic.textOnBrand
               : semantic.textPrimary,
+          iconColor: isPrimary ? semantic.iconOnBrand : semantic.iconPrimary,
           side: isPrimary ? null : BorderSide(color: semantic.borderDefault),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16),
         ),
         onPressed: () {
           context.read<AuthBloc>().add(AuthSigninWithGoogle());
         },
-        icon: const Icon(FontAwesomeIcons.google),
+        icon: const Icon(FontAwesomeIcons.google, size: AppSpace.s16),
         label: Text(
           label ?? 'Continue with Google',
-          style: Theme.of(context).textTheme.labelLarge,
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+            color: isPrimary ? semantic.textOnBrand : semantic.textPrimary,
+          ),
         ),
       ),
     );

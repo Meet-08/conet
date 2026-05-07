@@ -1,8 +1,8 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/theme/theme.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AppBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -16,15 +16,10 @@ class AppBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<AppUserCubit, AppUserState, int>(
-      selector: (state) {
-        if (state is AppUserAuthenticated) {
-          return state.user.unseenNotificationCount;
-        }
-        return 0;
-      },
-      builder: (context, unseenCount) {
+    return BlocBuilder<AppUserCubit, AppUserState>(
+      builder: (context, state) {
         final semantic = context.semanticColors;
+        final user = state is AppUserAuthenticated ? state.user : null;
 
         return BottomNavigationBar(
           currentIndex: currentIndex,
@@ -33,19 +28,47 @@ class AppBottomNav extends StatelessWidget {
           unselectedItemColor: semantic.iconSecondary,
           items: [
             const BottomNavigationBarItem(
-              icon: FaIcon(FontAwesomeIcons.house),
+              icon: Icon(CupertinoIcons.house),
+              activeIcon: Icon(CupertinoIcons.house_fill),
               label: 'Home',
             ),
             const BottomNavigationBarItem(
-              icon: FaIcon(FontAwesomeIcons.calendar),
+              icon: Icon(CupertinoIcons.calendar),
+              activeIcon: Icon(
+                CupertinoIcons.calendar_today,
+              ), // no fill variant in Cupertino
               label: 'Events',
             ),
             const BottomNavigationBarItem(
-              icon: FaIcon(FontAwesomeIcons.comment),
+              icon: Icon(CupertinoIcons.bubble_left),
+              activeIcon: Icon(CupertinoIcons.bubble_left_fill),
               label: 'Messages',
             ),
-            const BottomNavigationBarItem(
-              icon: FaIcon(FontAwesomeIcons.user),
+            BottomNavigationBarItem(
+              icon:
+                  user?.profilePicUrl != null && user!.profilePicUrl!.isNotEmpty
+                  ? CircleAvatar(
+                      radius: 12,
+                      backgroundImage: NetworkImage(user.profilePicUrl!),
+                    )
+                  : const Icon(CupertinoIcons.person),
+              activeIcon:
+                  user?.profilePicUrl != null && user!.profilePicUrl!.isNotEmpty
+                  ? Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: semantic.iconSelected,
+                          width: 2,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        radius: 12,
+                        backgroundImage: NetworkImage(user.profilePicUrl!),
+                      ),
+                    )
+                  : const Icon(CupertinoIcons.person_fill),
               label: 'Profile',
             ),
           ],

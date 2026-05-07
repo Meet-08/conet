@@ -8,18 +8,26 @@ class EmailSignInButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+
     return SizedBox(
       width: double.infinity,
-      height: 52,
-      child: OutlinedButton.icon(
-        style: OutlinedButton.styleFrom(
-          shape: const RoundedRectangleBorder(borderRadius: AppRadius.fullAll),
+      height: AppSpace.s48,
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: semantic.backgroundBrand,
+          foregroundColor: semantic.textOnBrand,
+          iconColor: semantic.iconOnBrand,
+          shape: const RoundedRectangleBorder(borderRadius: AppRadius.mdAll),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16),
         ),
         onPressed: () => context.push('/email-signup'),
-        icon: const Icon(FontAwesomeIcons.envelope, size: 18),
+        icon: const Icon(FontAwesomeIcons.envelope, size: AppSpace.s16),
         label: Text(
           'Sign up with Email',
-          style: Theme.of(context).textTheme.labelLarge,
+          style: Theme.of(
+            context,
+          ).textTheme.labelLarge?.copyWith(color: semantic.textOnBrand),
         ),
       ),
     );

@@ -1,3 +1,4 @@
+import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/core/widgets/responsive_center_scrollable.dart';
@@ -34,7 +35,11 @@ class _FeedPageState extends State<FeedPage> {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
+      backgroundColor: semantic.backgroundPrimary,
       appBar: const PostAppBar(),
       floatingActionButton: const CreatePostFab(),
       body: BlocConsumer<PostBloc, PostState>(
@@ -45,35 +50,78 @@ class _FeedPageState extends State<FeedPage> {
         },
         builder: (context, state) {
           if (state is PostLoading) {
-            return const Center(child: Loader());
+            return ColoredBox(
+              color: semantic.surfaceBase,
+              child: const Center(child: Loader()),
+            );
           }
 
           if (state is! PostLoaded) {
-            return const SizedBox();
+            return ColoredBox(
+              color: semantic.surfaceBase,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16),
+                  child: Text(
+                    'Unable to load feed right now.',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: semantic.textSecondary,
+                    ),
+                  ),
+                ),
+              ),
+            );
           }
 
           final posts = state.posts;
 
-          return Stack(
-            children: [
-              ResponsiveCenterScrollable(
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    context.read<PostBloc>().add(
-                      const PostGetPostsEvent(page: 1, limit: 20),
-                    );
-                  },
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    cacheExtent: 400,
-                    itemCount: posts.length,
-                    itemBuilder: (context, index) {
-                      return PostCard(post: posts[index]);
-                    },
+          if (posts.isEmpty) {
+            return ColoredBox(
+              color: semantic.surfaceBase,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16),
+                  child: Text(
+                    'No posts yet. Pull to refresh to check again.',
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: semantic.textSecondary,
+                    ),
                   ),
                 ),
               ),
-            ],
+            );
+          }
+
+          return ColoredBox(
+            color: semantic.surfaceBase,
+            child: ResponsiveCenterScrollable(
+              maxContentWidth: 640,
+              child: RefreshIndicator(
+                color: semantic.backgroundBrand,
+                backgroundColor: semantic.surfaceBase,
+                onRefresh: () async {
+                  context.read<PostBloc>().add(
+                    const PostGetPostsEvent(page: 1, limit: 20),
+                  );
+                },
+                child: ListView.separated(
+                  controller: _scrollController,
+                  cacheExtent: 400,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: posts.length,
+                  itemBuilder: (context, index) {
+                    return PostCard(post: posts[index]);
+                  },
+                  separatorBuilder: (context, index) => Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: semantic.borderDefault,
+                  ),
+                ),
+              ),
+            ),
           );
         },
       ),

@@ -39,7 +39,9 @@ class PostPage extends StatelessWidget {
           children: [
             Text(
               'Post content',
-              style: textTheme.labelMedium?.copyWith(color: semantic.textSecondary),
+              style: textTheme.labelMedium?.copyWith(
+                color: semantic.textSecondary,
+              ),
             ),
             const SizedBox(height: 8),
             QuillReadOnlyView(deltaJson: post.content),

@@ -9,14 +9,14 @@ final class AppTypographyTokens {
   static const double size12 = 12;
   static const double size13 = 13;
   static const double size14 = 14;
-  static const double size15 = 15;
   static const double size16 = 16;
   static const double size18 = 18;
   static const double size20 = 20;
-  static const double size22 = 22;
   static const double size24 = 24;
-  static const double size28 = 28;
   static const double size30 = 30;
+  static const double size15 = 15;
+  static const double size22 = 22;
+  static const double size28 = 28;
   static const double size32 = 32;
 
   static const FontWeight weightLight = FontWeight.w300;
@@ -28,18 +28,20 @@ final class AppTypographyTokens {
   static const double lineHeight14 = 14;
   static const double lineHeight16 = 16;
   static const double lineHeight18 = 18;
+  static const double lineHeight20 = 20;
   static const double lineHeight22 = 22;
   static const double lineHeight24 = 24;
   static const double lineHeight26 = 26;
   static const double lineHeight28 = 28;
-  static const double lineHeight30 = 30;
   static const double lineHeight32 = 32;
+  static const double lineHeight30 = 30;
   static const double lineHeight36 = 36;
   static const double lineHeight38 = 38;
   static const double lineHeight40 = 40;
 
   static const double letterSpacingNone = 0;
-  static const double letterSpacingMicro = 0.01;
+  static const double letterSpacingWide = 0.2;
+  static const double letterSpacingMicro = letterSpacingWide;
   static const double letterSpacingUppercase = 0.04;
 }
 
@@ -56,9 +58,9 @@ final class AppTextStyles {
 
   static const TextStyle headingH1 = TextStyle(
     fontFamily: AppTypographyTokens.fontFamilyPrimary,
-    fontSize: AppTypographyTokens.size22,
+    fontSize: AppTypographyTokens.size24,
     fontWeight: AppTypographyTokens.weightSemibold,
-    height: AppTypographyTokens.lineHeight30 / AppTypographyTokens.size22,
+    height: AppTypographyTokens.lineHeight32 / AppTypographyTokens.size24,
   );
 
   static const TextStyle headingH2 = TextStyle(
@@ -71,7 +73,7 @@ final class AppTextStyles {
   static const TextStyle headingH3 = TextStyle(
     fontFamily: AppTypographyTokens.fontFamilyPrimary,
     fontSize: AppTypographyTokens.size18,
-    fontWeight: AppTypographyTokens.weightMedium,
+    fontWeight: AppTypographyTokens.weightSemibold,
     height: AppTypographyTokens.lineHeight26 / AppTypographyTokens.size18,
   );
 
@@ -84,9 +86,9 @@ final class AppTextStyles {
 
   static const TextStyle bodyDefault = TextStyle(
     fontFamily: AppTypographyTokens.fontFamilyPrimary,
-    fontSize: AppTypographyTokens.size15,
+    fontSize: AppTypographyTokens.size14,
     fontWeight: AppTypographyTokens.weightRegular,
-    height: AppTypographyTokens.lineHeight22 / AppTypographyTokens.size15,
+    height: AppTypographyTokens.lineHeight20 / AppTypographyTokens.size14,
   );
 
   static const TextStyle bodySmall = TextStyle(
@@ -100,21 +102,21 @@ final class AppTextStyles {
     fontFamily: AppTypographyTokens.fontFamilyPrimary,
     fontSize: AppTypographyTokens.size14,
     fontWeight: AppTypographyTokens.weightMedium,
-    height: AppTypographyTokens.lineHeight18 / AppTypographyTokens.size14,
+    height: AppTypographyTokens.lineHeight20 / AppTypographyTokens.size14,
   );
 
   static const TextStyle button = TextStyle(
     fontFamily: AppTypographyTokens.fontFamilyPrimary,
-    fontSize: AppTypographyTokens.size15,
+    fontSize: AppTypographyTokens.size16,
     fontWeight: AppTypographyTokens.weightMedium,
-    height: AppTypographyTokens.lineHeight22 / AppTypographyTokens.size15,
+    height: AppTypographyTokens.lineHeight24 / AppTypographyTokens.size16,
   );
 
   static const TextStyle link = TextStyle(
     fontFamily: AppTypographyTokens.fontFamilyPrimary,
-    fontSize: AppTypographyTokens.size15,
+    fontSize: AppTypographyTokens.size14,
     fontWeight: AppTypographyTokens.weightMedium,
-    height: AppTypographyTokens.lineHeight22 / AppTypographyTokens.size15,
+    height: AppTypographyTokens.lineHeight20 / AppTypographyTokens.size14,
   );
 
   static const TextStyle caption = TextStyle(
@@ -122,6 +124,7 @@ final class AppTextStyles {
     fontSize: AppTypographyTokens.size12,
     fontWeight: AppTypographyTokens.weightRegular,
     height: AppTypographyTokens.lineHeight16 / AppTypographyTokens.size12,
+    letterSpacing: AppTypographyTokens.letterSpacingWide,
   );
 
   static const TextStyle micro = TextStyle(
@@ -129,7 +132,7 @@ final class AppTextStyles {
     fontSize: AppTypographyTokens.size11,
     fontWeight: AppTypographyTokens.weightRegular,
     height: AppTypographyTokens.lineHeight14 / AppTypographyTokens.size11,
-    letterSpacing: AppTypographyTokens.letterSpacingMicro,
+    letterSpacing: AppTypographyTokens.letterSpacingWide,
   );
 
   static TextTheme textTheme(Color color) {
