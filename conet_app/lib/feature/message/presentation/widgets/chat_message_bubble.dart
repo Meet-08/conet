@@ -87,6 +87,7 @@ class ChatMessageBubble extends StatelessWidget {
                 if (hasText)
                   Linkify(
                     text: text,
+                    options: const LinkifyOptions(humanize: false),
                     style: AppTextStyles.bodyDefault.copyWith(color: textColor),
                     linkStyle: AppTextStyles.bodyDefault.copyWith(
                       color: colors.textLink,

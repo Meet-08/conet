@@ -119,7 +119,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
         final eventStartTime = _formData['start_time'] as TimeOfDay?;
         final registrationDeadline =
             _formData['registration_deadline'] as DateTime?;
-        if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
+        if (startDate != null &&
+            endDate != null &&
+            endDate.isBefore(startDate)) {
           return 'End date cannot be before start date';
         }
 
@@ -273,6 +275,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
           (a) => EventActivity(
             activityTime: startTodToDateTime(a['activity_time'] as TimeOfDay),
             activityTitle: a['activity_title'] as String,
+            description: (a['description'] as String?) ?? '',
           ),
         )
         .toList();
@@ -709,4 +712,3 @@ class _StepProgressBar extends StatelessWidget {
     );
   }
 }
-

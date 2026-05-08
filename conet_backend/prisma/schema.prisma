@@ -548,6 +548,7 @@ model event_activity {
   event_id       String   @db.Uuid
   activity_time  DateTime @db.Timestamp(6)
   activity_title String   @db.VarChar(255)
+  description    String
   events         events   @relation(fields: [event_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([event_id], map: "idx_event_activity_event")

@@ -206,6 +206,7 @@ class EventRequestActivityListConverter
           map['activity_time'] as String,
         ),
         activityTitle: map['activity_title'] as String,
+        description: (map['description'] as String?) ?? '',
       );
     }).toList();
   }
@@ -219,9 +220,9 @@ class EventRequestActivityListConverter
               item.activityTime,
             ),
             'activity_title': item.activityTitle.trim(),
+            'description': item.description.trim(),
           },
         )
         .toList();
   }
 }
-

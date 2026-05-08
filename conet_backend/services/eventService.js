@@ -569,12 +569,15 @@ const normalizeActivityEntries = (activity, fieldName = "activity") => {
       throw err;
     }
 
+    const description = String(entry.description ?? "").trim();
+
     return {
       activity_time: parseActivityTimeValue(
         entry.activity_time,
         `${fieldName}[${index}].activity_time`,
       ),
       activity_title: title,
+      description,
     };
   });
 };
@@ -727,9 +730,10 @@ export const createEventService = async (organizerId, body) => {
         normalizedActivities.length ?
           {
             create: normalizedActivities.map(
-              ({ activity_time, activity_title }) => ({
+              ({ activity_time, activity_title, description }) => ({
                 activity_time,
                 activity_title,
+                description,
               }),
             ),
           }
@@ -827,9 +831,9 @@ export const updateEventService = async (eventId, organizerId, body) => {
   const effectiveStartDate =
     start_date !== undefined ? new Date(start_date) : existing.start_date;
   const effectiveEndDate =
-    end_date !== undefined ?
-      new Date(end_date)
-    : (start_date !== undefined ? effectiveStartDate : existing.end_date);
+    end_date !== undefined ? new Date(end_date)
+    : start_date !== undefined ? effectiveStartDate
+    : existing.end_date;
   if (effectiveEndDate < effectiveStartDate) {
     const err = new Error("end_date cannot be before start_date");
     err.statusCode = 400;
@@ -936,10 +940,11 @@ export const updateEventService = async (eventId, organizerId, body) => {
       if (normalizedActivities.length) {
         await tx.event_activity.createMany({
           data: normalizedActivities.map(
-            ({ activity_time, activity_title }) => ({
+            ({ activity_time, activity_title, description }) => ({
               event_id: eventId,
               activity_time,
               activity_title,
+              description,
             }),
           ),
         });
@@ -2271,5 +2276,3 @@ export const listCohostsService = async (eventId, requesterId) => {
 
   return cohosts.map(mapCohost);
 };
-
-

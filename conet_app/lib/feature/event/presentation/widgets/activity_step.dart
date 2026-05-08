@@ -32,7 +32,7 @@ class _ActivityStepState extends State<ActivityStep> {
 
   void _addActivity() {
     final list = _activities
-      ..add({'activity_time': null, 'activity_title': ''});
+      ..add({'activity_time': null, 'activity_title': '', 'description': ''});
     _update({'activities': list});
   }
 
@@ -120,39 +120,59 @@ class _ActivityStepState extends State<ActivityStep> {
             return _DismissibleCard(
               key: ValueKey('act_$i'),
               onDismissed: () => _removeActivity(i),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Time picker
-                  _CompactTimePicker(
-                    value: a['activity_time'] as TimeOfDay?,
-                    onChanged: (t) => _updateActivity(i, {'activity_time': t}),
-                  ),
-                  const SizedBox(width: 12),
-                  // Title
-                  Expanded(
-                    child: TextFormField(
-                      initialValue: a['activity_title'] as String? ?? '',
-                      decoration: const InputDecoration(
-                        hintText: 'Activity title',
-                        filled: true,
-                        isDense: true,
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadius.mdAll,
-                          borderSide: BorderSide.none,
+                  Row(
+                    children: [
+                      _CompactTimePicker(
+                        value: a['activity_time'] as TimeOfDay?,
+                        onChanged: (t) =>
+                            _updateActivity(i, {'activity_time': t}),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextFormField(
+                          initialValue: a['activity_title'] as String? ?? '',
+                          decoration: const InputDecoration(
+                            hintText: 'Activity title',
+                            filled: true,
+                            isDense: true,
+                            border: OutlineInputBorder(
+                              borderRadius: AppRadius.mdAll,
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                          onChanged: (v) =>
+                              _updateActivity(i, {'activity_title': v}),
                         ),
                       ),
-                      onChanged: (v) =>
-                          _updateActivity(i, {'activity_title': v}),
-                    ),
+                      IconButton(
+                        icon: FaIcon(
+                          FontAwesomeIcons.xmark,
+                          size: 14,
+                          color: colorScheme.error,
+                        ),
+                        onPressed: () => _removeActivity(i),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
                   ),
-                  IconButton(
-                    icon: FaIcon(
-                      FontAwesomeIcons.xmark,
-                      size: 14,
-                      color: colorScheme.error,
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    initialValue: a['description'] as String? ?? '',
+                    decoration: const InputDecoration(
+                      hintText: 'Description (optional)',
+                      filled: true,
+                      isDense: true,
+                      border: OutlineInputBorder(
+                        borderRadius: AppRadius.mdAll,
+                        borderSide: BorderSide.none,
+                      ),
                     ),
-                    onPressed: () => _removeActivity(i),
-                    visualDensity: VisualDensity.compact,
+                    maxLines: null,
+                    minLines: 2,
+                    onChanged: (v) => _updateActivity(i, {'description': v}),
                   ),
                 ],
               ),
@@ -229,7 +249,7 @@ class _ActivityStepState extends State<ActivityStep> {
                     child: TextFormField(
                       initialValue: p['prize'] as String? ?? '',
                       decoration: const InputDecoration(
-                        hintText: 'Prize description',
+                        hintText: 'Prize details',
                         filled: true,
                         isDense: true,
                         border: OutlineInputBorder(
