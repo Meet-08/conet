@@ -385,16 +385,16 @@ class _MyEventCard extends StatelessWidget {
     );
   }
 
-  String _savedHint(DateTime eventDate) {
-    final days = eventDate.difference(DateTime.now()).inDays;
+  String _savedHint(DateTime startDate) {
+    final days = startDate.difference(DateTime.now()).inDays;
     if (days <= 3) {
       return 'Only ${days < 0 ? 0 : days} days left';
     }
     return 'Upcoming event in $days days';
   }
 
-  Color _savedHintColor(DateTime eventDate) {
-    final days = eventDate.difference(DateTime.now()).inDays;
+  Color _savedHintColor(DateTime startDate) {
+    final days = startDate.difference(DateTime.now()).inDays;
     return days <= 3 ? const Color(0xFF2563EB) : const Color(0xFFF97316);
   }
 }
@@ -484,3 +484,4 @@ class _ActionPill extends StatelessWidget {
     );
   }
 }
+

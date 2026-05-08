@@ -84,7 +84,8 @@ void main() {
     organizerId: 'org-1',
     title: 'Flutter Meetup',
     category: 'Technology',
-    eventDate: DateTime(2026, 4, 10),
+    startDate: DateTime(2026, 4, 10),
+    endDate: DateTime(2026, 4, 10),
     startTime: DateTime(2026, 4, 10, 9),
     endTime: DateTime(2026, 4, 10, 12),
     locationType: 'OFFLINE',
@@ -97,7 +98,8 @@ void main() {
   final tPayload = EventCreatePayload(
     title: 'Flutter Meetup',
     category: 'Technology',
-    eventDate: DateTime(2026, 4, 10),
+    startDate: DateTime(2026, 4, 10),
+    endDate: DateTime(2026, 4, 10),
     startTime: DateTime(2026, 4, 10, 9),
     endTime: DateTime(2026, 4, 10, 12),
     locationType: 'OFFLINE',
@@ -483,3 +485,4 @@ void main() {
     );
   });
 }
+

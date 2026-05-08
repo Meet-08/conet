@@ -265,7 +265,7 @@ class _HeaderCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final dateLabel = DateFormat('MMM d').format(event.eventDate);
+    final dateLabel = DateFormat('MMM d').format(event.startDate);
     final timeLabel =
         '${_formatClock(event.startTime)} - ${_formatClock(event.endTime)}';
     final locationLabel = event.venue ?? event.location ?? 'Location TBA';
@@ -917,3 +917,4 @@ String? _teamSizeLabel(Event event) {
   if (min != null) return 'Minimum $min members';
   return 'Up to $max members';
 }
+

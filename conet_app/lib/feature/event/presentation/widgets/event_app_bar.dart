@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class EventAppBar extends StatelessWidget implements PreferredSizeWidget {
   const EventAppBar({super.key});
@@ -17,29 +17,35 @@ class EventAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: false,
       actions: [
         IconButton(
+          visualDensity: VisualDensity.compact,
           onPressed: () => context.push('/event-search'),
-          icon: FaIcon(
-            FontAwesomeIcons.magnifyingGlass,
-            size: 17,
+          icon: Icon(
+            PhosphorIconsBold.magnifyingGlass,
+            size: 20,
             color: colorScheme.onSurface,
+            fontWeight: FontWeight.w700,
           ),
           tooltip: 'Search events',
         ),
         IconButton(
+          visualDensity: VisualDensity.compact,
           onPressed: () => context.push('/my-events?type=upcoming'),
-          icon: FaIcon(
-            FontAwesomeIcons.ticket,
-            size: 17,
+          icon: Icon(
+            PhosphorIconsBold.ticket,
+            size: 20,
             color: colorScheme.onSurface,
+            fontWeight: FontWeight.w700,
           ),
           tooltip: 'My events',
         ),
         IconButton(
+          visualDensity: VisualDensity.compact,
           onPressed: () => context.push('/event-dashboard'),
-          icon: FaIcon(
-            FontAwesomeIcons.tableCellsLarge,
-            size: 16,
+          icon: Icon(
+            PhosphorIconsBold.squaresFour,
+            size: 20,
             color: colorScheme.onSurface,
+            fontWeight: FontWeight.w700,
           ),
           tooltip: 'Browse event sections',
         ),

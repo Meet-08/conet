@@ -519,11 +519,45 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
             title: 'Event Date & Time',
           ),
           const SizedBox(height: 12),
-          const _LabelText(text: 'Date'),
-          const SizedBox(height: 8),
-          _DatePickerField(
-            value: widget.formData['event_date'] as DateTime?,
-            onChanged: (d) => _update({'event_date': d}),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _LabelText(text: 'Start Date'),
+                    const SizedBox(height: 8),
+                    _DatePickerField(
+                      value: widget.formData['start_date'] as DateTime?,
+                      onChanged: (d) {
+                        final endDate = widget.formData['end_date'] as DateTime?;
+                        _update({
+                          'start_date': d,
+                          if (endDate == null || endDate.isBefore(d)) 'end_date': d,
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const _LabelText(text: 'End Date'),
+                    const SizedBox(height: 8),
+                    _DatePickerField(
+                      value: widget.formData['end_date'] as DateTime?,
+                      firstDate:
+                          (widget.formData['start_date'] as DateTime?) ??
+                          DateTime.now(),
+                      onChanged: (d) => _update({'end_date': d}),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           Row(
@@ -974,9 +1008,14 @@ InputDecoration _inputDecoration({required String hint, Widget? prefixIcon}) {
 
 class _DatePickerField extends StatelessWidget {
   final DateTime? value;
+  final DateTime? firstDate;
   final ValueChanged<DateTime> onChanged;
 
-  const _DatePickerField({required this.value, required this.onChanged});
+  const _DatePickerField({
+    required this.value,
+    this.firstDate,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -988,10 +1027,13 @@ class _DatePickerField extends StatelessWidget {
       borderRadius: AppRadius.mdAll,
       onTap: () async {
         final now = DateTime.now();
+        final minDate = firstDate ?? now;
+        final effectiveInitialDate =
+            value != null && value!.isBefore(minDate) ? minDate : (value ?? now);
         final picked = await showDatePicker(
           context: context,
-          initialDate: value ?? now,
-          firstDate: now,
+          initialDate: effectiveInitialDate,
+          firstDate: minDate,
           lastDate: now.add(const Duration(days: 365 * 3)),
         );
         if (picked != null) onChanged(picked);
@@ -1036,3 +1078,4 @@ class _TimePickerField extends StatelessWidget {
     );
   }
 }
+

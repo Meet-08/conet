@@ -10,7 +10,8 @@ class EventCreatePayload extends Equatable {
   final String title;
   final String category;
   final String? about;
-  final DateTime eventDate;
+  final DateTime startDate;
+  final DateTime endDate;
   final DateTime startTime;
   final DateTime endTime;
   final String locationType;
@@ -39,7 +40,8 @@ class EventCreatePayload extends Equatable {
     required this.title,
     required this.category,
     this.about,
-    required this.eventDate,
+    required this.startDate,
+    required this.endDate,
     required this.startTime,
     required this.endTime,
     required this.locationType,
@@ -67,7 +69,8 @@ class EventCreatePayload extends Equatable {
     String? title,
     String? category,
     String? about,
-    DateTime? eventDate,
+    DateTime? startDate,
+    DateTime? endDate,
     DateTime? startTime,
     DateTime? endTime,
     String? locationType,
@@ -94,7 +97,8 @@ class EventCreatePayload extends Equatable {
       title: title ?? this.title,
       category: category ?? this.category,
       about: about ?? this.about,
-      eventDate: eventDate ?? this.eventDate,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       locationType: locationType ?? this.locationType,
@@ -124,7 +128,8 @@ class EventCreatePayload extends Equatable {
     title,
     category,
     about,
-    eventDate,
+    startDate,
+    endDate,
     startTime,
     endTime,
     locationType,
@@ -148,3 +153,4 @@ class EventCreatePayload extends Equatable {
     conversationId,
   ];
 }
+

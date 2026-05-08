@@ -109,7 +109,7 @@ class _PreviewStepState extends State<PreviewStep> {
 
     final title = widget.formData['title'] as String? ?? '';
     final category = widget.formData['category'] as String? ?? '';
-    final eventDate = widget.formData['event_date'] as DateTime?;
+    final startDate = widget.formData['start_date'] as DateTime?;
     final startTime = widget.formData['start_time'] as TimeOfDay?;
     final endTime = widget.formData['end_time'] as TimeOfDay?;
     final isOnline = widget.formData['location_type'] == 'ONLINE';
@@ -245,7 +245,7 @@ class _PreviewStepState extends State<PreviewStep> {
                 const SizedBox(height: 16),
                 _QuickInfoRow(
                   icon: FontAwesomeIcons.calendar,
-                  title: _formatShortDate(eventDate),
+                  title: _formatShortDate(startDate),
                   subtitle:
                       '${_formatTime(startTime)} - ${_formatTime(endTime)}',
                   theme: theme,
@@ -945,3 +945,5 @@ class _PrizeTile extends StatelessWidget {
     );
   }
 }
+
+

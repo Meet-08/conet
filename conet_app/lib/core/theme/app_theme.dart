@@ -113,8 +113,8 @@ final class AppTheme {
       dividerColor: semantic.borderSubtle,
       iconTheme: IconThemeData(
         color: semantic.iconPrimary,
-        size: 16,
-        weight: 150,
+        size: 18,
+        weight: 700,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

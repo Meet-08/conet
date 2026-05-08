@@ -18,8 +18,11 @@ class Event extends Equatable {
   final String category;
   final String? about;
 
-  @JsonKey(name: 'event_date')
-  final DateTime eventDate;
+  @JsonKey(name: 'start_date')
+  final DateTime startDate;
+
+  @JsonKey(name: 'end_date')
+  final DateTime endDate;
 
   @JsonKey(name: 'start_time')
   final DateTime startTime;
@@ -95,7 +98,8 @@ class Event extends Equatable {
     required this.title,
     required this.category,
     this.about,
-    required this.eventDate,
+    required this.startDate,
+    required this.endDate,
     required this.startTime,
     required this.endTime,
     required this.locationType,
@@ -136,7 +140,8 @@ class Event extends Equatable {
     String? title,
     String? category,
     String? about,
-    DateTime? eventDate,
+    DateTime? startDate,
+    DateTime? endDate,
     DateTime? startTime,
     DateTime? endTime,
     String? locationType,
@@ -172,7 +177,8 @@ class Event extends Equatable {
       title: title ?? this.title,
       category: category ?? this.category,
       about: about ?? this.about,
-      eventDate: eventDate ?? this.eventDate,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       locationType: locationType ?? this.locationType,
@@ -211,7 +217,8 @@ class Event extends Equatable {
     title,
     category,
     about,
-    eventDate,
+    startDate,
+    endDate,
     startTime,
     endTime,
     locationType,
@@ -241,3 +248,5 @@ class Event extends Equatable {
     isBookmarked,
   ];
 }
+
+

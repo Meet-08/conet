@@ -73,7 +73,8 @@ class EventCreatePayloadModel extends EventCreatePayload {
     required super.title,
     required super.category,
     super.about,
-    required super.eventDate,
+    required super.startDate,
+    required super.endDate,
     required this.startTime,
     required this.endTime,
     required super.locationType,
@@ -121,7 +122,8 @@ class EventCreatePayloadModel extends EventCreatePayload {
       title: payload.title.trim(),
       category: payload.category.trim(),
       about: _nullableText(payload.about),
-      eventDate: payload.eventDate,
+      startDate: payload.startDate,
+      endDate: payload.endDate,
       startTime: payload.startTime,
       endTime: payload.endTime,
       locationType: payload.locationType,
@@ -222,3 +224,4 @@ class EventRequestActivityListConverter
         .toList();
   }
 }
+

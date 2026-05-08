@@ -39,13 +39,13 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
     final currentDeadline =
         widget.formData['registration_deadline'] as DateTime?;
 
-    final eventDate = widget.formData['event_date'] as DateTime?;
+    final startDate = widget.formData['start_date'] as DateTime?;
     final eventStartTime = widget.formData['start_time'] as TimeOfDay?;
-    final eventStartDateTime = eventDate != null && eventStartTime != null
+    final eventStartDateTime = startDate != null && eventStartTime != null
         ? DateTime(
-            eventDate.year,
-            eventDate.month,
-            eventDate.day,
+            startDate.year,
+            startDate.month,
+            startDate.day,
             eventStartTime.hour,
             eventStartTime.minute,
           )
@@ -727,3 +727,5 @@ InputDecoration _inputDecoration({required String hint, Widget? prefixIcon}) {
     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
   );
 }
+
+

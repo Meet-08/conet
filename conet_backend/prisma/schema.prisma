@@ -712,7 +712,7 @@ model events {
   organizer_id          String                  @db.Uuid
   title                 String                  @db.VarChar(255)
   category              String                  @db.VarChar(100)
-  event_date            DateTime                @db.Date
+  start_date            DateTime                @db.Date
   start_time            DateTime                @db.Time(6)
   end_time              DateTime                @db.Time(6)
   location_type         location_type_enum
@@ -733,6 +733,7 @@ model events {
   about                 Json                    @default("{\"ops\": []}")
   custom_fields         Json?                   @default("[]")
   conversation_id       String?                 @db.Uuid
+  end_date              DateTime                @db.Date
   event_activity        event_activity[]
   event_bookmarks       event_bookmarks[]
   event_cohosts         event_cohosts[]
@@ -747,7 +748,7 @@ model events {
 
   @@index([about], map: "idx_events_about", type: Gin)
   @@index([custom_fields], map: "idx_events_custom_fields_gin", type: Gin)
-  @@index([event_date], map: "idx_events_date")
+  @@index([start_date], map: "idx_events_date")
   @@index([organizer_id], map: "idx_events_organizer")
   @@index([participation_type], map: "idx_events_participation_type")
   @@index([event_status], map: "idx_events_status")

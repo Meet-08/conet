@@ -34,7 +34,7 @@ const makeEventRow = (override = {}) => ({
   title: "Campus Hack Night",
   category: "Technology",
   about: "Build and ship with your team",
-  event_date: new Date("2026-06-15T00:00:00.000Z"),
+  start_date: new Date("2026-06-15T00:00:00.000Z"),
   start_time: new Date("1970-01-01T09:00:00.000Z"),
   end_time: new Date("1970-01-01T11:00:00.000Z"),
   location_type: "ONLINE",
@@ -77,7 +77,7 @@ const makeSummaryRow = (override = {}) => ({
   category: "Technology",
   ticket_price_type: "FREE",
   price: null,
-  event_date: new Date("2026-06-15T00:00:00.000Z"),
+  start_date: new Date("2026-06-15T00:00:00.000Z"),
   venue: "Innovation Hub",
   location: null,
   created_at: new Date("2026-03-28T00:00:00.000Z"),
@@ -163,7 +163,7 @@ describe("GET /api/events", () => {
     expect(prismaMock.events.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         take: 101,
-        orderBy: [{ event_date: "asc" }, { id: "asc" }],
+        orderBy: [{ start_date: "asc" }, { id: "asc" }],
         where: expect.objectContaining({
           event_status: "published",
           category: "Tech",
@@ -233,7 +233,7 @@ describe("GET /api/events/my", () => {
     expect(prismaMock.events.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         take: 21,
-        orderBy: [{ event_date: "asc" }, { id: "asc" }],
+        orderBy: [{ start_date: "asc" }, { id: "asc" }],
       }),
     );
   });
@@ -260,7 +260,7 @@ describe("Event lifecycle routes", () => {
       .send({
         title: "Hackathon",
         category: "Technology",
-        event_date: "2026-06-15",
+        start_date: "2026-06-15",
         start_time: "09:00",
         end_time: "11:00",
         location_type: "ONLINE",
@@ -394,7 +394,7 @@ describe("Registration and attendance routes", () => {
     prismaMock.events.findUnique.mockResolvedValue({
       id: EVENT_ID,
       title: "Campus Hack Night",
-      event_date: new Date("2026-06-15T00:00:00.000Z"),
+      start_date: new Date("2026-06-15T00:00:00.000Z"),
       start_time: new Date("1970-01-01T09:00:00.000Z"),
       end_time: new Date("1970-01-01T11:00:00.000Z"),
       venue: "Innovation Hub",
@@ -531,3 +531,4 @@ describe("Cohost routes", () => {
     expect(res.body.cohosts).toHaveLength(1);
   });
 });
+

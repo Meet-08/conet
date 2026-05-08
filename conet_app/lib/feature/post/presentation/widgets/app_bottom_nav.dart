@@ -1,8 +1,8 @@
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/theme/theme.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class AppBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -26,22 +26,46 @@ class AppBottomNav extends StatelessWidget {
           type: BottomNavigationBarType.fixed,
           selectedItemColor: semantic.iconPrimary,
           unselectedItemColor: semantic.iconSecondary,
+          unselectedFontSize: 14,
+          selectedFontSize: 14,
           items: [
             const BottomNavigationBarItem(
-              icon: Icon(CupertinoIcons.house),
-              activeIcon: Icon(CupertinoIcons.house_fill),
+              icon: Icon(
+                PhosphorIconsBold.house,
+                size: 24,
+                fontWeight: FontWeight.w500,
+              ),
+              activeIcon: Icon(
+                PhosphorIconsFill.house,
+                size: 24,
+                fontWeight: FontWeight.w500,
+              ),
               label: 'Home',
             ),
             const BottomNavigationBarItem(
-              icon: Icon(CupertinoIcons.calendar),
+              icon: Icon(
+                PhosphorIconsBold.calendarBlank,
+                size: 24,
+                fontWeight: FontWeight.w500,
+              ),
               activeIcon: Icon(
-                CupertinoIcons.calendar_today,
-              ), // no fill variant in Cupertino
+                PhosphorIconsFill.calendarBlank,
+                size: 24,
+                fontWeight: FontWeight.w500,
+              ),
               label: 'Events',
             ),
             const BottomNavigationBarItem(
-              icon: Icon(CupertinoIcons.bubble_left),
-              activeIcon: Icon(CupertinoIcons.bubble_left_fill),
+              icon: Icon(
+                PhosphorIconsBold.chatCircle,
+                size: 24,
+                fontWeight: FontWeight.w500,
+              ),
+              activeIcon: Icon(
+                PhosphorIconsFill.chatCircle,
+                size: 24,
+                fontWeight: FontWeight.w500,
+              ),
               label: 'Messages',
             ),
             BottomNavigationBarItem(
@@ -51,7 +75,11 @@ class AppBottomNav extends StatelessWidget {
                       radius: 12,
                       backgroundImage: NetworkImage(user.profilePicUrl!),
                     )
-                  : const Icon(CupertinoIcons.person),
+                  : const Icon(
+                      PhosphorIconsRegular.user,
+                      size: 24,
+                      fontWeight: FontWeight.w500,
+                    ),
               activeIcon:
                   user?.profilePicUrl != null && user!.profilePicUrl!.isNotEmpty
                   ? Container(
@@ -68,7 +96,11 @@ class AppBottomNav extends StatelessWidget {
                         backgroundImage: NetworkImage(user.profilePicUrl!),
                       ),
                     )
-                  : const Icon(CupertinoIcons.person_fill),
+                  : const Icon(
+                      PhosphorIconsBold.user,
+                      size: 24,
+                      fontWeight: FontWeight.w500,
+                    ),
               label: 'Profile',
             ),
           ],

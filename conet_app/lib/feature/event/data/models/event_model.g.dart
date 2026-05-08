@@ -15,7 +15,8 @@ EventModel _$EventModelFromJson(Map<String, dynamic> json) => EventModel(
   title: json['title'] as String,
   category: json['category'] as String,
   about: json['about'] as String?,
-  eventDate: DateTime.parse(json['event_date'] as String),
+  startDate: DateTime.parse(json['start_date'] as String),
+  endDate: DateTime.parse(json['end_date'] as String),
   startTime: DateTime.parse(json['start_time'] as String),
   endTime: DateTime.parse(json['end_time'] as String),
   locationType: json['location_type'] as String,
@@ -70,7 +71,8 @@ Map<String, dynamic> _$EventModelToJson(
   'title': instance.title,
   'category': instance.category,
   'about': instance.about,
-  'event_date': instance.eventDate.toIso8601String(),
+  'start_date': instance.startDate.toIso8601String(),
+  'end_date': instance.endDate.toIso8601String(),
   'start_time': instance.startTime.toIso8601String(),
   'end_time': instance.endTime.toIso8601String(),
   'location_type': instance.locationType,
@@ -101,3 +103,5 @@ Map<String, dynamic> _$EventModelToJson(
   'is_registered': instance.isRegistered,
   'is_bookmarked': instance.isBookmarked,
 };
+
+

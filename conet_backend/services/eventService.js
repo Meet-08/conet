@@ -105,43 +105,43 @@ const normalizeAttendeeStatusFilter = (value) => {
   return normalized;
 };
 
-const buildPublishedEventsCursor = (eventDate, id) =>
+const buildPublishedEventsCursor = (startDate, id) =>
   Buffer.from(
-    JSON.stringify({ eventDate: eventDate.toISOString(), id }),
+    JSON.stringify({ startDate: startDate.toISOString(), id }),
   ).toString("base64");
 
 const parsePublishedEventsCursor = (cursor) => {
   try {
     const decoded = JSON.parse(Buffer.from(cursor, "base64").toString("utf8"));
-    if (!decoded?.eventDate || !decoded?.id) {
+    if (!decoded?.startDate || !decoded?.id) {
       return null;
     }
-    const eventDate = new Date(decoded.eventDate);
-    if (Number.isNaN(eventDate.getTime())) {
+    const startDate = new Date(decoded.startDate);
+    if (Number.isNaN(startDate.getTime())) {
       return null;
     }
-    return { eventDate, id: decoded.id };
+    return { startDate, id: decoded.id };
   } catch {
     return null;
   }
 };
 
-const buildMyEventsCursor = (eventDate, id) =>
+const buildMyEventsCursor = (startDate, id) =>
   Buffer.from(
-    JSON.stringify({ eventDate: eventDate.toISOString(), id }),
+    JSON.stringify({ startDate: startDate.toISOString(), id }),
   ).toString("base64");
 
 const parseMyEventsCursor = (cursor) => {
   try {
     const decoded = JSON.parse(Buffer.from(cursor, "base64").toString("utf8"));
-    if (!decoded?.eventDate || !decoded?.id) {
+    if (!decoded?.startDate || !decoded?.id) {
       return null;
     }
-    const eventDate = new Date(decoded.eventDate);
-    if (Number.isNaN(eventDate.getTime())) {
+    const startDate = new Date(decoded.startDate);
+    if (Number.isNaN(startDate.getTime())) {
       return null;
     }
-    return { eventDate, id: decoded.id };
+    return { startDate, id: decoded.id };
   } catch {
     return null;
   }
@@ -584,7 +584,8 @@ export const createEventService = async (organizerId, body) => {
     title,
     category,
     about,
-    event_date,
+    start_date,
+    end_date,
     start_time,
     end_time,
     location_type,
@@ -619,14 +620,14 @@ export const createEventService = async (organizerId, body) => {
   if (
     !title ||
     !category ||
-    !event_date ||
+    !start_date ||
     !start_time ||
     !end_time ||
     !location_type ||
     !event_image_url
   ) {
     const err = new Error(
-      "title, category, event_date, start_time, end_time, location_type, and event_image_url are required",
+      "title, category, start_date, start_time, end_time, location_type, and event_image_url are required",
     );
     err.statusCode = 400;
     throw err;
@@ -653,6 +654,14 @@ export const createEventService = async (organizerId, body) => {
   const parsedStartTime = parseTimeString(start_time, "start_time");
   const parsedEndTime = parseTimeString(end_time, "end_time");
   assertEndAfterStart(parsedStartTime, parsedEndTime);
+  const resolvedEndDate = end_date ?? start_date;
+  const parsedStartDate = new Date(start_date);
+  const parsedEndDate = new Date(resolvedEndDate);
+  if (parsedEndDate < parsedStartDate) {
+    const err = new Error("end_date cannot be before start_date");
+    err.statusCode = 400;
+    throw err;
+  }
 
   const normalizedParticipationType =
     normalizeParticipationType(participation_type) ?? "individual";
@@ -691,7 +700,8 @@ export const createEventService = async (organizerId, body) => {
       title,
       category,
       about,
-      event_date: new Date(event_date),
+      start_date: parsedStartDate,
+      end_date: parsedEndDate,
       start_time: parsedStartTime,
       end_time: parsedEndTime,
       location_type,
@@ -753,7 +763,8 @@ export const updateEventService = async (eventId, organizerId, body) => {
     title,
     category,
     about,
-    event_date,
+    start_date,
+    end_date,
     start_time,
     end_time,
     location_type,
@@ -813,6 +824,18 @@ export const updateEventService = async (eventId, organizerId, body) => {
     assertEndAfterStart(effectiveStart, effectiveEnd);
   }
 
+  const effectiveStartDate =
+    start_date !== undefined ? new Date(start_date) : existing.start_date;
+  const effectiveEndDate =
+    end_date !== undefined ?
+      new Date(end_date)
+    : (start_date !== undefined ? effectiveStartDate : existing.end_date);
+  if (effectiveEndDate < effectiveStartDate) {
+    const err = new Error("end_date cannot be before start_date");
+    err.statusCode = 400;
+    throw err;
+  }
+
   const normalizedParticipationType =
     participation_type !== undefined ?
       normalizeParticipationType(participation_type)
@@ -869,7 +892,8 @@ export const updateEventService = async (eventId, organizerId, body) => {
     ...(title !== undefined && { title }),
     ...(category !== undefined && { category }),
     ...(about !== undefined && { about }),
-    ...(event_date !== undefined && { event_date: new Date(event_date) }),
+    ...(start_date !== undefined && { start_date: new Date(start_date) }),
+    ...(end_date !== undefined && { end_date: new Date(end_date) }),
     ...(start_time !== undefined && { start_time: parsedStartTime }),
     ...(end_time !== undefined && { end_time: parsedEndTime }),
     ...(location_type !== undefined && { location_type }),
@@ -1388,7 +1412,7 @@ export const getRegistrationInfoService = async (eventId, userId) => {
     select: {
       id: true,
       title: true,
-      event_date: true,
+      start_date: true,
       start_time: true,
       end_time: true,
       venue: true,
@@ -1836,7 +1860,7 @@ export const listPublishedEventsService = async ({
     ...(location_type && { location_type }),
     ...(date_from || date_to ?
       {
-        event_date: {
+        start_date: {
           ...(date_from && { gte: new Date(date_from) }),
           ...(date_to && { lte: new Date(date_to) }),
         },
@@ -1850,9 +1874,9 @@ export const listPublishedEventsService = async ({
     }),
     ...(parsedCursor && {
       OR: [
-        { event_date: { gt: parsedCursor.eventDate } },
+        { start_date: { gt: parsedCursor.startDate } },
         {
-          event_date: parsedCursor.eventDate,
+          start_date: parsedCursor.startDate,
           id: { gt: parsedCursor.id },
         },
       ],
@@ -1862,7 +1886,7 @@ export const listPublishedEventsService = async ({
   const rows = await prisma.events.findMany({
     where,
     take: safePageSize + 1,
-    orderBy: [{ event_date: "asc" }, { id: "asc" }],
+    orderBy: [{ start_date: "asc" }, { id: "asc" }],
     select: eventSummarySelect(viewerId),
   });
 
@@ -1871,7 +1895,7 @@ export const listPublishedEventsService = async ({
   const nextCursor =
     hasMore ?
       buildPublishedEventsCursor(
-        rows[rows.length - 1].event_date,
+        rows[rows.length - 1].start_date,
         rows[rows.length - 1].id,
       )
     : null;
@@ -1996,8 +2020,8 @@ export const listMyEventsService = async (
           },
         ],
         ...(type === "upcoming" ?
-          { event_date: { gte: today } }
-        : { event_date: { lt: today } }),
+          { start_date: { gte: today } }
+        : { start_date: { lt: today } }),
       }),
   };
 
@@ -2006,18 +2030,18 @@ export const listMyEventsService = async (
     : type === "past" ?
       {
         OR: [
-          { event_date: { lt: parsedCursor.eventDate } },
+          { start_date: { lt: parsedCursor.startDate } },
           {
-            event_date: parsedCursor.eventDate,
+            start_date: parsedCursor.startDate,
             id: { lt: parsedCursor.id },
           },
         ],
       }
     : {
         OR: [
-          { event_date: { gt: parsedCursor.eventDate } },
+          { start_date: { gt: parsedCursor.startDate } },
           {
-            event_date: parsedCursor.eventDate,
+            start_date: parsedCursor.startDate,
             id: { gt: parsedCursor.id },
           },
         ],
@@ -2031,8 +2055,8 @@ export const listMyEventsService = async (
     take: safePageSize + 1,
     orderBy:
       type === "past" ?
-        [{ event_date: "desc" }, { id: "desc" }]
-      : [{ event_date: "asc" }, { id: "asc" }],
+        [{ start_date: "desc" }, { id: "desc" }]
+      : [{ start_date: "asc" }, { id: "asc" }],
     select: eventSummarySelect(userId),
   });
 
@@ -2042,7 +2066,7 @@ export const listMyEventsService = async (
   const nextCursor =
     hasMore ?
       buildMyEventsCursor(
-        rows[rows.length - 1].event_date,
+        rows[rows.length - 1].start_date,
         rows[rows.length - 1].id,
       )
     : null;
@@ -2247,3 +2271,5 @@ export const listCohostsService = async (eventId, requesterId) => {
 
   return cohosts.map(mapCohost);
 };
+
+

@@ -66,7 +66,8 @@ class EventModel extends Event {
     required super.title,
     required super.category,
     super.about,
-    required super.eventDate,
+    required super.startDate,
+    required super.endDate,
     required super.startTime,
     required super.endTime,
     required super.locationType,
@@ -120,7 +121,8 @@ class EventModel extends Event {
       title: entity.title,
       category: entity.category,
       about: entity.about,
-      eventDate: entity.eventDate,
+      startDate: entity.startDate,
+      endDate: entity.endDate,
       startTime: entity.startTime,
       endTime: entity.endTime,
       locationType: entity.locationType,
@@ -248,3 +250,4 @@ class EventCustomFieldListConverter
     return object.map((field) => field.toJson()).toList(growable: false);
   }
 }
+

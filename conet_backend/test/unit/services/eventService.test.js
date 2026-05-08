@@ -31,7 +31,7 @@ const makeEventRow = (override = {}) => ({
   title: "Campus Hack Night",
   category: "Technology",
   about: "Build, ship, and network",
-  event_date: new Date("2026-05-10T00:00:00.000Z"),
+  start_date: new Date("2026-05-10T00:00:00.000Z"),
   start_time: new Date("1970-01-01T09:00:00.000Z"),
   end_time: new Date("1970-01-01T11:00:00.000Z"),
   location_type: "ONLINE",
@@ -74,7 +74,7 @@ const makeSummaryRow = (override = {}) => ({
   category: "Technology",
   ticket_price_type: "FREE",
   price: null,
-  event_date: new Date("2026-05-10T00:00:00.000Z"),
+  start_date: new Date("2026-05-10T00:00:00.000Z"),
   venue: "Main Hall",
   location: null,
   created_at: new Date("2026-03-28T00:00:00.000Z"),
@@ -144,7 +144,7 @@ describe("createEventService", () => {
     await expect(createEventService(ORGANIZER_ID, {})).rejects.toMatchObject({
       statusCode: 400,
       message:
-        "title, category, event_date, start_time, end_time, location_type, and event_image_url are required",
+        "title, category, start_date, start_time, end_time, location_type, and event_image_url are required",
     });
   });
 
@@ -153,7 +153,7 @@ describe("createEventService", () => {
       createEventService(ORGANIZER_ID, {
         title: "Offline meetup",
         category: "Networking",
-        event_date: "2026-05-10",
+        start_date: "2026-05-10",
         start_time: "10:00",
         end_time: "11:00",
         location_type: "OFFLINE",
@@ -173,7 +173,7 @@ describe("createEventService", () => {
     const result = await createEventService(ORGANIZER_ID, {
       title: "Launch Day",
       category: "Technology",
-      event_date: "2026-06-01",
+      start_date: "2026-06-01",
       start_time: "09:30",
       end_time: "11:30",
       location_type: "ONLINE",
@@ -201,7 +201,7 @@ describe("createEventService", () => {
     await createEventService(ORGANIZER_ID, {
       title: "Demo Event",
       category: "hackathon",
-      event_date: "2026-06-01",
+      start_date: "2026-06-01",
       start_time: "09:30",
       end_time: "11:30",
       location_type: "OFFLINE",
@@ -230,7 +230,7 @@ describe("createEventService", () => {
       createEventService(ORGANIZER_ID, {
         title: "Broken Activity Event",
         category: "Technology",
-        event_date: "2026-06-01",
+        start_date: "2026-06-01",
         start_time: "09:30",
         end_time: "11:30",
         location_type: "ONLINE",
@@ -254,7 +254,7 @@ describe("createEventService", () => {
     await createEventService(ORGANIZER_ID, {
       title: "Image Field Event",
       category: "Technology",
-      event_date: "2026-06-01",
+      start_date: "2026-06-01",
       start_time: "09:30",
       end_time: "11:30",
       location_type: "ONLINE",
@@ -288,7 +288,7 @@ describe("createEventService", () => {
       createEventService(ORGANIZER_ID, {
         title: "Broken Image Field Event",
         category: "Technology",
-        event_date: "2026-06-01",
+        start_date: "2026-06-01",
         start_time: "09:30",
         end_time: "11:30",
         location_type: "ONLINE",
@@ -754,7 +754,7 @@ describe("getRegistrationInfoService", () => {
     prismaMock.events.findUnique.mockResolvedValue({
       id: EVENT_ID,
       title: "Campus Hack Night",
-      event_date: new Date("2026-05-10T00:00:00.000Z"),
+      start_date: new Date("2026-05-10T00:00:00.000Z"),
       start_time: new Date("1970-01-01T09:00:00.000Z"),
       end_time: new Date("1970-01-01T11:00:00.000Z"),
       venue: "Main Hall",
@@ -775,7 +775,7 @@ describe("getRegistrationInfoService", () => {
     prismaMock.events.findUnique.mockResolvedValue({
       id: EVENT_ID,
       title: "Campus Hack Night",
-      event_date: new Date("2026-05-10T00:00:00.000Z"),
+      start_date: new Date("2026-05-10T00:00:00.000Z"),
       start_time: new Date("1970-01-01T09:00:00.000Z"),
       end_time: new Date("1970-01-01T11:00:00.000Z"),
       venue: "Main Hall",
@@ -1138,15 +1138,15 @@ describe("listPublishedEventsService", () => {
     prismaMock.events.findMany.mockResolvedValue([
       makeSummaryRow({
         id: "event-1",
-        event_date: new Date("2026-05-10T00:00:00.000Z"),
+        start_date: new Date("2026-05-10T00:00:00.000Z"),
       }),
       makeSummaryRow({
         id: "event-2",
-        event_date: new Date("2026-05-11T00:00:00.000Z"),
+        start_date: new Date("2026-05-11T00:00:00.000Z"),
       }),
       makeSummaryRow({
         id: "event-3",
-        event_date: new Date("2026-05-12T00:00:00.000Z"),
+        start_date: new Date("2026-05-12T00:00:00.000Z"),
       }),
     ]);
 
@@ -1160,7 +1160,7 @@ describe("listPublishedEventsService", () => {
     expect(prismaMock.events.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         take: 3,
-        orderBy: [{ event_date: "asc" }, { id: "asc" }],
+        orderBy: [{ start_date: "asc" }, { id: "asc" }],
       }),
     );
     expect(result.events).toHaveLength(2);
@@ -1225,7 +1225,7 @@ describe("listMyEventsService", () => {
     expect(arg.where.event_bookmarks).toEqual({
       some: { user_id: ORGANIZER_ID },
     });
-    expect(arg.orderBy).toEqual([{ event_date: "asc" }, { id: "asc" }]);
+    expect(arg.orderBy).toEqual([{ start_date: "asc" }, { id: "asc" }]);
   });
 
   it("uses descending order for past events", async () => {
@@ -1237,7 +1237,7 @@ describe("listMyEventsService", () => {
     });
 
     const arg = prismaMock.events.findMany.mock.calls[0][0];
-    expect(arg.orderBy).toEqual([{ event_date: "desc" }, { id: "desc" }]);
+    expect(arg.orderBy).toEqual([{ start_date: "desc" }, { id: "desc" }]);
   });
 });
 
@@ -1323,3 +1323,4 @@ describe("cohost services", () => {
     ]);
   });
 });
+

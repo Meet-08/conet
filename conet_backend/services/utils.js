@@ -29,7 +29,8 @@ export const mapEvent = (event, viewerId = null) => ({
   title: event.title,
   category: event.category,
   about: jsonFieldToString(event.about, EMPTY_QUILL_DELTA_JSON),
-  event_date: event.event_date,
+  start_date: event.start_date,
+  end_date: event.end_date,
   start_time: event.start_time,
   end_time: event.end_time,
   location_type: event.location_type,
@@ -71,7 +72,7 @@ export const mapEventSummary = (event) => ({
   category: event.category,
   ticket_price_type: event.ticket_price_type,
   price: event.price ? Number(event.price) : null,
-  event_start_date: event.event_date,
+  event_start_date: event.start_date,
   venue: event.venue ?? null,
   location: event.location ?? null,
   max_participant: event.max_participant ?? null,
@@ -85,7 +86,7 @@ export const eventSummarySelect = (viewerId = null) => ({
   category: true,
   ticket_price_type: true,
   price: true,
-  event_date: true,
+  start_date: true,
   venue: true,
   location: true,
   max_participant: true,
@@ -234,3 +235,4 @@ export const assertEndAfterStart = (startDate, endDate) => {
     throw err;
   }
 };
+

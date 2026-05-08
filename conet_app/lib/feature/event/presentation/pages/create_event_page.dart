@@ -33,7 +33,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
   Map<String, dynamic> _formData = {
     'title': '',
     'category': '',
-    'event_date': null, // DateTime?
+    'start_date': null, // DateTime?
+    'end_date': null, // DateTime?
     'start_time': null, // TimeOfDay?
     'end_time': null, // TimeOfDay?
     'location_type': 'OFFLINE', // 'ONLINE' | 'OFFLINE'
@@ -87,8 +88,11 @@ class _CreateEventPageState extends State<CreateEventPage> {
         if ((_formData['category'] as String).isEmpty) {
           return 'Please select a category';
         }
-        if (_formData['event_date'] == null) {
-          return 'Please pick a date';
+        if (_formData['start_date'] == null) {
+          return 'Please pick a start date';
+        }
+        if (_formData['end_date'] == null) {
+          return 'Please pick an end date';
         }
         if (_formData['start_time'] == null) {
           return 'Please pick a start time';
@@ -110,18 +114,22 @@ class _CreateEventPageState extends State<CreateEventPage> {
         }
         return null;
       case 1:
-        final eventDate = _formData['event_date'] as DateTime?;
+        final startDate = _formData['start_date'] as DateTime?;
+        final endDate = _formData['end_date'] as DateTime?;
         final eventStartTime = _formData['start_time'] as TimeOfDay?;
         final registrationDeadline =
             _formData['registration_deadline'] as DateTime?;
+        if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
+          return 'End date cannot be before start date';
+        }
 
         if (registrationDeadline != null &&
-            eventDate != null &&
+            startDate != null &&
             eventStartTime != null) {
           final eventStartDateTime = DateTime(
-            eventDate.year,
-            eventDate.month,
-            eventDate.day,
+            startDate.year,
+            startDate.month,
+            startDate.day,
             eventStartTime.hour,
             eventStartTime.minute,
           );
@@ -237,12 +245,20 @@ class _CreateEventPageState extends State<CreateEventPage> {
   }
 
   EventCreatePayload _buildPayload() {
-    final date = _formData['event_date'] as DateTime;
+    final date = _formData['start_date'] as DateTime;
+    final endDate = _formData['end_date'] as DateTime;
     final startTod = _formData['start_time'] as TimeOfDay;
     final endTod = _formData['end_time'] as TimeOfDay;
 
-    DateTime todToDateTime(TimeOfDay tod) =>
+    DateTime startTodToDateTime(TimeOfDay tod) =>
         DateTime(date.year, date.month, date.day, tod.hour, tod.minute);
+    DateTime endTodToDateTime(TimeOfDay tod) => DateTime(
+      endDate.year,
+      endDate.month,
+      endDate.day,
+      tod.hour,
+      tod.minute,
+    );
 
     final rawActivities = List<Map<String, dynamic>>.from(
       _formData['activities'] as List? ?? [],
@@ -255,7 +271,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
         )
         .map(
           (a) => EventActivity(
-            activityTime: todToDateTime(a['activity_time'] as TimeOfDay),
+            activityTime: startTodToDateTime(a['activity_time'] as TimeOfDay),
             activityTitle: a['activity_title'] as String,
           ),
         )
@@ -382,9 +398,10 @@ class _CreateEventPageState extends State<CreateEventPage> {
                 ).isEmpty
                 ? null
                 : _formData['about'] as String?),
-      eventDate: date,
-      startTime: todToDateTime(startTod),
-      endTime: todToDateTime(endTod),
+      startDate: date,
+      endDate: endDate,
+      startTime: startTodToDateTime(startTod),
+      endTime: endTodToDateTime(endTod),
       locationType: _formData['location_type'] as String,
       location: isOnline ? null : (cityOrCampus.isEmpty ? null : cityOrCampus),
       venue: isOnline ? null : (venueName.isEmpty ? null : venueName),
@@ -692,3 +709,4 @@ class _StepProgressBar extends StatelessWidget {
     );
   }
 }
+
