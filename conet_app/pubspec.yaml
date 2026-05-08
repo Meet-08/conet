@@ -76,6 +76,7 @@ dependencies:
   razorpay_flutter: ^1.4.4
   open_filex: ^4.7.0
   phosphor_flutter: ^2.1.0
+  flutter_linkify: ^6.0.0
 
 dev_dependencies:
   flutter_test:

@@ -5,7 +5,9 @@ import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/presentation/widgets/media/chat_media_item.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChatMessageBubble extends StatelessWidget {
   final String text;
@@ -83,9 +85,22 @@ class ChatMessageBubble extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (hasText)
-                  Text(
-                    text,
+                  Linkify(
+                    text: text,
                     style: AppTextStyles.bodyDefault.copyWith(color: textColor),
+                    linkStyle: AppTextStyles.bodyDefault.copyWith(
+                      color: colors.textLink,
+                      decoration: TextDecoration.none,
+                    ),
+                    onOpen: (link) async {
+                      final uri = Uri.parse(link.url);
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      }
+                    },
                   ),
                 if (hasText && hasMedia) const SizedBox(height: 8),
                 if (hasMedia) _buildMediaGrid(context),
