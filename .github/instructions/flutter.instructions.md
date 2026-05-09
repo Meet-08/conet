@@ -143,6 +143,7 @@ UI rules:
 - No async calls inside widgets
 - No repository or use case access directly
 - Use FontAwesome icons for all icons, no custom SVGs
+- Use `AppSemanticColors` and `AppTextStyle` for all styling, no hardcoded values
 - Always check core widgets and utils before adding anything
 
 ---

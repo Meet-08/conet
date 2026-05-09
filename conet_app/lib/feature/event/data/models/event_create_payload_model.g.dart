@@ -12,6 +12,7 @@ EventCreatePayloadModel _$EventCreatePayloadModelFromJson(
   title: json['title'] as String,
   category: json['category'] as String,
   about: json['about'] as String?,
+  instructions: json['instructions'] as String?,
   startDate: DateTime.parse(json['start_date'] as String),
   endDate: DateTime.parse(json['end_date'] as String),
   startTime: const EventRequestTimeConverter().fromJson(
@@ -60,6 +61,7 @@ Map<String, dynamic> _$EventCreatePayloadModelToJson(
   'title': instance.title,
   'category': instance.category,
   'about': ?instance.about,
+  'instructions': ?instance.instructions,
   'start_date': instance.startDate.toIso8601String(),
   'end_date': instance.endDate.toIso8601String(),
   'location_type': instance.locationType,
@@ -68,7 +70,6 @@ Map<String, dynamic> _$EventCreatePayloadModelToJson(
   'ticket_price_type': instance.ticketPriceType,
   'price': ?instance.price,
   'max_participant': ?instance.maxParticipant,
-  'venue': ?instance.venue,
   'eligibility': ?instance.eligibility,
   'conversation_id': ?instance.conversationId,
   'start_time': const EventRequestTimeConverter().toJson(instance.startTime),
@@ -78,6 +79,7 @@ Map<String, dynamic> _$EventCreatePayloadModelToJson(
   ),
   'prizes': const EventPrizeListConverter().toJson(instance.prizes),
   'faqs': const EventFaqListConverter().toJson(instance.faqs),
+  'venue': ?instance.venue,
   'registration_deadline': ?instance.registrationDeadline?.toIso8601String(),
   'participation_type': ?instance.participationType,
   'min_team_size': ?instance.minTeamSize,
@@ -87,5 +89,3 @@ Map<String, dynamic> _$EventCreatePayloadModelToJson(
   ),
   'publish': instance.publish,
 };
-
-

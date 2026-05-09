@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/theme/app_tokens.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/widgets/quill_read_only_view.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -28,8 +30,6 @@ class PreviewStep extends StatefulWidget {
 
 class _PreviewStepState extends State<PreviewStep> {
   final Map<int, bool> _expandedFaqs = {};
-
-  // ── Helpers ──────────────────────────────────────────────────────────────
 
   String _formatShortDate(DateTime? d) =>
       d == null ? '—' : DateFormat('MMM d').format(d);
@@ -104,8 +104,16 @@ class _PreviewStepState extends State<PreviewStep> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final semantic = context.semanticColors;
+    final screenTitleStyle = AppTextStyles.headingH2.copyWith(
+      color: semantic.textPrimary,
+    );
+    final sectionTitleStyle = AppTextStyles.headingH3.copyWith(
+      color: semantic.textPrimary,
+    );
+    final bodyLargeStyle = AppTextStyles.bodyLarge.copyWith(
+      color: semantic.textPrimary,
+    );
 
     final title = widget.formData['title'] as String? ?? '';
     final category = widget.formData['category'] as String? ?? '';
@@ -121,7 +129,6 @@ class _PreviewStepState extends State<PreviewStep> {
     final aboutDelta = widget.formData['about'] as String? ?? '';
     final eligibility = widget.formData['eligibility'] as String? ?? '';
     final additionalNote = widget.formData['additional_note'] as String? ?? '';
-    final maxParticipant = widget.formData['max_participant'];
     final prizeType = widget.formData['prize_type'] as String? ?? 'none';
     final minTeamSize = widget.formData['min_team_size'];
     final maxTeamSize = widget.formData['max_team_size'];
@@ -135,16 +142,14 @@ class _PreviewStepState extends State<PreviewStep> {
       widget.formData['faqs'] as List? ?? [],
     );
     final mobileNumber = widget.formData['mobile_number'] as String? ?? '';
+    final createEventConversation =
+        widget.formData['create_event_conversation'] as bool? ?? false;
     final coOrganizers = List<String>.from(
       widget.formData['co_organizers'] as List? ?? [],
     );
     final coOrganizerUsers = List<Map<String, dynamic>>.from(
       widget.formData['co_organizer_users'] as List? ?? [],
     );
-
-    final registrationCount = maxParticipant is int
-        ? (maxParticipant * 0.6).round().clamp(1, maxParticipant)
-        : 1847;
 
     final hasAboutContent = aboutDelta.trim().isNotEmpty;
 
@@ -157,18 +162,16 @@ class _PreviewStepState extends State<PreviewStep> {
         children: [
           _SectionTitle(
             label: widget.stepTitle,
-            theme: theme,
-            colorScheme: colorScheme,
+            semantic: semantic,
+            titleStyle: screenTitleStyle,
           ),
           const SizedBox(height: 12),
 
           Container(
             decoration: BoxDecoration(
-              color: colorScheme.surface,
+              color: semantic.backgroundPrimary,
               borderRadius: AppRadius.lgAll,
-              border: Border.all(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
-              ),
+              border: Border.all(color: semantic.borderDefault),
             ),
             padding: const EdgeInsets.all(14),
             child: Column(
@@ -193,12 +196,13 @@ class _PreviewStepState extends State<PreviewStep> {
                                       fit: BoxFit.cover,
                                     ))
                             : Container(
-                                color: colorScheme.surfaceContainerHighest,
+                                color: semantic.backgroundTertiary,
                                 child: Center(
                                   child: Text(
                                     _initialsFromTitle(title),
-                                    style: theme.textTheme.titleMedium
-                                        ?.copyWith(fontWeight: FontWeight.w800),
+                                    style: AppTextStyles.headingH3.copyWith(
+                                      color: semantic.textPrimary,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -215,12 +219,13 @@ class _PreviewStepState extends State<PreviewStep> {
                               vertical: 3,
                             ),
                             decoration: BoxDecoration(
-                              color: colorScheme.surfaceContainerHighest,
+                              color: semantic.backgroundTertiary,
                               borderRadius: AppRadius.fullAll,
                             ),
                             child: Text(
                               _categoryLabel(category).toUpperCase(),
-                              style: theme.textTheme.labelSmall?.copyWith(
+                              style: AppTextStyles.caption.copyWith(
+                                color: semantic.textPrimary,
                                 fontWeight: FontWeight.w700,
                                 letterSpacing: 0.4,
                               ),
@@ -231,10 +236,7 @@ class _PreviewStepState extends State<PreviewStep> {
                             title.isEmpty ? 'Untitled Event' : title,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              height: 1.2,
-                            ),
+                            style: sectionTitleStyle.copyWith(height: 1.2),
                           ),
                         ],
                       ),
@@ -248,8 +250,7 @@ class _PreviewStepState extends State<PreviewStep> {
                   title: _formatShortDate(startDate),
                   subtitle:
                       '${_formatTime(startTime)} - ${_formatTime(endTime)}',
-                  theme: theme,
-                  colorScheme: colorScheme,
+                  semantic: semantic,
                 ),
                 const SizedBox(height: 12),
                 _QuickInfoRow(
@@ -262,8 +263,7 @@ class _PreviewStepState extends State<PreviewStep> {
                             ? 'Link will be shared later'
                             : meetingLink)
                       : 'Venue details',
-                  theme: theme,
-                  colorScheme: colorScheme,
+                  semantic: semantic,
                 ),
                 if (minTeamSize != null || maxTeamSize != null) ...[
                   const SizedBox(height: 12),
@@ -272,8 +272,7 @@ class _PreviewStepState extends State<PreviewStep> {
                     title: 'Team Size',
                     subtitle:
                         '${minTeamSize ?? '1'} - ${maxTeamSize ?? '∞'} members',
-                    theme: theme,
-                    colorScheme: colorScheme,
+                    semantic: semantic,
                   ),
                 ],
                 const SizedBox(height: 12),
@@ -285,39 +284,31 @@ class _PreviewStepState extends State<PreviewStep> {
                   subtitle: isPaid
                       ? 'Registration fee applies'
                       : 'No registration fee',
-                  theme: theme,
-                  colorScheme: colorScheme,
+                  semantic: semantic,
                 ),
 
                 const SizedBox(height: 18),
-                _line(colorScheme),
+                _line(semantic),
                 const SizedBox(height: 16),
 
                 Text(
                   'About ${title.isEmpty ? 'this event' : title}',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: sectionTitleStyle,
                 ),
                 const SizedBox(height: 12),
                 if (!hasAboutContent)
                   Text(
                     'No event description provided yet.',
-                    style: theme.textTheme.bodyLarge?.copyWith(height: 1.55),
+                    style: bodyLargeStyle.copyWith(height: 1.55),
                   )
                 else
                   QuillReadOnlyView(deltaJson: aboutDelta),
 
                 if (activities.isNotEmpty) ...[
                   const SizedBox(height: 18),
-                  _line(colorScheme),
+                  _line(semantic),
                   const SizedBox(height: 14),
-                  Text(
-                    'Event Schedule',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  Text('Event Schedule', style: sectionTitleStyle),
                   const SizedBox(height: 12),
                   ...List.generate(activities.length, (i) {
                     final a = activities[i];
@@ -339,7 +330,7 @@ class _PreviewStepState extends State<PreviewStep> {
                               width: 7,
                               height: 7,
                               decoration: BoxDecoration(
-                                color: colorScheme.onSurface,
+                                color: semantic.textPrimary,
                                 shape: BoxShape.circle,
                               ),
                             ),
@@ -355,21 +346,18 @@ class _PreviewStepState extends State<PreviewStep> {
                                     children: [
                                       Text(
                                         _formatTime(t1),
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color:
-                                                  colorScheme.onSurfaceVariant,
-                                              fontWeight: FontWeight.w600,
-                                            ),
+                                        style: AppTextStyles.bodySmall.copyWith(
+                                          color: semantic.textSecondary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                       if (duration.isNotEmpty) ...[
                                         const SizedBox(width: 8),
                                         Text(
                                           '• $duration',
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                                color: colorScheme
-                                                    .onSurfaceVariant,
+                                          style: AppTextStyles.bodySmall
+                                              .copyWith(
+                                                color: semantic.textSecondary,
                                               ),
                                         ),
                                       ],
@@ -379,7 +367,8 @@ class _PreviewStepState extends State<PreviewStep> {
                                 const SizedBox(height: 2),
                                 Text(
                                   title.isEmpty ? 'Activity' : title,
-                                  style: theme.textTheme.titleMedium?.copyWith(
+                                  style: AppTextStyles.label.copyWith(
+                                    color: semantic.textPrimary,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -393,21 +382,15 @@ class _PreviewStepState extends State<PreviewStep> {
                 ],
 
                 const SizedBox(height: 18),
-                _line(colorScheme),
+                _line(semantic),
                 const SizedBox(height: 14),
-                Text(
-                  'Prizes',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+                Text('Prizes', style: sectionTitleStyle),
                 const SizedBox(height: 10),
                 if (prizes.isEmpty)
                   _PrizeTile(
                     position: _prizeLabel(prizeType),
                     value: 'Prize details will be announced by the organizer',
-                    theme: theme,
-                    colorScheme: colorScheme,
+                    semantic: semantic,
                   )
                 else
                   ...prizes.map((p) {
@@ -418,21 +401,15 @@ class _PreviewStepState extends State<PreviewStep> {
                       child: _PrizeTile(
                         position: pos.isEmpty ? 'Prize' : pos,
                         value: val.isEmpty ? 'Prize details' : val,
-                        theme: theme,
-                        colorScheme: colorScheme,
+                        semantic: semantic,
                       ),
                     );
                   }),
 
                 const SizedBox(height: 18),
-                _line(colorScheme),
+                _line(semantic),
                 const SizedBox(height: 14),
-                Text(
-                  'Organizer',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+                Text('Organizer', style: sectionTitleStyle),
                 const SizedBox(height: 10),
                 BlocBuilder<AppUserCubit, AppUserState>(
                   builder: (context, state) {
@@ -446,28 +423,24 @@ class _PreviewStepState extends State<PreviewStep> {
                     return Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: colorScheme.surfaceContainerLow,
+                        color: semantic.backgroundTertiary,
                         borderRadius: AppRadius.mdAll,
-                        border: Border.all(
-                          color: colorScheme.outlineVariant.withValues(
-                            alpha: 0.35,
-                          ),
-                        ),
+                        border: Border.all(color: semantic.borderDefault),
                       ),
                       child: Row(
                         children: [
                           CircleAvatar(
                             radius: 16,
-                            backgroundColor: colorScheme.primaryContainer,
+                            backgroundColor: semantic.backgroundInfo,
                             backgroundImage: profilePicUrl != null
                                 ? NetworkImage(profilePicUrl)
                                 : null,
                             child: profilePicUrl == null
                                 ? Text(
                                     _initialsFromTitle(organizerName),
-                                    style: theme.textTheme.labelSmall?.copyWith(
+                                    style: AppTextStyles.caption.copyWith(
+                                      color: semantic.textOnInfo,
                                       fontWeight: FontWeight.w700,
-                                      color: colorScheme.onPrimaryContainer,
                                     ),
                                   )
                                 : null,
@@ -481,7 +454,8 @@ class _PreviewStepState extends State<PreviewStep> {
                                   organizerName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleSmall?.copyWith(
+                                  style: AppTextStyles.label.copyWith(
+                                    color: semantic.textPrimary,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -489,8 +463,8 @@ class _PreviewStepState extends State<PreviewStep> {
                                   mobileNumber.isEmpty
                                       ? 'Contact will be shared'
                                       : mobileNumber,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: semantic.textSecondary,
                                   ),
                                 ),
                               ],
@@ -527,12 +501,13 @@ class _PreviewStepState extends State<PreviewStep> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest,
+                                color: semantic.backgroundTertiary,
                                 borderRadius: AppRadius.fullAll,
                               ),
                               child: Text(
                                 displayName,
-                                style: theme.textTheme.labelSmall?.copyWith(
+                                style: AppTextStyles.caption.copyWith(
+                                  color: semantic.textPrimary,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -545,12 +520,13 @@ class _PreviewStepState extends State<PreviewStep> {
                                 vertical: 6,
                               ),
                               decoration: BoxDecoration(
-                                color: colorScheme.surfaceContainerHighest,
+                                color: semantic.backgroundTertiary,
                                 borderRadius: AppRadius.fullAll,
                               ),
                               child: Text(
                                 '@$u',
-                                style: theme.textTheme.labelSmall?.copyWith(
+                                style: AppTextStyles.caption.copyWith(
+                                  color: semantic.textPrimary,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -560,85 +536,31 @@ class _PreviewStepState extends State<PreviewStep> {
                 ],
 
                 const SizedBox(height: 18),
-                _line(colorScheme),
+                _line(semantic),
                 const SizedBox(height: 14),
-                Text(
-                  'Instructions',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+                Text('Instructions', style: sectionTitleStyle),
                 const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surface,
-                    borderRadius: AppRadius.smAll,
-                    border: Border.all(
-                      color: colorScheme.primary.withValues(alpha: 0.45),
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: instructionPoints.map((item) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('• '),
-                            Expanded(
-                              child: Text(
-                                item,
-                                style: theme.textTheme.bodyMedium,
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
+                _InfoCallout(items: instructionPoints, semantic: semantic),
 
                 if (eligibility.trim().isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  Text(
-                    'Eligibility',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  Text('Eligibility', style: sectionTitleStyle),
                   const SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: colorScheme.surface,
-                      borderRadius: AppRadius.smAll,
-                      border: Border.all(
-                        color: colorScheme.primary.withValues(alpha: 0.45),
-                      ),
-                    ),
-                    child: Text(eligibility, style: theme.textTheme.bodyMedium),
+                  _InfoCallout(
+                    items: eligibility
+                        .split(RegExp(r'\n|•|-'))
+                        .map((e) => e.trim())
+                        .where((e) => e.isNotEmpty)
+                        .toList(growable: false),
+                    semantic: semantic,
                   ),
                 ],
 
                 if (faqs.isNotEmpty) ...[
                   const SizedBox(height: 18),
-                  _line(colorScheme),
+                  _line(semantic),
                   const SizedBox(height: 14),
-                  Text(
-                    'Frequently Asked Questions',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  Text('Frequently Asked Questions', style: sectionTitleStyle),
                   const SizedBox(height: 10),
                   ...List.generate(faqs.length, (i) {
                     final f = faqs[i];
@@ -649,13 +571,9 @@ class _PreviewStepState extends State<PreviewStep> {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerLow,
+                          color: semantic.backgroundTertiary,
                           borderRadius: AppRadius.smAll,
-                          border: Border.all(
-                            color: colorScheme.outlineVariant.withValues(
-                              alpha: 0.35,
-                            ),
-                          ),
+                          border: Border.all(color: semantic.borderDefault),
                         ),
                         child: Column(
                           children: [
@@ -676,10 +594,10 @@ class _PreviewStepState extends State<PreviewStep> {
                                     Expanded(
                                       child: Text(
                                         q.isEmpty ? 'FAQ ${i + 1}' : q,
-                                        style: theme.textTheme.titleSmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w700,
-                                            ),
+                                        style: AppTextStyles.label.copyWith(
+                                          color: semantic.textPrimary,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                     ),
                                     FaIcon(
@@ -687,7 +605,7 @@ class _PreviewStepState extends State<PreviewStep> {
                                           ? FontAwesomeIcons.chevronUp
                                           : FontAwesomeIcons.chevronDown,
                                       size: 12,
-                                      color: colorScheme.onSurfaceVariant,
+                                      color: semantic.textSecondary,
                                     ),
                                   ],
                                 ),
@@ -705,8 +623,8 @@ class _PreviewStepState extends State<PreviewStep> {
                                   a.isEmpty
                                       ? 'Answer will be shared by organizer.'
                                       : a,
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
+                                  style: AppTextStyles.bodyDefault.copyWith(
+                                    color: semantic.textSecondary,
                                     height: 1.45,
                                   ),
                                 ),
@@ -718,70 +636,68 @@ class _PreviewStepState extends State<PreviewStep> {
                   }),
                 ],
 
-                const SizedBox(height: 18),
-                _line(colorScheme),
-                const SizedBox(height: 14),
-                Text(
-                  'Discussion',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerLow,
-                    borderRadius: AppRadius.mdAll,
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: colorScheme.surfaceContainerHighest,
-                        child: FaIcon(
-                          FontAwesomeIcons.message,
-                          size: 14,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${title.isEmpty ? 'Event' : title} Group',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                if (createEventConversation) ...[
+                  const SizedBox(height: 18),
+                  _line(semantic),
+                  const SizedBox(height: 14),
+                  Text('Discussion', style: sectionTitleStyle),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: semantic.backgroundInfo,
+                      borderRadius: AppRadius.lgAll,
+                      border: Border.all(color: semantic.borderInfo),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: semantic.backgroundPrimary,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: semantic.borderDefault),
+                          ),
+                          child: Center(
+                            child: FaIcon(
+                              FontAwesomeIcons.message,
+                              size: 16,
+                              color: semantic.iconSecondary,
                             ),
-                            Text(
-                              '$registrationCount members',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    'Register to auto join this group',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '${title.isEmpty ? 'Event' : title} Group',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.label.copyWith(
+                                  color: semantic.textPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'Register to auto-join this group',
+                                style: AppTextStyles.bodyDefault.copyWith(
+                                  color: semantic.textSecondary,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
@@ -790,34 +706,93 @@ class _PreviewStepState extends State<PreviewStep> {
     );
   }
 
-  Widget _line(ColorScheme colorScheme) {
+  Widget _line(AppSemanticColors semantic) {
+    return Container(height: 1, color: semantic.borderDefault);
+  }
+}
+
+class _InfoCallout extends StatelessWidget {
+  final List<String> items;
+  final AppSemanticColors semantic;
+
+  const _InfoCallout({required this.items, required this.semantic});
+
+  Widget _bulletItem(String item) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: semantic.iconInfo,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              item,
+              style: AppTextStyles.bodyDefault.copyWith(
+                height: 1.45,
+                color: semantic.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      height: 1,
-      color: colorScheme.outlineVariant.withValues(alpha: 0.45),
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpace.s10),
+      decoration: BoxDecoration(
+        color: semantic.backgroundInfo,
+        borderRadius: AppRadius.mdAll,
+        border: Border.all(color: semantic.borderInfo),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 12),
+          if (items.isEmpty)
+            Text(
+              'Details will be shared by the organizer.',
+              style: AppTextStyles.bodyDefault.copyWith(
+                height: 1.45,
+                color: semantic.textPrimary,
+              ),
+            )
+          else
+            ...items.map(_bulletItem),
+        ],
+      ),
     );
   }
 }
 
 class _SectionTitle extends StatelessWidget {
   final String label;
-  final ThemeData theme;
-  final ColorScheme colorScheme;
+  final AppSemanticColors semantic;
+  final TextStyle titleStyle;
 
   const _SectionTitle({
     required this.label,
-    required this.theme,
-    required this.colorScheme,
+    required this.semantic,
+    required this.titleStyle,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: theme.textTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.w800,
-        color: colorScheme.onSurface,
-      ),
-    );
+    return Text(label, style: titleStyle);
   }
 }
 
@@ -825,15 +800,13 @@ class _QuickInfoRow extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
-  final ThemeData theme;
-  final ColorScheme colorScheme;
+  final AppSemanticColors semantic;
 
   const _QuickInfoRow({
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.theme,
-    required this.colorScheme,
+    required this.semantic,
   });
 
   @override
@@ -847,11 +820,11 @@ class _QuickInfoRow extends StatelessWidget {
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: colorScheme.surfaceContainerHighest,
+              color: semantic.backgroundTertiary,
               shape: BoxShape.circle,
             ),
             child: Center(
-              child: FaIcon(icon, size: 14, color: colorScheme.onSurface),
+              child: FaIcon(icon, size: 14, color: semantic.iconSecondary),
             ),
           ),
           const SizedBox(width: 12),
@@ -861,15 +834,16 @@ class _QuickInfoRow extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: theme.textTheme.titleMedium?.copyWith(
+                  style: AppTextStyles.label.copyWith(
+                    color: semantic.textPrimary,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                  style: AppTextStyles.bodyDefault.copyWith(
+                    color: semantic.textSecondary,
                   ),
                 ),
               ],
@@ -884,14 +858,12 @@ class _QuickInfoRow extends StatelessWidget {
 class _PrizeTile extends StatelessWidget {
   final String position;
   final String value;
-  final ThemeData theme;
-  final ColorScheme colorScheme;
+  final AppSemanticColors semantic;
 
   const _PrizeTile({
     required this.position,
     required this.value,
-    required this.theme,
-    required this.colorScheme,
+    required this.semantic,
   });
 
   @override
@@ -899,7 +871,7 @@ class _PrizeTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
+        color: semantic.backgroundTertiary,
         borderRadius: AppRadius.smAll,
       ),
       child: Row(
@@ -909,13 +881,13 @@ class _PrizeTile extends StatelessWidget {
             height: 28,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: colorScheme.surfaceContainerHighest,
+              color: semantic.backgroundPrimary,
             ),
             child: Center(
               child: FaIcon(
                 FontAwesomeIcons.award,
                 size: 13,
-                color: colorScheme.primary,
+                color: semantic.iconInfo,
               ),
             ),
           ),
@@ -926,15 +898,17 @@ class _PrizeTile extends StatelessWidget {
               children: [
                 Text(
                   position,
-                  style: theme.textTheme.bodyMedium?.copyWith(
+                  style: AppTextStyles.bodyDefault.copyWith(
+                    color: semantic.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                  style: AppTextStyles.label.copyWith(
+                    color: semantic.textPrimary,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
@@ -945,5 +919,3 @@ class _PrizeTile extends StatelessWidget {
     );
   }
 }
-
-

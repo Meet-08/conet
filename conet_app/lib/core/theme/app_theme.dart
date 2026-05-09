@@ -127,11 +127,11 @@ final class AppTheme {
         suffixIconColor: semantic.iconSecondary,
         prefixIconConstraints: const BoxConstraints(
           minWidth: 40,
-          minHeight: 40,
+          minHeight: 48,
         ),
         suffixIconConstraints: const BoxConstraints(
           minWidth: 40,
-          minHeight: 40,
+          minHeight: 48,
         ),
         hintStyle: AppTextStyles.bodyDefault.copyWith(
           color: semantic.textTertiary,

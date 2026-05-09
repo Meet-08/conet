@@ -1,16 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/theme/app_tokens.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/utils/quill_content_utils.dart';
 import 'package:conet_app/feature/event/presentation/constants/event_constants.dart';
+import 'package:dotted_border/dotted_border.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
+import 'package:phosphor_flutter/phosphor_flutter.dart';
 
 class BasicInfoStep extends StatefulWidget {
   final Map<String, dynamic> formData;
@@ -35,6 +39,11 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
   late QuillController _aboutController;
   late final FocusNode _aboutFocusNode;
   late final ScrollController _aboutScrollController;
+  late final TextEditingController _scheduleTitleController;
+  late final TextEditingController _scheduleDescriptionController;
+  TimeOfDay? _scheduleTime;
+  int? _scheduleEditingIndex;
+  bool _showScheduleEditor = false;
   String _lastSerializedAbout = '';
 
   String _serializedAbout() {
@@ -67,6 +76,8 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
     super.initState();
     _aboutFocusNode = FocusNode();
     _aboutScrollController = ScrollController();
+    _scheduleTitleController = TextEditingController();
+    _scheduleDescriptionController = TextEditingController();
     _aboutController = _buildAboutController(
       widget.formData['about'] as String? ?? '',
     );
@@ -101,6 +112,8 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
     _aboutController
       ..removeListener(_onAboutChanged)
       ..dispose();
+    _scheduleTitleController.dispose();
+    _scheduleDescriptionController.dispose();
     _aboutFocusNode.dispose();
     _aboutScrollController.dispose();
     super.dispose();
@@ -137,7 +150,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
           textInputAction: TextInputAction.done,
           onChanged: (value) => linkValue = value,
           onSubmitted: (value) => ctx.pop(value.trim()),
-          decoration: _inputDecoration(hint: 'https://example.com'),
+          decoration: _inputDecoration(ctx, hint: 'https://example.com'),
         ),
         actions: [
           TextButton(onPressed: () => ctx.pop(), child: const Text('Cancel')),
@@ -213,110 +226,64 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
     widget.formData['activities'] as List? ?? [],
   );
 
-  Future<void> _openScheduleEditor({int? index}) async {
-    final isEdit = index != null;
-    final current = isEdit ? _activities[index] : <String, dynamic>{};
+  void _startScheduleEditor({int? index}) {
+    final current = index == null ? <String, dynamic>{} : _activities[index];
+    setState(() {
+      _scheduleEditingIndex = index;
+      _scheduleTime = current['activity_time'] as TimeOfDay?;
+      _scheduleTitleController.text =
+          (current['activity_title'] as String?) ?? '';
+      _scheduleDescriptionController.text =
+          (current['description'] as String?) ?? '';
+      _showScheduleEditor = true;
+    });
+  }
 
-    TimeOfDay? selectedTime = current['activity_time'] as TimeOfDay?;
-    final titleController = TextEditingController(
-      text: (current['activity_title'] as String?) ?? '',
-    );
+  void _cancelScheduleEditor() {
+    setState(() {
+      _showScheduleEditor = false;
+      _scheduleEditingIndex = null;
+      _scheduleTime = null;
+      _scheduleTitleController.clear();
+      _scheduleDescriptionController.clear();
+    });
+  }
 
-    final saved = await showDialog<bool>(
-      context: context,
-      builder: (ctx) {
-        final theme = Theme.of(ctx);
-        return StatefulBuilder(
-          builder: (context, setInnerState) => AlertDialog(
-            title: Text(isEdit ? 'Edit Schedule' : 'Add Schedule'),
-            content: SizedBox(
-              width: 360,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      OutlinedButton.icon(
-                        onPressed: () async {
-                          final picked = await showTimePicker(
-                            context: ctx,
-                            initialTime: selectedTime ?? TimeOfDay.now(),
-                          );
-                          if (picked != null) {
-                            setInnerState(() => selectedTime = picked);
-                          }
-                        },
-                        icon: const FaIcon(FontAwesomeIcons.clock, size: 14),
-                        label: Text(selectedTime?.format(ctx) ?? 'Select time'),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        flex: 2,
-                        child: TextFormField(
-                          controller: titleController,
-                          decoration: _inputDecoration(hint: 'Title'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Time and title are required.',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => context.pop(false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  if (selectedTime == null ||
-                      titleController.text.trim().isEmpty) {
-                    return;
-                  }
-                  final list = _activities;
-                  final item = <String, dynamic>{
-                    'activity_time': selectedTime,
-                    'activity_title': titleController.text.trim(),
-                  };
-                  if (isEdit) {
-                    list[index] = item;
-                  } else {
-                    list.add(item);
-                  }
-                  _update({'activities': list});
-                  context.pop(true);
-                },
-                child: Text(isEdit ? 'Save' : 'Add'),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-
-    if (saved == true) {
-      setState(() {});
+  void _saveScheduleEditor() {
+    if (_scheduleTime == null || _scheduleTitleController.text.trim().isEmpty) {
+      AppToast.showWarning(context, 'Time and title are required');
+      return;
     }
+
+    final list = _activities;
+    final item = <String, dynamic>{
+      'activity_time': _scheduleTime,
+      'activity_title': _scheduleTitleController.text.trim(),
+      'description': _scheduleDescriptionController.text.trim(),
+    };
+
+    if (_scheduleEditingIndex != null) {
+      list[_scheduleEditingIndex!] = item;
+    } else {
+      list.add(item);
+    }
+
+    _update({'activities': list});
+    _cancelScheduleEditor();
   }
 
   void _deleteSchedule(int index) {
     final list = _activities..removeAt(index);
     _update({'activities': list});
+    if (_scheduleEditingIndex == index) {
+      _cancelScheduleEditor();
+    }
     setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final semantic = context.semanticColors;
     final selectedCategory = widget.formData['category'] as String? ?? '';
     final selectedImage =
         _pickedImage ?? widget.formData['event_image_file'] as PlatformFile?;
@@ -324,40 +291,44 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
     final activities = _activities;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpace.s16,
+        AppSpace.s24,
+        AppSpace.s16,
+        AppSpace.s16,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const _SectionTitle(
-            icon: FontAwesomeIcons.calendarCheck,
-            title: 'Event Identity',
+            icon: FontAwesomeIcons.calendar,
+            title: 'Basic Info',
           ),
-          const SizedBox(height: 14),
-          const _LabelText(text: 'Event Logo / Header Image'),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpace.s24),
+          const _LabelText(text: 'Logo'),
+          const SizedBox(height: AppSpace.s8),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _UploadImageCard(image: selectedImage, onTap: _pickImage),
-              const SizedBox(width: 14),
+              const SizedBox(width: AppSpace.s8),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 6),
+                  padding: const EdgeInsets.only(top: AppSpace.s4),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Upload event banner image *',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w700,
+                        'Upload an event logo',
+                        style: AppTextStyles.label.copyWith(
+                          color: semantic.textTertiary,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: AppSpace.s4),
                       Text(
                         'PNG, JPG or WEBP (max. 5 MB) and square format recommended.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          height: 1.3,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: semantic.textTertiary,
                         ),
                       ),
                     ],
@@ -366,22 +337,25 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
               ),
             ],
           ),
-          const SizedBox(height: 18),
-          const _LabelText(text: 'Event Title'),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpace.s24),
+          const _LabelText(text: 'Title'),
+          const SizedBox(height: AppSpace.s8),
           TextFormField(
             initialValue: widget.formData['title'] as String? ?? '',
             maxLength: 100,
             textCapitalization: TextCapitalization.words,
-            decoration: _inputDecoration(hint: 'e.g. Global AI Hackathon 2024'),
+            decoration: _inputDecoration(
+              context,
+              hint: 'e.g. Global AI Hackathon 2024',
+            ),
             onChanged: (v) => _update({'title': v}),
           ),
-          const SizedBox(height: 4),
-          const _LabelText(text: 'Event Category'),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpace.s8),
+          const _LabelText(text: 'Category'),
+          const SizedBox(height: AppSpace.s8),
           DropdownButtonFormField<String>(
             initialValue: selectedCategory.isEmpty ? null : selectedCategory,
-            decoration: _inputDecoration(hint: 'Select a category'),
+            decoration: _inputDecoration(context, hint: 'Select a category'),
             icon: const FaIcon(FontAwesomeIcons.chevronDown, size: 14),
             items: eventCategories
                 .map(
@@ -393,29 +367,143 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
                 .toList(),
             onChanged: (v) => _update({'category': v ?? ''}),
           ),
-
-          const SizedBox(height: 26),
+          const SizedBox(height: AppSpace.s32),
 
           const _SectionTitle(
-            icon: FontAwesomeIcons.fileLines,
-            title: 'About Event',
+            icon: FontAwesomeIcons.calendarDays,
+            title: 'Date & Time',
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpace.s16),
+          const _LabelText(text: 'Start Date'),
+          const SizedBox(height: AppSpace.s8),
+          Row(
+            children: [
+              Expanded(
+                child: _DatePickerField(
+                  value: widget.formData['start_date'] as DateTime?,
+                  onChanged: (d) {
+                    final endDate = widget.formData['end_date'] as DateTime?;
+                    _update({
+                      'start_date': d,
+                      if (endDate == null || endDate.isBefore(d)) 'end_date': d,
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: AppSpace.s8),
+              Expanded(
+                child: _TimePickerField(
+                  value: widget.formData['start_time'] as TimeOfDay?,
+                  onChanged: (t) => _update({'start_time': t}),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpace.s16),
+          const _LabelText(text: 'End'),
+          const SizedBox(height: AppSpace.s8),
+          Row(
+            children: [
+              Expanded(
+                child: _DatePickerField(
+                  value: widget.formData['end_date'] as DateTime?,
+                  firstDate:
+                      (widget.formData['start_date'] as DateTime?) ??
+                      DateTime.now(),
+                  onChanged: (d) => _update({'end_date': d}),
+                ),
+              ),
+              const SizedBox(width: AppSpace.s8),
+              Expanded(
+                child: _TimePickerField(
+                  value: widget.formData['end_time'] as TimeOfDay?,
+                  onChanged: (t) => _update({'end_time': t}),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpace.s32),
+
+          const _SectionTitle(
+            icon: FontAwesomeIcons.mapLocationDot,
+            title: 'Location',
+          ),
+          const SizedBox(height: AppSpace.s16),
+          _ModeToggle(
+            isOnline: isOnline,
+            onChanged: (online) {
+              _update({
+                'location_type': online ? 'ONLINE' : 'OFFLINE',
+                if (online) 'venue_name': '',
+              });
+            },
+          ),
+          const SizedBox(height: AppSpace.s16),
+          if (isOnline) ...[
+            const _LabelText(text: 'Meeting Link'),
+            const SizedBox(height: AppSpace.s8),
+            TextFormField(
+              initialValue: widget.formData['meeting_link'] as String? ?? '',
+              keyboardType: TextInputType.url,
+              decoration: _inputDecoration(
+                context,
+                hint: 'Paste meeting URL',
+                prefixIcon: Icon(
+                  PhosphorIconsRegular.link,
+                  size: 18,
+                  color: semantic.iconTertiary,
+                ),
+              ),
+              onChanged: (v) => _update({'meeting_link': v}),
+            ),
+          ] else ...[
+            const _LabelText(text: 'Venue'),
+            const SizedBox(height: AppSpace.s8),
+            TextFormField(
+              initialValue: widget.formData['venue_name'] as String? ?? '',
+              decoration: _inputDecoration(
+                context,
+                hint: 'e.g. A-block Auditorium',
+              ),
+              onChanged: (v) => _update({'venue_name': v}),
+            ),
+            const SizedBox(height: AppSpace.s16),
+            const _LabelText(text: 'Address'),
+            const SizedBox(height: AppSpace.s8),
+            TextFormField(
+              initialValue: widget.formData['location'] as String? ?? '',
+              decoration: _inputDecoration(
+                context,
+                hint: 'e.g. VGEC, Chandkheda',
+                prefixIcon: Icon(
+                  PhosphorIconsRegular.mapPin,
+                  size: 18,
+                  color: semantic.iconTertiary,
+                ),
+              ),
+              onChanged: (v) => _update({'location': v}),
+            ),
+          ],
+          const SizedBox(height: AppSpace.s32),
+
+          const _SectionTitle(icon: FontAwesomeIcons.fileLines, title: 'About'),
+          const SizedBox(height: AppSpace.s16),
           Container(
             decoration: BoxDecoration(
               borderRadius: AppRadius.mdAll,
-              border: Border.all(color: colorScheme.outlineVariant),
+              border: Border.all(color: semantic.borderDefault),
             ),
             child: Column(
               children: [
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
+                    horizontal: AppSpace.s6,
+                    vertical: AppSpace.s4,
                   ),
                   decoration: BoxDecoration(
+                    color: semantic.surfaceOverlay,
                     border: Border(
-                      bottom: BorderSide(color: colorScheme.outlineVariant),
+                      bottom: BorderSide(color: semantic.borderDefault),
                     ),
                   ),
                   child: AnimatedBuilder(
@@ -487,267 +575,212 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpace.s8),
           Text(
             'Describe the event, goals, agenda, and why people should attend.',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: semantic.textTertiary,
             ),
           ),
-
-          const SizedBox(height: 26),
+          const SizedBox(height: AppSpace.s24),
 
           const _SectionTitle(
-            icon: FontAwesomeIcons.gears,
+            icon: FontAwesomeIcons.userCheck,
             title: 'Eligibility',
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpace.s16),
           TextFormField(
             initialValue: widget.formData['eligibility'] as String? ?? '',
             onChanged: (v) => _update({'eligibility': v}),
             minLines: 2,
             maxLines: 2,
             decoration: _inputDecoration(
+              context,
               hint: 'e.g. Open to all university students worldwide',
             ),
           ),
-
-          const SizedBox(height: 28),
+          const SizedBox(height: AppSpace.s24),
 
           const _SectionTitle(
-            icon: FontAwesomeIcons.calendarDays,
-            title: 'Event Date & Time',
+            icon: FontAwesomeIcons.calendarCheck,
+            title: 'Schedule',
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _LabelText(text: 'Start Date'),
-                    const SizedBox(height: 8),
-                    _DatePickerField(
-                      value: widget.formData['start_date'] as DateTime?,
-                      onChanged: (d) {
-                        final endDate = widget.formData['end_date'] as DateTime?;
-                        _update({
-                          'start_date': d,
-                          if (endDate == null || endDate.isBefore(d)) 'end_date': d,
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _LabelText(text: 'End Date'),
-                    const SizedBox(height: 8),
-                    _DatePickerField(
-                      value: widget.formData['end_date'] as DateTime?,
-                      firstDate:
-                          (widget.formData['start_date'] as DateTime?) ??
-                          DateTime.now(),
-                      onChanged: (d) => _update({'end_date': d}),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _LabelText(text: 'Start Time'),
-                    const SizedBox(height: 8),
-                    _TimePickerField(
-                      value: widget.formData['start_time'] as TimeOfDay?,
-                      onChanged: (t) => _update({'start_time': t}),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _LabelText(text: 'End Time'),
-                    const SizedBox(height: 8),
-                    _TimePickerField(
-                      value: widget.formData['end_time'] as TimeOfDay?,
-                      onChanged: (t) => _update({'end_time': t}),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 28),
-
-          Row(
-            children: [
-              const _SectionTitle(
-                icon: FontAwesomeIcons.stopwatch,
-                title: 'Event Schedule',
-              ),
-              const Spacer(),
-              OutlinedButton.icon(
-                onPressed: () => _openScheduleEditor(),
-                icon: const FaIcon(FontAwesomeIcons.plus, size: 13),
-                label: const Text('Schedule'),
-                style: OutlinedButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          if (activities.isEmpty)
-            Text(
-              'No schedule added yet.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-            )
-          else
-            ...List.generate(activities.length, (index) {
-              final item = activities[index];
-              final tod = item['activity_time'] as TimeOfDay?;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 0),
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: colorScheme.onSurface,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Row(
+          const SizedBox(height: AppSpace.s16),
+          ...activities.asMap().entries.map((entry) {
+            final index = entry.key;
+            final item = entry.value;
+            final tod = item['activity_time'] as TimeOfDay?;
+            final title = (item['activity_title'] as String? ?? '').trim();
+            final description = (item['description'] as String? ?? '').trim();
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppSpace.s12),
+              child: InkWell(
+                onTap: () => _startScheduleEditor(index: index),
+                borderRadius: AppRadius.mdAll,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(AppSpace.s12),
+                  decoration: BoxDecoration(
+                    color: semantic.surfaceRaised,
+                    borderRadius: AppRadius.mdAll,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         children: [
-                          SizedBox(
-                            width: 88,
-                            child: Text(
-                              tod?.format(context).toUpperCase() ?? '--:--',
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w700,
-                              ),
+                          Text(
+                            tod?.format(context).toUpperCase() ?? '--:--',
+                            style: AppTextStyles.caption.copyWith(
+                              color: semantic.textTertiary,
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              (item['activity_title'] as String? ?? '')
-                                      .trim()
-                                      .isEmpty
-                                  ? 'Untitled schedule item'
-                                  : (item['activity_title'] as String).trim(),
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                          const Spacer(),
+                          IconButton(
+                            visualDensity: VisualDensity.compact,
+                            onPressed: () => _deleteSchedule(index),
+                            icon: FaIcon(
+                              FontAwesomeIcons.xmark,
+                              size: 14,
+                              color: semantic.textTertiary,
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    PopupMenuButton<String>(
-                      icon: const FaIcon(
-                        FontAwesomeIcons.penToSquare,
-                        size: 14,
+                      Text(
+                        title.isEmpty ? 'Untitled schedule item' : title,
+                        style: AppTextStyles.label.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: semantic.textPrimary,
+                        ),
                       ),
-                      onSelected: (value) {
-                        if (value == 'edit') {
-                          _openScheduleEditor(index: index);
-                        } else {
-                          _deleteSchedule(index);
-                        }
-                      },
-                      itemBuilder: (_) => const [
-                        PopupMenuItem(value: 'edit', child: Text('Edit')),
-                        PopupMenuItem(value: 'delete', child: Text('Delete')),
+                      if (description.isNotEmpty) ...[
+                        const SizedBox(height: AppSpace.s4),
+                        Text(
+                          description,
+                          style: AppTextStyles.bodyDefault.copyWith(
+                            color: semantic.textTertiary,
+                          ),
+                        ),
                       ],
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+          if (_showScheduleEditor)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: AppSpace.s12),
+              padding: const EdgeInsets.all(AppSpace.s16),
+              decoration: BoxDecoration(
+                color: semantic.surfaceRaised,
+                borderRadius: AppRadius.mdAll,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _SectionTitle(
+                    icon: FontAwesomeIcons.calendarCheck,
+                    title: 'Schedule',
+                  ),
+                  const SizedBox(height: AppSpace.s16),
+                  const _LabelText(text: 'Time'),
+                  const SizedBox(height: AppSpace.s8),
+                  _TimePickerField(
+                    value: _scheduleTime,
+                    onChanged: (value) => setState(() => _scheduleTime = value),
+                  ),
+                  const SizedBox(height: AppSpace.s12),
+                  const _LabelText(text: 'Title'),
+                  const SizedBox(height: AppSpace.s8),
+                  TextFormField(
+                    controller: _scheduleTitleController,
+                    decoration: _inputDecoration(
+                      context,
+                      hint: 'Opening Keynote',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpace.s12),
+                  const _LabelText(text: 'Description'),
+                  const SizedBox(height: AppSpace.s8),
+                  TextFormField(
+                    controller: _scheduleDescriptionController,
+                    minLines: 2,
+                    maxLines: 2,
+                    decoration: _inputDecoration(
+                      context,
+                      hint:
+                          'Future of AI in Sustainable Energy by Dr. Rajesh Kumar',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpace.s16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _cancelScheduleEditor,
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpace.s12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: _saveScheduleEditor,
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: AppSpace.s12,
+                            ),
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: AppRadius.mdAll,
+                            ),
+                          ),
+                          child: Text(
+                            _scheduleEditingIndex == null ? 'Add' : 'Save',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          DottedBorder(
+            options: RoundedRectDottedBorderOptions(
+              radius: AppRadius.md,
+              dashPattern: const [6, 4],
+              strokeWidth: 1.2,
+              color: semantic.borderDefault,
+            ),
+            child: InkWell(
+              onTap: () => _startScheduleEditor(),
+              borderRadius: AppRadius.mdAll,
+              child: Container(
+                width: double.infinity,
+                height: AppSpace.s48,
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FaIcon(
+                      FontAwesomeIcons.plus,
+                      size: 14,
+                      color: semantic.textPrimary,
+                    ),
+                    const SizedBox(width: AppSpace.s8),
+                    Text(
+                      'Schedule',
+                      style: AppTextStyles.button.copyWith(
+                        color: semantic.textPrimary,
+                      ),
                     ),
                   ],
                 ),
-              );
-            }),
-
-          const SizedBox(height: 20),
-
-          const _SectionTitle(
-            icon: FontAwesomeIcons.locationDot,
-            title: 'Event Mode',
+              ),
+            ),
           ),
-          const SizedBox(height: 12),
-          _ModeToggle(
-            isOnline: isOnline,
-            onChanged: (online) {
-              _update({
-                'location_type': online ? 'ONLINE' : 'OFFLINE',
-                if (online) 'venue_name': '',
-              });
-            },
-          ),
-          const SizedBox(height: 14),
-          if (isOnline) ...[
-            const _LabelText(text: 'Meeting Link'),
-            const SizedBox(height: 8),
-            TextFormField(
-              initialValue: widget.formData['meeting_link'] as String? ?? '',
-              keyboardType: TextInputType.url,
-              decoration: _inputDecoration(
-                hint: 'Paste meeting URL',
-                prefixIcon: const FaIcon(FontAwesomeIcons.link, size: 15),
-              ),
-              onChanged: (v) => _update({'meeting_link': v}),
-            ),
-          ] else ...[
-            const _LabelText(text: 'Location'),
-            const SizedBox(height: 8),
-            TextFormField(
-              initialValue: widget.formData['location'] as String? ?? '',
-              decoration: _inputDecoration(
-                hint: 'Search college or city',
-                prefixIcon: const FaIcon(
-                  FontAwesomeIcons.locationDot,
-                  size: 15,
-                ),
-              ),
-              onChanged: (v) => _update({'location': v}),
-            ),
-            const SizedBox(height: 12),
-            const _LabelText(text: 'Venue Name'),
-            const SizedBox(height: 8),
-            TextFormField(
-              initialValue: widget.formData['venue_name'] as String? ?? '',
-              decoration: _inputDecoration(
-                hint: 'e.g. Grand Plaza Convention Center',
-              ),
-              onChanged: (v) => _update({'venue_name': v}),
-            ),
-          ],
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpace.s12),
         ],
       ),
     );
@@ -762,15 +795,16 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final semantic = context.semanticColors;
     return Row(
       children: [
-        FaIcon(icon, size: 16),
+        FaIcon(icon, size: 16, color: semantic.iconPrimary),
         const SizedBox(width: 10),
         Text(
           title,
-          style: theme.textTheme.headlineSmall?.copyWith(
+          style: AppTextStyles.headingH3.copyWith(
             fontWeight: FontWeight.w800,
+            color: semantic.textPrimary,
           ),
         ),
       ],
@@ -785,11 +819,13 @@ class _LabelText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
     return Text(
       text,
-      style: Theme.of(
-        context,
-      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+      style: AppTextStyles.label.copyWith(
+        fontWeight: FontWeight.w700,
+        color: semantic.textPrimary,
+      ),
     );
   }
 }
@@ -802,32 +838,41 @@ class _UploadImageCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final semantic = context.semanticColors;
 
     return InkWell(
       onTap: onTap,
       borderRadius: AppRadius.mdAll,
-      child: Container(
-        width: 110,
-        height: 110,
-        decoration: BoxDecoration(
-          borderRadius: AppRadius.mdAll,
-          color: colorScheme.surfaceContainerHigh,
-          border: Border.all(color: colorScheme.outlineVariant),
+      child: DottedBorder(
+        options: RoundedRectDottedBorderOptions(
+          radius: AppRadius.md,
+          dashPattern: const [6, 4],
+          strokeWidth: 1.2,
+          color: semantic.borderDefault,
+          padding: EdgeInsets.zero,
         ),
-        child: image != null
-            ? ClipRRect(
-                borderRadius: AppRadius.mdAll,
-                child: kIsWeb && image!.bytes != null
-                    ? Image.memory(image!.bytes!, fit: BoxFit.cover)
-                    : Image.file(File(image!.path!), fit: BoxFit.cover),
-              )
-            : Center(
-                child: FaIcon(
-                  FontAwesomeIcons.cloudArrowUp,
-                  color: colorScheme.onSurfaceVariant,
+        child: Container(
+          width: 110,
+          height: 110,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            borderRadius: AppRadius.mdAll,
+            color: semantic.surfaceRaised,
+          ),
+          child: image != null
+              ? ClipRRect(
+                  borderRadius: AppRadius.mdAll,
+                  child: kIsWeb && image!.bytes != null
+                      ? Image.memory(image!.bytes!, fit: BoxFit.cover)
+                      : Image.file(File(image!.path!), fit: BoxFit.cover),
+                )
+              : Center(
+                  child: FaIcon(
+                    FontAwesomeIcons.cloudArrowUp,
+                    color: semantic.iconTertiary,
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }
@@ -852,12 +897,12 @@ class _ToolbarAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final style = Theme.of(context).textTheme.labelLarge?.copyWith(
+    final semantic = context.semanticColors;
+    final style = AppTextStyles.button.copyWith(
       fontWeight: isStrong ? FontWeight.w800 : FontWeight.w600,
       fontStyle: isItalic ? FontStyle.italic : FontStyle.normal,
       decoration: isUnderlined ? TextDecoration.underline : TextDecoration.none,
-      color: isActive ? colors.onPrimaryContainer : colors.onSurface,
+      color: isActive ? semantic.textOnBrand : semantic.textPrimary,
     );
 
     return InkWell(
@@ -868,7 +913,7 @@ class _ToolbarAction extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
           borderRadius: AppRadius.xsAll,
-          color: isActive ? colors.primaryContainer : Colors.transparent,
+          color: isActive ? semantic.backgroundBrand : Colors.transparent,
         ),
         child: Text(label, style: style),
       ),
@@ -889,19 +934,19 @@ class _ToolbarIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final semantic = context.semanticColors;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 140),
       decoration: BoxDecoration(
         borderRadius: AppRadius.xsAll,
-        color: isActive ? colors.primaryContainer : Colors.transparent,
+        color: isActive ? semantic.backgroundBrand : Colors.transparent,
       ),
       child: IconButton(
         onPressed: onTap,
         icon: FaIcon(
           icon,
           size: 13,
-          color: isActive ? colors.onPrimaryContainer : colors.onSurface,
+          color: isActive ? semantic.iconOnBrand : semantic.iconPrimary,
         ),
         visualDensity: VisualDensity.compact,
         splashRadius: 16,
@@ -918,8 +963,7 @@ class _ModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final theme = Theme.of(context);
+    final semantic = context.semanticColors;
 
     Widget item({
       required bool selected,
@@ -935,16 +979,16 @@ class _ModeToggle extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(
               borderRadius: AppRadius.smAll,
-              color: selected ? colorScheme.surface : Colors.transparent,
+              color: selected ? semantic.surfaceBase : Colors.transparent,
             ),
             child: Center(
               child: Text(
                 text,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: AppTextStyles.label.copyWith(
                   fontWeight: FontWeight.w700,
                   color: selected
-                      ? colorScheme.onSurface
-                      : colorScheme.onSurfaceVariant,
+                      ? semantic.textPrimary
+                      : semantic.textTertiary,
                 ),
               ),
             ),
@@ -956,7 +1000,7 @@ class _ModeToggle extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
+        color: semantic.surfaceOverlay,
         borderRadius: AppRadius.mdAll,
       ),
       child: Row(
@@ -977,32 +1021,39 @@ class _ModeToggle extends StatelessWidget {
   }
 }
 
-InputDecoration _inputDecoration({required String hint, Widget? prefixIcon}) {
+InputDecoration _inputDecoration(
+  BuildContext context, {
+  required String hint,
+  Widget? prefixIcon,
+}) {
+  final inputTheme = Theme.of(context).inputDecorationTheme;
+  final iconWidth = (inputTheme.prefixIconConstraints?.minWidth ?? 40).clamp(
+    40.0,
+    48.0,
+  );
   return InputDecoration(
     hintText: hint,
     counterText: '',
-    filled: true,
-    fillColor: Colors.grey.shade100,
-    prefixIcon: prefixIcon != null
-        ? Padding(
-            padding: const EdgeInsets.only(left: 14, right: 10),
-            child: prefixIcon,
-          )
-        : null,
-    prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-    border: OutlineInputBorder(
-      borderRadius: AppRadius.mdAll,
-      borderSide: BorderSide(color: Colors.grey.shade300),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: AppRadius.mdAll,
-      borderSide: BorderSide(color: Colors.grey.shade300),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: AppRadius.mdAll,
-      borderSide: BorderSide(color: Colors.grey.shade500),
-    ),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    filled: inputTheme.filled,
+    fillColor: inputTheme.fillColor,
+    prefixIcon: prefixIcon == null
+        ? null
+        : SizedBox(
+            width: iconWidth.toDouble(),
+            child: Align(alignment: Alignment.center, child: prefixIcon),
+          ),
+    prefixIconConstraints:
+        inputTheme.prefixIconConstraints ??
+        const BoxConstraints(minWidth: 40, minHeight: 52),
+    suffixIconConstraints:
+        inputTheme.suffixIconConstraints ??
+        const BoxConstraints(minWidth: 40, minHeight: 52),
+    contentPadding:
+        inputTheme.contentPadding ??
+        const EdgeInsets.symmetric(
+          horizontal: AppSpace.s12,
+          vertical: AppSpace.s12,
+        ),
   );
 }
 
@@ -1023,13 +1074,17 @@ class _DatePickerField extends StatelessWidget {
         ? 'dd/mm/yyyy'
         : '${value!.day.toString().padLeft(2, '0')}/${value!.month.toString().padLeft(2, '0')}/${value!.year}';
 
-    return InkWell(
-      borderRadius: AppRadius.mdAll,
+    return _PickerInputShell(
+      valueText: display,
+      placeholderText: 'dd/mm/yyyy',
+      isPlaceholder: value == null,
+      icon: FontAwesomeIcons.calendar,
       onTap: () async {
         final now = DateTime.now();
         final minDate = firstDate ?? now;
-        final effectiveInitialDate =
-            value != null && value!.isBefore(minDate) ? minDate : (value ?? now);
+        final effectiveInitialDate = value != null && value!.isBefore(minDate)
+            ? minDate
+            : (value ?? now);
         final picked = await showDatePicker(
           context: context,
           initialDate: effectiveInitialDate,
@@ -1038,13 +1093,6 @@ class _DatePickerField extends StatelessWidget {
         );
         if (picked != null) onChanged(picked);
       },
-      child: InputDecorator(
-        decoration: _inputDecoration(
-          hint: 'dd/mm/yyyy',
-          prefixIcon: const FaIcon(FontAwesomeIcons.calendar, size: 15),
-        ),
-        child: Text(display),
-      ),
     );
   }
 }
@@ -1059,8 +1107,11 @@ class _TimePickerField extends StatelessWidget {
   Widget build(BuildContext context) {
     final display = value?.format(context) ?? '--:--';
 
-    return InkWell(
-      borderRadius: AppRadius.mdAll,
+    return _PickerInputShell(
+      valueText: display,
+      placeholderText: '--:--',
+      isPlaceholder: value == null,
+      icon: FontAwesomeIcons.clock,
       onTap: () async {
         final picked = await showTimePicker(
           context: context,
@@ -1068,14 +1119,65 @@ class _TimePickerField extends StatelessWidget {
         );
         if (picked != null) onChanged(picked);
       },
-      child: InputDecorator(
-        decoration: _inputDecoration(
-          hint: '--:--',
-          prefixIcon: const FaIcon(FontAwesomeIcons.clock, size: 15),
-        ),
-        child: Text(display),
-      ),
     );
   }
 }
 
+class _PickerInputShell extends StatelessWidget {
+  final String valueText;
+  final String placeholderText;
+  final bool isPlaceholder;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _PickerInputShell({
+    required this.valueText,
+    required this.placeholderText,
+    required this.isPlaceholder,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    final inputTheme = Theme.of(context).inputDecorationTheme;
+    final enabledBorder =
+        inputTheme.enabledBorder as OutlineInputBorder? ??
+        const OutlineInputBorder(borderRadius: AppRadius.mdAll);
+
+    return InkWell(
+      borderRadius: enabledBorder.borderRadius,
+      onTap: onTap,
+      child: Container(
+        height: AppSpace.s48 + AppSpace.s4,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpace.s12),
+        decoration: BoxDecoration(
+          color: inputTheme.fillColor ?? semantic.surfaceOverlay,
+          borderRadius: enabledBorder.borderRadius,
+          border: Border.all(
+            color: enabledBorder.borderSide.color,
+            width: enabledBorder.borderSide.width,
+          ),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            FaIcon(icon, size: 16, color: semantic.iconTertiary),
+            const SizedBox(width: AppSpace.s8),
+            Expanded(
+              child: Text(
+                valueText,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: isPlaceholder
+                      ? semantic.textTertiary
+                      : semantic.textPrimary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -27,6 +27,7 @@ EventModel _$EventModelFromJson(Map<String, dynamic> json) => EventModel(
   maxParticipant: (json['max_participant'] as num).toInt(),
   eventStatus: json['event_status'] as String,
   eligibility: json['eligibility'] as String?,
+  instructions: json['instructions'] as String?,
   eventImageUrl: json['event_image_url'] as String?,
   venue: json['venue'] as String?,
   registrationDeadline: json['registration_deadline'] == null
@@ -83,6 +84,7 @@ Map<String, dynamic> _$EventModelToJson(
   'max_participant': instance.maxParticipant,
   'event_status': instance.eventStatus,
   'eligibility': instance.eligibility,
+  'instructions': instance.instructions,
   'event_image_url': instance.eventImageUrl,
   'venue': instance.venue,
   'registration_deadline': instance.registrationDeadline?.toIso8601String(),
@@ -103,5 +105,3 @@ Map<String, dynamic> _$EventModelToJson(
   'is_registered': instance.isRegistered,
   'is_bookmarked': instance.isBookmarked,
 };
-
-

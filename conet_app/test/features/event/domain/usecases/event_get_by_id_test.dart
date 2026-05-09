@@ -23,6 +23,7 @@ void main() {
     endTime: DateTime(2026, 4, 10, 12),
     locationType: 'OFFLINE',
     location: 'Campus Hall',
+    instructions: 'Carry your student ID card',
     ticketPriceType: 'FREE',
     maxParticipant: 100,
     eventStatus: 'PUBLISHED',
@@ -55,6 +56,7 @@ void main() {
       result.fold((_) => fail('Expected Right'), (event) {
         expect(event.id, 'event-1');
         expect(event.title, 'Flutter Meetup');
+        expect(event.instructions, 'Carry your student ID card');
       });
     });
 
@@ -73,4 +75,3 @@ void main() {
     });
   });
 }
-

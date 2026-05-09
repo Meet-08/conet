@@ -48,6 +48,7 @@ class Event extends Equatable {
   final String eventStatus;
 
   final String? eligibility;
+  final String? instructions;
 
   @JsonKey(name: 'event_image_url')
   final String? eventImageUrl;
@@ -110,6 +111,7 @@ class Event extends Equatable {
     required this.maxParticipant,
     required this.eventStatus,
     this.eligibility,
+    this.instructions,
     this.eventImageUrl,
     this.venue,
     this.registrationDeadline,
@@ -152,6 +154,7 @@ class Event extends Equatable {
     int? maxParticipant,
     String? eventStatus,
     String? eligibility,
+    String? instructions,
     String? eventImageUrl,
     String? venue,
     DateTime? registrationDeadline,
@@ -189,6 +192,7 @@ class Event extends Equatable {
       maxParticipant: maxParticipant ?? this.maxParticipant,
       eventStatus: eventStatus ?? this.eventStatus,
       eligibility: eligibility ?? this.eligibility,
+      instructions: instructions ?? this.instructions,
       eventImageUrl: eventImageUrl ?? this.eventImageUrl,
       venue: venue ?? this.venue,
       registrationDeadline: registrationDeadline ?? this.registrationDeadline,
@@ -229,6 +233,7 @@ class Event extends Equatable {
     maxParticipant,
     eventStatus,
     eligibility,
+    instructions,
     eventImageUrl,
     venue,
     registrationDeadline,
@@ -248,5 +253,3 @@ class Event extends Equatable {
     isBookmarked,
   ];
 }
-
-

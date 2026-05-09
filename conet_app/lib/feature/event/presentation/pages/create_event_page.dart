@@ -1,3 +1,6 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_tokens.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/utils/quill_content_utils.dart';
 import 'package:conet_app/core/widgets/loader.dart';
@@ -401,6 +404,10 @@ class _CreateEventPageState extends State<CreateEventPage> {
                 ).isEmpty
                 ? null
                 : _formData['about'] as String?),
+      instructions:
+          (_formData['additional_note'] as String?)?.trim().isEmpty == true
+          ? null
+          : (_formData['additional_note'] as String?)?.trim(),
       startDate: date,
       endDate: endDate,
       startTime: startTodToDateTime(startTod),
@@ -528,11 +535,13 @@ class _CreateEventPageState extends State<CreateEventPage> {
   }
 
   Widget _buildScaffold(BuildContext context, {required bool isSubmitting}) {
+    final semantic = context.semanticColors;
+
     return Stack(
       children: [
         _buildForm(context, isSubmitting: isSubmitting),
         if (isSubmitting) ...[
-          const ModalBarrier(dismissible: false, color: Colors.black38),
+          ModalBarrier(dismissible: false, color: semantic.backgroundBackdrop),
           const Center(child: Loader()),
         ],
       ],
@@ -540,29 +549,30 @@ class _CreateEventPageState extends State<CreateEventPage> {
   }
 
   Widget _buildForm(BuildContext context, {required bool isSubmitting}) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final semantic = context.semanticColors;
     final isLast = _currentStep == totalSteps - 1;
     final isPreview = _currentStep == totalSteps - 2;
 
     return Scaffold(
-      backgroundColor: colorScheme.surface,
+      backgroundColor: semantic.backgroundPrimary,
       appBar: AppBar(
+        backgroundColor: semantic.backgroundPrimary,
+        foregroundColor: semantic.iconPrimary,
         leading: IconButton(
+          color: semantic.iconPrimary,
           icon: const FaIcon(FontAwesomeIcons.arrowLeft, size: 18),
           onPressed: _currentStep > 0 ? _back : () => context.pop(),
         ),
         title: Text(
           stepTitles[_currentStep],
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w800,
-          ),
+          style: AppTextStyles.headingH2.copyWith(color: semantic.textPrimary),
         ),
         centerTitle: true,
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
           IconButton(
+            color: semantic.iconPrimary,
             onPressed: _showStepHelp,
             icon: const FaIcon(FontAwesomeIcons.circleQuestion, size: 18),
           ),
@@ -574,7 +584,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
             child: _StepProgressBar(
               currentStep: _currentStep,
               totalSteps: totalSteps,
-              colorScheme: colorScheme,
+              semantic: semantic,
             ),
           ),
         ),
@@ -617,9 +627,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
           12 + MediaQuery.of(context).padding.bottom,
         ),
         decoration: BoxDecoration(
-          color: colorScheme.surface,
+          color: semantic.backgroundPrimary,
           border: Border(
-            top: BorderSide(color: colorScheme.outlineVariant, width: 0.5),
+            top: BorderSide(color: semantic.borderDefault, width: 0.5),
           ),
         ),
         child: Row(
@@ -629,11 +639,16 @@ class _CreateEventPageState extends State<CreateEventPage> {
                 onPressed: isSubmitting ? null : _saveDraft,
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: AppRadius.mdAll,
                   ),
                 ),
-                child: const Text('Save as Draft'),
+                child: Text(
+                  'Save as Draft',
+                  style: AppTextStyles.button.copyWith(
+                    color: semantic.textPrimary,
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -643,23 +658,30 @@ class _CreateEventPageState extends State<CreateEventPage> {
                     ? null
                     : (isLast ? _publish : (isPreview ? _preview : _next)),
                 style: FilledButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: AppRadius.mdAll,
                   ),
+                  foregroundColor: semantic.textOnBrand,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     if (isPreview) ...[
-                      const FaIcon(FontAwesomeIcons.eye, size: 16),
+                      FaIcon(
+                        FontAwesomeIcons.eye,
+                        size: 16,
+                        color: semantic.iconOnBrand,
+                      ),
                       const SizedBox(width: 6),
                     ],
                     if (isLast) ...[
-                      const FaIcon(FontAwesomeIcons.rocket, size: 14),
+                      FaIcon(
+                        FontAwesomeIcons.rocket,
+                        size: 14,
+                        color: semantic.iconOnBrand,
+                      ),
                       const SizedBox(width: 6),
                     ],
                     Text(
@@ -668,6 +690,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
                           : isPreview
                           ? 'Preview'
                           : 'Next',
+                      style: AppTextStyles.button.copyWith(
+                        color: semantic.textOnBrand,
+                      ),
                     ),
                   ],
                 ),
@@ -683,12 +708,12 @@ class _CreateEventPageState extends State<CreateEventPage> {
 class _StepProgressBar extends StatelessWidget {
   final int currentStep;
   final int totalSteps;
-  final ColorScheme colorScheme;
+  final AppSemanticColors semantic;
 
   const _StepProgressBar({
     required this.currentStep,
     required this.totalSteps,
-    required this.colorScheme,
+    required this.semantic,
   });
 
   @override
@@ -702,8 +727,8 @@ class _StepProgressBar extends StatelessWidget {
             margin: EdgeInsets.only(right: index == totalSteps - 1 ? 0 : 4),
             decoration: BoxDecoration(
               color: isComplete
-                  ? colorScheme.onSurface.withValues(alpha: 0.9)
-                  : colorScheme.surfaceContainerHighest,
+                  ? semantic.iconInfo
+                  : semantic.backgroundTertiary,
               borderRadius: BorderRadius.circular(999),
             ),
           ),

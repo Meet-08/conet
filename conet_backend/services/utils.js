@@ -29,6 +29,7 @@ export const mapEvent = (event, viewerId = null) => ({
   title: event.title,
   category: event.category,
   about: jsonFieldToString(event.about, EMPTY_QUILL_DELTA_JSON),
+  instructions: event.instructions ?? null,
   start_date: event.start_date,
   end_date: event.end_date,
   start_time: event.start_time,
@@ -235,4 +236,3 @@ export const assertEndAfterStart = (startDate, endDate) => {
     throw err;
   }
 };
-

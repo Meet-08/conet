@@ -587,6 +587,7 @@ export const createEventService = async (organizerId, body) => {
     title,
     category,
     about,
+    instructions,
     start_date,
     end_date,
     start_time,
@@ -684,6 +685,10 @@ export const createEventService = async (organizerId, body) => {
 
   const normalizedCustomFields = normalizeCustomFieldDefinitions(custom_fields);
   const normalizedVenue = normalizeOptionalString(venue, "venue");
+  const normalizedInstructions = normalizeOptionalString(
+    instructions,
+    "instructions",
+  );
   const normalizedConversationId =
     hasConversationIdField ?
       normalizeOptionalString(rawConversationId, "conversation_id")
@@ -723,6 +728,9 @@ export const createEventService = async (organizerId, body) => {
       min_team_size: resolvedMinTeamSize,
       max_team_size: resolvedMaxTeamSize,
       custom_fields: normalizedCustomFields ?? [],
+      ...(normalizedInstructions !== undefined && {
+        instructions: normalizedInstructions,
+      }),
       ...(normalizedConversationId !== undefined && {
         conversation_id: normalizedConversationId,
       }),
@@ -767,6 +775,7 @@ export const updateEventService = async (eventId, organizerId, body) => {
     title,
     category,
     about,
+    instructions,
     start_date,
     end_date,
     start_time,
@@ -878,6 +887,10 @@ export const updateEventService = async (eventId, organizerId, body) => {
     : undefined;
   const normalizedVenue =
     venue !== undefined ? normalizeOptionalString(venue, "venue") : undefined;
+  const normalizedInstructions =
+    instructions !== undefined ?
+      normalizeOptionalString(instructions, "instructions")
+    : undefined;
   const normalizedConversationId =
     hasConversationIdField ?
       normalizeOptionalString(rawConversationId, "conversation_id")
@@ -928,6 +941,9 @@ export const updateEventService = async (eventId, organizerId, body) => {
     }),
     ...(normalizedCustomFields !== undefined && {
       custom_fields: normalizedCustomFields,
+    }),
+    ...(normalizedInstructions !== undefined && {
+      instructions: normalizedInstructions,
     }),
     ...(normalizedConversationId !== undefined && {
       conversation_id: normalizedConversationId,

@@ -162,7 +162,7 @@ class _ActivityStepState extends State<ActivityStep> {
                   TextFormField(
                     initialValue: a['description'] as String? ?? '',
                     decoration: const InputDecoration(
-                      hintText: 'Description (optional)',
+                      hintText: 'Description (required)',
                       filled: true,
                       isDense: true,
                       border: OutlineInputBorder(
@@ -170,8 +170,8 @@ class _ActivityStepState extends State<ActivityStep> {
                         borderSide: BorderSide.none,
                       ),
                     ),
-                    maxLines: null,
-                    minLines: 2,
+                    maxLines: 2,
+                    minLines: 1,
                     onChanged: (v) => _updateActivity(i, {'description': v}),
                   ),
                 ],

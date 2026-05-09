@@ -78,6 +78,7 @@ class EventModel extends Event {
     required super.maxParticipant,
     required super.eventStatus,
     super.eligibility,
+    super.instructions,
     super.eventImageUrl,
     super.venue,
     super.registrationDeadline,
@@ -133,6 +134,7 @@ class EventModel extends Event {
       maxParticipant: entity.maxParticipant,
       eventStatus: entity.eventStatus,
       eligibility: entity.eligibility,
+      instructions: entity.instructions,
       eventImageUrl: entity.eventImageUrl,
       venue: entity.venue,
       registrationDeadline: entity.registrationDeadline,
@@ -250,4 +252,3 @@ class EventCustomFieldListConverter
     return object.map((field) => field.toJson()).toList(growable: false);
   }
 }
-

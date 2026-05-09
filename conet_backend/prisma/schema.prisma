@@ -735,6 +735,7 @@ model events {
   custom_fields         Json?                   @default("[]")
   conversation_id       String?                 @db.Uuid
   end_date              DateTime                @db.Date
+  instructions          String?
   event_activity        event_activity[]
   event_bookmarks       event_bookmarks[]
   event_cohosts         event_cohosts[]

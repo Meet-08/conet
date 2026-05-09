@@ -34,6 +34,7 @@ const makeEventRow = (override = {}) => ({
   title: "Campus Hack Night",
   category: "Technology",
   about: "Build and ship with your team",
+  instructions: null,
   start_date: new Date("2026-06-15T00:00:00.000Z"),
   start_time: new Date("1970-01-01T09:00:00.000Z"),
   end_time: new Date("1970-01-01T11:00:00.000Z"),
@@ -260,6 +261,7 @@ describe("Event lifecycle routes", () => {
       .send({
         title: "Hackathon",
         category: "Technology",
+        instructions: "Bring your own laptop",
         start_date: "2026-06-15",
         start_time: "09:00",
         end_time: "11:00",
@@ -270,7 +272,13 @@ describe("Event lifecycle routes", () => {
 
     expect(res.status).toBe(201);
     expect(res.body.success).toBe(true);
-    expect(prismaMock.events.create).toHaveBeenCalled();
+    expect(prismaMock.events.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          instructions: "Bring your own laptop",
+        }),
+      }),
+    );
   });
 
   it("409 - rejects publishing already published event", async () => {
@@ -287,7 +295,9 @@ describe("Event lifecycle routes", () => {
   });
 
   it("200 - gets event details", async () => {
-    prismaMock.events.findUnique.mockResolvedValue(makeEventRow());
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({ instructions: "Carry your college ID" }),
+    );
 
     const res = await request(app)
       .get(`/api/events/${EVENT_ID}`)
@@ -296,6 +306,7 @@ describe("Event lifecycle routes", () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.event.id).toBe(EVENT_ID);
+    expect(res.body.event.instructions).toBe("Carry your college ID");
   });
 });
 
@@ -531,4 +542,3 @@ describe("Cohost routes", () => {
     expect(res.body.cohosts).toHaveLength(1);
   });
 });
-
