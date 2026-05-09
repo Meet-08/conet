@@ -193,6 +193,22 @@ describe("createEventService", () => {
     expect(result.event_status).toBe("published");
   });
 
+  it("accepts overnight timing when end_date is after start_date", async () => {
+    await createEventService(ORGANIZER_ID, {
+      title: "Overnight Hackathon",
+      category: "Technology",
+      start_date: "2026-06-01",
+      end_date: "2026-06-02",
+      start_time: "23:30",
+      end_time: "00:30",
+      location_type: "ONLINE",
+      meeting_link: "https://meet.example/overnight",
+      event_image_url: "https://cdn.example.com/events/overnight-banner.jpg",
+    });
+
+    expect(prismaMock.events.create).toHaveBeenCalledTimes(1);
+  });
+
   it("accepts HH:MM(:SS) activity_time payloads", async () => {
     prismaMock.events.create.mockResolvedValue(
       makeEventRow({ event_status: "published" }),

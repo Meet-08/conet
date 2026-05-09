@@ -3,7 +3,6 @@ import prisma from "../config/prisma.js";
 import { createGroupService } from "./conversationService.js";
 import {
   assertAttendanceScanner,
-  assertEndAfterStart,
   assertEventExists,
   assertOrganizer,
   eventInclude,
@@ -582,6 +581,30 @@ const normalizeActivityEntries = (activity, fieldName = "activity") => {
   });
 };
 
+const combineDateAndTime = (dateValue, timeValue) => {
+  const baseDate = new Date(dateValue);
+  if (Number.isNaN(baseDate.getTime())) {
+    return null;
+  }
+
+  const timeDate = new Date(timeValue);
+  if (Number.isNaN(timeDate.getTime())) {
+    return null;
+  }
+
+  return new Date(
+    Date.UTC(
+      baseDate.getUTCFullYear(),
+      baseDate.getUTCMonth(),
+      baseDate.getUTCDate(),
+      timeDate.getUTCHours(),
+      timeDate.getUTCMinutes(),
+      timeDate.getUTCSeconds(),
+      timeDate.getUTCMilliseconds(),
+    ),
+  );
+};
+
 export const createEventService = async (organizerId, body) => {
   const {
     title,
@@ -657,12 +680,24 @@ export const createEventService = async (organizerId, body) => {
 
   const parsedStartTime = parseTimeString(start_time, "start_time");
   const parsedEndTime = parseTimeString(end_time, "end_time");
-  assertEndAfterStart(parsedStartTime, parsedEndTime);
   const resolvedEndDate = end_date ?? start_date;
   const parsedStartDate = new Date(start_date);
   const parsedEndDate = new Date(resolvedEndDate);
   if (parsedEndDate < parsedStartDate) {
     const err = new Error("end_date cannot be before start_date");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const startDateTime = combineDateAndTime(parsedStartDate, parsedStartTime);
+  const endDateTime = combineDateAndTime(parsedEndDate, parsedEndTime);
+  if (!startDateTime || !endDateTime) {
+    const err = new Error("Invalid event date/time values");
+    err.statusCode = 400;
+    throw err;
+  }
+  if (endDateTime.getTime() <= startDateTime.getTime()) {
+    const err = new Error("end_time must be after start_time");
     err.statusCode = 400;
     throw err;
   }
@@ -831,12 +866,6 @@ export const updateEventService = async (eventId, organizerId, body) => {
   if (end_time !== undefined) {
     parsedEndTime = parseTimeString(end_time, "end_time");
   }
-  if (start_time !== undefined || end_time !== undefined) {
-    const effectiveStart = parsedStartTime ?? existing.start_time;
-    const effectiveEnd = parsedEndTime ?? existing.end_time;
-    assertEndAfterStart(effectiveStart, effectiveEnd);
-  }
-
   const effectiveStartDate =
     start_date !== undefined ? new Date(start_date) : existing.start_date;
   const effectiveEndDate =
@@ -847,6 +876,26 @@ export const updateEventService = async (eventId, organizerId, body) => {
     const err = new Error("end_date cannot be before start_date");
     err.statusCode = 400;
     throw err;
+  }
+
+  if (start_time !== undefined || end_time !== undefined) {
+    const effectiveStart = parsedStartTime ?? existing.start_time;
+    const effectiveEnd = parsedEndTime ?? existing.end_time;
+    const effectiveStartDateTime = combineDateAndTime(
+      effectiveStartDate,
+      effectiveStart,
+    );
+    const effectiveEndDateTime = combineDateAndTime(effectiveEndDate, effectiveEnd);
+    if (!effectiveStartDateTime || !effectiveEndDateTime) {
+      const err = new Error("Invalid event date/time values");
+      err.statusCode = 400;
+      throw err;
+    }
+    if (effectiveEndDateTime.getTime() <= effectiveStartDateTime.getTime()) {
+      const err = new Error("end_time must be after start_time");
+      err.statusCode = 400;
+      throw err;
+    }
   }
 
   const normalizedParticipationType =
