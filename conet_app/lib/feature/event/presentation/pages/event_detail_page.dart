@@ -981,22 +981,20 @@ class _InfoCalloutSection extends StatelessWidget {
 
   Widget _buildBulletItem(String item) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpace.s8),
+      padding: const EdgeInsets.only(bottom: AppSpace.s8, left: AppSpace.s8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: semantic.iconInfo,
-                shape: BoxShape.circle,
-              ),
+          Container(
+            margin: const EdgeInsets.only(top: 7),
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: semantic.iconInfo,
+              shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: AppSpace.s10),
+          const SizedBox(width: AppSpace.s8),
           Expanded(
             child: Text(
               item,
@@ -1017,7 +1015,10 @@ class _InfoCalloutSection extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpace.s16),
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpace.s16,
+        horizontal: AppSpace.s12,
+      ),
       decoration: BoxDecoration(
         color: semantic.backgroundInfo,
         border: Border.all(color: semantic.borderInfo),
@@ -1027,22 +1028,22 @@ class _InfoCalloutSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Container(
-                width: 28,
-                height: 28,
+                width: 30,
+                height: 30,
                 decoration: BoxDecoration(
                   color: semantic.backgroundPrimary,
-                  borderRadius: BorderRadius.circular(999),
+                  shape: BoxShape.circle,
                 ),
                 child: Icon(
                   Icons.info_outline,
-                  size: 16,
+                  size: 18,
                   color: semantic.iconInfo,
                 ),
               ),
-              const SizedBox(width: AppSpace.s10),
+              const SizedBox(width: AppSpace.s8),
               Expanded(
                 child: Text(
                   title,

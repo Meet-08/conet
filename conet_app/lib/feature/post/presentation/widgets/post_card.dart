@@ -29,10 +29,14 @@ class PostCard extends StatefulWidget {
 
 class _PostCardState extends State<PostCard> {
   int _currentImageIndex = 0;
+
   final PageController _pageController = PageController();
+
   late bool _isLiked;
   late int _likeCount;
   late bool _isFollowingAuthor;
+
+  bool _isExpanded = false;
 
   static const _avatarColors = [
     Color(0xFFF7E6E6),
@@ -45,9 +49,11 @@ class _PostCardState extends State<PostCard> {
   @override
   void initState() {
     super.initState();
+
     _isLiked = widget.post.isLiked;
     _likeCount = widget.post.likeCount;
     _isFollowingAuthor = widget.post.user.isFollowing;
+
     context.read<PostBloc>().add(
       PostCheckBookmarkStatusEvent(postId: widget.post.id),
     );
@@ -56,10 +62,12 @@ class _PostCardState extends State<PostCard> {
   @override
   void didUpdateWidget(PostCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+
     if (oldWidget.post != widget.post) {
       _isLiked = widget.post.isLiked;
       _likeCount = widget.post.likeCount;
       _isFollowingAuthor = widget.post.user.isFollowing;
+      _isExpanded = false;
     }
   }
 
@@ -71,15 +79,21 @@ class _PostCardState extends State<PostCard> {
 
   Color _getAvatarColor(String username) {
     if (username.isEmpty) return _avatarColors[0];
+
     final hash = username.codeUnits.fold<int>(0, (prev, c) => prev + c);
+
     return _avatarColors[hash % _avatarColors.length];
   }
 
   void _toggleFollowAuthor() {
     final nextValue = !_isFollowingAuthor;
-    setState(() => _isFollowingAuthor = nextValue);
+
+    setState(() {
+      _isFollowingAuthor = nextValue;
+    });
 
     final profileBloc = context.read<ProfileBloc>();
+
     if (nextValue) {
       profileBloc.add(ProfileFollowUserEvent(targetUid: widget.post.user.id));
     } else {
@@ -106,22 +120,33 @@ class _PostCardState extends State<PostCard> {
     final textTheme = Theme.of(context).textTheme;
 
     final user = widget.post.user;
+
     final displayName = _buildDisplayName();
     final handle = _buildHandle();
-    final renderedContent = quillPlainTextFromString(widget.post.content);
+
+    final renderedContent = quillPlainTextFromString(
+      widget.post.content,
+    ).trim();
+
     final tags = quillTagsFromString(widget.post.content);
+
+    final hasMedia = widget.post.mediaUrls.isNotEmpty;
+
     final imageUrlsForViewer = widget.post.mediaUrls
         .where((url) => getMediaType(url) == MediaType.image)
         .toList();
+
     final currentMediaUrl = widget.post.mediaUrls.isNotEmpty
         ? widget.post.mediaUrls[_currentImageIndex.clamp(
             0,
             widget.post.mediaUrls.length - 1,
           )]
         : '';
+
     final currentMediaType = currentMediaUrl.isEmpty
         ? MediaType.unknown
         : getMediaType(currentMediaUrl);
+
     final mediaAspectRatio = switch (currentMediaType) {
       MediaType.image || MediaType.video => 4 / 3,
       MediaType.audio => 16 / 7,
@@ -151,11 +176,13 @@ class _PostCardState extends State<PostCard> {
                 CustomCircleAvatar(
                   size: CustomCircleAvatarSize.medium,
                   imageUrl: user.profilePicUrl,
-                  displayName: _buildDisplayName(),
+                  displayName: displayName,
                   userId: user.id,
                   backgroundColor: _getAvatarColor(user.username),
                 ),
+
                 const SizedBox(width: 10),
+
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(top: 1),
@@ -172,7 +199,9 @@ class _PostCardState extends State<PostCard> {
                             color: semantic.textPrimary,
                           ),
                         ),
+
                         const SizedBox(height: 2),
+
                         Text(
                           '$handle · ${DateFormatter.format(widget.post.createdAt)}',
                           maxLines: 1,
@@ -187,6 +216,7 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ),
                 ),
+
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -194,6 +224,7 @@ class _PostCardState extends State<PostCard> {
                       isFollowing: _isFollowingAuthor,
                       onTap: _toggleFollowAuthor,
                     ),
+
                     PopupMenuButton<_PostActionMenuItem>(
                       position: PopupMenuPosition.under,
                       padding: EdgeInsets.zero,
@@ -205,6 +236,7 @@ class _PostCardState extends State<PostCard> {
                           case _PostActionMenuItem.unfollow:
                             _toggleFollowAuthor();
                             break;
+
                           case _PostActionMenuItem.report:
                             showReportBottomSheet(
                               context: context,
@@ -230,7 +262,9 @@ class _PostCardState extends State<PostCard> {
                                 size: 15,
                                 color: semantic.iconSecondary,
                               ),
+
                               const SizedBox(width: 10),
+
                               Text(
                                 _isFollowingAuthor ? 'Unfollow' : 'Follow',
                                 style: textTheme.bodyMedium?.copyWith(
@@ -241,6 +275,7 @@ class _PostCardState extends State<PostCard> {
                             ],
                           ),
                         ),
+
                         PopupMenuItem<_PostActionMenuItem>(
                           value: _PostActionMenuItem.report,
                           child: Row(
@@ -250,7 +285,9 @@ class _PostCardState extends State<PostCard> {
                                 size: 15,
                                 color: semantic.textError,
                               ),
+
                               const SizedBox(width: 10),
+
                               Text(
                                 'Report',
                                 style: textTheme.bodyMedium?.copyWith(
@@ -278,11 +315,77 @@ class _PostCardState extends State<PostCard> {
 
             if (renderedContent.isNotEmpty) ...[
               const SizedBox(height: 11),
-              QuillReadOnlyView(deltaJson: widget.post.content),
+
+              if (widget.isDetailView || !hasMedia)
+                QuillReadOnlyView(deltaJson: widget.post.content)
+              else
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final textStyle = textTheme.bodyMedium?.copyWith(
+                      color: semantic.textPrimary,
+                      height: 1.45,
+                    );
+
+                    final textPainter = TextPainter(
+                      text: TextSpan(text: renderedContent, style: textStyle),
+                      maxLines: 2,
+                      textDirection: TextDirection.ltr,
+                    )..layout(maxWidth: constraints.maxWidth);
+
+                    final exceedsMaxLines = textPainter.didExceedMaxLines;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AnimatedSize(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeInOut,
+                          child: ClipRect(
+                            child: SizedBox(
+                              width: double.infinity,
+                              height: _isExpanded
+                                  ? null
+                                  : (textStyle?.fontSize ?? 14) *
+                                            (textStyle?.height ?? 1.4) *
+                                            2 +
+                                        6,
+                              child: IgnorePointer(
+                                ignoring: true,
+                                child: QuillReadOnlyView(
+                                  deltaJson: widget.post.content,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        if (exceedsMaxLines)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6),
+                            child: GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _isExpanded = !_isExpanded;
+                                });
+                              },
+                              child: Text(
+                                _isExpanded ? 'Show less' : 'Read more',
+                                style: textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
             ],
 
             if (widget.post.mediaUrls.isNotEmpty) ...[
               const SizedBox(height: 12),
+
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Stack(
@@ -306,6 +409,7 @@ class _PostCardState extends State<PostCard> {
                         },
                       ),
                     ),
+
                     if (widget.post.mediaUrls.length > 1)
                       Positioned(
                         bottom: 12,
@@ -348,8 +452,9 @@ class _PostCardState extends State<PostCard> {
 
             if (tags.isNotEmpty) ...[
               const SizedBox(height: 12),
+
               SingleChildScrollView(
-                scrollDirection: .horizontal,
+                scrollDirection: Axis.horizontal,
                 child: Row(
                   spacing: 8,
                   children: tags.map((tag) => _TagChip(text: tag)).toList(),
@@ -367,6 +472,7 @@ class _PostCardState extends State<PostCard> {
                       _isLiked = !_isLiked;
                       _likeCount += _isLiked ? 1 : -1;
                     });
+
                     context.read<PostBloc>().add(
                       PostToggleLikePostEvent(postId: widget.post.id),
                     );
@@ -388,7 +494,9 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ),
                 ),
+
                 const SizedBox(width: 12),
+
                 InkWell(
                   borderRadius: BorderRadius.circular(8),
                   onTap: widget.isDetailView
@@ -411,7 +519,9 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ),
                 ),
+
                 const SizedBox(width: 12),
+
                 InkWell(
                   borderRadius: BorderRadius.circular(8),
                   onTap: () async {
@@ -426,17 +536,21 @@ class _PostCardState extends State<PostCard> {
                     ),
                   ),
                 ),
+
                 const Spacer(),
+
                 BlocBuilder<PostBloc, PostState>(
                   buildWhen: (prev, curr) {
                     if (prev is PostLoaded && curr is PostLoaded) {
                       return prev.bookmarkedPostIds.contains(widget.post.id) !=
                           curr.bookmarkedPostIds.contains(widget.post.id);
                     }
+
                     if (prev is PostBookmarksLoaded ||
                         curr is PostBookmarksLoaded) {
                       return true;
                     }
+
                     return false;
                   },
                   builder: (context, state) {
@@ -447,6 +561,7 @@ class _PostCardState extends State<PostCard> {
                       PostBookmarksLoaded _ => true,
                       _ => false,
                     };
+
                     return InkWell(
                       borderRadius: BorderRadius.circular(8),
                       onTap: () {
@@ -480,6 +595,7 @@ class _PostCardState extends State<PostCard> {
 
             if (!widget.isDetailView) ...[
               const SizedBox(height: 12),
+
               Divider(height: 1, thickness: 0.7, color: semantic.borderSubtle),
             ],
           ],
@@ -489,12 +605,16 @@ class _PostCardState extends State<PostCard> {
   }
 
   String _formatDisplayName(String username) {
-    if (username.isEmpty) return 'Unknown User';
+    if (username.isEmpty) {
+      return 'Unknown User';
+    }
 
     final words = username.split('_');
+
     return words
         .map((word) {
           if (word.isEmpty) return '';
+
           return word[0].toUpperCase() + word.substring(1).toLowerCase();
         })
         .join(' ');
@@ -503,6 +623,7 @@ class _PostCardState extends State<PostCard> {
   String _buildDisplayName() {
     final first = widget.post.user.firstName.trim();
     final last = widget.post.user.lastName.trim();
+
     final full = '$first $last'.trim();
 
     if (full.isNotEmpty) {
@@ -514,6 +635,7 @@ class _PostCardState extends State<PostCard> {
 
   String _buildHandle() {
     final username = widget.post.user.username.trim();
+
     if (username.isNotEmpty) {
       return '@$username';
     }
@@ -606,7 +728,9 @@ class _ActionItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         FaIcon(icon, size: 17, color: color ?? semantic.iconSecondary),
+
         const SizedBox(width: 6),
+
         Text(
           label,
           style: textTheme.bodySmall?.copyWith(

@@ -885,7 +885,10 @@ export const updateEventService = async (eventId, organizerId, body) => {
       effectiveStartDate,
       effectiveStart,
     );
-    const effectiveEndDateTime = combineDateAndTime(effectiveEndDate, effectiveEnd);
+    const effectiveEndDateTime = combineDateAndTime(
+      effectiveEndDate,
+      effectiveEnd,
+    );
     if (!effectiveStartDateTime || !effectiveEndDateTime) {
       const err = new Error("Invalid event date/time values");
       err.statusCode = 400;
@@ -2081,14 +2084,10 @@ export const listMyEventsService = async (
         event_bookmarks: { some: { user_id: userId } },
       }
     : {
-        OR: [
-          { organizer_id: userId },
-          {
-            event_registrations: {
-              some: { user_id: userId, registration_status: "registered" },
-            },
-          },
-        ],
+        event_registrations: {
+          some: { user_id: userId, registration_status: "registered" },
+        },
+
         ...(type === "upcoming" ?
           { start_date: { gte: today } }
         : { start_date: { lt: today } }),
