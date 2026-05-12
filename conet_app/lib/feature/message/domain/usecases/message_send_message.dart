@@ -15,12 +15,16 @@ class MessageSendMessage {
     required String content,
     List<String>? mediaUrls,
     List<PlatformFile>? files,
+    bool isPost = false,
+    String? postId,
   }) async {
     return _messageRepository.sendMessage(
       conversationId,
       content,
       mediaUrls: mediaUrls,
       files: files,
+      isPost: isPost,
+      postId: postId,
     );
   }
 }

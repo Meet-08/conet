@@ -1,3 +1,4 @@
+import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
@@ -12,7 +13,7 @@ class Message extends Equatable {
   @JsonKey(name: 'sender_id')
   final String senderId;
 
-  final String content;
+  final String? content;
 
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
@@ -25,15 +26,26 @@ class Message extends Equatable {
 
   final MessageDeliveryStatus status;
 
+  @JsonKey(name: 'is_post')
+  final bool isPost;
+
+  @JsonKey(name: 'post_id')
+  final String? postId;
+
+  final Post? post;
+
   const Message({
     required this.id,
     required this.conversationId,
     required this.senderId,
-    required this.content,
+    this.content,
     required this.createdAt,
     this.isRead = false,
     this.mediaUrls = const [],
     this.status = MessageDeliveryStatus.sent,
+    this.isPost = false,
+    this.postId,
+    this.post,
   });
 
   @override
@@ -46,5 +58,8 @@ class Message extends Equatable {
     isRead,
     mediaUrls,
     status,
+    isPost,
+    postId,
+    post,
   ];
 }

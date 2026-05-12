@@ -766,8 +766,11 @@ model messages {
   created_at                                            DateTime?       @default(now()) @db.Timestamptz(6)
   is_read                                               Boolean?        @default(false)
   media_urls                                            String[]        @default([])
+  is_post                                               Boolean         @default(false)
+  post_id                                               String?         @db.Uuid
   conversations_conversations_last_message_idTomessages conversations[] @relation("conversations_last_message_idTomessages")
   conversations_messages_conversation_idToconversations conversations   @relation("messages_conversation_idToconversations", fields: [conversation_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "messages_conversation_fkey")
+  posts                                                 posts?          @relation(fields: [post_id], references: [id], onUpdate: NoAction)
   users                                                 public_users    @relation(fields: [sender_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "messages_sender_fkey")
 
   @@index([conversation_id], map: "idx_messages_conversation")
@@ -852,6 +855,7 @@ model posts {
   created_at    DateTime?       @default(now()) @db.Timestamptz(6)
   updated_at    DateTime?       @default(now()) @db.Timestamptz(6)
   content       Json            @default("{\"ops\": []}")
+  messages      messages[]
   post_comments post_comments[]
   post_likes    post_likes[]
   users         public_users?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)

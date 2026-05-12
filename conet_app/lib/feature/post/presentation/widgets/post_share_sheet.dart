@@ -52,11 +52,7 @@ class _PostShareSheetState extends State<PostShareSheet> {
 
   String _buildShareText() {
     final deepLink = PostShareHelper.buildPostDeepLink(widget.postId);
-    final trimmed = widget.contentPreview.trim();
-    final preview = trimmed.length > 100
-        ? '${trimmed.substring(0, 100)}...'
-        : trimmed;
-    return 'Post by @${widget.username}\n$preview\n\n$deepLink';
+    return 'Post by @${widget.username}\n$deepLink';
   }
 
   void _onSearchChanged(String value) {
@@ -92,7 +88,12 @@ class _PostShareSheetState extends State<PostShareSheet> {
 
   void _sendToConversation(String conversationId, String displayName) {
     context.read<MessageBloc>().add(
-      MessageSent(conversationId: conversationId, content: _buildShareText()),
+      MessageSent(
+        conversationId: conversationId,
+        content: _buildShareText(),
+        isPost: true,
+        postId: widget.postId,
+      ),
     );
     context.pop();
     AppToast.showSuccess(widget.parentContext, 'Sent to $displayName');

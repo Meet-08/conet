@@ -112,7 +112,7 @@ class ChatMessageList extends StatelessWidget {
                 ? colors.backgroundTertiary.withValues(alpha: 0.5)
                 : Colors.transparent,
             child: ChatMessageBubble(
-              text: message.content,
+              text: message.content ?? '',
               time: time,
               isMe: isMe,
               mediaUrls: message.mediaUrls,
@@ -125,6 +125,7 @@ class ChatMessageList extends StatelessWidget {
                   isMe &&
                   message.id == latestOutgoingMessageId,
               isSeen: message.isRead,
+              sharedPost: message.post,
             ),
           ),
         );

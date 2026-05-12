@@ -4,6 +4,8 @@ import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/presentation/widgets/media/chat_media_item.dart';
+import 'package:conet_app/feature/post/domain/entities/post.dart';
+import 'package:conet_app/feature/post/presentation/widgets/post_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_linkify/flutter_linkify.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -20,6 +22,7 @@ class ChatMessageBubble extends StatelessWidget {
   final String? senderImageUrl;
   final bool showSeenStatus;
   final bool isSeen;
+  final Post? sharedPost;
 
   const ChatMessageBubble({
     super.key,
@@ -33,6 +36,7 @@ class ChatMessageBubble extends StatelessWidget {
     this.senderImageUrl,
     this.showSeenStatus = false,
     this.isSeen = false,
+    this.sharedPost,
   });
 
   @override
@@ -105,6 +109,47 @@ class ChatMessageBubble extends StatelessWidget {
                   ),
                 if (hasText && hasMedia) const SizedBox(height: 8),
                 if (hasMedia) _buildMediaGrid(context),
+                if (sharedPost != null) ...[
+                  if (hasText || hasMedia) const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: colors.backgroundSecondary,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: colors.borderSubtle),
+                    ),
+                    clipBehavior: Clip.hardEdge,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                          child: Row(
+                            children: [
+                              FaIcon(FontAwesomeIcons.share, size: 12, color: colors.textSecondary),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Post from ${sharedPost!.user.username}',
+                                  style: AppTextStyles.caption.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: colors.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // The actual PostCard injected right into the bubble
+                        PostCard(
+                          post: sharedPost!,
+                          isChatPreview: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 if (status == MessageDeliveryStatus.error) ...[
                   const SizedBox(height: 4),
                   Row(

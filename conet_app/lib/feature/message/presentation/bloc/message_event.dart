@@ -22,15 +22,19 @@ class MessageRealtimeReceived extends MessageEvent {
 
 class MessageSent extends MessageEvent {
   final String conversationId;
-  final String content;
+  final String? content;
   final List<String>? mediaUrls;
   final List<PlatformFile>? files;
+  final bool isPost;
+  final String? postId;
 
   MessageSent({
     required this.conversationId,
-    required this.content,
+    this.content,
     this.mediaUrls,
     this.files,
+    this.isPost = false,
+    this.postId,
   });
 }
 

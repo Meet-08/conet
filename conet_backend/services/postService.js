@@ -6,7 +6,7 @@ import { EMPTY_QUILL_DELTA_JSON, jsonFieldToString } from "./utils.js";
 
 const authorFollowRelation = "user_follows_user_follows_following_idTousers";
 
-const authorInclude = (viewerId) =>
+export const authorInclude = (viewerId) =>
   viewerId ?
     {
       include: {
@@ -18,7 +18,7 @@ const authorInclude = (viewerId) =>
     }
   : true;
 
-const mapPostAuthor = (post, viewerId = null) => {
+export const mapPostAuthor = (post, viewerId = null) => {
   const user = post.users ?? post.user ?? null;
   if (!user) return null;
 
@@ -30,7 +30,7 @@ const mapPostAuthor = (post, viewerId = null) => {
   };
 };
 
-const mapPost = (post, viewerId = null) => ({
+export const mapPost = (post, viewerId = null) => ({
   id: post.id,
   user: mapPostAuthor(post, viewerId),
   content: jsonFieldToString(post.content, EMPTY_QUILL_DELTA_JSON),
@@ -50,6 +50,17 @@ const mapComment = (comment) => ({
   content: comment.content,
   created_at: comment.created_at,
   user: comment.users ?? comment.user ?? null,
+});
+
+export const postIncludeOptions = (viewerId) => ({
+  users: authorInclude(viewerId),
+  _count: {
+    select: { post_likes: true, post_comments: true },
+  },
+  post_likes:
+    viewerId ?
+      { where: { user_id: viewerId }, select: { user_id: true } }
+    : false,
 });
 
 // ─── Create post ─────────────────────────────────────────────────────────
@@ -83,16 +94,7 @@ export const getAllPostsService = async (
     skip,
     take: limit,
     orderBy: { created_at: "desc" },
-    include: {
-      users: authorInclude(viewerId),
-      _count: {
-        select: { post_likes: true, post_comments: true },
-      },
-      post_likes:
-        viewerId ?
-          { where: { user_id: viewerId }, select: { user_id: true } }
-        : false,
-    },
+    include: postIncludeOptions(viewerId),
   });
 
   return posts.map((p) => mapPost(p, viewerId));

@@ -550,6 +550,8 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
       createdAt: DateTime.now(),
       status: MessageDeliveryStatus.pending,
       mediaUrls: event.mediaUrls ?? [],
+      isPost: event.isPost,
+      postId: event.postId,
     );
 
     // Optimistic update
@@ -559,9 +561,11 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
 
     final result = await _sendMessage(
       conversationId: event.conversationId,
-      content: event.content,
+      content: event.content ?? '',
       mediaUrls: event.mediaUrls,
       files: event.files,
+      isPost: event.isPost,
+      postId: event.postId,
     );
 
     result.fold(

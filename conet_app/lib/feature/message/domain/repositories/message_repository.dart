@@ -16,6 +16,8 @@ abstract interface class MessageRepository {
     String message, {
     List<String>? mediaUrls,
     List<PlatformFile>? files,
+    bool isPost = false,
+    String? postId,
   });
 
   Future<Either<AppFailure, MessagePage>> getMessages(

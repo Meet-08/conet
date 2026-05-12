@@ -2,6 +2,7 @@ import { USER_SELECT_FIELDS, UUID_REGEX } from "../config/constants.js";
 import logger from "../config/logger.js";
 import prisma from "../config/prisma.js";
 import notificationService from "./notificationService.js";
+import { mapPost, postIncludeOptions } from "./postService.js";
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
@@ -344,6 +345,7 @@ export const getConversationsService = async (
 export const getMessagesService = async (
   conversationId,
   { limit = 20, before } = {},
+  currentUserId,
 ) => {
   const where = {
     conversation_id: conversationId,
@@ -354,6 +356,10 @@ export const getMessagesService = async (
     where,
     orderBy: { created_at: "desc" },
     take: limit + 1,
+    include: {
+      posts:
+        currentUserId ? { include: postIncludeOptions(currentUserId) } : true,
+    },
   });
 
   const hasMore = rows.length > limit;
@@ -367,6 +373,9 @@ export const getMessagesService = async (
     created_at: m.created_at?.toISOString() ?? null,
     is_read: m.is_read ?? false,
     media_urls: m.media_urls ?? [],
+    is_post: m.is_post ?? false,
+    post_id: m.post_id ?? null,
+    post: m.posts ? mapPost(m.posts, currentUserId) : null,
   }));
 
   const nextBefore =
@@ -388,6 +397,8 @@ export const sendMessageService = async (
   senderId,
   content,
   mediaUrls = [],
+  isPost = false,
+  postId = null,
 ) => {
   // Verify conversation exists and user is a participant
   const conversation = await prisma.conversations.findUnique({
@@ -433,6 +444,12 @@ export const sendMessageService = async (
       sender_id: senderId,
       content,
       media_urls: mediaUrls,
+      is_post: isPost,
+      post_id: postId,
+    },
+    include: {
+      posts:
+        isPost && postId ? { include: postIncludeOptions(senderId) } : false,
     },
   });
 
@@ -469,6 +486,9 @@ export const sendMessageService = async (
     created_at: message.created_at?.toISOString() ?? null,
     is_read: message.is_read ?? false,
     media_urls: message.media_urls ?? [],
+    is_post: message.is_post ?? false,
+    post_id: message.post_id ?? null,
+    post: message.posts ? mapPost(message.posts, senderId) : null,
   };
 };
 

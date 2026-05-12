@@ -97,11 +97,19 @@ class MessageDataSourceImpl implements MessageDataSource {
     required String conversationId,
     required String content,
     List<String>? mediaUrls,
+    bool isPost = false,
+    String? postId,
   }) async {
     try {
       final data = <String, dynamic>{"content": content};
       if (mediaUrls != null && mediaUrls.isNotEmpty) {
         data['mediaUrls'] = mediaUrls;
+      }
+      if (isPost) {
+        data['is_post'] = true;
+      }
+      if (postId != null) {
+        data['post_id'] = postId;
       }
       final res = await _dioClient.dio.post(
         "/conversations/$conversationId/messages",

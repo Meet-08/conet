@@ -12,6 +12,8 @@ abstract interface class MessageDataSource {
     required String conversationId,
     required String content,
     List<String>? mediaUrls,
+    bool isPost = false,
+    String? postId,
   });
 
   Future<MessagePage> getMessages({

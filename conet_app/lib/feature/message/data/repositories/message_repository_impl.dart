@@ -61,6 +61,8 @@ class MessageRepositoryImpl implements MessageRepository {
     String message, {
     List<String>? mediaUrls,
     List<PlatformFile>? files,
+    bool isPost = false,
+    String? postId,
   }) async {
     return _getResult(() async {
       List<String>? uploadedUrls = mediaUrls;
@@ -82,6 +84,8 @@ class MessageRepositoryImpl implements MessageRepository {
         conversationId: conversationId,
         content: message,
         mediaUrls: uploadedUrls,
+        isPost: isPost,
+        postId: postId,
       );
     });
   }

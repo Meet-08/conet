@@ -20,8 +20,14 @@ import 'package:go_router/go_router.dart';
 class PostCard extends StatefulWidget {
   final Post post;
   final bool isDetailView;
+  final bool isChatPreview;
 
-  const PostCard({super.key, required this.post, this.isDetailView = false});
+  const PostCard({
+    super.key,
+    required this.post,
+    this.isDetailView = false,
+    this.isChatPreview = false,
+  });
 
   @override
   State<PostCard> createState() => _PostCardState();
@@ -155,7 +161,7 @@ class _PostCardState extends State<PostCard> {
     };
 
     return InkWell(
-      onTap: widget.isDetailView
+      onTap: widget.isDetailView || widget.isChatPreview
           ? null
           : () {
               context.push(
@@ -165,156 +171,159 @@ class _PostCardState extends State<PostCard> {
             },
       borderRadius: BorderRadius.zero,
       child: Container(
-        color: semantic.surfaceBase,
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+        color: widget.isChatPreview ? Colors.transparent : semantic.surfaceBase,
+        padding: widget.isChatPreview
+            ? const EdgeInsets.fromLTRB(4, 4, 4, 4)
+            : const EdgeInsets.fromLTRB(16, 14, 16, 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                CustomCircleAvatar(
-                  size: CustomCircleAvatarSize.medium,
-                  imageUrl: user.profilePicUrl,
-                  displayName: displayName,
-                  userId: user.id,
-                  backgroundColor: _getAvatarColor(user.username),
-                ),
-
-                const SizedBox(width: 10),
-
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 1),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          displayName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: -0.2,
-                            color: semantic.textPrimary,
-                          ),
-                        ),
-
-                        const SizedBox(height: 2),
-
-                        Text(
-                          '$handle · ${DateFormatter.format(widget.post.createdAt)}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.bodySmall?.copyWith(
-                            fontSize: 12.5,
-                            color: semantic.textSecondary,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
+            if (!widget.isChatPreview)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CustomCircleAvatar(
+                    size: CustomCircleAvatarSize.medium,
+                    imageUrl: user.profilePicUrl,
+                    displayName: displayName,
+                    userId: user.id,
+                    backgroundColor: _getAvatarColor(user.username),
                   ),
-                ),
 
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _FollowButton(
-                      isFollowing: _isFollowingAuthor,
-                      onTap: _toggleFollowAuthor,
-                    ),
+                  const SizedBox(width: 10),
 
-                    PopupMenuButton<_PostActionMenuItem>(
-                      position: PopupMenuPosition.under,
-                      padding: EdgeInsets.zero,
-                      color: semantic.surfaceBase,
-                      offset: const Offset(0, 10),
-                      onSelected: (value) {
-                        switch (value) {
-                          case _PostActionMenuItem.follow:
-                          case _PostActionMenuItem.unfollow:
-                            _toggleFollowAuthor();
-                            break;
-
-                          case _PostActionMenuItem.report:
-                            showReportBottomSheet(
-                              context: context,
-                              targetId: widget.post.id,
-                              targetType: ReportTargetType.post,
-                              targetLabel: 'Post',
-                              targetSubtitle: '$displayName · $handle',
-                            );
-                            break;
-                        }
-                      },
-                      itemBuilder: (context) => [
-                        PopupMenuItem<_PostActionMenuItem>(
-                          value: _isFollowingAuthor
-                              ? _PostActionMenuItem.unfollow
-                              : _PostActionMenuItem.follow,
-                          child: Row(
-                            children: [
-                              FaIcon(
-                                _isFollowingAuthor
-                                    ? FontAwesomeIcons.userMinus
-                                    : FontAwesomeIcons.userPlus,
-                                size: 15,
-                                color: semantic.iconSecondary,
-                              ),
-
-                              const SizedBox(width: 10),
-
-                              Text(
-                                _isFollowingAuthor ? 'Unfollow' : 'Follow',
-                                style: textTheme.bodyMedium?.copyWith(
-                                  color: semantic.textPrimary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 1),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.2,
+                              color: semantic.textPrimary,
+                            ),
                           ),
-                        ),
 
-                        PopupMenuItem<_PostActionMenuItem>(
-                          value: _PostActionMenuItem.report,
-                          child: Row(
-                            children: [
-                              FaIcon(
-                                FontAwesomeIcons.flag,
-                                size: 15,
-                                color: semantic.textError,
-                              ),
+                          const SizedBox(height: 2),
 
-                              const SizedBox(width: 10),
-
-                              Text(
-                                'Report',
-                                style: textTheme.bodyMedium?.copyWith(
-                                  color: semantic.textError,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                          Text(
+                            '$handle · ${DateFormatter.format(widget.post.createdAt)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: textTheme.bodySmall?.copyWith(
+                              fontSize: 12.5,
+                              color: semantic.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
-                        child: Icon(
-                          FontAwesomeIcons.ellipsisVertical,
-                          color: semantic.iconSecondary,
-                          size: 16,
-                        ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
+                  ),
+
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _FollowButton(
+                        isFollowing: _isFollowingAuthor,
+                        onTap: _toggleFollowAuthor,
+                      ),
+
+                      PopupMenuButton<_PostActionMenuItem>(
+                        position: PopupMenuPosition.under,
+                        padding: EdgeInsets.zero,
+                        color: semantic.surfaceBase,
+                        offset: const Offset(0, 10),
+                        onSelected: (value) {
+                          switch (value) {
+                            case _PostActionMenuItem.follow:
+                            case _PostActionMenuItem.unfollow:
+                              _toggleFollowAuthor();
+                              break;
+
+                            case _PostActionMenuItem.report:
+                              showReportBottomSheet(
+                                context: context,
+                                targetId: widget.post.id,
+                                targetType: ReportTargetType.post,
+                                targetLabel: 'Post',
+                                targetSubtitle: '$displayName · $handle',
+                              );
+                              break;
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem<_PostActionMenuItem>(
+                            value: _isFollowingAuthor
+                                ? _PostActionMenuItem.unfollow
+                                : _PostActionMenuItem.follow,
+                            child: Row(
+                              children: [
+                                FaIcon(
+                                  _isFollowingAuthor
+                                      ? FontAwesomeIcons.userMinus
+                                      : FontAwesomeIcons.userPlus,
+                                  size: 15,
+                                  color: semantic.iconSecondary,
+                                ),
+
+                                const SizedBox(width: 10),
+
+                                Text(
+                                  _isFollowingAuthor ? 'Unfollow' : 'Follow',
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: semantic.textPrimary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          PopupMenuItem<_PostActionMenuItem>(
+                            value: _PostActionMenuItem.report,
+                            child: Row(
+                              children: [
+                                FaIcon(
+                                  FontAwesomeIcons.flag,
+                                  size: 15,
+                                  color: semantic.textError,
+                                ),
+
+                                const SizedBox(width: 10),
+
+                                Text(
+                                  'Report',
+                                  style: textTheme.bodyMedium?.copyWith(
+                                    color: semantic.textError,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
+                          child: Icon(
+                            FontAwesomeIcons.ellipsisVertical,
+                            color: semantic.iconSecondary,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
 
             if (renderedContent.isNotEmpty) ...[
-              const SizedBox(height: 11),
+              if (!widget.isChatPreview) const SizedBox(height: 11),
 
               if (widget.isDetailView || !hasMedia)
                 QuillReadOnlyView(deltaJson: widget.post.content)
@@ -450,7 +459,7 @@ class _PostCardState extends State<PostCard> {
               ),
             ],
 
-            if (tags.isNotEmpty) ...[
+            if (tags.isNotEmpty && !widget.isChatPreview) ...[
               const SizedBox(height: 12),
 
               SingleChildScrollView(
@@ -462,138 +471,142 @@ class _PostCardState extends State<PostCard> {
               ),
             ],
 
-            const SizedBox(height: 14),
+            if (!widget.isChatPreview) ...[
+              const SizedBox(height: 14),
 
-            Row(
-              children: [
-                InkWell(
-                  onTap: () {
-                    setState(() {
-                      _isLiked = !_isLiked;
-                      _likeCount += _isLiked ? 1 : -1;
-                    });
+              Row(
+                children: [
+                  InkWell(
+                    onTap: () {
+                      setState(() {
+                        _isLiked = !_isLiked;
+                        _likeCount += _isLiked ? 1 : -1;
+                      });
 
-                    context.read<PostBloc>().add(
-                      PostToggleLikePostEvent(postId: widget.post.id),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(8),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 4,
-                    ),
-                    child: _ActionItem(
-                      icon: _isLiked
-                          ? FontAwesomeIcons.solidHeart
-                          : FontAwesomeIcons.heart,
-                      label: '$_likeCount',
-                      color: _isLiked
-                          ? const Color(0xFFE53935)
-                          : semantic.iconSecondary,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: widget.isDetailView
-                      ? null
-                      : () {
-                          context.push(
-                            '/post-detail/${widget.post.id}',
-                            extra: widget.post,
-                          );
-                        },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 4,
-                      vertical: 4,
-                    ),
-                    child: _ActionItem(
-                      icon: FontAwesomeIcons.comment,
-                      label: '${widget.post.commentCount}',
-                      color: semantic.iconSecondary,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                InkWell(
-                  borderRadius: BorderRadius.circular(8),
-                  onTap: () async {
-                    await _openPostShareSheet(renderedContent);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: Icon(
-                      CupertinoIcons.arrowshape_turn_up_right,
-                      size: 20,
-                      color: semantic.iconSecondary,
-                    ),
-                  ),
-                ),
-
-                const Spacer(),
-
-                BlocBuilder<PostBloc, PostState>(
-                  buildWhen: (prev, curr) {
-                    if (prev is PostLoaded && curr is PostLoaded) {
-                      return prev.bookmarkedPostIds.contains(widget.post.id) !=
-                          curr.bookmarkedPostIds.contains(widget.post.id);
-                    }
-
-                    if (prev is PostBookmarksLoaded ||
-                        curr is PostBookmarksLoaded) {
-                      return true;
-                    }
-
-                    return false;
-                  },
-                  builder: (context, state) {
-                    final isBookmarked = switch (state) {
-                      PostLoaded s => s.bookmarkedPostIds.contains(
-                        widget.post.id,
+                      context.read<PostBloc>().add(
+                        PostToggleLikePostEvent(postId: widget.post.id),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 4,
                       ),
-                      PostBookmarksLoaded _ => true,
-                      _ => false,
-                    };
+                      child: _ActionItem(
+                        icon: _isLiked
+                            ? FontAwesomeIcons.solidHeart
+                            : FontAwesomeIcons.heart,
+                        label: '$_likeCount',
+                        color: _isLiked
+                            ? const Color(0xFFE53935)
+                            : semantic.iconSecondary,
+                      ),
+                    ),
+                  ),
 
-                    return InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () {
-                        if (isBookmarked) {
-                          context.read<PostBloc>().add(
-                            PostRemoveBookmarkEvent(postId: widget.post.id),
-                          );
-                        } else {
-                          context.read<PostBloc>().add(
-                            PostBookmarkEvent(post: widget.post),
-                          );
-                        }
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: FaIcon(
-                          isBookmarked
-                              ? FontAwesomeIcons.solidBookmark
-                              : FontAwesomeIcons.bookmark,
-                          size: 18,
-                          color: isBookmarked
-                              ? Theme.of(context).colorScheme.primary
-                              : semantic.iconSecondary,
+                  const SizedBox(width: 12),
+
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: widget.isDetailView
+                        ? null
+                        : () {
+                            context.push(
+                              '/post-detail/${widget.post.id}',
+                              extra: widget.post,
+                            );
+                          },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 4,
+                      ),
+                      child: _ActionItem(
+                        icon: FontAwesomeIcons.comment,
+                        label: '${widget.post.commentCount}',
+                        color: semantic.iconSecondary,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () async {
+                      await _openPostShareSheet(renderedContent);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        CupertinoIcons.arrowshape_turn_up_right,
+                        size: 20,
+                        color: semantic.iconSecondary,
+                      ),
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  BlocBuilder<PostBloc, PostState>(
+                    buildWhen: (prev, curr) {
+                      if (prev is PostLoaded && curr is PostLoaded) {
+                        return prev.bookmarkedPostIds.contains(
+                              widget.post.id,
+                            ) !=
+                            curr.bookmarkedPostIds.contains(widget.post.id);
+                      }
+
+                      if (prev is PostBookmarksLoaded ||
+                          curr is PostBookmarksLoaded) {
+                        return true;
+                      }
+
+                      return false;
+                    },
+                    builder: (context, state) {
+                      final isBookmarked = switch (state) {
+                        PostLoaded s => s.bookmarkedPostIds.contains(
+                          widget.post.id,
                         ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
+                        PostBookmarksLoaded _ => true,
+                        _ => false,
+                      };
 
-            if (!widget.isDetailView) ...[
+                      return InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () {
+                          if (isBookmarked) {
+                            context.read<PostBloc>().add(
+                              PostRemoveBookmarkEvent(postId: widget.post.id),
+                            );
+                          } else {
+                            context.read<PostBloc>().add(
+                              PostBookmarkEvent(post: widget.post),
+                            );
+                          }
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: FaIcon(
+                            isBookmarked
+                                ? FontAwesomeIcons.solidBookmark
+                                : FontAwesomeIcons.bookmark,
+                            size: 18,
+                            color: isBookmarked
+                                ? Theme.of(context).colorScheme.primary
+                                : semantic.iconSecondary,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ], // Close the if (!widget.isChatPreview) ...[ block
+
+            if (!widget.isDetailView && !widget.isChatPreview) ...[
               const SizedBox(height: 12),
 
               Divider(height: 1, thickness: 0.7, color: semantic.borderSubtle),

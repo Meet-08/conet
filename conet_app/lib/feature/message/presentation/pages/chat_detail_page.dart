@@ -144,7 +144,8 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
 
   void _forwardSelectedMessages(String conversationId) {
     for (final message in _selectedMessages) {
-      if (message.content.trim().isEmpty && message.mediaUrls.isEmpty) {
+      if ((message.content?.trim().isEmpty ?? true) &&
+          message.mediaUrls.isEmpty) {
         continue;
       }
 
