@@ -365,4 +365,33 @@ class MessageDataSourceImpl implements MessageDataSource {
       throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }
+
+  @override
+  Future<List<Map<String, dynamic>>> getSharedContent({
+    required String conversationId,
+    required String type,
+  }) async {
+    try {
+      final res = await _dioClient.dio.get(
+        "/conversations/$conversationId/shared",
+        queryParameters: {"type": type},
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to fetch shared content");
+      }
+      final raw = res.data;
+      List<dynamic> items = [];
+      if (raw is List) {
+        items = raw;
+      } else if (raw is Map<String, dynamic>) {
+        final maybeItems = raw['items'];
+        if (maybeItems is List) items = maybeItems;
+      }
+
+      return items.map((item) => item as Map<String, dynamic>).toList();
+    } catch (e) {
+      logger.e("Failed to get shared content: ${e.toString()}");
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
 }

@@ -79,4 +79,11 @@ abstract interface class MessageDataSource {
     required String groupId,
     required String userId,
   });
+
+  // ─── Shared content operations ──────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> getSharedContent({
+    required String conversationId,
+    required String type, // 'media', 'post', 'docs'
+  });
 }

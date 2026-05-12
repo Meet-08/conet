@@ -6,6 +6,8 @@ import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/group_member.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/domain/entities/message_realtime_event.dart';
+import 'package:conet_app/feature/message/domain/entities/shared_media_item.dart';
+import 'package:conet_app/feature/message/domain/usecases/fetch_shared_content.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_add_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_conversation.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_group.dart';
@@ -51,6 +53,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
   final MessageRemoveGroupMember _removeGroupMember;
   final MessagePromoteGroupMember _promoteGroupMember;
   final MessageDemoteGroupMember _demoteGroupMember;
+  final FetchSharedContent? _fetchSharedContent;
   final String? Function() _getCurrentUserId;
   StreamSubscription<MessageRealtimeEvent>? _messagesSubscription;
   StreamSubscription<void>? _globalSubscription;
@@ -76,6 +79,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     required MessageRemoveGroupMember removeGroupMember,
     required MessagePromoteGroupMember promoteGroupMember,
     required MessageDemoteGroupMember demoteGroupMember,
+    FetchSharedContent? fetchSharedContent,
     String? Function()? getCurrentUserId,
   }) : _createConversation = createConversation,
        _getConversationsUsecase = getConversationsUsecase,
@@ -91,8 +95,9 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
        _getGroupMembers = getGroupMembers,
        _addGroupMember = addGroupMember,
        _removeGroupMember = removeGroupMember,
-       _promoteGroupMember = promoteGroupMember,
-       _demoteGroupMember = demoteGroupMember,
+      _promoteGroupMember = promoteGroupMember,
+      _demoteGroupMember = demoteGroupMember,
+      _fetchSharedContent = fetchSharedContent,
        _getCurrentUserId =
            (getCurrentUserId ??
            (() => Supabase.instance.client.auth.currentUser?.id)),
@@ -124,6 +129,7 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     on<MessageGroupMemberRemoved>(_onGroupMemberRemoved);
     on<MessageGroupMemberPromoted>(_onGroupMemberPromoted);
     on<MessageGroupMemberDemoted>(_onGroupMemberDemoted);
+    on<MessageFetchSharedContentRequested>(_onFetchSharedContentRequested);
 
     // Initial global subscription setup
     _initGlobalSubscription();
@@ -393,6 +399,52 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
       add(MessageConversationsRequested());
     });
   }
+
+    Future<void> _onFetchSharedContentRequested(
+      MessageFetchSharedContentRequested event,
+      Emitter<MessageState> emit,
+    ) async {
+      emit(state.copyWith(sharedContentStatus: MessageStatus.loading));
+
+      final typeMap = {
+        'media': SharedContentType.media,
+        'post': SharedContentType.post,
+        'docs': SharedContentType.docs,
+      };
+
+      final contentType = typeMap[event.type] ?? SharedContentType.media;
+
+      if (_fetchSharedContent == null) {
+        emit(
+          state.copyWith(
+            sharedContentStatus: MessageStatus.failure,
+            errorMessage: 'Shared content feature unavailable',
+          ),
+        );
+        return;
+      }
+
+      final result = await _fetchSharedContent(
+        conversationId: event.conversationId,
+        type: contentType,
+      );
+
+      result.fold(
+        (failure) => emit(
+          state.copyWith(
+            sharedContentStatus: MessageStatus.failure,
+            errorMessage: failure.message,
+          ),
+        ),
+        (sharedContent) => emit(
+          state.copyWith(
+            sharedContent: sharedContent,
+            sharedContentStatus: MessageStatus.success,
+            sharedContentType: event.type,
+          ),
+        ),
+      );
+    }
 
   Future<void> _onWatchStarted(
     MessageWatchStarted event,

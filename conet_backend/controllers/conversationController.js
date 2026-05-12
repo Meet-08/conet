@@ -5,6 +5,7 @@ import {
   createGroupService,
   deleteGroupService,
   demoteGroupMemberService,
+  getConversationSharedService,
   getConversationsService,
   getGroupMembersService,
   getMessagesService,
@@ -91,6 +92,25 @@ export const getMessages = asyncHandler(async (req, res) => {
     next_before: result.nextBefore,
     has_more: result.hasMore,
   });
+});
+
+// GET /api/conversations/:conversationId/shared?type=media|post|docs
+export const getConversationShared = asyncHandler(async (req, res) => {
+  const { conversationId } = req.params;
+  const { type } = req.query;
+
+  if (!type) {
+    res.status(400);
+    throw new Error("type query parameter is required");
+  }
+
+  const shared = await getConversationSharedService(
+    conversationId,
+    req.user.id,
+    type,
+  );
+
+  res.status(200).json(shared);
 });
 
 // POST /api/conversations/:conversationId/messages  { content, mediaUrls, is_post, post_id }

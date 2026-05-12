@@ -156,3 +156,13 @@ class MessageGroupMemberDemoted extends MessageEvent {
   final String userId;
   MessageGroupMemberDemoted({required this.groupId, required this.userId});
 }
+
+class MessageFetchSharedContentRequested extends MessageEvent {
+  final String conversationId;
+  final String type; // 'media', 'post', 'docs'
+
+  MessageFetchSharedContentRequested({
+    required this.conversationId,
+    required this.type,
+  });
+}

@@ -5,6 +5,7 @@ import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
@@ -16,6 +17,7 @@ class FileDownloadOpenButton extends StatefulWidget {
   final bool allowRedownload;
   final bool openAfterDownload;
   final String? subDirectory;
+  final bool usePublicDownloads;
   final Color? downloadColor;
   final Color? openColor;
 
@@ -27,6 +29,7 @@ class FileDownloadOpenButton extends StatefulWidget {
     this.allowRedownload = true,
     this.openAfterDownload = true,
     this.subDirectory,
+    this.usePublicDownloads = false,
     this.downloadColor,
     this.openColor,
   });
@@ -36,10 +39,15 @@ class FileDownloadOpenButton extends StatefulWidget {
 }
 
 class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
+  static const MethodChannel _downloadsChannel = MethodChannel(
+    'conet_app/downloads',
+  );
+
   bool _isLoading = false;
   bool _isDownloaded = false;
   double? _progress;
   String? _filePath;
+  String? _savedMimeType;
 
   @override
   void initState() {
@@ -58,7 +66,9 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
   }
 
   Future<String> _resolveFilePath() async {
-    final baseDir = await getApplicationDocumentsDirectory();
+    final baseDir = widget.usePublicDownloads
+        ? await _resolveDownloadDirectory()
+        : await getApplicationDocumentsDirectory();
     final targetDir =
         widget.subDirectory == null || widget.subDirectory!.trim().isEmpty
         ? baseDir.path
@@ -71,7 +81,119 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
     return '${directory.path}/${widget.fileName}';
   }
 
+  Future<Directory> _resolveDownloadDirectory() async {
+    try {
+      final downloadsDir = await getDownloadsDirectory();
+      if (downloadsDir != null) {
+        return downloadsDir;
+      }
+    } catch (_) {
+      // Fall through to app documents only if the platform has no downloads dir.
+    }
+
+    return getApplicationDocumentsDirectory();
+  }
+
+  String _guessMimeType(String fileName) {
+    final extension = fileName.contains('.')
+        ? fileName.split('.').last.toLowerCase()
+        : '';
+
+    switch (extension) {
+      case 'pdf':
+        return 'application/pdf';
+      case 'doc':
+        return 'application/msword';
+      case 'docx':
+        return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      case 'xls':
+        return 'application/vnd.ms-excel';
+      case 'xlsx':
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      case 'ppt':
+        return 'application/vnd.ms-powerpoint';
+      case 'pptx':
+        return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      case 'txt':
+        return 'text/plain';
+      case 'mp3':
+        return 'audio/mpeg';
+      case 'm4a':
+        return 'audio/mp4';
+      case 'wav':
+        return 'audio/wav';
+      case 'aac':
+        return 'audio/aac';
+      case 'ogg':
+        return 'audio/ogg';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'png':
+        return 'image/png';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      case 'mp4':
+        return 'video/mp4';
+      case 'mov':
+        return 'video/quicktime';
+      default:
+        return 'application/octet-stream';
+    }
+  }
+
+  Future<String> _persistDownload(
+    Uint8List bytes,
+    String fileName,
+    String mimeType,
+  ) async {
+    if (widget.usePublicDownloads && Platform.isAndroid) {
+      final savedPathOrUri = await _downloadsChannel.invokeMethod<String>(
+        'saveToDownloads',
+        <String, dynamic>{
+          'fileName': fileName,
+          'mimeType': mimeType,
+          'bytes': bytes,
+        },
+      );
+
+      if (savedPathOrUri == null || savedPathOrUri.isEmpty) {
+        throw Exception('Unable to save file to Downloads.');
+      }
+
+      return savedPathOrUri;
+    }
+
+    final directory = await getApplicationDocumentsDirectory();
+    if (!directory.existsSync()) {
+      directory.createSync(recursive: true);
+    }
+
+    final file = File('${directory.path}/$fileName');
+    await file.writeAsBytes(bytes, flush: true);
+    return file.path;
+  }
+
   Future<void> _openFile(String path) async {
+    if (Platform.isAndroid && path.startsWith('content://')) {
+      try {
+        await _downloadsChannel.invokeMethod<bool>(
+          'openDownloadedUri',
+          <String, dynamic>{
+            'uri': path,
+            if (_savedMimeType != null) 'mimeType': _savedMimeType,
+          },
+        );
+        return;
+      } catch (_) {
+        if (!mounted) return;
+        AppToast.showWarning(context, 'Unable to open downloaded file');
+        return;
+      }
+    }
+
     final result = await OpenFilex.open(path);
     if (!mounted) return;
 
@@ -84,9 +206,18 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
     if (_isLoading) return;
 
     final path = _filePath ?? await _resolveFilePath();
+    final uri = Uri.tryParse(widget.downloadUrl);
+    if (uri == null) {
+      if (!mounted) return;
+      AppToast.showError(context, 'Invalid download URL');
+      return;
+    }
+
     final file = File(path);
-    if (force && file.existsSync()) {
-      await file.delete();
+    if (!widget.usePublicDownloads) {
+      if (force && file.existsSync()) {
+        await file.delete();
+      }
     }
 
     setState(() {
@@ -96,10 +227,12 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
     });
 
     try {
-      await serviceLocator<DioClient>().dio.download(
+      final response = await serviceLocator<DioClient>().dio.get<List<int>>(
         widget.downloadUrl,
-        path,
-        options: Options(headers: widget.headers),
+        options: Options(
+          headers: widget.headers,
+          responseType: ResponseType.bytes,
+        ),
         onReceiveProgress: (received, total) {
           if (!mounted) return;
           if (total <= 0) {
@@ -110,13 +243,34 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
         },
       );
 
+      final bytesList = response.data;
+      if (bytesList == null || bytesList.isEmpty) {
+        throw Exception('Download response is empty.');
+      }
+
+      final contentType = response.headers
+          .value(Headers.contentTypeHeader)
+          ?.split(';')
+          .first;
+      final mimeType = (contentType == null || contentType.trim().isEmpty)
+          ? _guessMimeType(widget.fileName)
+          : contentType.trim();
+
+      final savedPath = await _persistDownload(
+        Uint8List.fromList(bytesList),
+        widget.fileName,
+        mimeType,
+      );
+
       if (!mounted) return;
       setState(() {
         _isDownloaded = true;
+        _filePath = savedPath;
+        _savedMimeType = mimeType;
       });
 
       if (widget.openAfterDownload) {
-        await _openFile(path);
+        await _openFile(savedPath);
       }
     } on DioException catch (error) {
       if (!mounted) return;
@@ -140,7 +294,9 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
   Future<void> _handlePrimaryTap() async {
     if (_isLoading) return;
     final path = _filePath;
-    if (_isDownloaded && path != null && File(path).existsSync()) {
+    final canOpenExistingFile =
+        path != null && (widget.usePublicDownloads || File(path).existsSync());
+    if (_isDownloaded && canOpenExistingFile) {
       await _openFile(path);
       return;
     }

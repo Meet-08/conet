@@ -5,6 +5,7 @@
  *  ✓ createConversationService – UUID target, username target, self-message, not found
  *  ✓ getConversationsService   – empty list, populated list, unread count aggregation
  *  ✓ getMessagesService        – returns paged messages, supports cursor pagination
+ *  ✓ getConversationShared...  – returns media, docs, and post shares
  *  ✓ sendMessageService        – success, not a participant, conversation not found
  *  ✓ markAsReadService         – updates unread messages belonging to other user
  *  ✓ getGroupMembersService    – authorization and stable member ordering
@@ -45,6 +46,7 @@ mock.module("../../../config/logger.js", () => ({
 import {
   createConversationService,
   demoteGroupMemberService,
+  getConversationSharedService,
   getConversationsService,
   getGroupMembersService,
   getMessagesService,
@@ -404,6 +406,136 @@ describe("getMessagesService", () => {
     expect(result.hasMore).toBe(false);
     expect(result.nextBefore).toBeNull();
     expect(result.messages[0].created_at).toBe("2026-02-23T09:00:00.000Z");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("getConversationSharedService", () => {
+  const POST_ID = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+
+  it("returns image and video media items for media type", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      conversation_members: [{ user_id: TEST_USER.id }],
+    });
+    prismaMock.messages.findMany.mockResolvedValue([
+      {
+        id: "msg-1",
+        conversation_id: CONV_ID,
+        sender_id: TEST_USER_B.id,
+        created_at: new Date("2026-01-01T00:00:00.000Z"),
+        media_urls: [
+          "https://cdn.example.com/photo.jpg",
+          "https://cdn.example.com/video.mp4",
+          "https://cdn.example.com/manual.pdf",
+        ],
+      },
+    ]);
+
+    const result = await getConversationSharedService(
+      CONV_ID,
+      TEST_USER.id,
+      "media",
+    );
+
+    expect(result).toHaveLength(2);
+    expect(result.map((item) => item.url)).toEqual([
+      "https://cdn.example.com/photo.jpg",
+      "https://cdn.example.com/video.mp4",
+    ]);
+  });
+
+  it("returns docs items for non image/video media", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      conversation_members: [{ user_id: TEST_USER.id }],
+    });
+    prismaMock.messages.findMany.mockResolvedValue([
+      {
+        id: "msg-1",
+        conversation_id: CONV_ID,
+        sender_id: TEST_USER_B.id,
+        created_at: new Date("2026-01-01T00:00:00.000Z"),
+        media_urls: [
+          "https://cdn.example.com/photo.jpg",
+          "https://cdn.example.com/manual.pdf",
+        ],
+      },
+    ]);
+
+    const result = await getConversationSharedService(
+      CONV_ID,
+      TEST_USER.id,
+      "docs",
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].url).toBe("https://cdn.example.com/manual.pdf");
+  });
+
+  it("returns mapped post items for post type", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      conversation_members: [{ user_id: TEST_USER.id }],
+    });
+    prismaMock.messages.findMany.mockResolvedValue([
+      {
+        id: "msg-post",
+        conversation_id: CONV_ID,
+        sender_id: TEST_USER.id,
+        created_at: new Date("2026-01-01T00:00:00.000Z"),
+        posts: {
+          id: POST_ID,
+          users: {
+            id: TEST_USER.id,
+            email: TEST_USER.email,
+            first_name: "Alice",
+            last_name: "Smith",
+            username: "alice",
+            profile_pic_url: null,
+            user_role: "user",
+            is_verified: false,
+            user_follows_user_follows_following_idTousers: [],
+          },
+          content: { ops: [{ insert: "Shared post" }] },
+          media_urls: [],
+          _count: { post_likes: 0, post_comments: 0 },
+          post_likes: [],
+        },
+      },
+    ]);
+
+    const result = await getConversationSharedService(
+      CONV_ID,
+      TEST_USER.id,
+      "post",
+    );
+
+    expect(result).toHaveLength(1);
+    expect(result[0].post.id).toBe(POST_ID);
+  });
+
+  it("throws 400 for unsupported type", async () => {
+    await expect(
+      getConversationSharedService(CONV_ID, TEST_USER.id, "other"),
+    ).rejects.toMatchObject({
+      message: "type must be one of: media, post, docs",
+      statusCode: 400,
+    });
+  });
+
+  it("throws 403 when current user is not a participant", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      conversation_members: [{ user_id: TEST_USER_B.id }],
+    });
+
+    await expect(
+      getConversationSharedService(CONV_ID, TEST_USER.id, "media"),
+    ).rejects.toMatchObject({
+      message: "Not a participant of this conversation",
+      statusCode: 403,
+    });
   });
 });
 

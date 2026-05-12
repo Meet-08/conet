@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createConversation,
+  getConversationShared,
   getConversations,
   getMessages,
   markAsRead,
@@ -19,6 +20,7 @@ router.get("/search_users", searchUsers);
 
 router.post("/", createConversation);
 router.get("/", getConversations);
+router.get("/:conversationId/shared", getConversationShared);
 router.get("/:conversationId/messages", getMessages);
 router.post("/:conversationId/messages", sendMessage);
 router.post("/:conversationId/mark_as_read", markAsRead);

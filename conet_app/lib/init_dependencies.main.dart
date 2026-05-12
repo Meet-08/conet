@@ -258,6 +258,11 @@ void _initMessage() {
     () => MessageDemoteGroupMember(messageRepository: serviceLocator()),
   );
 
+  // Use case for fetching shared content (media/docs/posts)
+  serviceLocator.registerFactory(
+    () => FetchSharedContent(serviceLocator<MessageRepository>()),
+  );
+
   // Bloc
   serviceLocator.registerLazySingleton(
     () => MessageBloc(
@@ -277,6 +282,7 @@ void _initMessage() {
       removeGroupMember: serviceLocator(),
       promoteGroupMember: serviceLocator(),
       demoteGroupMember: serviceLocator(),
+      fetchSharedContent: serviceLocator(),
     ),
   );
 }

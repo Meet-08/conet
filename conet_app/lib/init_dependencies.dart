@@ -51,6 +51,7 @@ import 'package:conet_app/feature/message/data/data_sources/message_real_time_da
 import 'package:conet_app/feature/message/data/data_sources/supabase_message_real_time_data_source_impl.dart';
 import 'package:conet_app/feature/message/data/repositories/message_repository_impl.dart';
 import 'package:conet_app/feature/message/domain/repositories/message_repository.dart';
+import 'package:conet_app/feature/message/domain/usecases/fetch_shared_content.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_add_group_member.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_conversation.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_group.dart';

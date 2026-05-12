@@ -1,3 +1,4 @@
+import mime from "mime";
 import { USER_SELECT_FIELDS, UUID_REGEX } from "../config/constants.js";
 import logger from "../config/logger.js";
 import prisma from "../config/prisma.js";
@@ -143,6 +144,41 @@ const buildConversationSearchWhere = (currentUserId, search) => {
     ],
   };
 };
+
+const isImageOrVideoUrl = (url) => {
+  if (!url) return false;
+
+  let pathname = url;
+  try {
+    pathname = new URL(url).pathname;
+  } catch {
+    // Fall back to the raw string when the value is not an absolute URL.
+  }
+
+  const contentType = mime.getType(pathname);
+  return Boolean(
+    contentType &&
+    (contentType.startsWith("image/") || contentType.startsWith("video/")),
+  );
+};
+
+const mapSharedMediaItem = (message, url) => ({
+  id: `${message.id}:${url}`,
+  message_id: message.id,
+  conversation_id: message.conversation_id,
+  sender_id: message.sender_id,
+  url,
+  created_at: message.created_at?.toISOString() ?? null,
+});
+
+const mapSharedPostItem = (message, currentUserId) => ({
+  id: message.id,
+  message_id: message.id,
+  conversation_id: message.conversation_id,
+  sender_id: message.sender_id,
+  created_at: message.created_at?.toISOString() ?? null,
+  post: message.posts ? mapPost(message.posts, currentUserId) : null,
+});
 
 export const createConversationService = async (currentUserId, otherUserId) => {
   let targetUserId = otherUserId;
@@ -388,6 +424,87 @@ export const getMessagesService = async (
     hasMore,
     nextBefore,
   };
+};
+
+// ─── Shared content for a conversation ──────────────────────────────────────
+
+export const getConversationSharedService = async (
+  conversationId,
+  currentUserId,
+  type,
+) => {
+  const normalizedType = String(type ?? "")
+    .trim()
+    .toLowerCase();
+
+  if (!["media", "post", "docs"].includes(normalizedType)) {
+    const err = new Error("type must be one of: media, post, docs");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const conversation = await prisma.conversations.findUnique({
+    where: { id: conversationId },
+    include: { conversation_members: true },
+  });
+
+  if (!conversation) {
+    const err = new Error("Conversation not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const isParticipant = conversation.conversation_members.some(
+    (member) => member.user_id === currentUserId,
+  );
+
+  if (!isParticipant) {
+    const err = new Error("Not a participant of this conversation");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  if (normalizedType === "post") {
+    const postMessages = await prisma.messages.findMany({
+      where: {
+        conversation_id: conversationId,
+        is_post: true,
+        post_id: { not: null },
+      },
+      orderBy: { created_at: "desc" },
+      include: {
+        posts: { include: postIncludeOptions(currentUserId) },
+      },
+    });
+
+    return postMessages.map((message) =>
+      mapSharedPostItem(message, currentUserId),
+    );
+  }
+
+  const mediaMessages = await prisma.messages.findMany({
+    where: {
+      conversation_id: conversationId,
+      is_post: false,
+    },
+    orderBy: { created_at: "desc" },
+    select: {
+      id: true,
+      conversation_id: true,
+      sender_id: true,
+      created_at: true,
+      media_urls: true,
+    },
+  });
+
+  return mediaMessages.flatMap((message) =>
+    (message.media_urls ?? [])
+      .filter((url) => {
+        const isMedia = isImageOrVideoUrl(url);
+        return normalizedType === "media" ? isMedia : !isMedia;
+      })
+      .map((url) => mapSharedMediaItem(message, url)),
+  );
 };
 
 // ─── Send a message ─────────────────────────────────────────────────────────

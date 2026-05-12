@@ -1,7 +1,9 @@
 package com.example.conet_app
 
 import android.content.ContentValues
+import android.content.Intent
 import android.media.MediaScannerConnection
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
@@ -39,9 +41,39 @@ class MainActivity : FlutterActivity() {
 						}
 					}
 
+					"openDownloadedUri" -> {
+						val uriString = call.argument<String>("uri")
+						val mimeType = call.argument<String>("mimeType")
+
+						if (uriString.isNullOrBlank()) {
+							result.error("INVALID_ARGS", "Missing uri", null)
+							return@setMethodCallHandler
+						}
+
+						try {
+							openDownloadedUri(uriString, mimeType)
+							result.success(true)
+						} catch (error: Exception) {
+							result.error("OPEN_FAILED", error.message, null)
+						}
+					}
+
 					else -> result.notImplemented()
 				}
 			}
+	}
+
+	private fun openDownloadedUri(uriString: String, mimeType: String?) {
+		val uri = Uri.parse(uriString)
+		val resolvedMimeType =
+			if (mimeType.isNullOrBlank()) applicationContext.contentResolver.getType(uri) else mimeType
+		val intent = Intent(Intent.ACTION_VIEW).apply {
+			setDataAndType(uri, resolvedMimeType ?: "*/*")
+			addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+			addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+		}
+
+		startActivity(intent)
 	}
 
 	@Throws(IOException::class)

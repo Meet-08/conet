@@ -21,6 +21,9 @@ class MessageState {
   final DateTime? lastConversationRealtimeAt;
   final String conversationFilter; // 'all', 'direct', 'group'
   final String? conversationSearchQuery;
+  final List<SharedMediaItem> sharedContent;
+  final MessageStatus sharedContentStatus;
+  final String? sharedContentType; // 'media', 'post', 'docs'
 
   MessageState({
     this.messages = const [],
@@ -41,6 +44,9 @@ class MessageState {
     this.lastConversationRealtimeAt,
     this.conversationFilter = 'all',
     this.conversationSearchQuery,
+    this.sharedContent = const [],
+    this.sharedContentStatus = MessageStatus.initial,
+    this.sharedContentType,
   });
 
   MessageState copyWith({
@@ -64,6 +70,9 @@ class MessageState {
     bool clearNextBeforeCursor = false,
     String? conversationFilter,
     String? conversationSearchQuery,
+    List<SharedMediaItem>? sharedContent,
+    MessageStatus? sharedContentStatus,
+    String? sharedContentType,
   }) {
     return MessageState(
       messages: messages ?? this.messages,
@@ -90,6 +99,9 @@ class MessageState {
       conversationFilter: conversationFilter ?? this.conversationFilter,
       conversationSearchQuery:
           conversationSearchQuery ?? this.conversationSearchQuery,
+      sharedContent: sharedContent ?? this.sharedContent,
+      sharedContentStatus: sharedContentStatus ?? this.sharedContentStatus,
+      sharedContentType: sharedContentType ?? this.sharedContentType,
     );
   }
 }

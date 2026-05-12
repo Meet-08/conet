@@ -6,6 +6,7 @@ import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/core/widgets/user_selector_bottom_sheet.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/group_member.dart';
+import 'package:conet_app/feature/message/presentation/pages/shared_media_page.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/message/presentation/widgets/group_permissions_dialog.dart';
 import 'package:flutter/material.dart';
@@ -25,6 +26,10 @@ class GroupDetailsPage extends StatefulWidget {
 class _GroupDetailsPageState extends State<GroupDetailsPage> {
   bool _showAllMembers = false;
   bool _isUploadingGroupImage = false;
+
+  void _showUnavailableMessage(String message) {
+    AppToast.showInfo(context, message);
+  }
 
   bool _canEditGroupDetails(Conversation conversation) {
     return !conversation.onlyAdminEditGroup || conversation.isAdmin;
@@ -458,10 +463,27 @@ class _GroupDetailsPageState extends State<GroupDetailsPage> {
                   _GroupSettingTile(
                     title: 'Shared media, links and docs',
                     onTap: () {
-                      AppToast.showInfo(
-                        context,
-                        'Shared media section is not available yet.',
-                      );
+                      final conv = widget.conversation;
+                      if (conv.id.isNotEmpty) {
+                        context.read<MessageBloc>().add(
+                          MessageFetchSharedContentRequested(
+                            conversationId: conv.id,
+                            type: 'docs',
+                          ),
+                        );
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => SharedMediaPage(
+                              conversationId: conv.id,
+                              type: 'docs',
+                            ),
+                          ),
+                        );
+                      } else {
+                        _showUnavailableMessage(
+                          'Shared items are not available yet.',
+                        );
+                      }
                     },
                   ),
                   _GroupSettingTile(

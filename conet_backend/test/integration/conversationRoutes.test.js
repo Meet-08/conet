@@ -5,6 +5,7 @@
  * Tests verify:
  *  ✓ POST  /api/conversations       – create or retrieve conversation
  *  ✓ GET   /api/conversations       – list all conversations for current user
+ *  ✓ GET   /api/conversations/:id/shared
  *  ✓ GET   /api/conversations/:id/messages
  *  ✓ POST  /api/conversations/:id/messages
  *  ✓ POST  /api/conversations/:id/mark_as_read
@@ -42,6 +43,8 @@ const app = createApp();
 
 const CONV_ID = "cccccccc-cccc-cccc-cccc-cccccccccccc";
 const MSG_ID = "dddddddd-dddd-dddd-dddd-dddddddddddd";
+const POST_MSG_ID = "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee";
+const MEDIA_MSG_ID = "ffffffff-ffff-ffff-ffff-ffffffffffff";
 
 const mockOtherUser = {
   id: TEST_USER_B.id,
@@ -91,6 +94,48 @@ const mockMessage = {
   created_at: new Date(),
   is_read: false,
   media_urls: [],
+};
+
+const mockSharedMessage = {
+  id: MEDIA_MSG_ID,
+  conversation_id: CONV_ID,
+  sender_id: TEST_USER_B.id,
+  created_at: new Date("2026-01-03T10:00:00.000Z"),
+  media_urls: [
+    "https://cdn.example.com/photo.jpg",
+    "https://cdn.example.com/video.mp4",
+    "https://cdn.example.com/manual.pdf",
+  ],
+};
+
+const mockPostMessage = {
+  id: POST_MSG_ID,
+  conversation_id: CONV_ID,
+  sender_id: TEST_USER.id,
+  content: null,
+  created_at: new Date("2026-01-02T10:00:00.000Z"),
+  is_read: false,
+  media_urls: [],
+  is_post: true,
+  post_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+  posts: {
+    id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    user: {
+      id: TEST_USER.id,
+      username: "alice",
+      email: TEST_USER.email,
+      first_name: "Alice",
+      last_name: "Smith",
+      profile_pic_url: null,
+      user_role: "user",
+      is_verified: false,
+      user_follows_user_follows_following_idTousers: [],
+    },
+    content: { ops: [{ insert: "Shared post" }] },
+    media_urls: ["https://cdn.example.com/post.jpg"],
+    _count: { post_likes: 0, post_comments: 0 },
+    post_likes: [],
+  },
 };
 
 beforeEach(() => {
@@ -239,6 +284,77 @@ describe("GET /api/conversations/:conversationId/messages", () => {
     );
 
     expect(res.status).toBe(401);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("GET /api/conversations/:conversationId/shared", () => {
+  it("200 – returns image and video media items", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      conversation_members: [
+        { user_id: TEST_USER.id },
+        { user_id: TEST_USER_B.id },
+      ],
+    });
+    prismaMock.messages.findMany.mockResolvedValue([mockSharedMessage]);
+
+    const res = await request(app)
+      .get(`/api/conversations/${CONV_ID}/shared?type=media`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(2);
+    expect(res.body.map((item) => item.url)).toEqual([
+      "https://cdn.example.com/photo.jpg",
+      "https://cdn.example.com/video.mp4",
+    ]);
+  });
+
+  it("200 – returns post items with mapped post data", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      conversation_members: [
+        { user_id: TEST_USER.id },
+        { user_id: TEST_USER_B.id },
+      ],
+    });
+    prismaMock.messages.findMany.mockResolvedValue([mockPostMessage]);
+
+    const res = await request(app)
+      .get(`/api/conversations/${CONV_ID}/shared?type=post`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].post.id).toBe("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+  });
+
+  it("200 – returns non image/video media items for docs", async () => {
+    prismaMock.conversations.findUnique.mockResolvedValue({
+      id: CONV_ID,
+      conversation_members: [
+        { user_id: TEST_USER.id },
+        { user_id: TEST_USER_B.id },
+      ],
+    });
+    prismaMock.messages.findMany.mockResolvedValue([mockSharedMessage]);
+
+    const res = await request(app)
+      .get(`/api/conversations/${CONV_ID}/shared?type=docs`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].url).toBe("https://cdn.example.com/manual.pdf");
+  });
+
+  it("400 – rejects missing type query param", async () => {
+    const res = await request(app)
+      .get(`/api/conversations/${CONV_ID}/shared`)
+      .set("Authorization", makeAuthHeader());
+
+    expect(res.status).toBe(400);
   });
 });
 

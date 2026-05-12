@@ -94,81 +94,66 @@ class ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
         icon: const FaIcon(FontAwesomeIcons.arrowLeft),
         onPressed: () => context.pop(),
       ),
-      title: Row(
-        children: [
-          if (otherUser != null)
-            BlocSelector<PresenceCubit, Set<String>, bool>(
+      title: otherUser == null
+          ? Text(
+              displayName,
+              style: AppTextStyles.label.copyWith(color: colors.textPrimary),
+            )
+          : BlocSelector<PresenceCubit, Set<String>, bool>(
               selector: (onlineIds) => onlineIds.contains(otherUser.id),
               builder: (context, isOnline) {
                 return GestureDetector(
-                  onTap: () =>
-                      context.push('/user-profile', extra: otherUser.id),
-                  child: Stack(
-                    clipBehavior: Clip.none,
+                  onTap: () => context.push(
+                    '/chat-participant-details',
+                    extra: conversation,
+                  ),
+                  child: Row(
                     children: [
-                      CustomCircleAvatar(
-                        size: CustomCircleAvatarSize.medium,
-                        imageUrl: imageUrl,
-                        displayName: displayName,
-                        userId: otherUser.id,
-                        backgroundColor: Colors
-                            .primaries[displayName.hashCode %
-                                Colors.primaries.length]
-                            .shade100,
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          CustomCircleAvatar(
+                            size: CustomCircleAvatarSize.medium,
+                            imageUrl: imageUrl,
+                            displayName: displayName,
+                            userId: otherUser.id,
+                            backgroundColor: Colors
+                                .primaries[displayName.hashCode %
+                                    Colors.primaries.length]
+                                .shade100,
+                          ),
+                          Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: OnlineIndicator(isOnline: isOnline),
+                          ),
+                        ],
                       ),
-                      Positioned(
-                        right: 0,
-                        bottom: 0,
-                        child: OnlineIndicator(isOnline: isOnline),
+                      const SizedBox(width: 8),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            style: AppTextStyles.label.copyWith(
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            isOnline ? 'Online' : 'Offline',
+                            style: AppTextStyles.micro.copyWith(
+                              color: isOnline
+                                  ? colors.textSuccess
+                                  : colors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 );
               },
-            )
-          else
-            CustomCircleAvatar(
-              radius: 24,
-              imageUrl: imageUrl,
-              displayName: displayName,
-              backgroundColor: Colors
-                  .primaries[displayName.hashCode % Colors.primaries.length]
-                  .shade100,
             ),
-          const SizedBox(width: 8),
-          // Name and online status text
-          if (otherUser != null)
-            BlocSelector<PresenceCubit, Set<String>, bool>(
-              selector: (onlineIds) => onlineIds.contains(otherUser.id),
-              builder: (context, isOnline) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      displayName,
-                      style: AppTextStyles.label.copyWith(
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      isOnline ? 'Online' : 'Offline',
-                      style: AppTextStyles.micro.copyWith(
-                        color: isOnline
-                            ? colors.textSuccess
-                            : colors.textSecondary,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            )
-          else
-            Text(
-              displayName,
-              style: AppTextStyles.label.copyWith(color: colors.textPrimary),
-            ),
-        ],
-      ),
     );
   }
 
