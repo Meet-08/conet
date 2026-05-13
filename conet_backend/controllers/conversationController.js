@@ -94,7 +94,7 @@ export const getMessages = asyncHandler(async (req, res) => {
   });
 });
 
-// GET /api/conversations/:conversationId/shared?type=media|post|docs
+// GET /api/conversations/:conversationId/shared?type=media|post|docs&limit=20&before=ISO_DATETIME
 export const getConversationShared = asyncHandler(async (req, res) => {
   const { conversationId } = req.params;
   const { type } = req.query;
@@ -104,13 +104,31 @@ export const getConversationShared = asyncHandler(async (req, res) => {
     throw new Error("type query parameter is required");
   }
 
-  const shared = await getConversationSharedService(
+  const parsedLimit = parseInt(req.query.limit, 10);
+  const limit =
+    Number.isNaN(parsedLimit) ? 20 : Math.min(Math.max(parsedLimit, 1), 50);
+
+  let before;
+  if (req.query.before) {
+    before = new Date(req.query.before);
+    if (Number.isNaN(before.getTime())) {
+      res.status(400);
+      throw new Error("before must be a valid ISO datetime");
+    }
+  }
+
+  const result = await getConversationSharedService(
     conversationId,
     req.user.id,
     type,
+    { limit, before },
   );
 
-  res.status(200).json(shared);
+  res.status(200).json({
+    items: result.items,
+    next_before: result.nextBefore,
+    has_more: result.hasMore,
+  });
 });
 
 // POST /api/conversations/:conversationId/messages  { content, mediaUrls, is_post, post_id }

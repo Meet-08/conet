@@ -56,12 +56,57 @@ class SupabaseFileUploadDataSource implements FileUploadDataSource {
     return extension == 'png' ? CompressFormat.png : CompressFormat.jpeg;
   }
 
-  String _buildStorageFileName(int index, String? extension) {
+  String _sanitizeFileName(String name) {
+    var sanitized = name.trim();
+    // Replace problematic characters with underscores and collapse multiple underscores
+    sanitized = sanitized.replaceAll(RegExp(r'[\\/:*?"<>|]'), '_');
+    sanitized = sanitized.replaceAll(RegExp(r'\s+'), '_');
+    sanitized = sanitized.replaceAll(RegExp(r'[^\w\-.@_]'), '_');
+    sanitized = sanitized.replaceAll(RegExp(r'_+'), '_');
+    if (sanitized.isEmpty) sanitized = 'file';
+    return sanitized;
+  }
+
+  String _buildStorageFileName(
+    PlatformFile file,
+    int index,
+    String? extension,
+  ) {
     final timestamp = DateTime.now().microsecondsSinceEpoch;
-    if (extension == null || extension.isEmpty) {
-      return 'upload_${timestamp}_$index';
+
+    var original = file.name;
+    if (original.isEmpty) {
+      // fallback to timestamped name
+      final base = 'upload_${timestamp}_$index';
+      return extension == null || extension.isEmpty ? base : '$base.$extension';
     }
-    return 'upload_${timestamp}_$index.$extension';
+
+    // sanitize original filename
+    final dotIndex = original.lastIndexOf('.');
+    String baseName;
+    String extFromName = '';
+    if (dotIndex >= 0 && dotIndex < original.length - 1) {
+      baseName = original.substring(0, dotIndex);
+      extFromName = original.substring(dotIndex + 1).toLowerCase();
+    } else {
+      baseName = original;
+    }
+
+    baseName = _sanitizeFileName(baseName);
+
+    // determine extension to use (prefer provided extension, else the one from original name)
+    final finalExt = (extension != null && extension.isNotEmpty)
+        ? extension
+        : (extFromName.isNotEmpty ? extFromName : null);
+
+    // If multiple files in same batch share the same name, append index to avoid clash within same upload
+    final nameWithIndex = index > 0 ? '${baseName}_$index' : baseName;
+
+    if (finalExt == null || finalExt.isEmpty) {
+      return nameWithIndex;
+    }
+
+    return '$nameWithIndex.$finalExt';
   }
 
   Future<Uint8List?> _readFileBytes(PlatformFile file) async {
@@ -152,7 +197,7 @@ class SupabaseFileUploadDataSource implements FileUploadDataSource {
 
       for (final file in files) {
         final extension = _extensionFromFile(file);
-        final fileName = _buildStorageFileName(fileIndex, extension);
+        final fileName = _buildStorageFileName(file, fileIndex, extension);
         final path = '$folder/$fileName';
         final isImage = _isImageExtension(extension);
         final isVideo = _isVideoExtension(extension);

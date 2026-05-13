@@ -24,6 +24,9 @@ class MessageState {
   final List<SharedMediaItem> sharedContent;
   final MessageStatus sharedContentStatus;
   final String? sharedContentType; // 'media', 'post', 'docs'
+  final bool isFetchingMoreSharedContent;
+  final bool hasMoreSharedContent;
+  final DateTime? nextSharedContentBefore;
 
   MessageState({
     this.messages = const [],
@@ -47,6 +50,9 @@ class MessageState {
     this.sharedContent = const [],
     this.sharedContentStatus = MessageStatus.initial,
     this.sharedContentType,
+    this.isFetchingMoreSharedContent = false,
+    this.hasMoreSharedContent = true,
+    this.nextSharedContentBefore,
   });
 
   MessageState copyWith({
@@ -73,6 +79,10 @@ class MessageState {
     List<SharedMediaItem>? sharedContent,
     MessageStatus? sharedContentStatus,
     String? sharedContentType,
+    bool? isFetchingMoreSharedContent,
+    bool? hasMoreSharedContent,
+    DateTime? nextSharedContentBefore,
+    bool clearNextSharedContentBefore = false,
   }) {
     return MessageState(
       messages: messages ?? this.messages,
@@ -102,6 +112,12 @@ class MessageState {
       sharedContent: sharedContent ?? this.sharedContent,
       sharedContentStatus: sharedContentStatus ?? this.sharedContentStatus,
       sharedContentType: sharedContentType ?? this.sharedContentType,
+      isFetchingMoreSharedContent:
+          isFetchingMoreSharedContent ?? this.isFetchingMoreSharedContent,
+      hasMoreSharedContent: hasMoreSharedContent ?? this.hasMoreSharedContent,
+      nextSharedContentBefore: clearNextSharedContentBefore
+          ? null
+          : (nextSharedContentBefore ?? this.nextSharedContentBefore),
     );
   }
 }

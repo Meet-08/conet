@@ -9,10 +9,9 @@ import 'package:conet_app/feature/message/domain/entities/group_member.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/domain/entities/message_page.dart';
 import 'package:conet_app/feature/message/domain/entities/message_realtime_event.dart';
+import 'package:conet_app/feature/message/domain/entities/shared_content_page.dart';
 import 'package:conet_app/feature/message/domain/entities/shared_media_item.dart';
 import 'package:conet_app/feature/message/domain/repositories/message_repository.dart';
-import 'package:conet_app/feature/post/data/models/post_model.dart';
-import 'package:conet_app/feature/post/domain/entities/post.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -276,70 +275,20 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<Either<AppFailure, List<SharedMediaItem>>> getSharedContent({
+  Future<Either<AppFailure, SharedContentPage>> getSharedContent({
     required String conversationId,
     required SharedContentType type,
+    int limit = 20,
+    DateTime? before,
   }) async {
-    try {
-      final rawItems = await _messageDataSource.getSharedContent(
+    return _getResult(
+      () => _messageDataSource.getSharedContent(
         conversationId: conversationId,
         type: type.name,
-      );
-      final result = _convertRawSharedContent(rawItems, type);
-      return Right(result);
-    } on ServerException catch (e) {
-      return Left(AppFailure(e.message));
-    } catch (e) {
-      return Left(AppFailure(e.toString()));
-    }
-  }
-
-  List<SharedMediaItem> _convertRawSharedContent(
-    List<Map<String, dynamic>> rawItems,
-    SharedContentType type,
-  ) {
-    return rawItems.map((item) {
-      final id = item['id'] ?? item['messageId'] ?? '';
-      final mediaUrls = <String>[];
-      // Accept multiple possible server shapes: 'media_urls', 'mediaUrl', or 'url'
-      if (item['mediaUrls'] is List) {
-        mediaUrls.addAll((item['mediaUrls'] as List).cast<String>());
-      } else if (item['mediaUrl'] is String) {
-        mediaUrls.add(item['mediaUrl'] as String);
-      } else if (item['url'] is String) {
-        mediaUrls.add(item['url'] as String);
-      }
-
-      final contentUrl = mediaUrls.isNotEmpty ? mediaUrls.first : null;
-      // Try to hydrate nested post if present
-      Post? postEntity;
-      if (item['post'] is Map<String, dynamic>) {
-        try {
-          postEntity = PostModel.fromJson(item['post'] as Map<String, dynamic>);
-        } catch (_) {
-          postEntity = null;
-        }
-      }
-
-      return SharedMediaItem(
-        id: id,
-        title:
-            item['title'] ??
-            item['content'] ??
-            item['name'] ??
-            (postEntity?.content),
-        description: item['description'] ?? postEntity?.content,
-        thumbnailUrl: item['thumbnailUrl'] ?? contentUrl,
-        contentUrl: contentUrl,
-        type: type,
-        createdAt: item['createdAt'] != null
-            ? DateTime.tryParse(item['createdAt'].toString())
-            : null,
-        senderName: item['senderName'] ?? item['senderDisplayName'],
-        post: postEntity,
-        mediaUrls: mediaUrls,
-      );
-    }).toList();
+        limit: limit,
+        before: before,
+      ),
+    );
   }
 
   Future<Either<AppFailure, T>> _getResult<T>(Future<T> Function() fn) async {

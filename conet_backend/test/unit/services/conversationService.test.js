@@ -438,11 +438,13 @@ describe("getConversationSharedService", () => {
       "media",
     );
 
-    expect(result).toHaveLength(2);
-    expect(result.map((item) => item.url)).toEqual([
+    expect(result.items).toHaveLength(2);
+    expect(result.items.map((item) => item.url)).toEqual([
       "https://cdn.example.com/photo.jpg",
       "https://cdn.example.com/video.mp4",
     ]);
+    expect(result.hasMore).toBe(false);
+    expect(result.nextBefore).toBe(null);
   });
 
   it("returns docs items for non image/video media", async () => {
@@ -469,8 +471,10 @@ describe("getConversationSharedService", () => {
       "docs",
     );
 
-    expect(result).toHaveLength(1);
-    expect(result[0].url).toBe("https://cdn.example.com/manual.pdf");
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].url).toBe("https://cdn.example.com/manual.pdf");
+    expect(result.hasMore).toBe(false);
+    expect(result.nextBefore).toBe(null);
   });
 
   it("returns mapped post items for post type", async () => {
@@ -511,8 +515,10 @@ describe("getConversationSharedService", () => {
       "post",
     );
 
-    expect(result).toHaveLength(1);
-    expect(result[0].post.id).toBe(POST_ID);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].post.id).toBe(POST_ID);
+    expect(result.hasMore).toBe(false);
+    expect(result.nextBefore).toBe(null);
   });
 
   it("throws 400 for unsupported type", async () => {

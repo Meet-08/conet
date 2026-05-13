@@ -432,6 +432,7 @@ export const getConversationSharedService = async (
   conversationId,
   currentUserId,
   type,
+  { limit = 20, before } = {},
 ) => {
   const normalizedType = String(type ?? "")
     .trim()
@@ -465,29 +466,44 @@ export const getConversationSharedService = async (
   }
 
   if (normalizedType === "post") {
+    const where = {
+      conversation_id: conversationId,
+      is_post: true,
+      post_id: { not: null },
+      ...(before ? { created_at: { lt: before } } : {}),
+    };
+
     const postMessages = await prisma.messages.findMany({
-      where: {
-        conversation_id: conversationId,
-        is_post: true,
-        post_id: { not: null },
-      },
+      where,
       orderBy: { created_at: "desc" },
+      take: limit + 1,
       include: {
         posts: { include: postIncludeOptions(currentUserId) },
       },
     });
 
-    return postMessages.map((message) =>
-      mapSharedPostItem(message, currentUserId),
-    );
+    const hasMore = postMessages.length > limit;
+    const items = hasMore ? postMessages.slice(0, limit) : postMessages;
+    const nextBefore =
+      hasMore && items.length > 0 ? items[items.length - 1].created_at : null;
+
+    return {
+      items: items.map((message) => mapSharedPostItem(message, currentUserId)),
+      hasMore,
+      nextBefore,
+    };
   }
 
+  const where = {
+    conversation_id: conversationId,
+    is_post: false,
+    ...(before ? { created_at: { lt: before } } : {}),
+  };
+
   const mediaMessages = await prisma.messages.findMany({
-    where: {
-      conversation_id: conversationId,
-      is_post: false,
-    },
+    where,
     orderBy: { created_at: "desc" },
+    take: limit + 1,
     select: {
       id: true,
       conversation_id: true,
@@ -497,7 +513,15 @@ export const getConversationSharedService = async (
     },
   });
 
-  return mediaMessages.flatMap((message) =>
+  const hasMore = mediaMessages.length > limit;
+  const limitedMessages =
+    hasMore ? mediaMessages.slice(0, limit) : mediaMessages;
+  const nextBefore =
+    hasMore && limitedMessages.length > 0 ?
+      limitedMessages[limitedMessages.length - 1].created_at
+    : null;
+
+  const items = limitedMessages.flatMap((message) =>
     (message.media_urls ?? [])
       .filter((url) => {
         const isMedia = isImageOrVideoUrl(url);
@@ -505,6 +529,12 @@ export const getConversationSharedService = async (
       })
       .map((url) => mapSharedMediaItem(message, url)),
   );
+
+  return {
+    items,
+    hasMore: hasMore || items.length === limit, // Check if we got a full page
+    nextBefore,
+  };
 };
 
 // ─── Send a message ─────────────────────────────────────────────────────────

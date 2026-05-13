@@ -166,3 +166,13 @@ class MessageFetchSharedContentRequested extends MessageEvent {
     required this.type,
   });
 }
+
+class MessageFetchMoreSharedContentRequested extends MessageEvent {
+  final String conversationId;
+  final String type; // 'media', 'post', 'docs'
+
+  MessageFetchMoreSharedContentRequested({
+    required this.conversationId,
+    required this.type,
+  });
+}

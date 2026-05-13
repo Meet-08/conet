@@ -110,14 +110,44 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           context.read<NotificationBloc>().add(const NotificationLoadEvent());
         }
       },
-      child: MaterialApp.router(
-        title: 'Conet App',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: ThemeMode.system,
-        routerConfig: AppRouter.router,
+      child: BlocBuilder<AppUserCubit, AppUserState>(
+        buildWhen: (previous, current) =>
+            previous.runtimeType != current.runtimeType,
+        builder: (context, state) {
+          return KeyedSubtree(
+            key: ValueKey(_sessionKey(state)),
+            child: MultiBlocProvider(
+              providers: [
+                BlocProvider(create: (_) => serviceLocator<PostBloc>()),
+                BlocProvider(create: (_) => serviceLocator<MessageBloc>()),
+                BlocProvider(create: (_) => serviceLocator<NotificationBloc>()),
+                BlocProvider(create: (_) => serviceLocator<ProfileBloc>()),
+                BlocProvider(create: (_) => serviceLocator<EventBloc>()),
+                BlocProvider(
+                  create: (_) => serviceLocator<EventRegistrationBloc>(),
+                ),
+                BlocProvider(create: (_) => serviceLocator<PaymentBloc>()),
+              ],
+              child: MaterialApp.router(
+                title: 'Conet App',
+                debugShowCheckedModeBanner: false,
+                theme: AppTheme.light,
+                darkTheme: AppTheme.dark,
+                themeMode: ThemeMode.system,
+                routerConfig: AppRouter.router,
+              ),
+            ),
+          );
+        },
       ),
     );
+  }
+
+  String _sessionKey(AppUserState state) {
+    if (state is AppUserAuthenticated) {
+      return 'authenticated';
+    }
+
+    return state.runtimeType.toString();
   }
 }

@@ -5,6 +5,7 @@ import 'package:conet_app/feature/message/domain/entities/group_member.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
 import 'package:conet_app/feature/message/domain/entities/message_page.dart';
 import 'package:conet_app/feature/message/domain/entities/message_realtime_event.dart';
+import 'package:conet_app/feature/message/domain/entities/shared_content_page.dart';
 import 'package:conet_app/feature/message/domain/entities/shared_media_item.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:fpdart/fpdart.dart';
@@ -94,8 +95,10 @@ abstract interface class MessageRepository {
 
   // ─── Shared content operations ──────────────────────────────────────────────
 
-  Future<Either<AppFailure, List<SharedMediaItem>>> getSharedContent({
+  Future<Either<AppFailure, SharedContentPage>> getSharedContent({
     required String conversationId,
     required SharedContentType type,
+    int limit = 20,
+    DateTime? before,
   });
 }

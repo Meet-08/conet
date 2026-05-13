@@ -95,9 +95,9 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
        _getGroupMembers = getGroupMembers,
        _addGroupMember = addGroupMember,
        _removeGroupMember = removeGroupMember,
-      _promoteGroupMember = promoteGroupMember,
-      _demoteGroupMember = demoteGroupMember,
-      _fetchSharedContent = fetchSharedContent,
+       _promoteGroupMember = promoteGroupMember,
+       _demoteGroupMember = demoteGroupMember,
+       _fetchSharedContent = fetchSharedContent,
        _getCurrentUserId =
            (getCurrentUserId ??
            (() => Supabase.instance.client.auth.currentUser?.id)),
@@ -130,6 +130,9 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     on<MessageGroupMemberPromoted>(_onGroupMemberPromoted);
     on<MessageGroupMemberDemoted>(_onGroupMemberDemoted);
     on<MessageFetchSharedContentRequested>(_onFetchSharedContentRequested);
+    on<MessageFetchMoreSharedContentRequested>(
+      _onFetchMoreSharedContentRequested,
+    );
 
     // Initial global subscription setup
     _initGlobalSubscription();
@@ -400,51 +403,101 @@ class MessageBloc extends Bloc<MessageEvent, MessageState> {
     });
   }
 
-    Future<void> _onFetchSharedContentRequested(
-      MessageFetchSharedContentRequested event,
-      Emitter<MessageState> emit,
-    ) async {
-      emit(state.copyWith(sharedContentStatus: MessageStatus.loading));
+  Future<void> _onFetchSharedContentRequested(
+    MessageFetchSharedContentRequested event,
+    Emitter<MessageState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        sharedContentStatus: MessageStatus.loading,
+        clearNextSharedContentBefore: true,
+      ),
+    );
 
-      final typeMap = {
-        'media': SharedContentType.media,
-        'post': SharedContentType.post,
-        'docs': SharedContentType.docs,
-      };
+    final typeMap = {
+      'media': SharedContentType.media,
+      'post': SharedContentType.post,
+      'docs': SharedContentType.docs,
+    };
 
-      final contentType = typeMap[event.type] ?? SharedContentType.media;
+    final contentType = typeMap[event.type] ?? SharedContentType.media;
 
-      if (_fetchSharedContent == null) {
-        emit(
-          state.copyWith(
-            sharedContentStatus: MessageStatus.failure,
-            errorMessage: 'Shared content feature unavailable',
-          ),
-        );
-        return;
-      }
-
-      final result = await _fetchSharedContent(
-        conversationId: event.conversationId,
-        type: contentType,
-      );
-
-      result.fold(
-        (failure) => emit(
-          state.copyWith(
-            sharedContentStatus: MessageStatus.failure,
-            errorMessage: failure.message,
-          ),
-        ),
-        (sharedContent) => emit(
-          state.copyWith(
-            sharedContent: sharedContent,
-            sharedContentStatus: MessageStatus.success,
-            sharedContentType: event.type,
-          ),
+    if (_fetchSharedContent == null) {
+      emit(
+        state.copyWith(
+          sharedContentStatus: MessageStatus.failure,
+          errorMessage: 'Shared content feature unavailable',
         ),
       );
+      return;
     }
+
+    final result = await _fetchSharedContent(
+      conversationId: event.conversationId,
+      type: contentType,
+    );
+
+    result.fold(
+      (failure) => emit(
+        state.copyWith(
+          sharedContentStatus: MessageStatus.failure,
+          errorMessage: failure.message,
+        ),
+      ),
+      (page) => emit(
+        state.copyWith(
+          sharedContent: page.items,
+          sharedContentStatus: MessageStatus.success,
+          sharedContentType: event.type,
+          hasMoreSharedContent: page.hasMore,
+          nextSharedContentBefore: page.nextBefore,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onFetchMoreSharedContentRequested(
+    MessageFetchMoreSharedContentRequested event,
+    Emitter<MessageState> emit,
+  ) async {
+    if (!state.hasMoreSharedContent || state.nextSharedContentBefore == null) {
+      return;
+    }
+
+    emit(state.copyWith(isFetchingMoreSharedContent: true));
+
+    final typeMap = {
+      'media': SharedContentType.media,
+      'post': SharedContentType.post,
+      'docs': SharedContentType.docs,
+    };
+
+    final contentType = typeMap[event.type] ?? SharedContentType.media;
+
+    if (_fetchSharedContent == null) {
+      emit(state.copyWith(isFetchingMoreSharedContent: false));
+      return;
+    }
+
+    final result = await _fetchSharedContent(
+      conversationId: event.conversationId,
+      type: contentType,
+      limit: 20,
+      before: state.nextSharedContentBefore,
+    );
+
+    result.fold(
+      (failure) => emit(state.copyWith(isFetchingMoreSharedContent: false)),
+      (page) => emit(
+        state.copyWith(
+          isFetchingMoreSharedContent: false,
+          sharedContent: [...state.sharedContent, ...page.items],
+          hasMoreSharedContent: page.hasMore,
+          nextSharedContentBefore: page.nextBefore,
+        ),
+      ),
+    );
+  }
 
   Future<void> _onWatchStarted(
     MessageWatchStarted event,

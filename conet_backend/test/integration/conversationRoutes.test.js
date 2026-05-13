@@ -304,11 +304,13 @@ describe("GET /api/conversations/:conversationId/shared", () => {
       .set("Authorization", makeAuthHeader());
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(2);
-    expect(res.body.map((item) => item.url)).toEqual([
+    expect(res.body.items).toHaveLength(2);
+    expect(res.body.items.map((item) => item.url)).toEqual([
       "https://cdn.example.com/photo.jpg",
       "https://cdn.example.com/video.mp4",
     ]);
+    expect(res.body.has_more).toBe(false);
+    expect(res.body.next_before).toBe(null);
   });
 
   it("200 – returns post items with mapped post data", async () => {
@@ -326,8 +328,12 @@ describe("GET /api/conversations/:conversationId/shared", () => {
       .set("Authorization", makeAuthHeader());
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(1);
-    expect(res.body[0].post.id).toBe("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.items[0].post.id).toBe(
+      "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    );
+    expect(res.body.has_more).toBe(false);
+    expect(res.body.next_before).toBe(null);
   });
 
   it("200 – returns non image/video media items for docs", async () => {
@@ -345,8 +351,10 @@ describe("GET /api/conversations/:conversationId/shared", () => {
       .set("Authorization", makeAuthHeader());
 
     expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(1);
-    expect(res.body[0].url).toBe("https://cdn.example.com/manual.pdf");
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.items[0].url).toBe("https://cdn.example.com/manual.pdf");
+    expect(res.body.has_more).toBe(false);
+    expect(res.body.next_before).toBe(null);
   });
 
   it("400 – rejects missing type query param", async () => {

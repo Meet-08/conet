@@ -3,6 +3,7 @@ import 'package:conet_app/feature/message/data/models/group_member_model.dart';
 import 'package:conet_app/feature/message/data/models/message_model.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/message_page.dart';
+import 'package:conet_app/feature/message/domain/entities/shared_content_page.dart';
 import 'package:fpdart/fpdart.dart';
 
 abstract interface class MessageDataSource {
@@ -82,8 +83,10 @@ abstract interface class MessageDataSource {
 
   // ─── Shared content operations ──────────────────────────────────────────────
 
-  Future<List<Map<String, dynamic>>> getSharedContent({
+  Future<SharedContentPage> getSharedContent({
     required String conversationId,
     required String type, // 'media', 'post', 'docs'
+    int limit = 20,
+    DateTime? before,
   });
 }

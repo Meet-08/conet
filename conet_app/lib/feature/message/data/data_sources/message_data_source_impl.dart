@@ -9,6 +9,9 @@ import 'package:conet_app/feature/message/data/models/group_member_model.dart';
 import 'package:conet_app/feature/message/data/models/message_model.dart';
 import 'package:conet_app/feature/message/domain/entities/conversation.dart';
 import 'package:conet_app/feature/message/domain/entities/message_page.dart';
+import 'package:conet_app/feature/message/domain/entities/shared_content_page.dart';
+import 'package:conet_app/feature/message/domain/entities/shared_media_item.dart';
+import 'package:conet_app/feature/post/data/models/post_model.dart';
 import 'package:conet_app/main.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -367,28 +370,94 @@ class MessageDataSourceImpl implements MessageDataSource {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getSharedContent({
+  Future<SharedContentPage> getSharedContent({
     required String conversationId,
     required String type,
+    int limit = 20,
+    DateTime? before,
   }) async {
     try {
+      final queryParams = <String, dynamic>{
+        "type": type,
+        "limit": limit,
+        if (before != null) "before": before.toIso8601String(),
+      };
+
       final res = await _dioClient.dio.get(
         "/conversations/$conversationId/shared",
-        queryParameters: {"type": type},
+        queryParameters: queryParams,
       );
+
       if (res.statusCode != 200) {
         throw ServerException("Failed to fetch shared content");
       }
-      final raw = res.data;
-      List<dynamic> items = [];
-      if (raw is List) {
-        items = raw;
-      } else if (raw is Map<String, dynamic>) {
-        final maybeItems = raw['items'];
-        if (maybeItems is List) items = maybeItems;
+
+      final data = res.data as Map<String, dynamic>;
+      final rawItems = data['items'] as List<dynamic>? ?? [];
+
+      List<SharedMediaItem> items = [];
+      for (final rawItem in rawItems) {
+        final item = rawItem as Map<String, dynamic>;
+
+        if (type == 'post') {
+          // Post type items have a 'post' field
+          final postData = item['post'] as Map<String, dynamic>?;
+          if (postData != null) {
+            items.add(
+              SharedMediaItem(
+                id: item['id'] as String? ?? '',
+                type: SharedContentType.post,
+                post: PostModel.fromJson(postData),
+                createdAt: item['created_at'] != null
+                    ? DateTime.parse(item['created_at'] as String)
+                    : null,
+                senderName: item['sender_id'] as String?,
+              ),
+            );
+          }
+        } else if (type == 'docs') {
+          // Docs type items have a 'url' field
+          items.add(
+            SharedMediaItem(
+              id: item['id'] as String? ?? '',
+              type: SharedContentType.docs,
+              contentUrl: item['url'] as String?,
+              title: (item['url'] as String?)?.split('/').last ?? 'Document',
+              createdAt: item['created_at'] != null
+                  ? DateTime.parse(item['created_at'] as String)
+                  : null,
+              senderName: item['sender_id'] as String?,
+            ),
+          );
+        } else {
+          // Media type items have 'url' field
+          items.add(
+            SharedMediaItem(
+              id: item['id'] as String? ?? '',
+              type: SharedContentType.media,
+              contentUrl: item['url'] as String?,
+              mediaUrls: [
+                item['url'] as String? ?? '',
+              ].where((u) => u.isNotEmpty).toList(),
+              createdAt: item['created_at'] != null
+                  ? DateTime.parse(item['created_at'] as String)
+                  : null,
+              senderName: item['sender_id'] as String?,
+            ),
+          );
+        }
       }
 
-      return items.map((item) => item as Map<String, dynamic>).toList();
+      final nextBeforeRaw = data['next_before'];
+      final nextBefore = nextBeforeRaw is String
+          ? DateTime.parse(nextBeforeRaw)
+          : null;
+
+      return SharedContentPage(
+        items: items,
+        hasMore: data['has_more'] as bool? ?? false,
+        nextBefore: nextBefore,
+      );
     } catch (e) {
       logger.e("Failed to get shared content: ${e.toString()}");
       throw ServerException(AppErrorHandler.handleException(e), e);

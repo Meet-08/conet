@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:conet_app/core/api/dio_client.dart';
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
@@ -7,6 +5,7 @@ import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/widgets/file_download_open_button.dart';
 import 'package:conet_app/feature/message/domain/entities/shared_media_item.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
+import 'package:conet_app/feature/post/presentation/widgets/post_card.dart';
 import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -29,11 +28,14 @@ class SharedMediaPage extends StatefulWidget {
 class _SharedMediaPageState extends State<SharedMediaPage> {
   late String _selectedType;
   final Map<String, Future<int?>> _fileSizeRequests = {};
+  late ScrollController _scrollController;
 
   @override
   void initState() {
     super.initState();
     _selectedType = widget.type;
+    _scrollController = ScrollController();
+    _scrollController.addListener(_onScroll);
     // Trigger initial fetch
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       if (!mounted) return;
@@ -44,6 +46,29 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
         ),
       );
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 180) {
+      final state = context.read<MessageBloc>().state;
+      if (state.hasMoreSharedContent && !state.isFetchingMoreSharedContent) {
+        context.read<MessageBloc>().add(
+          MessageFetchMoreSharedContentRequested(
+            conversationId: widget.conversationId,
+            type: _selectedType,
+          ),
+        );
+      }
+    }
   }
 
   void _onTypeSelected(String type) {
@@ -134,7 +159,10 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
             child: BlocBuilder<MessageBloc, MessageState>(
               buildWhen: (prev, cur) =>
                   prev.sharedContentStatus != cur.sharedContentStatus ||
-                  prev.sharedContentType != cur.sharedContentType,
+                  prev.sharedContentType != cur.sharedContentType ||
+                  prev.sharedContent != cur.sharedContent ||
+                  prev.isFetchingMoreSharedContent !=
+                      cur.isFetchingMoreSharedContent,
               builder: (context, state) {
                 if (state.sharedContentStatus == MessageStatus.loading) {
                   return const Center(child: CircularProgressIndicator());
@@ -203,7 +231,7 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
                 }
 
                 if (_selectedType == 'post') {
-                  return _buildPostList(context, items, colors);
+                  return _buildPostList(context, items, colors, state);
                 }
 
                 return _buildDocsList(context, items, colors);
@@ -283,117 +311,36 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
     BuildContext context,
     List<SharedMediaItem> items,
     AppSemanticColors colors,
+    MessageState state,
   ) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(8),
-      itemCount: items.length,
-      separatorBuilder: (ctx, idx) => const SizedBox(height: 12),
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 8),
+      itemCount: items.length + (state.isFetchingMoreSharedContent ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index == items.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        }
+
         final item = items[index];
         final post = item.post;
-        final contentPreview = _plainTextFromQuill(
-          post?.content ?? item.description ?? item.title ?? '',
-        );
 
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: colors.surfaceBase,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: colors.borderSubtle),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: colors.surfaceRaised,
-                    child: FaIcon(
-                      FontAwesomeIcons.user,
-                      size: 18,
-                      color: colors.iconSecondary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          post != null
-                              ? ((post.user.firstName.trim().isNotEmpty)
-                                    ? '${post.user.firstName} ${post.user.lastName}'
-                                          .trim()
-                                    : post.user.username)
-                              : (item.senderName ?? 'Unknown'),
-                          style: AppTextStyles.bodyDefault.copyWith(
-                            color: colors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item.createdAt != null
-                              ? item.createdAt!
-                                    .toLocal()
-                                    .toString()
-                                    .split('.')
-                                    .first
-                              : '',
-                          style: AppTextStyles.bodySmall.copyWith(
-                            color: colors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                contentPreview,
-                style: AppTextStyles.bodyDefault.copyWith(
-                  color: colors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              if ((item.mediaUrls).isNotEmpty)
-                SizedBox(
-                  height: 120,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: item.mediaUrls.length,
-                    separatorBuilder: (_, _) => const SizedBox(width: 8),
-                    itemBuilder: (ctx, i) => ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: CachedNetworkImage(
-                        imageUrl: item.mediaUrls[i],
-                        width: 160,
-                        height: 120,
-                        fit: BoxFit.cover,
-                        placeholder: (ctx, url) => Container(
-                          width: 160,
-                          height: 120,
-                          color: colors.surfaceRaised,
-                        ),
-                        errorWidget: (ctx, url, err) => Container(
-                          width: 160,
-                          height: 120,
-                          color: colors.surfaceBase,
-                          child: Center(
-                            child: FaIcon(
-                              FontAwesomeIcons.file,
-                              color: colors.iconSecondary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
+        if (post == null) {
+          return const SizedBox.shrink();
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+          child: PostCard(post: post),
         );
       },
     );
@@ -471,19 +418,6 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
         );
       },
     );
-  }
-
-  String _plainTextFromQuill(String raw) {
-    try {
-      final decoded = json.decode(raw);
-      if (decoded is Map && decoded['ops'] is List) {
-        return (decoded['ops'] as List)
-            .map((op) => op['insert']?.toString() ?? '')
-            .join()
-            .trim();
-      }
-    } catch (_) {}
-    return raw;
   }
 
   String? _filenameFromUrl(String? url) {
