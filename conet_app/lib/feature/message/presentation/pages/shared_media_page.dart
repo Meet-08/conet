@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:conet_app/core/api/dio_client.dart';
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/theme/app_typography.dart';
-import 'package:conet_app/core/widgets/file_download_open_button.dart';
+import 'package:conet_app/core/widgets/document_card.dart';
 import 'package:conet_app/feature/message/domain/entities/shared_media_item.dart';
 import 'package:conet_app/feature/message/presentation/bloc/message_bloc.dart';
 import 'package:conet_app/feature/post/presentation/widgets/post_card.dart';
@@ -363,58 +363,10 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
         final filename = _filenameFromUrl(url);
         final fileSizeFuture = url == null ? null : _fileSizeForUrl(url);
 
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: colors.surfaceBase,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: colors.borderSubtle),
-          ),
-          child: Row(
-            children: [
-              FaIcon(FontAwesomeIcons.fileLines, color: colors.iconSecondary),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      filename ?? url ?? 'Unknown file',
-                      style: AppTextStyles.bodyDefault.copyWith(
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    if (fileSizeFuture != null)
-                      FutureBuilder<int?>(
-                        future: fileSizeFuture,
-                        builder: (context, snapshot) {
-                          final sizeText =
-                              snapshot.connectionState ==
-                                  ConnectionState.waiting
-                              ? 'Checking size...'
-                              : _formatFileSize(snapshot.data);
-
-                          return Text(
-                            sizeText,
-                            style: AppTextStyles.bodySmall.copyWith(
-                              color: colors.textSecondary,
-                            ),
-                          );
-                        },
-                      ),
-                  ],
-                ),
-              ),
-              if (url != null)
-                FileDownloadOpenButton(
-                  downloadUrl: url,
-                  fileName: filename ?? 'file',
-                  allowRedownload: false,
-                  usePublicDownloads: true,
-                ),
-            ],
-          ),
+        return DocumentCard(
+          downloadUrl: url,
+          filename: filename,
+          fileSizeFuture: fileSizeFuture,
         );
       },
     );
@@ -443,23 +395,5 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
       } catch (_) {}
       return null;
     });
-  }
-
-  String _formatFileSize(int? bytes) {
-    if (bytes == null || bytes <= 0) return 'Size unavailable';
-    const kb = 1024;
-    const mb = kb * 1024;
-    const gb = mb * 1024;
-
-    if (bytes >= gb) {
-      return '${(bytes / gb).toStringAsFixed(2)} GB';
-    }
-    if (bytes >= mb) {
-      return '${(bytes / mb).toStringAsFixed(2)} MB';
-    }
-    if (bytes >= kb) {
-      return '${(bytes / kb).toStringAsFixed(2)} KB';
-    }
-    return '$bytes B';
   }
 }

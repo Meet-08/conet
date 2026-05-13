@@ -2,9 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:conet_app/core/theme/theme.dart';
 import 'package:conet_app/core/utils/media_cache_manager.dart';
 import 'package:conet_app/core/utils/media_type_utils.dart';
+import 'package:conet_app/core/widgets/document_card.dart';
 import 'package:conet_app/feature/post/presentation/pages/post_image_viewer_page.dart';
 import 'package:conet_app/feature/post/presentation/widgets/media/post_audio_media.dart';
-import 'package:conet_app/feature/post/presentation/widgets/media/post_document_media.dart';
 import 'package:conet_app/feature/post/presentation/widgets/media/post_image_media.dart';
 import 'package:conet_app/feature/post/presentation/widgets/media/post_video_media.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +28,7 @@ class PostMediaItem extends StatelessWidget {
       ),
       MediaType.video => PostVideoMedia(videoUrl: mediaUrl),
       MediaType.audio => PostAudioMedia(audioUrl: mediaUrl),
-      MediaType.document => PostDocumentMedia(fileUrl: mediaUrl),
+      MediaType.document => DocumentCard(downloadUrl: mediaUrl),
       MediaType.unknown => _UnknownPostMedia(
         mediaUrl: mediaUrl,
         imageUrlsForViewer: imageUrlsForViewer,
@@ -81,7 +81,7 @@ class _UnknownPostMedia extends StatelessWidget {
         placeholder: (context, url) =>
             Container(color: semantic.backgroundTertiary),
         errorWidget: (context, url, error) =>
-            PostDocumentMedia(fileUrl: mediaUrl),
+            DocumentCard(downloadUrl: mediaUrl),
       ),
     );
   }

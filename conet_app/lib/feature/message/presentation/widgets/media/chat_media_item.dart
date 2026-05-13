@@ -1,6 +1,6 @@
 import 'package:conet_app/core/utils/media_type_utils.dart';
+import 'package:conet_app/core/widgets/document_card.dart';
 import 'package:conet_app/feature/message/presentation/widgets/media/chat_audio_media.dart';
-import 'package:conet_app/feature/message/presentation/widgets/media/chat_document_media.dart';
 import 'package:conet_app/feature/message/presentation/widgets/media/chat_image_media.dart';
 import 'package:conet_app/feature/message/presentation/widgets/media/chat_video_media.dart';
 import 'package:flutter/widgets.dart';
@@ -27,7 +27,7 @@ class ChatMediaItem extends StatelessWidget {
       MediaType.video => ChatVideoMedia(videoUrl: mediaUrl),
       MediaType.audio => ChatAudioMedia(audioUrl: mediaUrl),
       MediaType.document ||
-      MediaType.unknown => ChatDocumentMedia(fileUrl: mediaUrl),
+      MediaType.unknown => DocumentCard(downloadUrl: mediaUrl),
     };
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:conet_app/core/api/dio_client.dart';
@@ -48,6 +49,7 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
   double? _progress;
   String? _filePath;
   String? _savedMimeType;
+  static const _downloadIndexFileName = '.download_index.json';
 
   @override
   void initState() {
@@ -59,9 +61,26 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
     final path = await _resolveFilePath();
     if (!mounted) return;
 
+    String? mappedPath = await _readMappedPath(widget.downloadUrl);
+
+    bool exists = false;
+    if (mappedPath != null) {
+      if (mappedPath.startsWith('content://') ||
+          mappedPath.startsWith('content:')) {
+        exists = true;
+      } else {
+        exists = File(mappedPath).existsSync();
+      }
+    }
+
+    if (!exists) {
+      exists = File(path).existsSync();
+      if (exists) mappedPath = path;
+    }
+
     setState(() {
-      _filePath = path;
-      _isDownloaded = File(path).existsSync();
+      _filePath = mappedPath ?? path;
+      _isDownloaded = exists;
     });
   }
 
@@ -92,6 +111,54 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
     }
 
     return getApplicationDocumentsDirectory();
+  }
+
+  Future<File> _downloadIndexFile() async {
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/$_downloadIndexFileName');
+    if (!file.existsSync()) {
+      try {
+        await file.create(recursive: true);
+        await file.writeAsString('{}');
+      } catch (_) {}
+    }
+    return file;
+  }
+
+  Future<Map<String, String>> _readDownloadIndex() async {
+    try {
+      final file = await _downloadIndexFile();
+      final content = await file.readAsString();
+      if (content.trim().isEmpty) return {};
+      final data = jsonDecode(content) as Map<String, dynamic>;
+      return data.map((k, v) => MapEntry(k, v?.toString() ?? ''));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<void> _writeDownloadIndex(Map<String, String> index) async {
+    try {
+      final file = await _downloadIndexFile();
+      await file.writeAsString(jsonEncode(index));
+    } catch (_) {}
+  }
+
+  Future<void> _writeMappedPath(String key, String path) async {
+    try {
+      final index = await _readDownloadIndex();
+      index[key] = path;
+      await _writeDownloadIndex(index);
+    } catch (_) {}
+  }
+
+  Future<String?> _readMappedPath(String key) async {
+    try {
+      final index = await _readDownloadIndex();
+      return index[key];
+    } catch (_) {
+      return null;
+    }
   }
 
   String _guessMimeType(String fileName) {
@@ -162,6 +229,8 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
       if (savedPathOrUri == null || savedPathOrUri.isEmpty) {
         throw Exception('Unable to save file to Downloads.');
       }
+
+      await _writeMappedPath(widget.downloadUrl, savedPathOrUri);
 
       return savedPathOrUri;
     }
@@ -268,6 +337,10 @@ class _FileDownloadOpenButtonState extends State<FileDownloadOpenButton> {
         _filePath = savedPath;
         _savedMimeType = mimeType;
       });
+
+      if (!widget.usePublicDownloads) {
+        await _writeMappedPath(widget.downloadUrl, savedPath);
+      }
 
       if (widget.openAfterDownload) {
         await _openFile(savedPath);

@@ -1,5 +1,6 @@
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/theme/app_typography.dart';
+import 'package:conet_app/core/utils/media_type_utils.dart';
 import 'package:conet_app/core/widgets/custom_circle_avatar.dart';
 import 'package:conet_app/core/widgets/loader.dart';
 import 'package:conet_app/feature/message/domain/entities/message.dart';
@@ -125,7 +126,11 @@ class ChatMessageBubble extends StatelessWidget {
                           padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                           child: Row(
                             children: [
-                              FaIcon(FontAwesomeIcons.share, size: 12, color: colors.textSecondary),
+                              FaIcon(
+                                FontAwesomeIcons.share,
+                                size: 12,
+                                color: colors.textSecondary,
+                              ),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
@@ -142,10 +147,7 @@ class ChatMessageBubble extends StatelessWidget {
                           ),
                         ),
                         // The actual PostCard injected right into the bubble
-                        PostCard(
-                          post: sharedPost!,
-                          isChatPreview: true,
-                        ),
+                        PostCard(post: sharedPost!, isChatPreview: true),
                       ],
                     ),
                   ),
@@ -225,6 +227,16 @@ class ChatMessageBubble extends StatelessWidget {
 
   Widget _buildMediaGrid(BuildContext context) {
     if (mediaUrls.length == 1) {
+      final mediaType = getMediaType(mediaUrls[0]);
+      // For documents, render as rectangle without square constraint
+      if (mediaType == MediaType.document) {
+        return ChatMediaItem(
+          mediaUrl: mediaUrls[0],
+          imageUrlsForViewer: mediaUrls,
+          isMe: isMe,
+        );
+      }
+      // For images/videos/audio, constrain to square
       return SizedBox(
         height: 200,
         width: 200,
