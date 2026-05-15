@@ -1217,6 +1217,63 @@ describe("listMyOrganizedEventsService", () => {
     });
     expect(arg.orderBy).toEqual([{ created_at: "desc" }, { id: "desc" }]);
   });
+
+  it("applies upcoming timeline filter at DB level", async () => {
+    prismaMock.events.findMany.mockResolvedValue([makeSummaryRow()]);
+
+    await listMyOrganizedEventsService(ORGANIZER_ID, {
+      status: "published",
+      timeline: "upcoming",
+      page_size: 10,
+    });
+
+    const arg = prismaMock.events.findMany.mock.calls[0][0];
+    expect(arg.where.start_date).toBeDefined();
+    expect(arg.where.start_date.gte).toBeInstanceOf(Date);
+  });
+
+  it("applies active timeline filter at DB level", async () => {
+    prismaMock.events.findMany.mockResolvedValue([makeSummaryRow()]);
+
+    await listMyOrganizedEventsService(ORGANIZER_ID, {
+      status: "published",
+      timeline: "active",
+      page_size: 10,
+    });
+
+    const arg = prismaMock.events.findMany.mock.calls[0][0];
+    expect(arg.where.start_date).toBeDefined();
+    expect(arg.where.start_date.lte).toBeInstanceOf(Date);
+    expect(arg.where.end_date).toBeDefined();
+    expect(arg.where.end_date.gte).toBeInstanceOf(Date);
+  });
+
+  it("applies explicit date range filter at DB level", async () => {
+    prismaMock.events.findMany.mockResolvedValue([makeSummaryRow()]);
+
+    await listMyOrganizedEventsService(ORGANIZER_ID, {
+      date_from: "2026-04-10T00:00:00.000Z",
+      date_to: "2026-05-10T00:00:00.000Z",
+      page_size: 10,
+    });
+
+    const arg = prismaMock.events.findMany.mock.calls[0][0];
+    expect(arg.where.start_date).toMatchObject({
+      gte: new Date("2026-04-10T00:00:00.000Z"),
+      lte: new Date("2026-05-10T00:00:00.000Z"),
+    });
+  });
+
+  it("throws 400 when timeline value is invalid", async () => {
+    await expect(
+      listMyOrganizedEventsService(ORGANIZER_ID, {
+        timeline: "future-only",
+      }),
+    ).rejects.toMatchObject({
+      statusCode: 400,
+      message: "timeline must be one of: upcoming, past, all, active",
+    });
+  });
 });
 
 describe("listMyEventsService", () => {

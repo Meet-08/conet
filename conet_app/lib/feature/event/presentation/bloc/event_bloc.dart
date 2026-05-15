@@ -12,6 +12,8 @@ import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_setup_organizer_resources.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_update.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_update_draft.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_group.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -28,6 +30,8 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   final EventRegister _registerEvent;
   final EventSave _saveEvent;
   final EventSaveDraft _saveDraft;
+  final EventUpdateDraft _updateDraft;
+  final EventUpdate _updateEvent;
   final EventSetupOrganizerResources _setupOrganizerResources;
   final MessageCreateGroup _createGroup;
 
@@ -36,6 +40,9 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   String _myEventsType = 'upcoming';
   String? _organizedNextCursor;
   String? _organizedStatus;
+  String? _organizedTimeline;
+  DateTime? _organizedDateFrom;
+  DateTime? _organizedDateTo;
 
   EventBloc({
     required EventGetById getById,
@@ -46,6 +53,8 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     required EventRegister registerEvent,
     required EventSave saveEvent,
     required EventSaveDraft saveDraft,
+    required EventUpdateDraft updateDraft,
+    required EventUpdate updateEvent,
     required EventSetupOrganizerResources setupOrganizerResources,
     required MessageCreateGroup createGroup,
   }) : _getById = getById,
@@ -56,6 +65,8 @@ class EventBloc extends Bloc<EventEvent, EventState> {
        _registerEvent = registerEvent,
        _saveEvent = saveEvent,
        _saveDraft = saveDraft,
+       _updateDraft = updateDraft,
+       _updateEvent = updateEvent,
        _setupOrganizerResources = setupOrganizerResources,
        _createGroup = createGroup,
        super(EventInitial()) {
@@ -70,6 +81,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     on<EventRegisterEvent>(_onRegister);
     on<EventSaveEvent>(_onSaveEvent);
     on<EventSaveDraftEvent>(_onSaveDraft);
+    on<EventUpdateEvent>(_onUpdateEvent);
   }
 
   Future<void> _onFetchById(
@@ -214,10 +226,16 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     emit(MyOrganizedEventsLoading());
 
     _organizedStatus = event.status;
+    _organizedTimeline = event.timeline;
+    _organizedDateFrom = event.dateFrom;
+    _organizedDateTo = event.dateTo;
     _organizedNextCursor = null;
 
     final result = await _getMyOrganizedEvents(
       status: event.status,
+      timeline: event.timeline,
+      dateFrom: event.dateFrom,
+      dateTo: event.dateTo,
       cursor: event.cursor,
       limit: event.limit,
     );
@@ -253,6 +271,9 @@ class EventBloc extends Bloc<EventEvent, EventState> {
 
     final result = await _getMyOrganizedEvents(
       status: _organizedStatus,
+      timeline: _organizedTimeline,
+      dateFrom: _organizedDateFrom,
+      dateTo: _organizedDateTo,
       cursor: _organizedNextCursor,
       limit: current.pageSize,
     );
@@ -396,7 +417,11 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   ) async {
     emit(EventCreateLoading());
 
-    final result = await _saveDraft(event.payload);
+    final draftEventId = event.eventId?.trim();
+    final result =
+        (draftEventId != null && draftEventId.isNotEmpty)
+        ? await _updateDraft(draftEventId, event.payload)
+        : await _saveDraft(event.payload);
 
     String? failureMessage;
     Event? created;
@@ -416,6 +441,19 @@ class EventBloc extends Bloc<EventEvent, EventState> {
       );
       emit(EventCreateSuccess(event: created!, isDraft: true));
     }
+  }
+
+  Future<void> _onUpdateEvent(
+    EventUpdateEvent event,
+    Emitter<EventState> emit,
+  ) async {
+    emit(EventCreateLoading());
+
+    final result = await _updateEvent(event.eventId, event.payload);
+    result.fold(
+      (failure) => emit(EventCreateFailure(failure.message)),
+      (updated) => emit(EventCreateSuccess(event: updated, isDraft: false)),
+    );
   }
 
   Future<void> _createOrganizerGroupAfterEventIfNeeded({

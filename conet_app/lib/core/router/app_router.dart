@@ -199,7 +199,12 @@ class AppRouter {
 
       GoRoute(
         path: '/create-event',
-        builder: (context, state) => const CreateEventPage(),
+        builder: (context, state) {
+          final launchData = state.extra is CreateEventLaunchData
+              ? state.extra as CreateEventLaunchData
+              : null;
+          return CreateEventPage(launchData: launchData);
+        },
       ),
 
       GoRoute(

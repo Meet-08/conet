@@ -43,6 +43,8 @@ import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_setup_organizer_resources.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_update.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_update_draft.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_registration_bloc.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source.dart';

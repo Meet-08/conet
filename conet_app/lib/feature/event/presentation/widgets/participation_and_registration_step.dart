@@ -14,6 +14,8 @@ class ParticipationAndRegistrationStep extends StatefulWidget {
   final ValueChanged<Map<String, dynamic>> onFormDataChange;
   final String stepTitle;
   final String stepSubtitle;
+  final bool lockToggles;
+  final bool lockCustomFields;
 
   const ParticipationAndRegistrationStep({
     super.key,
@@ -21,6 +23,8 @@ class ParticipationAndRegistrationStep extends StatefulWidget {
     required this.onFormDataChange,
     required this.stepTitle,
     required this.stepSubtitle,
+    this.lockToggles = false,
+    this.lockCustomFields = false,
   });
 
   @override
@@ -109,10 +113,12 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
   }
 
   void _addCustomField() {
+    if (widget.lockCustomFields) return;
     _startEditingCustomField();
   }
 
   void _removeCustomField(int index) {
+    if (widget.lockCustomFields) return;
     final list = _customFields..removeAt(index);
     _update({'custom_fields': list});
   }
@@ -168,6 +174,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
   bool _showCustomEditor = false;
 
   void _startEditingCustomField({int? index}) {
+    if (widget.lockCustomFields) return;
     final field = index == null ? null : _customFields[index];
     _editingCustomIndex = index;
     if (field == null) {
@@ -301,7 +308,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
           const SizedBox(height: AppSpace.s8),
           _RegistrationDeadlineField(
             value: widget.formData['registration_deadline'] as DateTime?,
-            onTap: _selectRegistrationDeadline,
+            onTap: widget.lockToggles ? null : _selectRegistrationDeadline,
           ),
           const SizedBox(height: AppSpace.s24),
           // ── Participation Type Section ──
@@ -310,6 +317,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
           _ToggleRow(
             options: const ['Individual', 'Team'],
             selected: isTeam ? 'Team' : 'Individual',
+            enabled: !widget.lockToggles,
             onChanged: (v) {
               final nextType = v == 'Team' ? 'team' : 'individual';
               _update({
@@ -429,6 +437,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
           _ToggleRow(
             options: const ['Free', 'Paid'],
             selected: isPaid ? 'Paid' : 'Free',
+            enabled: !widget.lockToggles,
             onChanged: (value) {
               final isPaidValue = value == 'Paid';
               _update({
@@ -443,6 +452,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
             const SizedBox(height: AppSpace.s8),
             TextFormField(
               initialValue: widget.formData['price']?.toString(),
+              readOnly: widget.lockToggles,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
@@ -506,17 +516,18 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
             title: 'Registration Form',
           ),
           const SizedBox(height: AppSpace.s16),
-          Row(
-            children: [
-              const Expanded(child: _LabelText(text: 'Custom Fields')),
-              const SizedBox(),
-              TextButton.icon(
-                onPressed: _addCustomField,
-                icon: const FaIcon(FontAwesomeIcons.plus, size: 12),
-                label: const Text('Add'),
-              ),
-            ],
-          ),
+                  Row(
+                    children: [
+                      const Expanded(child: _LabelText(text: 'Custom Fields')),
+                      const SizedBox(),
+                      if (!widget.lockCustomFields)
+                        TextButton.icon(
+                          onPressed: _addCustomField,
+                          icon: const FaIcon(FontAwesomeIcons.plus, size: 12),
+                          label: const Text('Add'),
+                        ),
+                    ],
+                  ),
           const SizedBox(height: AppSpace.s8),
           if (customFields.isEmpty)
             Container(
@@ -714,7 +725,9 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                   color: semantic.surfaceRaised,
                   borderRadius: AppRadius.mdAll,
                   child: InkWell(
-                    onTap: () => _startEditingCustomField(index: index),
+                    onTap: widget.lockCustomFields
+                        ? null
+                        : () => _startEditingCustomField(index: index),
                     borderRadius: AppRadius.mdAll,
                     child: Padding(
                       padding: const EdgeInsets.all(AppSpace.s12),
@@ -773,43 +786,34 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                                     color: semantic.borderDefault,
                                   ),
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      isRequired ? 'Required' : 'Optional',
-                                      style: AppTextStyles.caption.copyWith(
-                                        color: semantic.textSecondary,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Icon(
-                                      Icons.keyboard_arrow_down_rounded,
-                                      size: 16,
-                                      color: semantic.iconTertiary,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: AppSpace.s8),
-                              InkWell(
-                                onTap: () => _removeCustomField(index),
-                                borderRadius: AppRadius.fullAll,
-                                child: Container(
-                                  width: 32,
-                                  height: 32,
-                                  decoration: BoxDecoration(
-                                    color: semantic.surfaceBase,
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: Icon(
-                                    Icons.close,
-                                    size: 18,
+                                child: Text(
+                                  isRequired ? 'Required' : 'Optional',
+                                  style: AppTextStyles.caption.copyWith(
                                     color: semantic.textSecondary,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
+                              if (!widget.lockCustomFields) ...[
+                                const SizedBox(width: AppSpace.s8),
+                                InkWell(
+                                  onTap: () => _removeCustomField(index),
+                                  borderRadius: AppRadius.fullAll,
+                                  child: Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: semantic.surfaceBase,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.close,
+                                      size: 18,
+                                      color: semantic.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ],
@@ -820,40 +824,41 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
               );
             }),
           const SizedBox(height: AppSpace.s16),
-          DottedBorder(
-            options: RoundedRectDottedBorderOptions(
-              radius: AppRadius.md,
-              dashPattern: const [6, 4],
-              strokeWidth: 1.2,
-              color: semantic.borderDefault,
-            ),
-            child: InkWell(
-              onTap: _addCustomField,
-              borderRadius: AppRadius.mdAll,
-              child: Container(
-                width: double.infinity,
-                height: AppSpace.s48,
-                alignment: Alignment.center,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FaIcon(
-                      FontAwesomeIcons.plus,
-                      size: 14,
-                      color: semantic.textPrimary,
-                    ),
-                    const SizedBox(width: AppSpace.s8),
-                    Text(
-                      'Add Field',
-                      style: AppTextStyles.button.copyWith(
+          if (!widget.lockCustomFields)
+            DottedBorder(
+              options: RoundedRectDottedBorderOptions(
+                radius: AppRadius.md,
+                dashPattern: const [6, 4],
+                strokeWidth: 1.2,
+                color: semantic.borderDefault,
+              ),
+              child: InkWell(
+                onTap: _addCustomField,
+                borderRadius: AppRadius.mdAll,
+                child: Container(
+                  width: double.infinity,
+                  height: AppSpace.s48,
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FaIcon(
+                        FontAwesomeIcons.plus,
+                        size: 14,
                         color: semantic.textPrimary,
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: AppSpace.s8),
+                      Text(
+                        'Add Field',
+                        style: AppTextStyles.button.copyWith(
+                          color: semantic.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
           const SizedBox(height: AppSpace.s12),
         ],
       ),
@@ -906,7 +911,7 @@ class _LabelText extends StatelessWidget {
 
 class _RegistrationDeadlineField extends StatelessWidget {
   final DateTime? value;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _RegistrationDeadlineField({required this.value, required this.onTap});
 
@@ -965,11 +970,13 @@ class _ToggleRow extends StatelessWidget {
   final List<String> options;
   final String selected;
   final ValueChanged<String> onChanged;
+  final bool enabled;
 
   const _ToggleRow({
     required this.options,
     required this.selected,
     required this.onChanged,
+    this.enabled = true,
   });
 
   @override
@@ -982,7 +989,7 @@ class _ToggleRow extends StatelessWidget {
         final isFirst = opt == options.first;
         return Expanded(
           child: GestureDetector(
-            onTap: () => onChanged(opt),
+            onTap: enabled ? () => onChanged(opt) : null,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
               margin: EdgeInsets.only(right: isFirst ? AppSpace.s8 : 0),

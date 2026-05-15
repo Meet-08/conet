@@ -68,6 +68,9 @@ class EventCreatePayloadModel extends EventCreatePayload {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   final PlatformFile? eventImage;
+  @override
+  @JsonKey(name: 'event_image_url')
+  final String? eventImageUrl;
 
   const EventCreatePayloadModel({
     required super.title,
@@ -92,6 +95,7 @@ class EventCreatePayloadModel extends EventCreatePayload {
     this.customFields = const [],
     super.eligibility,
     this.eventImage,
+    this.eventImageUrl,
     this.activities = const [],
     this.prizes = const [],
     this.faqs = const [],
@@ -110,6 +114,7 @@ class EventCreatePayloadModel extends EventCreatePayload {
          maxTeamSize: maxTeamSize,
          customFields: customFields,
          eventImage: eventImage,
+         eventImageUrl: eventImageUrl,
        );
 
   factory EventCreatePayloadModel.fromJson(Map<String, dynamic> json) =>
@@ -144,6 +149,7 @@ class EventCreatePayloadModel extends EventCreatePayload {
       customFields: payload.customFields,
       eligibility: _nullableText(payload.eligibility),
       eventImage: payload.eventImage,
+      eventImageUrl: payload.eventImageUrl,
       activities: payload.activities,
       prizes: payload.prizes,
       faqs: payload.faqs,

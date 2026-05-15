@@ -109,6 +109,9 @@ class EventDataSourceImpl implements EventDataSource {
   @override
   Future<EventPageModel> getMyOrganizedEvents({
     String? status,
+    String? timeline,
+    DateTime? dateFrom,
+    DateTime? dateTo,
     int limit = 20,
     String? cursor,
   }) async {
@@ -119,6 +122,10 @@ class EventDataSourceImpl implements EventDataSource {
           'page_size': limit,
           if (status != null && status.trim().isNotEmpty)
             'status': status.trim(),
+          if (timeline != null && timeline.trim().isNotEmpty)
+            'timeline': timeline.trim(),
+          if (dateFrom != null) 'date_from': dateFrom.toIso8601String(),
+          if (dateTo != null) 'date_to': dateTo.toIso8601String(),
           if (cursor != null && cursor.trim().isNotEmpty) 'cursor': cursor,
         },
       );
@@ -272,6 +279,84 @@ class EventDataSourceImpl implements EventDataSource {
       if (e is ServerException) rethrow;
       throw ServerException(AppErrorHandler.handleException(e), e);
     }
+  }
+
+  @override
+  Future<Event> updateEvent(String eventId, EventCreatePayload payload) async {
+    try {
+      return await _updateEventInternal(
+        eventId: eventId,
+        payload: payload,
+        publish: true,
+      );
+    } catch (e) {
+      logger.e('updateEvent failed', error: e);
+      if (e is ServerException) rethrow;
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<Event> updateDraftEvent(
+    String eventId,
+    EventCreatePayload payload,
+  ) async {
+    try {
+      return await _updateEventInternal(
+        eventId: eventId,
+        payload: payload,
+        publish: false,
+      );
+    } catch (e) {
+      logger.e('updateDraftEvent failed', error: e);
+      if (e is ServerException) rethrow;
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  Future<Event> _updateEventInternal({
+    required String eventId,
+    required EventCreatePayload payload,
+    required bool publish,
+  }) async {
+    String? imageUrl = payload.eventImageUrl?.trim();
+    if (payload.eventImage != null) {
+      final urls = await _fileUploadDataSource.uploadFiles(
+        files: [payload.eventImage!],
+        bucket: 'event',
+        folder: eventId,
+      );
+      imageUrl = urls.isNotEmpty ? urls.first : imageUrl;
+    }
+
+    final resolvedCustomFields = await _uploadCustomFieldImages(
+      eventId: eventId,
+      customFields: payload.customFields,
+    );
+    final payloadWithUploadedFieldImages = payload.copyWith(
+      customFields: resolvedCustomFields,
+    );
+
+    final requestBody = EventCreatePayloadModel.fromEntity(
+      payloadWithUploadedFieldImages,
+      publish: publish,
+    ).toJson();
+
+    if (imageUrl != null && imageUrl.isNotEmpty) {
+      requestBody['event_image_url'] = imageUrl;
+    }
+
+    final response = await _dioClient.dio.put(
+      '/events/$eventId',
+      data: requestBody,
+    );
+
+    if (response.statusCode != 200) {
+      throw ServerException('Failed to update event');
+    }
+
+    final data = response.data as Map<String, dynamic>;
+    return EventModel.fromJson(data['event'] as Map<String, dynamic>);
   }
 
   @override

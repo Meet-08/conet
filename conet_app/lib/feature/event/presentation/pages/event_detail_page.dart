@@ -567,6 +567,15 @@ class _ScheduleSection extends StatelessWidget {
                           color: semantic.textPrimary,
                         ),
                       ),
+                      if (activity.description.isNotEmpty) ...[
+                        const SizedBox(height: AppSpace.s6),
+                        Text(
+                          activity.description,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: semantic.textSecondary,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

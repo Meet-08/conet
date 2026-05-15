@@ -21,6 +21,8 @@ class BasicInfoStep extends StatefulWidget {
   final ValueChanged<Map<String, dynamic>> onFormDataChange;
   final String stepTitle;
   final String stepSubtitle;
+  final bool lockImage;
+  final bool lockImmutableFields;
 
   const BasicInfoStep({
     super.key,
@@ -28,6 +30,8 @@ class BasicInfoStep extends StatefulWidget {
     required this.onFormDataChange,
     required this.stepTitle,
     required this.stepSubtitle,
+    this.lockImage = false,
+    this.lockImmutableFields = false,
   });
 
   @override
@@ -41,6 +45,11 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
   late final ScrollController _aboutScrollController;
   late final TextEditingController _scheduleTitleController;
   late final TextEditingController _scheduleDescriptionController;
+  late final TextEditingController _titleController;
+  late final TextEditingController _meetingLinkController;
+  late final TextEditingController _venueController;
+  late final TextEditingController _locationController;
+  late final TextEditingController _eligibilityController;
   TimeOfDay? _scheduleTime;
   int? _scheduleEditingIndex;
   bool _showScheduleEditor = false;
@@ -78,6 +87,21 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
     _aboutScrollController = ScrollController();
     _scheduleTitleController = TextEditingController();
     _scheduleDescriptionController = TextEditingController();
+    _titleController = TextEditingController(
+      text: widget.formData['title'] as String? ?? '',
+    );
+    _meetingLinkController = TextEditingController(
+      text: widget.formData['meeting_link'] as String? ?? '',
+    );
+    _venueController = TextEditingController(
+      text: widget.formData['venue_name'] as String? ?? '',
+    );
+    _locationController = TextEditingController(
+      text: widget.formData['location'] as String? ?? '',
+    );
+    _eligibilityController = TextEditingController(
+      text: widget.formData['eligibility'] as String? ?? '',
+    );
     _aboutController = _buildAboutController(
       widget.formData['about'] as String? ?? '',
     );
@@ -95,16 +119,37 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
   @override
   void didUpdateWidget(covariant BasicInfoStep oldWidget) {
     super.didUpdateWidget(oldWidget);
+    void syncController(TextEditingController controller, String next) {
+      if (controller.text != next) {
+        controller.text = next;
+      }
+    }
+
+    syncController(_titleController, widget.formData['title'] as String? ?? '');
+    syncController(
+      _meetingLinkController,
+      widget.formData['meeting_link'] as String? ?? '',
+    );
+    syncController(_venueController, widget.formData['venue_name'] as String? ?? '');
+    syncController(
+      _locationController,
+      widget.formData['location'] as String? ?? '',
+    );
+    syncController(
+      _eligibilityController,
+      widget.formData['eligibility'] as String? ?? '',
+    );
+
     final incoming = widget.formData['about'] as String? ?? '';
     final current = _serializedAbout();
-    if (incoming.isEmpty || incoming == current) return;
-
-    _aboutController
-      ..removeListener(_onAboutChanged)
-      ..dispose();
-    _aboutController = _buildAboutController(incoming);
-    _lastSerializedAbout = _serializedAbout();
-    _aboutController.addListener(_onAboutChanged);
+    if (incoming.isNotEmpty && incoming != current) {
+      _aboutController
+        ..removeListener(_onAboutChanged)
+        ..dispose();
+      _aboutController = _buildAboutController(incoming);
+      _lastSerializedAbout = _serializedAbout();
+      _aboutController.addListener(_onAboutChanged);
+    }
   }
 
   @override
@@ -114,6 +159,11 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
       ..dispose();
     _scheduleTitleController.dispose();
     _scheduleDescriptionController.dispose();
+    _titleController.dispose();
+    _meetingLinkController.dispose();
+    _venueController.dispose();
+    _locationController.dispose();
+    _eligibilityController.dispose();
     _aboutFocusNode.dispose();
     _aboutScrollController.dispose();
     super.dispose();
@@ -205,6 +255,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
   }
 
   Future<void> _pickImage() async {
+    if (widget.lockImage) return;
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -287,6 +338,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
     final selectedCategory = widget.formData['category'] as String? ?? '';
     final selectedImage =
         _pickedImage ?? widget.formData['event_image_file'] as PlatformFile?;
+    final existingImageUrl = widget.formData['event_image_url'] as String?;
     final isOnline = widget.formData['location_type'] == 'ONLINE';
     final activities = _activities;
 
@@ -310,7 +362,12 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _UploadImageCard(image: selectedImage, onTap: _pickImage),
+              _UploadImageCard(
+                image: selectedImage,
+                existingImageUrl: existingImageUrl,
+                onTap: _pickImage,
+                isLocked: widget.lockImage,
+              ),
               const SizedBox(width: AppSpace.s8),
               Expanded(
                 child: Padding(
@@ -319,7 +376,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Upload an event logo',
+                        widget.lockImage ? 'Event logo is locked for draft setup' : 'Upload an event logo',
                         style: AppTextStyles.label.copyWith(
                           color: semantic.textTertiary,
                         ),
@@ -341,7 +398,8 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
           const _LabelText(text: 'Title'),
           const SizedBox(height: AppSpace.s8),
           TextFormField(
-            initialValue: widget.formData['title'] as String? ?? '',
+            controller: _titleController,
+            readOnly: widget.lockImmutableFields,
             maxLength: 100,
             textCapitalization: TextCapitalization.words,
             decoration: _inputDecoration(
@@ -365,7 +423,9 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
                   ),
                 )
                 .toList(),
-            onChanged: (v) => _update({'category': v ?? ''}),
+            onChanged: widget.lockImmutableFields
+                ? null
+                : (v) => _update({'category': v ?? ''}),
           ),
           const SizedBox(height: AppSpace.s32),
 
@@ -381,6 +441,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
               Expanded(
                 child: _DatePickerField(
                   value: widget.formData['start_date'] as DateTime?,
+                  enabled: !widget.lockImmutableFields,
                   onChanged: (d) {
                     final endDate = widget.formData['end_date'] as DateTime?;
                     _update({
@@ -394,6 +455,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
               Expanded(
                 child: _TimePickerField(
                   value: widget.formData['start_time'] as TimeOfDay?,
+                  enabled: !widget.lockImmutableFields,
                   onChanged: (t) => _update({'start_time': t}),
                 ),
               ),
@@ -410,6 +472,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
                   firstDate:
                       (widget.formData['start_date'] as DateTime?) ??
                       DateTime.now(),
+                  enabled: !widget.lockImmutableFields,
                   onChanged: (d) => _update({'end_date': d}),
                 ),
               ),
@@ -417,6 +480,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
               Expanded(
                 child: _TimePickerField(
                   value: widget.formData['end_time'] as TimeOfDay?,
+                  enabled: !widget.lockImmutableFields,
                   onChanged: (t) => _update({'end_time': t}),
                 ),
               ),
@@ -431,6 +495,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
           const SizedBox(height: AppSpace.s16),
           _ModeToggle(
             isOnline: isOnline,
+            enabled: !widget.lockImmutableFields,
             onChanged: (online) {
               _update({
                 'location_type': online ? 'ONLINE' : 'OFFLINE',
@@ -443,7 +508,8 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
             const _LabelText(text: 'Meeting Link'),
             const SizedBox(height: AppSpace.s8),
             TextFormField(
-              initialValue: widget.formData['meeting_link'] as String? ?? '',
+              controller: _meetingLinkController,
+              readOnly: widget.lockImmutableFields,
               keyboardType: TextInputType.url,
               decoration: _inputDecoration(
                 context,
@@ -460,7 +526,8 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
             const _LabelText(text: 'Venue'),
             const SizedBox(height: AppSpace.s8),
             TextFormField(
-              initialValue: widget.formData['venue_name'] as String? ?? '',
+              controller: _venueController,
+              readOnly: widget.lockImmutableFields,
               decoration: _inputDecoration(
                 context,
                 hint: 'e.g. A-block Auditorium',
@@ -471,7 +538,8 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
             const _LabelText(text: 'Address'),
             const SizedBox(height: AppSpace.s8),
             TextFormField(
-              initialValue: widget.formData['location'] as String? ?? '',
+              controller: _locationController,
+              readOnly: widget.lockImmutableFields,
               decoration: _inputDecoration(
                 context,
                 hint: 'e.g. VGEC, Chandkheda',
@@ -590,7 +658,8 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
           ),
           const SizedBox(height: AppSpace.s16),
           TextFormField(
-            initialValue: widget.formData['eligibility'] as String? ?? '',
+            controller: _eligibilityController,
+            readOnly: widget.lockImmutableFields,
             onChanged: (v) => _update({'eligibility': v}),
             minLines: 2,
             maxLines: 2,
@@ -832,16 +901,23 @@ class _LabelText extends StatelessWidget {
 
 class _UploadImageCard extends StatelessWidget {
   final PlatformFile? image;
+  final String? existingImageUrl;
   final VoidCallback onTap;
+  final bool isLocked;
 
-  const _UploadImageCard({required this.image, required this.onTap});
+  const _UploadImageCard({
+    required this.image,
+    required this.onTap,
+    this.existingImageUrl,
+    this.isLocked = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     final semantic = context.semanticColors;
 
     return InkWell(
-      onTap: onTap,
+      onTap: isLocked ? null : onTap,
       borderRadius: AppRadius.mdAll,
       child: DottedBorder(
         options: RoundedRectDottedBorderOptions(
@@ -865,6 +941,17 @@ class _UploadImageCard extends StatelessWidget {
                   child: kIsWeb && image!.bytes != null
                       ? Image.memory(image!.bytes!, fit: BoxFit.cover)
                       : Image.file(File(image!.path!), fit: BoxFit.cover),
+                )
+              : (existingImageUrl != null && existingImageUrl!.trim().isNotEmpty)
+              ? Image.network(
+                  existingImageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Center(
+                    child: FaIcon(
+                      FontAwesomeIcons.cloudArrowUp,
+                      color: semantic.iconTertiary,
+                    ),
+                  ),
                 )
               : Center(
                   child: FaIcon(
@@ -957,9 +1044,14 @@ class _ToolbarIcon extends StatelessWidget {
 
 class _ModeToggle extends StatelessWidget {
   final bool isOnline;
+  final bool enabled;
   final ValueChanged<bool> onChanged;
 
-  const _ModeToggle({required this.isOnline, required this.onChanged});
+  const _ModeToggle({
+    required this.isOnline,
+    required this.onChanged,
+    this.enabled = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -972,7 +1064,7 @@ class _ModeToggle extends StatelessWidget {
     }) {
       return Expanded(
         child: InkWell(
-          onTap: onTap,
+          onTap: enabled ? onTap : null,
           borderRadius: AppRadius.smAll,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
@@ -1026,45 +1118,57 @@ InputDecoration _inputDecoration(
   required String hint,
   Widget? prefixIcon,
 }) {
-  final inputTheme = Theme.of(context).inputDecorationTheme;
-  final iconWidth = (inputTheme.prefixIconConstraints?.minWidth ?? 40).clamp(
-    40.0,
-    48.0,
-  );
+  final semantic = context.semanticColors;
   return InputDecoration(
     hintText: hint,
+    hintStyle: AppTextStyles.bodyDefault.copyWith(color: semantic.textTertiary),
     counterText: '',
-    filled: inputTheme.filled,
-    fillColor: inputTheme.fillColor,
-    prefixIcon: prefixIcon == null
-        ? null
-        : SizedBox(
-            width: iconWidth.toDouble(),
-            child: Align(alignment: Alignment.center, child: prefixIcon),
-          ),
-    prefixIconConstraints:
-        inputTheme.prefixIconConstraints ??
-        const BoxConstraints(minWidth: 40, minHeight: 52),
-    suffixIconConstraints:
-        inputTheme.suffixIconConstraints ??
-        const BoxConstraints(minWidth: 40, minHeight: 52),
-    contentPadding:
-        inputTheme.contentPadding ??
-        const EdgeInsets.symmetric(
-          horizontal: AppSpace.s12,
-          vertical: AppSpace.s12,
-        ),
+    filled: true,
+    fillColor: semantic.surfaceRaised,
+    prefixIcon: prefixIcon != null
+        ? Padding(
+            padding: const EdgeInsets.only(
+              left: AppSpace.s12,
+              right: AppSpace.s10,
+            ),
+            child: prefixIcon,
+          )
+        : null,
+    prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+    suffixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 52),
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: AppSpace.s12,
+      vertical: AppSpace.s12,
+    ),
+    border: OutlineInputBorder(
+      borderRadius: AppRadius.mdAll,
+      borderSide: BorderSide(color: semantic.borderDefault),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: AppRadius.mdAll,
+      borderSide: BorderSide(color: semantic.borderDefault),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: AppRadius.mdAll,
+      borderSide: BorderSide(color: semantic.borderBrand, width: 1.5),
+    ),
+    disabledBorder: OutlineInputBorder(
+      borderRadius: AppRadius.mdAll,
+      borderSide: BorderSide(color: semantic.borderDefault),
+    ),
   );
 }
 
 class _DatePickerField extends StatelessWidget {
   final DateTime? value;
   final DateTime? firstDate;
+  final bool enabled;
   final ValueChanged<DateTime> onChanged;
 
   const _DatePickerField({
     required this.value,
     this.firstDate,
+    this.enabled = true,
     required this.onChanged,
   });
 
@@ -1079,7 +1183,9 @@ class _DatePickerField extends StatelessWidget {
       placeholderText: 'dd/mm/yyyy',
       isPlaceholder: value == null,
       icon: FontAwesomeIcons.calendar,
-      onTap: () async {
+      onTap: !enabled
+          ? null
+          : () async {
         final now = DateTime.now();
         final minDate = firstDate ?? now;
         final effectiveInitialDate = value != null && value!.isBefore(minDate)
@@ -1099,9 +1205,14 @@ class _DatePickerField extends StatelessWidget {
 
 class _TimePickerField extends StatelessWidget {
   final TimeOfDay? value;
+  final bool enabled;
   final ValueChanged<TimeOfDay> onChanged;
 
-  const _TimePickerField({required this.value, required this.onChanged});
+  const _TimePickerField({
+    required this.value,
+    this.enabled = true,
+    required this.onChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1112,7 +1223,9 @@ class _TimePickerField extends StatelessWidget {
       placeholderText: '--:--',
       isPlaceholder: value == null,
       icon: FontAwesomeIcons.clock,
-      onTap: () async {
+      onTap: !enabled
+          ? null
+          : () async {
         final picked = await showTimePicker(
           context: context,
           initialTime: value ?? TimeOfDay.now(),
@@ -1128,7 +1241,7 @@ class _PickerInputShell extends StatelessWidget {
   final String placeholderText;
   final bool isPlaceholder;
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _PickerInputShell({
     required this.valueText,
@@ -1141,10 +1254,7 @@ class _PickerInputShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final semantic = context.semanticColors;
-    final inputTheme = Theme.of(context).inputDecorationTheme;
-    final enabledBorder =
-        inputTheme.enabledBorder as OutlineInputBorder? ??
-        const OutlineInputBorder(borderRadius: AppRadius.mdAll);
+    const enabledBorder = OutlineInputBorder(borderRadius: AppRadius.mdAll);
 
     return InkWell(
       borderRadius: enabledBorder.borderRadius,
@@ -1153,11 +1263,11 @@ class _PickerInputShell extends StatelessWidget {
         height: AppSpace.s48 + AppSpace.s4,
         padding: const EdgeInsets.symmetric(horizontal: AppSpace.s12),
         decoration: BoxDecoration(
-          color: inputTheme.fillColor ?? semantic.surfaceOverlay,
+          color: semantic.surfaceRaised,
           borderRadius: enabledBorder.borderRadius,
           border: Border.all(
-            color: enabledBorder.borderSide.color,
-            width: enabledBorder.borderSide.width,
+            color: semantic.borderDefault,
+            width: 1,
           ),
         ),
         child: Row(

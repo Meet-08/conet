@@ -29,6 +29,7 @@ class EventCreatePayload extends Equatable {
   final List<EventCustomField> customFields;
   final String? eligibility;
   final PlatformFile? eventImage;
+  final String? eventImageUrl;
   final List<EventActivity> activities;
   final List<EventPrize> prizes;
   final List<EventFaq> faqs;
@@ -60,6 +61,7 @@ class EventCreatePayload extends Equatable {
     this.customFields = const [],
     this.eligibility,
     this.eventImage,
+    this.eventImageUrl,
     this.activities = const [],
     this.prizes = const [],
     this.faqs = const [],
@@ -90,6 +92,7 @@ class EventCreatePayload extends Equatable {
     List<EventCustomField>? customFields,
     String? eligibility,
     PlatformFile? eventImage,
+    String? eventImageUrl,
     List<EventActivity>? activities,
     List<EventPrize>? prizes,
     List<EventFaq>? faqs,
@@ -119,6 +122,7 @@ class EventCreatePayload extends Equatable {
       customFields: customFields ?? this.customFields,
       eligibility: eligibility ?? this.eligibility,
       eventImage: eventImage ?? this.eventImage,
+      eventImageUrl: eventImageUrl ?? this.eventImageUrl,
       activities: activities ?? this.activities,
       prizes: prizes ?? this.prizes,
       faqs: faqs ?? this.faqs,
@@ -151,6 +155,7 @@ class EventCreatePayload extends Equatable {
     customFields,
     eligibility,
     eventImage,
+    eventImageUrl,
     activities,
     prizes,
     faqs,

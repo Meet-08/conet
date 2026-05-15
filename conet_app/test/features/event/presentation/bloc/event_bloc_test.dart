@@ -16,6 +16,8 @@ import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_setup_organizer_resources.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_update.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_update_draft.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/message/domain/usecases/message_create_group.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -46,6 +48,8 @@ class MockEventSetupOrganizerResources extends Mock
     implements EventSetupOrganizerResources {}
 
 class MockMessageCreateGroup extends Mock implements MessageCreateGroup {}
+class MockEventUpdate extends Mock implements EventUpdate {}
+class MockEventUpdateDraft extends Mock implements EventUpdateDraft {}
 
 void main() {
   late EventBloc bloc;
@@ -59,6 +63,8 @@ void main() {
   late MockEventSaveDraft mockSaveDraft;
   late MockEventSetupOrganizerResources mockSetupOrganizerResources;
   late MockMessageCreateGroup mockCreateGroup;
+  late MockEventUpdate mockUpdateEvent;
+  late MockEventUpdateDraft mockUpdateDraft;
 
   final tEventListItem1 = EventListItem(
     id: 'event-1',
@@ -135,6 +141,8 @@ void main() {
     mockSaveDraft = MockEventSaveDraft();
     mockSetupOrganizerResources = MockEventSetupOrganizerResources();
     mockCreateGroup = MockMessageCreateGroup();
+    mockUpdateEvent = MockEventUpdate();
+    mockUpdateDraft = MockEventUpdateDraft();
 
     bloc = EventBloc(
       getById: mockGetById,
@@ -145,6 +153,8 @@ void main() {
       registerEvent: mockRegister,
       saveEvent: mockSave,
       saveDraft: mockSaveDraft,
+      updateDraft: mockUpdateDraft,
+      updateEvent: mockUpdateEvent,
       setupOrganizerResources: mockSetupOrganizerResources,
       createGroup: mockCreateGroup,
     );
@@ -416,6 +426,86 @@ void main() {
     );
   });
 
+  group('EventFetchMyOrganizedEventsEvent', () {
+    final organizedFirstPage = EventPage(
+      events: [tEventListItem1],
+      nextCursor: 'org-cursor-2',
+      hasMore: true,
+      pageSize: 10,
+    );
+    final organizedSecondPage = EventPage(
+      events: [tEventListItem2],
+      nextCursor: null,
+      hasMore: false,
+      pageSize: 10,
+    );
+    final dateFrom = DateTime(2026, 4, 12);
+
+    blocTest<EventBloc, EventState>(
+      'loads and paginates organized events using DB level filter arguments',
+      build: () {
+        when(
+          () => mockGetMyOrganizedEvents(
+            status: 'published',
+            timeline: 'upcoming',
+            dateFrom: dateFrom,
+            dateTo: null,
+            cursor: null,
+            limit: 10,
+          ),
+        ).thenAnswer((_) async => Right(organizedFirstPage));
+
+        when(
+          () => mockGetMyOrganizedEvents(
+            status: 'published',
+            timeline: 'upcoming',
+            dateFrom: dateFrom,
+            dateTo: null,
+            cursor: 'org-cursor-2',
+            limit: 10,
+          ),
+        ).thenAnswer((_) async => Right(organizedSecondPage));
+
+        return bloc;
+      },
+      act: (bloc) {
+        bloc
+          ..add(
+            EventFetchMyOrganizedEventsEvent(
+              status: 'published',
+              timeline: 'upcoming',
+              dateFrom: dateFrom,
+              limit: 10,
+            ),
+          )
+          ..add(const EventFetchMoreMyOrganizedEventsEvent());
+      },
+      expect: () => [
+        isA<MyOrganizedEventsLoading>(),
+        isA<MyOrganizedEventsLoaded>()
+            .having((s) => s.status, 'status', 'published')
+            .having((s) => s.events.length, 'events.length', 1)
+            .having((s) => s.hasMore, 'hasMore', true)
+            .having((s) => s.pageSize, 'pageSize', 10),
+        isA<MyOrganizedEventsLoaded>()
+            .having((s) => s.events.length, 'events.length', 2)
+            .having((s) => s.hasMore, 'hasMore', false),
+      ],
+      verify: (_) {
+        verify(
+          () => mockGetMyOrganizedEvents(
+            status: 'published',
+            timeline: 'upcoming',
+            dateFrom: dateFrom,
+            dateTo: null,
+            cursor: 'org-cursor-2',
+            limit: 10,
+          ),
+        ).called(1);
+      },
+    );
+  });
+
   group('EventSaveDraftEvent', () {
     blocTest<EventBloc, EventState>(
       'emits [EventCreateLoading, EventCreateSuccess(isDraft: true)] on success',
@@ -434,6 +524,28 @@ void main() {
       ],
       verify: (_) {
         verify(() => mockSaveDraft(tPayload)).called(1);
+      },
+    );
+
+    blocTest<EventBloc, EventState>(
+      'updates draft when eventId is provided',
+      build: () {
+        when(
+          () => mockUpdateDraft('event-1', tPayload),
+        ).thenAnswer((_) async => Right(tEvent));
+        return bloc;
+      },
+      act: (bloc) =>
+          bloc.add(EventSaveDraftEvent(tPayload, eventId: 'event-1')),
+      expect: () => [
+        isA<EventCreateLoading>(),
+        isA<EventCreateSuccess>()
+            .having((s) => s.event.id, 'event.id', 'event-1')
+            .having((s) => s.isDraft, 'isDraft', true),
+      ],
+      verify: (_) {
+        verify(() => mockUpdateDraft('event-1', tPayload)).called(1);
+        verifyNever(() => mockSaveDraft(tPayload));
       },
     );
   });

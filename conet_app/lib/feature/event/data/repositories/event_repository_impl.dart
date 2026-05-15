@@ -66,12 +66,18 @@ class EventRepositoryImpl implements EventRepository {
   @override
   Future<Either<AppFailure, EventPage>> getMyOrganizedEvents({
     String? status,
+    String? timeline,
+    DateTime? dateFrom,
+    DateTime? dateTo,
     int limit = 20,
     String? cursor,
   }) {
     return _getResult<EventPage, EventPage>(
       () => _eventDataSource.getMyOrganizedEvents(
         status: status,
+        timeline: timeline,
+        dateFrom: dateFrom,
+        dateTo: dateTo,
         limit: limit,
         cursor: cursor,
       ),
@@ -99,6 +105,26 @@ class EventRepositoryImpl implements EventRepository {
   Future<Either<AppFailure, Event>> publishEvent(EventCreatePayload payload) {
     return _getResult<Event, Event>(
       () => _eventDataSource.publishEvent(payload),
+    );
+  }
+
+  @override
+  Future<Either<AppFailure, Event>> updateEvent(
+    String eventId,
+    EventCreatePayload payload,
+  ) {
+    return _getResult<Event, Event>(
+      () => _eventDataSource.updateEvent(eventId, payload),
+    );
+  }
+
+  @override
+  Future<Either<AppFailure, Event>> updateDraftEvent(
+    String eventId,
+    EventCreatePayload payload,
+  ) {
+    return _getResult<Event, Event>(
+      () => _eventDataSource.updateDraftEvent(eventId, payload),
     );
   }
 

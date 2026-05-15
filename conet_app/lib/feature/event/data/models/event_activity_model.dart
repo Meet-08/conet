@@ -8,6 +8,7 @@ class EventActivityModel extends EventActivity {
   const EventActivityModel({
     required super.activityTime,
     required super.activityTitle,
+    super.description = '',
   });
 
   factory EventActivityModel.fromJson(Map<String, dynamic> json) =>
@@ -19,6 +20,7 @@ class EventActivityModel extends EventActivity {
     return EventActivityModel(
       activityTime: entity.activityTime,
       activityTitle: entity.activityTitle,
+      description: entity.description,
     );
   }
 }

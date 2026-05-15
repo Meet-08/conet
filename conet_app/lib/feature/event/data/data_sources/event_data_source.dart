@@ -18,6 +18,8 @@ abstract class EventDataSource {
   Future<EventAttendanceResultModel> saveEvent(String eventId);
 
   Future<Event> publishEvent(EventCreatePayload payload);
+  Future<Event> updateEvent(String eventId, EventCreatePayload payload);
+  Future<Event> updateDraftEvent(String eventId, EventCreatePayload payload);
 
   Future<Event> publishDraftById(String eventId);
 
@@ -53,6 +55,9 @@ abstract class EventDataSource {
 
   Future<EventPageModel> getMyOrganizedEvents({
     String? status,
+    String? timeline,
+    DateTime? dateFrom,
+    DateTime? dateTo,
     int limit = 20,
     String? cursor,
   });

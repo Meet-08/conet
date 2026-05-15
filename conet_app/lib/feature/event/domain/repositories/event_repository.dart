@@ -20,6 +20,14 @@ abstract interface class EventRepository {
   Future<Either<AppFailure, EventAttendanceResult>> saveEvent(String eventId);
 
   Future<Either<AppFailure, Event>> publishEvent(EventCreatePayload payload);
+  Future<Either<AppFailure, Event>> updateEvent(
+    String eventId,
+    EventCreatePayload payload,
+  );
+  Future<Either<AppFailure, Event>> updateDraftEvent(
+    String eventId,
+    EventCreatePayload payload,
+  );
 
   Future<Either<AppFailure, Event>> publishDraftById(String eventId);
 
@@ -55,6 +63,9 @@ abstract interface class EventRepository {
 
   Future<Either<AppFailure, EventPage>> getMyOrganizedEvents({
     String? status,
+    String? timeline,
+    DateTime? dateFrom,
+    DateTime? dateTo,
     int limit = 20,
     String? cursor,
   });

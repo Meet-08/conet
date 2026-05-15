@@ -1,6 +1,10 @@
+import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_tokens.dart';
+import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/feature/event/domain/entities/event_list_item.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
+import 'package:conet_app/feature/event/presentation/pages/create_event_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -19,9 +23,13 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
   int _selectedFilterIndex = 0;
 
   static const _filters = [
-    _DashboardFilter(label: 'Active', status: 'published'),
-    _DashboardFilter(label: 'Upcoming', status: 'published'),
-    _DashboardFilter(label: 'Past', status: 'published'),
+    _DashboardFilter(label: 'Active', status: 'published', timeline: 'active'),
+    _DashboardFilter(
+      label: 'Upcoming',
+      status: 'published',
+      timeline: 'upcoming',
+    ),
+    _DashboardFilter(label: 'Past', status: 'published', timeline: 'past'),
     _DashboardFilter(label: 'Drafts', status: 'draft'),
   ];
 
@@ -54,9 +62,15 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
   }
 
   void _fetchForSelectedFilter() {
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+
     context.read<EventBloc>().add(
       EventFetchMyOrganizedEventsEvent(
         status: _selectedFilter.status,
+        timeline: _selectedFilter.timeline,
+        dateFrom: _selectedFilter.label == 'Upcoming' ? startOfToday : null,
+        dateTo: _selectedFilter.label == 'Past' ? startOfToday : null,
         limit: 20,
       ),
     );
@@ -66,32 +80,19 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
     _fetchForSelectedFilter();
   }
 
-  List<EventListItem> _filterByTab(List<EventListItem> events, String label) {
-    if (label != 'Upcoming' && label != 'Past') {
-      return events;
-    }
-
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    if (label == 'Upcoming') {
-      return events
-          .where((event) => !event.eventStartDate.isBefore(today))
-          .toList();
-    }
-
-    return events
-        .where((event) => event.eventStartDate.isBefore(today))
-        .toList();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final semantic = context.semanticColors;
 
     return Scaffold(
+      backgroundColor: semantic.backgroundPrimary,
       appBar: AppBar(
-        title: const Text('Events'),
+        backgroundColor: semantic.backgroundPrimary,
+        foregroundColor: semantic.iconPrimary,
+        title: Text(
+          'Events',
+          style: AppTextStyles.headingH2.copyWith(color: semantic.textPrimary),
+        ),
         centerTitle: false,
         actions: [
           IconButton(
@@ -120,10 +121,9 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
             state is EventInitial,
         builder: (context, state) {
           final isLoading = state is MyOrganizedEventsLoading;
-          final rawEvents = state is MyOrganizedEventsLoaded
+          final events = state is MyOrganizedEventsLoaded
               ? state.events
               : const <EventListItem>[];
-          final events = _filterByTab(rawEvents, _selectedFilter.label);
           final hasMore = state is MyOrganizedEventsLoaded
               ? state.hasMore
               : false;
@@ -132,7 +132,12 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
             onRefresh: _onRefresh,
             child: ListView(
               controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpace.s16,
+                AppSpace.s8,
+                AppSpace.s16,
+                AppSpace.s20,
+              ),
               children: [
                 _FilterRow(
                   filters: _filters,
@@ -145,7 +150,7 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
                     _fetchForSelectedFilter();
                   },
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpace.s12),
                 if (isLoading && events.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 40),
@@ -156,11 +161,10 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
                 else
                   ...events.map(
                     (event) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.only(bottom: AppSpace.s12),
                       child: _EventDashboardCard(
                         event: event,
                         filterLabel: _selectedFilter.label,
-                        theme: theme,
                       ),
                     ),
                   ),
@@ -191,30 +195,32 @@ class _FilterRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final semantic = context.semanticColors;
 
     return SizedBox(
-      height: 40,
+      height: AppSpace.s40,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: filters.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: AppSpace.s8),
         itemBuilder: (context, index) {
           final selected = index == selectedIndex;
           return ChoiceChip(
             selected: selected,
             showCheckmark: false,
-            label: Text(filters[index].label),
-            onSelected: (_) => onSelected(index),
-            selectedColor: colorScheme.onSurface,
-            labelStyle: TextStyle(
-              color: selected ? colorScheme.surface : colorScheme.onSurface,
-              fontWeight: FontWeight.w500,
+            label: Text(
+              filters[index].label,
+              style: AppTextStyles.label.copyWith(
+                color: selected ? semantic.textOnBrand : semantic.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-            side: BorderSide(color: colorScheme.outlineVariant),
-            backgroundColor: colorScheme.surface,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(18),
+            onSelected: (_) => onSelected(index),
+            selectedColor: semantic.backgroundBrand,
+            side: BorderSide(color: semantic.borderDefault),
+            backgroundColor: semantic.backgroundPrimary,
+            shape: const RoundedRectangleBorder(
+              borderRadius: AppRadius.fullAll,
             ),
           );
         },
@@ -226,142 +232,170 @@ class _FilterRow extends StatelessWidget {
 class _EventDashboardCard extends StatelessWidget {
   final EventListItem event;
   final String filterLabel;
-  final ThemeData theme;
 
-  const _EventDashboardCard({
-    required this.event,
-    required this.filterLabel,
-    required this.theme,
-  });
-
-  List<String> _actionLabels() {
-    if (filterLabel == 'Drafts') return const ['Edit'];
-    return const ['Analytics', 'Attendees'];
-  }
+  const _EventDashboardCard({required this.event, required this.filterLabel});
 
   String _priceLabel() {
-    if (!event.isPaid) return 'Free';
+    if (!event.isPaid) return 'FREE';
     final value = event.price;
-    if (value == null) return 'Paid';
+    if (value == null) return 'PAID';
     if (value == value.roundToDouble()) {
-      return 'Rs ${value.toInt()}';
+      return '\u20B9${value.toInt()}';
     }
-    return 'Rs ${value.toStringAsFixed(2)}';
+    return '\u20B9${value.toStringAsFixed(2)}';
   }
 
-  void _handleActionTap(BuildContext context, String action) {
-    switch (action) {
-      case 'Attendees':
-        final encodedTitle = Uri.encodeComponent(event.title);
-        context.push(
-          '/event-attendees/${event.id}?title=$encodedTitle',
-          extra: {'event': event},
-        );
-        return;
-      case 'Analytics':
-        AppToast.showInfo(context, 'Analytics dashboard is coming soon.');
-        return;
-      case 'Edit':
-        AppToast.showInfo(context, 'Draft editing flow is not available yet.');
-        return;
+  Future<void> _openEditableFlow(BuildContext context) async {
+    final isDraft = filterLabel == 'Drafts';
+    final mode = isDraft
+        ? CreateEventMode.completeDraftSetup
+        : CreateEventMode.editUpcoming;
+
+    final changed = await context.push<bool>(
+      '/create-event',
+      extra: CreateEventLaunchData(eventId: event.id, mode: mode),
+    );
+
+    if (changed == true && context.mounted) {
+      context.read<EventBloc>().add(
+        EventFetchMyOrganizedEventsEvent(
+          status: isDraft ? 'draft' : 'published',
+          timeline: isDraft ? null : 'upcoming',
+          dateFrom: isDraft
+              ? null
+              : DateTime(
+                  DateTime.now().year,
+                  DateTime.now().month,
+                  DateTime.now().day,
+                ),
+        ),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = theme.colorScheme;
-    final actions = _actionLabels();
+    final semantic = context.semanticColors;
     final dateText = DateFormat('MMM d').format(event.eventStartDate);
     final timeText = DateFormat('h:mm a').format(event.eventStartDate);
     final location = event.venue ?? event.location ?? 'Location TBA';
+    final isDraft = filterLabel == 'Drafts';
+    final isUpcoming = filterLabel == 'Upcoming';
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border.all(color: colorScheme.outlineVariant),
-        borderRadius: BorderRadius.circular(16),
+        color: semantic.surfaceBase,
+        border: Border.all(color: semantic.borderDefault),
+        borderRadius: AppRadius.lgAll,
       ),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpace.s12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '${event.category.toUpperCase()} - ${filterLabel.toUpperCase()}',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.2,
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Text(
-                _priceLabel(),
-                style: theme.textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: colorScheme.onSurfaceVariant,
+              _CoverImage(imageUrl: event.eventImageUrl),
+              const SizedBox(width: AppSpace.s12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpace.s8,
+                            vertical: AppSpace.s4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: semantic.surfaceOverlay,
+                            borderRadius: AppRadius.smAll,
+                          ),
+                          child: Text(
+                            event.category.toUpperCase(),
+                            style: AppTextStyles.caption.copyWith(
+                              color: semantic.textSecondary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          _priceLabel(),
+                          style: AppTextStyles.label.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: semantic.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpace.s10),
+                    Text(
+                      event.title,
+                      style: AppTextStyles.headingH3.copyWith(
+                        color: semantic.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        height: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpace.s8),
+                    _MetaRow(
+                      icon: FontAwesomeIcons.calendarDay,
+                      text: '$dateText - $timeText',
+                    ),
+                    const SizedBox(height: AppSpace.s4),
+                    _MetaRow(icon: FontAwesomeIcons.locationDot, text: location),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            event.title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 8),
-          _MetaRow(
-            icon: FontAwesomeIcons.calendarDay,
-            text: '$dateText - $timeText',
-          ),
-          const SizedBox(height: 4),
-          _MetaRow(icon: FontAwesomeIcons.locationDot, text: location),
-          const SizedBox(height: 12),
-          if (filterLabel == 'Active' || filterLabel == 'Drafts') ...[
+          const SizedBox(height: AppSpace.s12),
+          Divider(color: semantic.borderSubtle, height: 1),
+          const SizedBox(height: AppSpace.s12),
+          if (isDraft)
             OutlinedButton(
-              onPressed: filterLabel == 'Drafts'
-                  ? null
-                  : () {
-                      context.push(
-                        '/event-attendance-scan',
-                        extra: {'eventId': event.id, 'eventTitle': event.title},
-                      );
-                    },
+              onPressed: () => _openEditableFlow(context),
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 40),
-                side: BorderSide(color: colorScheme.outline),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(24),
+                side: BorderSide(color: semantic.borderDefault),
+                shape: const RoundedRectangleBorder(
+                  borderRadius: AppRadius.xlAll,
                 ),
               ),
-              child: Text(
-                filterLabel == 'Drafts' ? 'Complete Setup' : 'Scan Tickets',
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: actions
-                .map(
-                  (action) => _ActionPill(
-                    label: action,
-                    onTap: () => _handleActionTap(context, action),
+              child: const Text('Complete Setup'),
+            )
+          else
+            Wrap(
+              spacing: AppSpace.s8,
+              runSpacing: AppSpace.s8,
+              children: [
+                _ActionPill(
+                  label: 'Analytics',
+                  onTap: () => AppToast.showInfo(
+                    context,
+                    'Analytics dashboard is coming soon.',
                   ),
-                )
-                .toList(),
-          ),
+                ),
+                _ActionPill(
+                  label: 'Attendees',
+                  onTap: () {
+                    final encodedTitle = Uri.encodeComponent(event.title);
+                    context.push(
+                      '/event-attendees/${event.id}?title=$encodedTitle',
+                      extra: {'event': event},
+                    );
+                  },
+                ),
+                if (isUpcoming)
+                  _ActionPill(
+                    iconOnly: true,
+                    icon: FontAwesomeIcons.penToSquare,
+                    onTap: () => _openEditableFlow(context),
+                  ),
+              ],
+            ),
         ],
       ),
     );
@@ -376,16 +410,18 @@ class _MetaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = Theme.of(context).textTheme.bodySmall;
+    final semantic = context.semanticColors;
 
     return Row(
       children: [
-        FaIcon(icon, size: 12, color: style?.color),
+        FaIcon(icon, size: 12, color: semantic.iconSecondary),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
             text,
-            style: style,
+            style: AppTextStyles.bodySmall.copyWith(
+              color: semantic.textSecondary,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -397,11 +433,19 @@ class _MetaRow extends StatelessWidget {
 
 class _ActionPill extends StatelessWidget {
   final String label;
+  final bool iconOnly;
+  final IconData? icon;
   final VoidCallback? onTap;
 
-  const _ActionPill({required this.label, this.onTap});
+  const _ActionPill({
+    this.label = '',
+    this.iconOnly = false,
+    this.icon,
+    this.onTap,
+  });
 
   IconData _iconForLabel() {
+    if (icon != null) return icon!;
     switch (label) {
       case 'Analytics':
         return FontAwesomeIcons.chartLine;
@@ -416,24 +460,69 @@ class _ActionPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final semantic = context.semanticColors;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: AppRadius.xlAll,
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          border: Border.all(color: colorScheme.outlineVariant),
-          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: semantic.borderDefault),
+          borderRadius: AppRadius.xlAll,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            FaIcon(_iconForLabel(), size: 12),
-            const SizedBox(width: 6),
-            Text(label),
+            FaIcon(_iconForLabel(), size: 12, color: semantic.iconPrimary),
+            if (!iconOnly) ...[
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: semantic.textPrimary,
+                ),
+              ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CoverImage extends StatelessWidget {
+  final String? imageUrl;
+
+  const _CoverImage({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    final semantic = context.semanticColors;
+    return ClipRRect(
+      borderRadius: AppRadius.mdAll,
+      child: SizedBox(
+        width: 92,
+        height: 92,
+        child: imageUrl != null && imageUrl!.trim().isNotEmpty
+            ? Image.network(
+                imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => _fallback(semantic),
+              )
+            : _fallback(semantic),
+      ),
+    );
+  }
+
+  Widget _fallback(AppSemanticColors semantic) {
+    return Container(
+      color: semantic.surfaceOverlay,
+      child: Center(
+        child: FaIcon(
+          FontAwesomeIcons.image,
+          size: 16,
+          color: semantic.iconSecondary,
         ),
       ),
     );
@@ -447,23 +536,32 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final semantic = context.semanticColors;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 52, 8, 16),
       child: Column(
         children: [
-          const FaIcon(FontAwesomeIcons.calendarXmark, size: 32),
+          FaIcon(
+            FontAwesomeIcons.calendarXmark,
+            size: 32,
+            color: semantic.iconSecondary,
+          ),
           const SizedBox(height: 12),
           Text(
             'No $label events yet.',
-            style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+            style: AppTextStyles.headingH3.copyWith(
+              fontWeight: FontWeight.w700,
+              color: semantic.textPrimary,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             'Events in this section will appear here once available.',
             textAlign: TextAlign.center,
-            style: textTheme.bodyMedium,
+            style: AppTextStyles.bodyDefault.copyWith(
+              color: semantic.textSecondary,
+            ),
           ),
         ],
       ),
@@ -474,6 +572,11 @@ class _EmptyState extends StatelessWidget {
 class _DashboardFilter {
   final String label;
   final String? status;
+  final String? timeline;
 
-  const _DashboardFilter({required this.label, required this.status});
+  const _DashboardFilter({
+    required this.label,
+    required this.status,
+    this.timeline,
+  });
 }

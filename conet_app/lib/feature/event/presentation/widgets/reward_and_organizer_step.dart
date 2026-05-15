@@ -15,6 +15,7 @@ class RewardAndOrganizerStep extends StatefulWidget {
   final ValueChanged<Map<String, dynamic>> onFormDataChange;
   final String stepTitle;
   final String stepSubtitle;
+  final bool lockToggles;
 
   const RewardAndOrganizerStep({
     super.key,
@@ -22,6 +23,7 @@ class RewardAndOrganizerStep extends StatefulWidget {
     required this.onFormDataChange,
     required this.stepTitle,
     required this.stepSubtitle,
+    this.lockToggles = false,
   });
 
   @override
@@ -584,7 +586,7 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
                 ),
                 Switch.adaptive(
                   value: createEventConversation,
-                  onChanged: _toggleConversation,
+                  onChanged: widget.lockToggles ? null : _toggleConversation,
                 ),
               ],
             ),

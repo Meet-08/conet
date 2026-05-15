@@ -40,6 +40,7 @@ EventCreatePayloadModel _$EventCreatePayloadModelFromJson(
           json['custom_fields'] as List,
         ),
   eligibility: json['eligibility'] as String?,
+  eventImageUrl: json['event_image_url'] as String?,
   activities: json['activity'] == null
       ? []
       : const EventRequestActivityListConverter().fromJson(
@@ -88,4 +89,5 @@ Map<String, dynamic> _$EventCreatePayloadModelToJson(
     instance.customFields,
   ),
   'publish': instance.publish,
+  'event_image_url': ?instance.eventImageUrl,
 };

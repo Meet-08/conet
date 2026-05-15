@@ -9,12 +9,14 @@ import 'package:conet_app/feature/event/domain/entities/event_create_payload.dar
 import 'package:conet_app/feature/event/domain/entities/event_custom_field.dart';
 import 'package:conet_app/feature/event/domain/entities/event_faq.dart';
 import 'package:conet_app/feature/event/domain/entities/event_prize.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_get_by_id.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
 import 'package:conet_app/feature/event/presentation/constants/event_constants.dart';
 import 'package:conet_app/feature/event/presentation/widgets/basic_info_step.dart';
 import 'package:conet_app/feature/event/presentation/widgets/participation_and_registration_step.dart';
 import 'package:conet_app/feature/event/presentation/widgets/preview_step.dart';
 import 'package:conet_app/feature/event/presentation/widgets/reward_and_organizer_step.dart';
+import 'package:conet_app/init_dependencies.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -22,7 +24,9 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 
 class CreateEventPage extends StatefulWidget {
-  const CreateEventPage({super.key});
+  final CreateEventLaunchData? launchData;
+
+  const CreateEventPage({super.key, this.launchData});
 
   @override
   State<CreateEventPage> createState() => _CreateEventPageState();
@@ -31,6 +35,8 @@ class CreateEventPage extends StatefulWidget {
 class _CreateEventPageState extends State<CreateEventPage> {
   final PageController _pageController = PageController();
   int _currentStep = 0;
+  late final CreateEventMode _mode;
+  late final String? _launchEventId;
 
   // ── Form data (single source of truth) ──
   Map<String, dynamic> _formData = {
@@ -66,12 +72,127 @@ class _CreateEventPageState extends State<CreateEventPage> {
     'co_organizer_users': <Map<String, dynamic>>[],
     'create_event_conversation': false,
     'event_conversation_id': null,
+    'event_image_url': null,
   };
+  bool _isPrefilling = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _mode = widget.launchData?.mode ?? CreateEventMode.create;
+    final rawLaunchEventId = widget.launchData?.eventId.trim();
+    _launchEventId = (rawLaunchEventId == null || rawLaunchEventId.isEmpty)
+        ? null
+        : rawLaunchEventId;
+    _hydrateFromLaunchData();
+  }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  bool get _isEditMode =>
+      _mode != CreateEventMode.create;
+  bool get _isDraftCompleteMode =>
+      _mode == CreateEventMode.completeDraftSetup;
+  bool get _isUpcomingEditMode =>
+      _mode == CreateEventMode.editUpcoming;
+
+  Future<void> _hydrateFromLaunchData() async {
+    final eventId = _launchEventId;
+    if (eventId == null || eventId.isEmpty) return;
+
+    setState(() => _isPrefilling = true);
+    final result = await serviceLocator<EventGetById>()(eventId);
+    if (!mounted) return;
+
+    result.fold((failure) => AppToast.showError(context, failure.message), (
+      event,
+    ) {
+      final coOrganizerUsers = event.cohosts
+          .map(
+            (cohost) => {
+              'id': cohost.userId,
+              'email': '',
+              'username': cohost.username,
+              'first_name': cohost.firstName ?? '',
+              'last_name': cohost.lastName ?? '',
+              'profile_pic_url': cohost.profilePicUrl,
+            },
+          )
+          .toList(growable: false);
+      final activityData = event.activities
+          .map(
+            (activity) => {
+              'activity_time': TimeOfDay.fromDateTime(activity.activityTime),
+              'activity_title': activity.activityTitle,
+              'description': activity.description,
+            },
+          )
+          .toList(growable: false);
+      final faqData = event.faqs
+          .map((faq) => {'question': faq.question, 'answer': faq.answer})
+          .toList(growable: false);
+
+      setState(() {
+        _formData = {
+          ..._formData,
+          'title': event.title,
+          'category': event.category,
+          'start_date': event.startDate,
+          'end_date': event.endDate,
+          'start_time': TimeOfDay.fromDateTime(event.startTime),
+          'end_time': TimeOfDay.fromDateTime(event.endTime),
+          'location_type': event.locationType,
+          'location': event.location ?? '',
+          'venue_name': event.venue ?? '',
+          'meeting_link': event.meetingLink ?? '',
+          'ticket_price_type': event.ticketPriceType,
+          'price': event.price,
+          'registration_deadline': event.registrationDeadline,
+          'participation_type': event.participationType ?? 'individual',
+          'min_team_size': event.minTeamSize,
+          'max_team_size': event.maxTeamSize,
+          'custom_fields': event.customFields
+              .map((field) {
+                return {
+                  'label': field.label,
+                  'helper_text': field.helperText ?? '',
+                  'type': field.type,
+                  'required': field.required,
+                  'options': field.options,
+                  'image_url': field.imageUrl,
+                };
+              })
+              .toList(growable: false),
+          'event_image_file': null,
+          'event_image_url': event.eventImageUrl,
+          'about': event.about ?? '',
+          'eligibility': event.eligibility ?? '',
+          'additional_note': event.instructions ?? '',
+          'activities': activityData,
+          'max_participant': event.maxParticipant,
+          'prizes': event.prizes
+              .map(
+                (prize) => {'position': prize.position, 'prize': prize.prize},
+              )
+              .toList(growable: false),
+          'faqs': faqData,
+          'co_organizer_ids': event.cohosts
+              .map((cohost) => cohost.userId)
+              .toList(growable: false),
+          'co_organizer_users': coOrganizerUsers,
+          'create_event_conversation': event.conversationId != null,
+          'event_conversation_id': event.conversationId,
+        };
+        _isPrefilling = false;
+      });
+    });
+    if (mounted && _isPrefilling) {
+      setState(() => _isPrefilling = false);
+    }
   }
 
   void _onFormDataChange(Map<String, dynamic> updated) {
@@ -82,7 +203,11 @@ class _CreateEventPageState extends State<CreateEventPage> {
   String? _validateStep(int step) {
     switch (step) {
       case 0:
-        if (_formData['event_image_file'] == null) {
+        final hasNewImage = _formData['event_image_file'] != null;
+        final hasExistingImage =
+            (_formData['event_image_url'] as String?)?.trim().isNotEmpty ==
+            true;
+        if (!hasNewImage && !hasExistingImage) {
           return 'Please upload a banner image';
         }
         if ((_formData['title'] as String).trim().isEmpty) {
@@ -432,6 +557,10 @@ class _CreateEventPageState extends State<CreateEventPage> {
           ? null
           : _formData['eligibility'] as String?,
       eventImage: _formData['event_image_file'] as PlatformFile?,
+      eventImageUrl: (_formData['event_image_url'] as String?)?.trim().isEmpty ==
+              true
+          ? null
+          : (_formData['event_image_url'] as String?),
       activities: activities,
       prizes: prizes,
       faqs: faqs,
@@ -467,6 +596,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
         EventSaveDraftEvent(
           _buildPayload(),
           shouldCreateOrganizerConversation: shouldCreateConversation,
+          eventId: _launchEventId,
         ),
       );
     } catch (e) {
@@ -491,6 +621,16 @@ class _CreateEventPageState extends State<CreateEventPage> {
     }
 
     try {
+      if (_isUpcomingEditMode) {
+        final eventId = _launchEventId;
+        if (eventId == null || eventId.isEmpty) {
+          AppToast.showError(context, 'Missing event id for update');
+          return;
+        }
+        context.read<EventBloc>().add(EventUpdateEvent(eventId, _buildPayload()));
+        return;
+      }
+
       final shouldCreateConversation =
           _formData['create_event_conversation'] as bool? ?? false;
       context.read<EventBloc>().add(
@@ -513,7 +653,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
           current is EventCreateLoading,
       listener: (context, state) {
         if (state is EventCreateSuccess) {
-          final msg = state.isDraft
+          final msg = _isUpcomingEditMode
+              ? 'Event updated successfully!'
+              : state.isDraft
               ? 'Event saved as draft'
               : 'Event published successfully!';
           AppToast.showSuccess(context, msg);
@@ -528,7 +670,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
           current is EventCreateFailure ||
           current is EventInitial,
       builder: (context, state) {
-        final isSubmitting = state is EventCreateLoading;
+        final isSubmitting = state is EventCreateLoading || _isPrefilling;
         return _buildScaffold(context, isSubmitting: isSubmitting);
       },
     );
@@ -564,7 +706,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
           onPressed: _currentStep > 0 ? _back : () => context.pop(),
         ),
         title: Text(
-          stepTitles[_currentStep],
+          _isEditMode ? _editTitle() : stepTitles[_currentStep],
           style: AppTextStyles.headingH2.copyWith(color: semantic.textPrimary),
         ),
         centerTitle: true,
@@ -599,18 +741,23 @@ class _CreateEventPageState extends State<CreateEventPage> {
             onFormDataChange: _onFormDataChange,
             stepTitle: stepTitles[0],
             stepSubtitle: stepSubtitles[0],
+            lockImage: _isDraftCompleteMode || _isUpcomingEditMode,
+            lockImmutableFields: _isUpcomingEditMode,
           ),
           ParticipationAndRegistrationStep(
             formData: _formData,
             onFormDataChange: _onFormDataChange,
             stepTitle: stepTitles[1],
             stepSubtitle: stepSubtitles[1],
+            lockToggles: _isUpcomingEditMode,
+            lockCustomFields: _isUpcomingEditMode,
           ),
           RewardAndOrganizerStep(
             formData: _formData,
             onFormDataChange: _onFormDataChange,
             stepTitle: stepTitles[2],
             stepSubtitle: stepSubtitles[2],
+            lockToggles: _isUpcomingEditMode,
           ),
           PreviewStep(
             formData: _formData,
@@ -634,29 +781,35 @@ class _CreateEventPageState extends State<CreateEventPage> {
         ),
         child: Row(
           children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: isSubmitting ? null : _saveDraft,
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: AppRadius.mdAll,
+            if (!_isUpcomingEditMode) ...[
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : (_isDraftCompleteMode ? null : _saveDraft),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: AppRadius.mdAll,
+                    ),
                   ),
-                ),
-                child: Text(
-                  'Save as Draft',
-                  style: AppTextStyles.button.copyWith(
-                    color: semantic.textPrimary,
+                  child: Text(
+                    _isDraftCompleteMode ? 'Draft Locked' : 'Save as Draft',
+                    style: AppTextStyles.button.copyWith(
+                      color: semantic.textPrimary,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
+              const SizedBox(width: 12),
+            ],
             Expanded(
               child: FilledButton(
                 onPressed: isSubmitting
                     ? null
-                    : (isLast ? _publish : (isPreview ? _preview : _next)),
+                    : (_isUpcomingEditMode
+                          ? (isLast ? _publish : _next)
+                          : (isLast ? _publish : (isPreview ? _preview : _next))),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: const RoundedRectangleBorder(
@@ -668,7 +821,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (isPreview) ...[
+                    if (isPreview && !_isUpcomingEditMode) ...[
                       FaIcon(
                         FontAwesomeIcons.eye,
                         size: 16,
@@ -685,7 +838,11 @@ class _CreateEventPageState extends State<CreateEventPage> {
                       const SizedBox(width: 6),
                     ],
                     Text(
-                      isLast
+                      _isUpcomingEditMode
+                          ? (isLast ? 'Update' : 'Next')
+                          : _isDraftCompleteMode
+                          ? 'Complete Setup'
+                          : isLast
                           ? 'Publish'
                           : isPreview
                           ? 'Preview'
@@ -703,6 +860,24 @@ class _CreateEventPageState extends State<CreateEventPage> {
       ),
     );
   }
+
+  String _editTitle() {
+    if (_isDraftCompleteMode) return 'Complete Draft Setup';
+    if (_isUpcomingEditMode) return 'Edit Upcoming Event';
+    return 'Edit Event';
+  }
+}
+
+enum CreateEventMode { create, editUpcoming, completeDraftSetup }
+
+class CreateEventLaunchData {
+  final String eventId;
+  final CreateEventMode mode;
+
+  const CreateEventLaunchData({
+    required this.eventId,
+    this.mode = CreateEventMode.create,
+  });
 }
 
 class _StepProgressBar extends StatelessWidget {

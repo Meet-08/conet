@@ -1985,7 +1985,7 @@ export const listPublishedEventsService = async ({
 
 export const listMyOrganizedEventsService = async (
   organizerId,
-  { cursor, page_size = 20, status },
+  { cursor, page_size = 20, status, timeline, date_from, date_to },
 ) => {
   const safePageSize = Math.min(
     100,
@@ -1999,8 +1999,72 @@ export const listMyOrganizedEventsService = async (
     throw err;
   }
 
+  const normalizedTimeline =
+    timeline == null ? null : String(timeline).trim().toLowerCase();
+  if (
+    normalizedTimeline &&
+    normalizedTimeline !== "upcoming" &&
+    normalizedTimeline !== "past" &&
+    normalizedTimeline !== "all" &&
+    normalizedTimeline !== "active"
+  ) {
+    const err = new Error(
+      "timeline must be one of: upcoming, past, all, active",
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const parsedDateFrom =
+    date_from == null || String(date_from).trim() === "" ?
+      null
+    : new Date(date_from);
+  if (parsedDateFrom && Number.isNaN(parsedDateFrom.getTime())) {
+    const err = new Error("date_from must be a valid ISO date-time");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const parsedDateTo =
+    date_to == null || String(date_to).trim() === "" ? null : new Date(date_to);
+  if (parsedDateTo && Number.isNaN(parsedDateTo.getTime())) {
+    const err = new Error("date_to must be a valid ISO date-time");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const now = new Date();
+  const startOfTodayUtc = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+
+  const timelineDateFilter =
+    normalizedTimeline === "upcoming" ?
+      { gte: startOfTodayUtc }
+    : normalizedTimeline === "past" ?
+      { lt: startOfTodayUtc }
+    : normalizedTimeline === "active" ?
+      { lte: startOfTodayUtc }
+    : {};
+
+  const explicitDateFilter = {
+    ...(parsedDateFrom ? { gte: parsedDateFrom } : {}),
+    ...(parsedDateTo ? { lte: parsedDateTo } : {}),
+  };
+
+  const mergedStartDateFilter = {
+    ...timelineDateFilter,
+    ...explicitDateFilter,
+  };
+
   const where = {
     ...(status && { event_status: status }),
+    ...(Object.keys(mergedStartDateFilter).length
+      ? { start_date: mergedStartDateFilter }
+      : {}),
+    ...(normalizedTimeline === "active"
+      ? { end_date: { gte: startOfTodayUtc } }
+      : {}),
     AND: [
       {
         OR: [

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
 import 'package:conet_app/core/theme/app_tokens.dart';
@@ -126,6 +127,7 @@ class _PreviewStepState extends State<PreviewStep> {
     final isPaid = widget.formData['ticket_price_type'] == 'PAID';
     final price = widget.formData['price'];
     final imageFile = widget.formData['event_image_file'] as PlatformFile?;
+    final imageUrl = (widget.formData['event_image_url'] as String?)?.trim();
     final aboutDelta = widget.formData['about'] as String? ?? '';
     final eligibility = widget.formData['eligibility'] as String? ?? '';
     final additionalNote = widget.formData['additional_note'] as String? ?? '';
@@ -195,6 +197,25 @@ class _PreviewStepState extends State<PreviewStep> {
                                       File(imageFile.path!),
                                       fit: BoxFit.cover,
                                     ))
+                            : (imageUrl != null && imageUrl.isNotEmpty)
+                            ? CachedNetworkImage(
+                                imageUrl: imageUrl,
+                                fit: BoxFit.cover,
+                                placeholder: (_, _) => Container(
+                                  color: semantic.backgroundTertiary,
+                                ),
+                                errorWidget: (_, _, _) => Container(
+                                  color: semantic.backgroundTertiary,
+                                  child: Center(
+                                    child: Text(
+                                      _initialsFromTitle(title),
+                                      style: AppTextStyles.headingH3.copyWith(
+                                        color: semantic.textPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
                             : Container(
                                 color: semantic.backgroundTertiary,
                                 child: Center(
@@ -317,6 +338,8 @@ class _PreviewStepState extends State<PreviewStep> {
                         ? activities[i + 1]['activity_time'] as TimeOfDay?
                         : null;
                     final title = (a['activity_title'] as String? ?? '').trim();
+                    final description = (a['description'] as String? ?? '')
+                        .trim();
                     return Padding(
                       padding: EdgeInsets.only(
                         bottom: i == activities.length - 1 ? 0 : 12,
@@ -372,6 +395,15 @@ class _PreviewStepState extends State<PreviewStep> {
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
+                                if (description.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    description,
+                                    style: AppTextStyles.bodySmall.copyWith(
+                                      color: semantic.textSecondary,
+                                    ),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

@@ -394,6 +394,12 @@ void _initEvent() {
     () => EventSaveDraft(repository: serviceLocator<EventRepository>()),
   );
   serviceLocator.registerFactory(
+    () => EventUpdate(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
+    () => EventUpdateDraft(repository: serviceLocator<EventRepository>()),
+  );
+  serviceLocator.registerFactory(
     () => EventSetupOrganizerResources(
       repository: serviceLocator<EventRepository>(),
     ),
@@ -440,6 +446,8 @@ void _initEvent() {
       registerEvent: serviceLocator(),
       saveEvent: serviceLocator(),
       saveDraft: serviceLocator(),
+      updateDraft: serviceLocator(),
+      updateEvent: serviceLocator(),
       setupOrganizerResources: serviceLocator(),
       createGroup: serviceLocator(),
     ),

@@ -45,11 +45,17 @@ final class EventFetchMoreMyEventsEvent extends EventEvent {
 
 final class EventFetchMyOrganizedEventsEvent extends EventEvent {
   final String? status;
+  final String? timeline;
+  final DateTime? dateFrom;
+  final DateTime? dateTo;
   final String? cursor;
   final int limit;
 
   const EventFetchMyOrganizedEventsEvent({
     this.status,
+    this.timeline,
+    this.dateFrom,
+    this.dateTo,
     this.cursor,
     this.limit = 20,
   });
@@ -91,9 +97,18 @@ final class EventPublishEvent extends EventEvent {
 final class EventSaveDraftEvent extends EventEvent {
   final EventCreatePayload payload;
   final bool shouldCreateOrganizerConversation;
+  final String? eventId;
 
   const EventSaveDraftEvent(
     this.payload, {
     this.shouldCreateOrganizerConversation = false,
+    this.eventId,
   });
+}
+
+final class EventUpdateEvent extends EventEvent {
+  final String eventId;
+  final EventCreatePayload payload;
+
+  const EventUpdateEvent(this.eventId, this.payload);
 }
