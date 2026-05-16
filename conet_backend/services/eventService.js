@@ -4,8 +4,8 @@ import { createGroupService } from "./conversationService.js";
 import {
   assertAttendanceScanner,
   assertEventExists,
-  assertOrganizerOrCohost,
   assertOrganizer,
+  assertOrganizerOrCohost,
   eventInclude,
   eventSummarySelect,
   mapCohost,
@@ -1442,6 +1442,7 @@ export const registerEventService = async (eventId, userId, body = {}) => {
       where: { event_id_user_id: { event_id: eventId, user_id: userId } },
       create: registrationCreateData,
       update: registrationUpdateData,
+      select: { id: true },
     });
   } catch (error) {
     if (error?.code === "P2002") {
@@ -1527,7 +1528,9 @@ export const getRegistrationInfoService = async (eventId, userId) => {
         user_id: userId,
       },
     },
-    include: {
+    select: {
+      id: true,
+      registration_status: true,
       users: {
         select: {
           id: true,
@@ -1578,18 +1581,31 @@ export const getEventAttendeesService = async (
         }),
     },
     orderBy: [{ registered_at: "asc" }, { id: "asc" }],
-    include: {
+    select: {
+      id: true,
+      event_id: true,
+      user_id: true,
+      registration_status: true,
+      registered_at: true,
+      team_id: true,
+      custom_field_responses: true,
       users: {
         select: attendeeUserSelect,
       },
       event_teams: {
-        include: {
+        select: {
+          team_name: true,
+          leader_id: true,
           users: {
             select: attendeeUserSelect,
           },
           event_team_members: {
             orderBy: [{ joined_at: "asc" }, { id: "asc" }],
-            include: {
+            select: {
+              id: true,
+              user_id: true,
+              role: true,
+              joined_at: true,
               users: {
                 select: attendeeUserSelect,
               },
@@ -1784,7 +1800,8 @@ export const getEventRegistrationCourseCountsService = async (
   });
 
   const counts = registrations.reduce((acc, registration) => {
-    const course = registration.users?.user_academics?.[0]?.course?.trim() || "Unknown";
+    const course =
+      registration.users?.user_academics?.[0]?.course?.trim() || "Unknown";
     acc[course] = (acc[course] ?? 0) + 1;
     return acc;
   }, {});
@@ -1810,18 +1827,31 @@ export const exportEventParticipationXlsxService = async (
       },
     },
     orderBy: [{ registered_at: "asc" }, { id: "asc" }],
-    include: {
+    select: {
+      id: true,
+      event_id: true,
+      user_id: true,
+      registration_status: true,
+      registered_at: true,
+      team_id: true,
+      custom_field_responses: true,
       users: {
         select: attendeeUserSelect,
       },
       event_teams: {
-        include: {
+        select: {
+          team_name: true,
+          leader_id: true,
           users: {
             select: attendeeUserSelect,
           },
           event_team_members: {
             orderBy: [{ joined_at: "asc" }, { id: "asc" }],
-            include: {
+            select: {
+              id: true,
+              user_id: true,
+              role: true,
+              joined_at: true,
               users: {
                 select: attendeeUserSelect,
               },
@@ -1952,6 +1982,7 @@ export const attendEventService = async (eventId, scannerUserId, body = {}) => {
 
   const registration = await prisma.event_registrations.findFirst({
     where: { id: registration_id, event_id: eventId, user_id },
+    select: { id: true, registration_status: true },
   });
 
   if (!registration || registration.registration_status === "cancelled") {
@@ -1968,6 +1999,7 @@ export const attendEventService = async (eventId, scannerUserId, body = {}) => {
       data: {
         registration_status: "attended",
       },
+      select: { id: true },
     });
 
     return {
@@ -2171,12 +2203,9 @@ export const listMyOrganizedEventsService = async (
   );
 
   const timelineDateFilter =
-    normalizedTimeline === "upcoming" ?
-      { gte: startOfTodayUtc }
-    : normalizedTimeline === "past" ?
-      { lt: startOfTodayUtc }
-    : normalizedTimeline === "active" ?
-      { lte: startOfTodayUtc }
+    normalizedTimeline === "upcoming" ? { gte: startOfTodayUtc }
+    : normalizedTimeline === "past" ? { lt: startOfTodayUtc }
+    : normalizedTimeline === "active" ? { lte: startOfTodayUtc }
     : {};
 
   const explicitDateFilter = {
@@ -2191,12 +2220,12 @@ export const listMyOrganizedEventsService = async (
 
   const where = {
     ...(status && { event_status: status }),
-    ...(Object.keys(mergedStartDateFilter).length
-      ? { start_date: mergedStartDateFilter }
-      : {}),
-    ...(normalizedTimeline === "active"
-      ? { end_date: { gte: startOfTodayUtc } }
-      : {}),
+    ...(Object.keys(mergedStartDateFilter).length ?
+      { start_date: mergedStartDateFilter }
+    : {}),
+    ...(normalizedTimeline === "active" ?
+      { end_date: { gte: startOfTodayUtc } }
+    : {}),
     AND: [
       {
         OR: [
