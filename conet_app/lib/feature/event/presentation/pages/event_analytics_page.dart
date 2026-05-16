@@ -321,12 +321,11 @@ class _TrendCard extends StatelessWidget {
                         barWidth: 2,
                         dotData: FlDotData(
                           show: true,
-                          getDotPainter: (_, __, ___, ____) =>
-                              FlDotCirclePainter(
-                                radius: 2,
-                                color: semantic.iconPrimary,
-                                strokeWidth: 0,
-                              ),
+                          getDotPainter: (_, _, _, _) => FlDotCirclePainter(
+                            radius: 2,
+                            color: semantic.iconPrimary,
+                            strokeWidth: 0,
+                          ),
                         ),
                         isCurved: false,
                       ),
