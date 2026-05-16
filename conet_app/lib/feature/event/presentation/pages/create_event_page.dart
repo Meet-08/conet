@@ -93,12 +93,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
     super.dispose();
   }
 
-  bool get _isEditMode =>
-      _mode != CreateEventMode.create;
-  bool get _isDraftCompleteMode =>
-      _mode == CreateEventMode.completeDraftSetup;
-  bool get _isUpcomingEditMode =>
-      _mode == CreateEventMode.editUpcoming;
+  bool get _isEditMode => _mode != CreateEventMode.create;
+  bool get _isDraftCompleteMode => _mode == CreateEventMode.completeDraftSetup;
+  bool get _isUpcomingEditMode => _mode == CreateEventMode.editUpcoming;
 
   Future<void> _hydrateFromLaunchData() async {
     final eventId = _launchEventId;
@@ -557,8 +554,8 @@ class _CreateEventPageState extends State<CreateEventPage> {
           ? null
           : _formData['eligibility'] as String?,
       eventImage: _formData['event_image_file'] as PlatformFile?,
-      eventImageUrl: (_formData['event_image_url'] as String?)?.trim().isEmpty ==
-              true
+      eventImageUrl:
+          (_formData['event_image_url'] as String?)?.trim().isEmpty == true
           ? null
           : (_formData['event_image_url'] as String?),
       activities: activities,
@@ -627,12 +624,30 @@ class _CreateEventPageState extends State<CreateEventPage> {
           AppToast.showError(context, 'Missing event id for update');
           return;
         }
-        context.read<EventBloc>().add(EventUpdateEvent(eventId, _buildPayload()));
+        context.read<EventBloc>().add(
+          EventUpdateEvent(eventId, _buildPayload()),
+        );
         return;
       }
 
       final shouldCreateConversation =
           _formData['create_event_conversation'] as bool? ?? false;
+      if (_isDraftCompleteMode) {
+        final eventId = _launchEventId;
+        if (eventId == null || eventId.isEmpty) {
+          AppToast.showError(context, 'Missing draft event id');
+          return;
+        }
+        context.read<EventBloc>().add(
+          EventPublishDraftEvent(
+            eventId,
+            _buildPayload(),
+            shouldCreateOrganizerConversation: shouldCreateConversation,
+          ),
+        );
+        return;
+      }
+
       context.read<EventBloc>().add(
         EventPublishEvent(
           _buildPayload(),
@@ -784,9 +799,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
             if (!_isUpcomingEditMode) ...[
               Expanded(
                 child: OutlinedButton(
-                  onPressed: isSubmitting
-                      ? null
-                      : (_isDraftCompleteMode ? null : _saveDraft),
+                  onPressed: isSubmitting ? null : _saveDraft,
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: const RoundedRectangleBorder(
@@ -794,7 +807,7 @@ class _CreateEventPageState extends State<CreateEventPage> {
                     ),
                   ),
                   child: Text(
-                    _isDraftCompleteMode ? 'Draft Locked' : 'Save as Draft',
+                    _isDraftCompleteMode ? 'Update Draft' : 'Save as Draft',
                     style: AppTextStyles.button.copyWith(
                       color: semantic.textPrimary,
                     ),
@@ -809,7 +822,9 @@ class _CreateEventPageState extends State<CreateEventPage> {
                     ? null
                     : (_isUpcomingEditMode
                           ? (isLast ? _publish : _next)
-                          : (isLast ? _publish : (isPreview ? _preview : _next))),
+                          : (isLast
+                                ? _publish
+                                : (isPreview ? _preview : _next))),
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: const RoundedRectangleBorder(

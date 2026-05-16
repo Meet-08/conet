@@ -17,3 +17,4 @@ lerna-debug.log*
 conet_backend/logs/combined.log
 
 temp/
+.codex/

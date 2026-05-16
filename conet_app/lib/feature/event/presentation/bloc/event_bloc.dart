@@ -8,6 +8,7 @@ import 'package:conet_app/feature/event/domain/usecases/event_get_my_events.dart
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_organized_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_publish_by_id.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_register.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_save_draft.dart';
@@ -27,6 +28,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
   final EventGetMyEvents _getMyEvents;
   final EventGetMyOrganizedEvents _getMyOrganizedEvents;
   final EventPublish _publish;
+  final EventPublishById _publishById;
   final EventRegister _registerEvent;
   final EventSave _saveEvent;
   final EventSaveDraft _saveDraft;
@@ -50,6 +52,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     required EventGetMyEvents getMyEvents,
     required EventGetMyOrganizedEvents getMyOrganizedEvents,
     required EventPublish publish,
+    required EventPublishById publishById,
     required EventRegister registerEvent,
     required EventSave saveEvent,
     required EventSaveDraft saveDraft,
@@ -62,6 +65,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
        _getMyEvents = getMyEvents,
        _getMyOrganizedEvents = getMyOrganizedEvents,
        _publish = publish,
+       _publishById = publishById,
        _registerEvent = registerEvent,
        _saveEvent = saveEvent,
        _saveDraft = saveDraft,
@@ -78,6 +82,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     on<EventFetchMyOrganizedEventsEvent>(_onFetchMyOrganizedEvents);
     on<EventFetchMoreMyOrganizedEventsEvent>(_onFetchMoreMyOrganizedEvents);
     on<EventPublishEvent>(_onPublish);
+    on<EventPublishDraftEvent>(_onPublishDraft);
     on<EventRegisterEvent>(_onRegister);
     on<EventSaveEvent>(_onSaveEvent);
     on<EventSaveDraftEvent>(_onSaveDraft);
@@ -345,6 +350,77 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     emit(EventCreateSuccess(event: publishedEvent!, isDraft: false));
   }
 
+  Future<void> _onPublishDraft(
+    EventPublishDraftEvent event,
+    Emitter<EventState> emit,
+  ) async {
+    emit(EventCreateLoading());
+
+    final draftEventId = event.eventId.trim();
+    if (draftEventId.isEmpty) {
+      emit(const EventCreateFailure('Missing draft event id'));
+      return;
+    }
+
+    final updateResult = await _updateDraft(draftEventId, event.payload);
+
+    String? updateFailure;
+    updateResult.fold((failure) => updateFailure = failure.message, (_) {});
+
+    if (updateFailure != null) {
+      emit(EventCreateFailure(updateFailure!));
+      return;
+    }
+
+    final publishResult = await _publishById(draftEventId);
+
+    String? failureMessage;
+    Event? publishedEvent;
+
+    publishResult.fold(
+      (failure) => failureMessage = failure.message,
+      (published) => publishedEvent = published,
+    );
+
+    if (failureMessage != null) {
+      emit(EventCreateFailure(failureMessage!));
+      return;
+    }
+
+    final cohostIds = event.payload.cohostUserIds
+        .map((id) => id.trim())
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList(growable: false);
+    final conversationId = event.payload.conversationId?.trim();
+    final shouldRunOrganizerSetup =
+        cohostIds.isNotEmpty ||
+        event.shouldCreateOrganizerConversation ||
+        (conversationId != null && conversationId.isNotEmpty);
+
+    if (shouldRunOrganizerSetup) {
+      final setupResult = await _setupOrganizerResources(
+        eventId: publishedEvent!.id,
+        cohostUserIds: cohostIds,
+        createEventConversation: event.shouldCreateOrganizerConversation,
+        conversationId: conversationId,
+      );
+
+      String? setupFailure;
+      setupResult.fold(
+        (failure) => setupFailure = failure.message,
+        (_) => null,
+      );
+
+      if (setupFailure != null) {
+        emit(EventCreateFailure(setupFailure!));
+        return;
+      }
+    }
+
+    emit(EventCreateSuccess(event: publishedEvent!, isDraft: false));
+  }
+
   Future<void> _onRegister(
     EventRegisterEvent event,
     Emitter<EventState> emit,
@@ -418,8 +494,7 @@ class EventBloc extends Bloc<EventEvent, EventState> {
     emit(EventCreateLoading());
 
     final draftEventId = event.eventId?.trim();
-    final result =
-        (draftEventId != null && draftEventId.isNotEmpty)
+    final result = (draftEventId != null && draftEventId.isNotEmpty)
         ? await _updateDraft(draftEventId, event.payload)
         : await _saveDraft(event.payload);
 

@@ -58,6 +58,7 @@ void main() {
   late MockEventGetMyEvents mockGetMyEvents;
   late MockEventGetMyOrganizedEvents mockGetMyOrganizedEvents;
   late MockEventPublish mockPublish;
+  late MockEventPublishById mockPublishById;
   late MockEventRegister mockRegister;
   late MockEventSave mockSave;
   late MockEventSaveDraft mockSaveDraft;
@@ -136,6 +137,7 @@ void main() {
     mockGetMyEvents = MockEventGetMyEvents();
     mockGetMyOrganizedEvents = MockEventGetMyOrganizedEvents();
     mockPublish = MockEventPublish();
+    mockPublishById = MockEventPublishById();
     mockRegister = MockEventRegister();
     mockSave = MockEventSave();
     mockSaveDraft = MockEventSaveDraft();
@@ -150,6 +152,7 @@ void main() {
       getMyEvents: mockGetMyEvents,
       getMyOrganizedEvents: mockGetMyOrganizedEvents,
       publish: mockPublish,
+      publishById: mockPublishById,
       registerEvent: mockRegister,
       saveEvent: mockSave,
       saveDraft: mockSaveDraft,

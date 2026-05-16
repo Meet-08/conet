@@ -94,6 +94,18 @@ final class EventPublishEvent extends EventEvent {
   });
 }
 
+final class EventPublishDraftEvent extends EventEvent {
+  final String eventId;
+  final EventCreatePayload payload;
+  final bool shouldCreateOrganizerConversation;
+
+  const EventPublishDraftEvent(
+    this.eventId,
+    this.payload, {
+    this.shouldCreateOrganizerConversation = false,
+  });
+}
+
 final class EventSaveDraftEvent extends EventEvent {
   final EventCreatePayload payload;
   final bool shouldCreateOrganizerConversation;
