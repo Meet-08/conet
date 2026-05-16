@@ -4,6 +4,7 @@ import { createGroupService } from "./conversationService.js";
 import {
   assertAttendanceScanner,
   assertEventExists,
+  assertOrganizerOrCohost,
   assertOrganizer,
   eventInclude,
   eventSummarySelect,
@@ -102,6 +103,19 @@ const normalizeAttendeeStatusFilter = (value) => {
   }
 
   return normalized;
+};
+
+const normalizeOptionalDate = (value, fieldName) => {
+  if (value === undefined || value === null || value === "") return null;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    const err = new Error(`${fieldName} must be a valid date`);
+    err.statusCode = 400;
+    throw err;
+  }
+
+  return date;
 };
 
 const buildPublishedEventsCursor = (startDate, id) =>
@@ -1660,6 +1674,124 @@ export const getEventAttendeesService = async (
       cancelled: statusCounts.cancelled,
     },
   };
+};
+
+export const getEventRegistrationsByDateService = async (
+  eventId,
+  requesterUserId,
+  { from, to } = {},
+) => {
+  await assertOrganizerOrCohost(eventId, requesterUserId);
+
+  const fromDate = normalizeOptionalDate(from, "from");
+  const toDate = normalizeOptionalDate(to, "to");
+  if (fromDate && toDate && fromDate > toDate) {
+    const err = new Error("from must be less than or equal to to");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const registrations = await prisma.event_registrations.findMany({
+    where: {
+      event_id: eventId,
+      registration_status: "registered",
+      ...(fromDate || toDate ?
+        {
+          registered_at: {
+            ...(fromDate ? { gte: fromDate } : {}),
+            ...(toDate ? { lte: toDate } : {}),
+          },
+        }
+      : {}),
+    },
+    select: { id: true, user_id: true, registered_at: true },
+    orderBy: { registered_at: "asc" },
+  });
+
+  const countsByDateMap = registrations.reduce((acc, registration) => {
+    if (!registration.registered_at) return acc;
+    const date = registration.registered_at.toISOString().slice(0, 10);
+    acc[date] = (acc[date] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return {
+    total_registrations: registrations.length,
+    counts_by_date: Object.entries(countsByDateMap).map(([date, count]) => ({
+      date,
+      count,
+    })),
+    registrations,
+  };
+};
+
+export const getEventRegistrationCollegeCountsService = async (
+  eventId,
+  requesterUserId,
+) => {
+  await assertOrganizerOrCohost(eventId, requesterUserId);
+
+  const registrations = await prisma.event_registrations.findMany({
+    where: { event_id: eventId, registration_status: "registered" },
+    select: {
+      users: {
+        select: {
+          user_academics: {
+            select: { college_name: true, created_at: true },
+            orderBy: { created_at: "desc" },
+            take: 1,
+          },
+        },
+      },
+    },
+  });
+
+  const counts = registrations.reduce((acc, registration) => {
+    const collegeName =
+      registration.users?.user_academics?.[0]?.college_name?.trim() ||
+      "Unknown";
+    acc[collegeName] = (acc[collegeName] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.entries(counts)
+    .map(([college_name, count]) => ({ college_name, count }))
+    .sort(
+      (a, b) =>
+        b.count - a.count || a.college_name.localeCompare(b.college_name),
+    );
+};
+
+export const getEventRegistrationCourseCountsService = async (
+  eventId,
+  requesterUserId,
+) => {
+  await assertOrganizerOrCohost(eventId, requesterUserId);
+
+  const registrations = await prisma.event_registrations.findMany({
+    where: { event_id: eventId, registration_status: "registered" },
+    select: {
+      users: {
+        select: {
+          user_academics: {
+            select: { course: true, created_at: true },
+            orderBy: { created_at: "desc" },
+            take: 1,
+          },
+        },
+      },
+    },
+  });
+
+  const counts = registrations.reduce((acc, registration) => {
+    const course = registration.users?.user_academics?.[0]?.course?.trim() || "Unknown";
+    acc[course] = (acc[course] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.entries(counts)
+    .map(([course, count]) => ({ course, count }))
+    .sort((a, b) => b.count - a.count || a.course.localeCompare(b.course));
 };
 
 export const exportEventParticipationXlsxService = async (

@@ -7,6 +7,9 @@ import {
   exportEventParticipationXlsxService,
   getEventAttendeesService,
   getEventService,
+  getEventRegistrationCollegeCountsService,
+  getEventRegistrationCourseCountsService,
+  getEventRegistrationsByDateService,
   getRegistrationInfoService,
   listCohostsService,
   listMyEventsService,
@@ -124,6 +127,38 @@ export const exportEventParticipationXlsx = asyncHandler(async (req, res) => {
   await workbook.xlsx.write(res);
   res.end();
 });
+
+export const getEventRegistrationsByDate = asyncHandler(async (req, res) => {
+  const result = await getEventRegistrationsByDateService(
+    req.params.id,
+    req.user.id,
+    {
+      from: req.query.from,
+      to: req.query.to,
+    },
+  );
+  res.status(200).json({ success: true, ...result });
+});
+
+export const getEventRegistrationCollegeCounts = asyncHandler(
+  async (req, res) => {
+    const counts = await getEventRegistrationCollegeCountsService(
+      req.params.id,
+      req.user.id,
+    );
+    res.status(200).json({ success: true, counts });
+  },
+);
+
+export const getEventRegistrationCourseCounts = asyncHandler(
+  async (req, res) => {
+    const counts = await getEventRegistrationCourseCountsService(
+      req.params.id,
+      req.user.id,
+    );
+    res.status(200).json({ success: true, counts });
+  },
+);
 
 export const attendEvent = asyncHandler(async (req, res) => {
   const result = await attendEventService(req.params.id, req.user.id, req.body);

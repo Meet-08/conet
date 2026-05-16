@@ -194,6 +194,33 @@ export const assertAttendanceScanner = async (eventId, scannerUserId) => {
   return event;
 };
 
+export const assertOrganizerOrCohost = async (eventId, userId) => {
+  const event = await assertEventExists(eventId);
+
+  if (event.organizer_id === userId) {
+    return event;
+  }
+
+  const cohost = await prisma.event_cohosts.findUnique({
+    where: {
+      event_id_user_id: {
+        event_id: eventId,
+        user_id: userId,
+      },
+    },
+  });
+
+  if (!cohost) {
+    const err = new Error(
+      "Only the organizer or a co-host can perform this action",
+    );
+    err.statusCode = 403;
+    throw err;
+  }
+
+  return event;
+};
+
 export const validateEventPayload = ({
   location_type,
   location,

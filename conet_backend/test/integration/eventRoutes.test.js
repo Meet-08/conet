@@ -501,6 +501,114 @@ describe("Registration and attendance routes", () => {
       cancelled: 0,
     });
   });
+
+  it("200 - returns registration counts by date for organizer", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({ organizer_id: TEST_USER.id }),
+    );
+    prismaMock.event_registrations.findMany.mockResolvedValue([
+      {
+        id: "reg-1",
+        user_id: "user-1",
+        registered_at: new Date("2026-04-01T10:00:00.000Z"),
+      },
+      {
+        id: "reg-2",
+        user_id: "user-2",
+        registered_at: new Date("2026-04-01T15:30:00.000Z"),
+      },
+      {
+        id: "reg-3",
+        user_id: "user-3",
+        registered_at: new Date("2026-04-02T09:00:00.000Z"),
+      },
+    ]);
+
+    const res = await request(app)
+      .get(`/api/events/${EVENT_ID}/registrations/by-date?from=2026-04-01&to=2026-04-10`)
+      .set("Authorization", makeAuthHeader(TEST_USER));
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.total_registrations).toBe(3);
+    expect(res.body.counts_by_date).toEqual([
+      { date: "2026-04-01", count: 2 },
+      { date: "2026-04-02", count: 1 },
+    ]);
+  });
+
+  it("200 - returns registration counts by college for cohost", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({ organizer_id: TEST_USER.id }),
+    );
+    prismaMock.event_cohosts.findUnique.mockResolvedValue({
+      id: "cohost-1",
+      event_id: EVENT_ID,
+      user_id: TEST_USER_B.id,
+    });
+    prismaMock.event_registrations.findMany.mockResolvedValue([
+      {
+        users: {
+          user_academics: [{ college_name: "ABC College" }],
+        },
+      },
+      {
+        users: {
+          user_academics: [{ college_name: "ABC College" }],
+        },
+      },
+      {
+        users: {
+          user_academics: [{ college_name: "XYZ Institute" }],
+        },
+      },
+    ]);
+
+    const res = await request(app)
+      .get(`/api/events/${EVENT_ID}/registrations/count-by-college`)
+      .set("Authorization", makeAuthHeader(TEST_USER_B));
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.counts).toEqual([
+      { college_name: "ABC College", count: 2 },
+      { college_name: "XYZ Institute", count: 1 },
+    ]);
+  });
+
+  it("200 - returns registration counts by course for organizer", async () => {
+    prismaMock.events.findUnique.mockResolvedValue(
+      makeEventRow({ organizer_id: TEST_USER.id }),
+    );
+    prismaMock.event_registrations.findMany.mockResolvedValue([
+      {
+        users: {
+          user_academics: [{ course: "B.Tech CSE" }],
+        },
+      },
+      {
+        users: {
+          user_academics: [{ course: "B.Tech CSE" }],
+        },
+      },
+      {
+        users: {
+          user_academics: [{ course: "MBA" }],
+        },
+      },
+    ]);
+
+    const res = await request(app)
+      .get(`/api/events/${EVENT_ID}/registrations/count-by-course`)
+      .set("Authorization", makeAuthHeader(TEST_USER));
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.counts).toEqual([
+      { course: "B.Tech CSE", count: 2 },
+      { course: "MBA", count: 1 },
+    ]);
+  });
 });
 
 describe("Cohost routes", () => {

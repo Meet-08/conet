@@ -6,7 +6,9 @@ import 'package:conet_app/feature/event/domain/entities/event_create_payload.dar
 import 'package:conet_app/feature/event/domain/entities/event_page.dart';
 import 'package:conet_app/feature/event/domain/entities/event_register_response.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
+import 'package:conet_app/feature/event/domain/entities/event_registration_count.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_ticket.dart';
+import 'package:conet_app/feature/event/domain/entities/event_registration_trend.dart';
 import 'package:fpdart/fpdart.dart';
 
 abstract interface class EventRepository {
@@ -84,4 +86,17 @@ abstract interface class EventRepository {
     required String userId,
     required String registrationId,
   });
+
+  Future<Either<AppFailure, EventRegistrationTrend>>
+  getRegistrationTrendByDate({
+    required String eventId,
+    DateTime? from,
+    DateTime? to,
+  });
+
+  Future<Either<AppFailure, List<EventRegistrationCount>>>
+  getRegistrationCountByCollege(String eventId);
+
+  Future<Either<AppFailure, List<EventRegistrationCount>>>
+  getRegistrationCountByCourse(String eventId);
 }

@@ -253,9 +253,12 @@
 - **Add Co-host** — Organizer adds another user as a co-host
 - **Remove Co-host** — Organizer removes a co-host
 - **List Co-hosts** — Retrieve all co-hosts for an event
+- **Registrations by Date (Organizer/Cohost)** — Retrieve registered participants and daily registration counts with optional `from`/`to` filter
+- **Registration Count by College (Organizer/Cohost)** — Aggregate registered participants by latest `user_academics.college_name`
+- **Registration Count by Course (Organizer/Cohost)** — Aggregate registered participants by latest `user_academics.course`
 
 **Use Cases:** `EventGetById`, `EventGetPublishedEvents`, `EventGetMyEvents`, `EventGetRegistrationInfo`, `EventMarkAttendance`
-**Backend Endpoints:** `GET /events`, `GET /events/my`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `POST /events/:id/register`, `GET /events/:id/registration-info`, `POST /events/:id/attend`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
+**Backend Endpoints:** `GET /events`, `GET /events/my`, `POST /events`, `GET /events/organized`, `GET /events/:id`, `POST /events/:id/register`, `GET /events/:id/registration-info`, `GET /events/:id/registrations/by-date`, `GET /events/:id/registrations/count-by-college`, `GET /events/:id/registrations/count-by-course`, `POST /events/:id/attend`, `PUT /events/:id`, `PATCH /events/:id/publish`, `PATCH /events/:id/cancel`, `GET /events/:id/cohosts`, `POST /events/:id/cohosts`, `DELETE /events/:id/cohosts/:userId`
 
 ---
 
@@ -295,6 +298,12 @@
 > ⚠️ No use cases, no repository, no bloc, no backend routes. Pure placeholder shell.
 
 ---
+
+## 4. UI + Functionality (Wired)
+
+### Events
+
+- **Organizer Event Analytics Page** — Added `/event-analytics/:eventId` route with `EventAnalyticsBloc` that fetches organizer analytics data in parallel using backend endpoints (`GET /events/:id`, `GET /events/:id/attendees`, `GET /events/:id/registrations/by-date`, `GET /events/:id/registrations/count-by-college`, `GET /events/:id/registrations/count-by-course`), renders token-based light/dark UI, and wires entry from organizer dashboard event cards.
 
 ## Architecture Overview
 

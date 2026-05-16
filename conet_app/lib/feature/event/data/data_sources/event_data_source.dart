@@ -1,5 +1,7 @@
 import 'package:conet_app/feature/event/data/models/event_attendance_result_model.dart';
 import 'package:conet_app/feature/event/data/models/event_attendees_model.dart';
+import 'package:conet_app/feature/event/data/models/event_registration_count_model.dart';
+import 'package:conet_app/feature/event/data/models/event_registration_trend_model.dart';
 import 'package:conet_app/feature/event/data/models/event_page_model.dart';
 import 'package:conet_app/feature/event/data/models/event_registration_ticket_model.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
@@ -74,4 +76,18 @@ abstract class EventDataSource {
     required String userId,
     required String registrationId,
   });
+
+  Future<EventRegistrationTrendModel> getRegistrationTrendByDate({
+    required String eventId,
+    DateTime? from,
+    DateTime? to,
+  });
+
+  Future<List<EventRegistrationCountModel>> getRegistrationCountByCollege(
+    String eventId,
+  );
+
+  Future<List<EventRegistrationCountModel>> getRegistrationCountByCourse(
+    String eventId,
+  );
 }

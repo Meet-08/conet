@@ -7,8 +7,10 @@ import 'package:conet_app/feature/event/domain/entities/event_attendees.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_page.dart';
 import 'package:conet_app/feature/event/domain/entities/event_register_response.dart';
+import 'package:conet_app/feature/event/domain/entities/event_registration_count.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_payload.dart';
 import 'package:conet_app/feature/event/domain/entities/event_registration_ticket.dart';
+import 'package:conet_app/feature/event/domain/entities/event_registration_trend.dart';
 import 'package:conet_app/feature/event/domain/repositories/event_repository.dart';
 import 'package:fpdart/fpdart.dart';
 
@@ -206,6 +208,40 @@ class EventRepositoryImpl implements EventRepository {
         registrationId: registrationId,
       ),
     );
+  }
+
+  @override
+  Future<Either<AppFailure, EventRegistrationTrend>>
+  getRegistrationTrendByDate({
+    required String eventId,
+    DateTime? from,
+    DateTime? to,
+  }) {
+    return _getResult<EventRegistrationTrend, EventRegistrationTrend>(
+      () => _eventDataSource.getRegistrationTrendByDate(
+        eventId: eventId,
+        from: from,
+        to: to,
+      ),
+    );
+  }
+
+  @override
+  Future<Either<AppFailure, List<EventRegistrationCount>>>
+  getRegistrationCountByCollege(String eventId) {
+    return _getResult<
+      List<EventRegistrationCount>,
+      List<EventRegistrationCount>
+    >(() => _eventDataSource.getRegistrationCountByCollege(eventId));
+  }
+
+  @override
+  Future<Either<AppFailure, List<EventRegistrationCount>>>
+  getRegistrationCountByCourse(String eventId) {
+    return _getResult<
+      List<EventRegistrationCount>,
+      List<EventRegistrationCount>
+    >(() => _eventDataSource.getRegistrationCountByCourse(eventId));
   }
 
   Future<Either<AppFailure, TResult>> _getResult<TSource, TResult>(

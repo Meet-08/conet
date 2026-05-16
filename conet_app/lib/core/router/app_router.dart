@@ -11,9 +11,11 @@ import 'package:conet_app/feature/auth/presentation/pages/welcome_page.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_attendees.dart';
 import 'package:conet_app/feature/event/presentation/constants/event_constants.dart';
+import 'package:conet_app/feature/event/presentation/bloc/event_analytics_bloc.dart';
 import 'package:conet_app/feature/event/presentation/pages/create_event_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_attendance_scanner_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_attendees_page.dart';
+import 'package:conet_app/feature/event/presentation/pages/event_analytics_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_dashboard_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_detail_page.dart';
 import 'package:conet_app/feature/event/presentation/pages/event_page.dart';
@@ -449,6 +451,22 @@ class AppRouter {
       GoRoute(
         path: '/event-dashboard',
         builder: (_, _) => const EventDashboardPage(),
+      ),
+
+      GoRoute(
+        path: '/event-analytics/:eventId',
+        builder: (context, state) {
+          final eventId = state.pathParameters['eventId']?.trim();
+          if (eventId == null || eventId.isEmpty) {
+            return const Scaffold(
+              body: Center(child: Text('Invalid event id')),
+            );
+          }
+          return BlocProvider(
+            create: (_) => serviceLocator<EventAnalyticsBloc>(),
+            child: EventAnalyticsPage(eventId: eventId),
+          );
+        },
       ),
 
       GoRoute(

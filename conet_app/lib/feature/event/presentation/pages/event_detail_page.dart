@@ -196,7 +196,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
               _onRegisterPressed(event);
             },
             onGoToDashboard: () {
-              context.push('/event-dashboard');
+              context.push('/event-analytics/${event.id}');
             },
           ),
           body: SingleChildScrollView(

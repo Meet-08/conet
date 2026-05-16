@@ -438,6 +438,21 @@ void _initEvent() {
   serviceLocator.registerFactory(
     () => EventMarkAttendance(repository: serviceLocator<EventRepository>()),
   );
+  serviceLocator.registerFactory(
+    () => EventGetRegistrationTrendByDate(
+      repository: serviceLocator<EventRepository>(),
+    ),
+  );
+  serviceLocator.registerFactory(
+    () => EventGetRegistrationCountByCollege(
+      repository: serviceLocator<EventRepository>(),
+    ),
+  );
+  serviceLocator.registerFactory(
+    () => EventGetRegistrationCountByCourse(
+      repository: serviceLocator<EventRepository>(),
+    ),
+  );
 
   serviceLocator.registerFactory(
     () => EventBloc(
@@ -462,6 +477,16 @@ void _initEvent() {
       getAttendees: serviceLocator(),
       getRegistrationInfo: serviceLocator(),
       markAttendance: serviceLocator(),
+    ),
+  );
+
+  serviceLocator.registerFactory(
+    () => EventAnalyticsBloc(
+      getById: serviceLocator(),
+      getAttendees: serviceLocator(),
+      getTrendByDate: serviceLocator(),
+      getCollegeCounts: serviceLocator(),
+      getCourseCounts: serviceLocator(),
     ),
   );
 }

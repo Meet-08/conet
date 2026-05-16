@@ -8,6 +8,8 @@ import 'package:conet_app/feature/event/data/models/event_attendees_model.dart';
 import 'package:conet_app/feature/event/data/models/event_create_payload_model.dart';
 import 'package:conet_app/feature/event/data/models/event_model.dart';
 import 'package:conet_app/feature/event/data/models/event_page_model.dart';
+import 'package:conet_app/feature/event/data/models/event_registration_count_model.dart';
+import 'package:conet_app/feature/event/data/models/event_registration_trend_model.dart';
 import 'package:conet_app/feature/event/data/models/event_registration_ticket_model.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_create_payload.dart';
@@ -277,6 +279,79 @@ class EventDataSourceImpl implements EventDataSource {
     } catch (e) {
       logger.e('publishEvent failed', error: e);
       if (e is ServerException) rethrow;
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<EventRegistrationTrendModel> getRegistrationTrendByDate({
+    required String eventId,
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    try {
+      final response = await _dioClient.dio.get(
+        '/events/$eventId/registrations/by-date',
+        queryParameters: {
+          if (from != null) 'from': from.toIso8601String().split('T').first,
+          if (to != null) 'to': to.toIso8601String().split('T').first,
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to fetch registration trend');
+      }
+
+      return EventRegistrationTrendModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<List<EventRegistrationCountModel>> getRegistrationCountByCollege(
+    String eventId,
+  ) async {
+    try {
+      final response = await _dioClient.dio.get(
+        '/events/$eventId/registrations/count-by-college',
+      );
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to fetch college registration counts');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      return EventRegistrationCountModel.fromJsonList(
+        data['counts'] as List<dynamic>? ?? const [],
+        'college_name',
+      );
+    } catch (e) {
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<List<EventRegistrationCountModel>> getRegistrationCountByCourse(
+    String eventId,
+  ) async {
+    try {
+      final response = await _dioClient.dio.get(
+        '/events/$eventId/registrations/count-by-course',
+      );
+
+      if (response.statusCode != 200) {
+        throw ServerException('Failed to fetch course registration counts');
+      }
+
+      final data = response.data as Map<String, dynamic>;
+      return EventRegistrationCountModel.fromJsonList(
+        data['counts'] as List<dynamic>? ?? const [],
+        'course',
+      );
+    } catch (e) {
       throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }

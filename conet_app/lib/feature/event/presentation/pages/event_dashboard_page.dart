@@ -345,7 +345,10 @@ class _EventDashboardCard extends StatelessWidget {
                       text: '$dateText - $timeText',
                     ),
                     const SizedBox(height: AppSpace.s4),
-                    _MetaRow(icon: FontAwesomeIcons.locationDot, text: location),
+                    _MetaRow(
+                      icon: FontAwesomeIcons.locationDot,
+                      text: location,
+                    ),
                   ],
                 ),
               ),
@@ -373,10 +376,9 @@ class _EventDashboardCard extends StatelessWidget {
               children: [
                 _ActionPill(
                   label: 'Analytics',
-                  onTap: () => AppToast.showInfo(
-                    context,
-                    'Analytics dashboard is coming soon.',
-                  ),
+                  onTap: () {
+                    context.push('/event-analytics/${event.id}');
+                  },
                 ),
                 _ActionPill(
                   label: 'Attendees',

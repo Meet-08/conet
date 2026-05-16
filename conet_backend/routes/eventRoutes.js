@@ -7,6 +7,9 @@ import {
   exportEventParticipationXlsx,
   getEvent,
   getEventAttendees,
+  getEventRegistrationCollegeCounts,
+  getEventRegistrationCourseCounts,
+  getEventRegistrationsByDate,
   getRegistrationInfo,
   listCohosts,
   listMyEvents,
@@ -32,6 +35,12 @@ router.get("/my", listMyEvents);
 router.get("/:id", getEvent);
 router.post("/:id/register", registerEvent);
 router.get("/:id/registration-info", getRegistrationInfo);
+router.get("/:id/registrations/by-date", getEventRegistrationsByDate);
+router.get(
+  "/:id/registrations/count-by-college",
+  getEventRegistrationCollegeCounts,
+);
+router.get("/:id/registrations/count-by-course", getEventRegistrationCourseCounts);
 router.get("/:id/attendees", getEventAttendees);
 router.get("/:id/participants/export", exportEventParticipationXlsx);
 router.post("/:id/attend", attendEvent);

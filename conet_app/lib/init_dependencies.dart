@@ -37,6 +37,9 @@ import 'package:conet_app/feature/event/domain/usecases/event_get_my_events.dart
 import 'package:conet_app/feature/event/domain/usecases/event_get_my_organized_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_published_events.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_get_registration_info.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_get_registration_count_by_college.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_get_registration_count_by_course.dart';
+import 'package:conet_app/feature/event/domain/usecases/event_get_registration_trend_by_date.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_mark_attendance.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_publish_by_id.dart';
@@ -47,6 +50,7 @@ import 'package:conet_app/feature/event/domain/usecases/event_setup_organizer_re
 import 'package:conet_app/feature/event/domain/usecases/event_update.dart';
 import 'package:conet_app/feature/event/domain/usecases/event_update_draft.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_bloc.dart';
+import 'package:conet_app/feature/event/presentation/bloc/event_analytics_bloc.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_registration_bloc.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source.dart';
 import 'package:conet_app/feature/message/data/data_sources/message_data_source_impl.dart';
