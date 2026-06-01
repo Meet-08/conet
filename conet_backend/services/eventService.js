@@ -2091,6 +2091,39 @@ export const listPublishedEventsService = async ({
     throw err;
   }
 
+  const now = new Date();
+  const andFilters = [
+    {
+      OR: [
+        { registration_deadline: null },
+        { registration_deadline: { gte: now } },
+      ],
+    },
+    ...(search ?
+      [
+        {
+          OR: [
+            { title: { contains: search, mode: "insensitive" } },
+            { category: { contains: search, mode: "insensitive" } },
+          ],
+        },
+      ]
+    : []),
+    ...(parsedCursor ?
+      [
+        {
+          OR: [
+            { start_date: { gt: parsedCursor.startDate } },
+            {
+              start_date: parsedCursor.startDate,
+              id: { gt: parsedCursor.id },
+            },
+          ],
+        },
+      ]
+    : []),
+  ];
+
   const where = {
     event_status: "published",
     ...(category && { category }),
@@ -2103,21 +2136,7 @@ export const listPublishedEventsService = async ({
         },
       }
     : {}),
-    ...(search && {
-      OR: [
-        { title: { contains: search, mode: "insensitive" } },
-        { category: { contains: search, mode: "insensitive" } },
-      ],
-    }),
-    ...(parsedCursor && {
-      OR: [
-        { start_date: { gt: parsedCursor.startDate } },
-        {
-          start_date: parsedCursor.startDate,
-          id: { gt: parsedCursor.id },
-        },
-      ],
-    }),
+    AND: andFilters,
   };
 
   const rows = await prisma.events.findMany({

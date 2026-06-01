@@ -456,6 +456,7 @@ describe("Registration and attendance routes", () => {
     expect(prismaMock.event_registrations.update).toHaveBeenCalledWith({
       where: { id: REGISTRATION_ID },
       data: { registration_status: "attended" },
+      select: { id: true },
     });
   });
 
@@ -525,7 +526,9 @@ describe("Registration and attendance routes", () => {
     ]);
 
     const res = await request(app)
-      .get(`/api/events/${EVENT_ID}/registrations/by-date?from=2026-04-01&to=2026-04-10`)
+      .get(
+        `/api/events/${EVENT_ID}/registrations/by-date?from=2026-04-01&to=2026-04-10`,
+      )
       .set("Authorization", makeAuthHeader(TEST_USER));
 
     expect(res.status).toBe(200);

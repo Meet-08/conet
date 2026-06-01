@@ -42,24 +42,16 @@ class EventAnalyticsBloc
   ) async {
     emit(EventAnalyticsLoading());
 
-    final now = DateTime.now();
-    final from = now.subtract(const Duration(days: 6));
     final eventFuture = _getById(event.eventId);
     final attendeesFuture = _getAttendees(
       eventId: event.eventId,
       status: 'all',
-    );
-    final trendFuture = _getTrendByDate(
-      eventId: event.eventId,
-      from: from,
-      to: now,
     );
     final collegesFuture = _getCollegeCounts(event.eventId);
     final coursesFuture = _getCourseCounts(event.eventId);
 
     final eventResult = await eventFuture;
     final attendeesResult = await attendeesFuture;
-    final trendResult = await trendFuture;
     final collegesResult = await collegesFuture;
     final coursesResult = await coursesFuture;
 
@@ -73,6 +65,11 @@ class EventAnalyticsBloc
       emit(EventAnalyticsFailure(failureMessage!));
       return;
     }
+    if (loadedEvent == null) {
+      emit(const EventAnalyticsFailure('Unable to load event details'));
+      return;
+    }
+    final Event resolvedEvent = loadedEvent!;
 
     EventAttendees? loadedAttendees;
     attendeesResult.fold(
@@ -83,6 +80,30 @@ class EventAnalyticsBloc
       emit(EventAnalyticsFailure(failureMessage!));
       return;
     }
+    if (loadedAttendees == null) {
+      emit(const EventAnalyticsFailure('Unable to load attendee summary'));
+      return;
+    }
+    final EventAttendees resolvedAttendees = loadedAttendees!;
+
+    final now = DateTime.now();
+    final eventDate = DateTime(
+      resolvedEvent.startDate.year,
+      resolvedEvent.startDate.month,
+      resolvedEvent.startDate.day,
+    );
+    final today = DateTime(now.year, now.month, now.day);
+    final trendEndDate = eventDate.isBefore(today) ? eventDate : today;
+    final createdAt = resolvedEvent.createdAt;
+    final trendStartDate = createdAt != null
+        ? DateTime(createdAt.year, createdAt.month, createdAt.day)
+        : trendEndDate.subtract(const Duration(days: 30));
+
+    var trendResult = await _getTrendByDate(
+      eventId: event.eventId,
+      from: trendStartDate,
+      to: trendEndDate,
+    );
 
     EventRegistrationTrend? loadedTrend;
     trendResult.fold(
@@ -94,6 +115,29 @@ class EventAnalyticsBloc
       return;
     }
 
+    if ((loadedTrend?.points.isEmpty ?? true) &&
+        resolvedAttendees.summary.registered > 0) {
+      trendResult = await _getTrendByDate(
+        eventId: event.eventId,
+        from: trendStartDate,
+        to: trendEndDate,
+      );
+      trendResult.fold(
+        (failure) => failureMessage = failure.message,
+        (data) => loadedTrend = data,
+      );
+      if (failureMessage != null) {
+        emit(EventAnalyticsFailure(failureMessage!));
+        return;
+      }
+    }
+
+    if (loadedTrend == null) {
+      emit(const EventAnalyticsFailure('Unable to load registration trend'));
+      return;
+    }
+    final EventRegistrationTrend resolvedTrend = loadedTrend!;
+
     List<EventRegistrationCount>? loadedCollegeCounts;
     collegesResult.fold(
       (failure) => failureMessage = failure.message,
@@ -103,6 +147,12 @@ class EventAnalyticsBloc
       emit(EventAnalyticsFailure(failureMessage!));
       return;
     }
+    if (loadedCollegeCounts == null) {
+      emit(const EventAnalyticsFailure('Unable to load college counts'));
+      return;
+    }
+    final List<EventRegistrationCount> resolvedCollegeCounts =
+        loadedCollegeCounts!;
 
     List<EventRegistrationCount>? loadedCourseCounts;
     coursesResult.fold(
@@ -113,14 +163,20 @@ class EventAnalyticsBloc
       emit(EventAnalyticsFailure(failureMessage!));
       return;
     }
+    if (loadedCourseCounts == null) {
+      emit(const EventAnalyticsFailure('Unable to load branch counts'));
+      return;
+    }
+    final List<EventRegistrationCount> resolvedCourseCounts =
+        loadedCourseCounts!;
 
     emit(
       EventAnalyticsLoaded(
-        event: loadedEvent!,
-        attendees: loadedAttendees!,
-        trend: loadedTrend!,
-        collegeCounts: loadedCollegeCounts!,
-        courseCounts: loadedCourseCounts!,
+        event: resolvedEvent,
+        attendees: resolvedAttendees,
+        trend: resolvedTrend,
+        collegeCounts: resolvedCollegeCounts,
+        courseCounts: resolvedCourseCounts,
       ),
     );
   }

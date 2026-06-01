@@ -242,7 +242,10 @@ class _TrendCard extends StatelessWidget {
         ),
         const SizedBox(height: AppSpace.s8),
         Container(
-          padding: const EdgeInsets.all(AppSpace.s12),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpace.s16,
+            vertical: AppSpace.s12,
+          ),
           decoration: BoxDecoration(
             color: semantic.surfaceBase,
             border: Border.all(color: semantic.borderDefault),
@@ -294,18 +297,26 @@ class _TrendCard extends StatelessWidget {
                       bottomTitles: AxisTitles(
                         sideTitles: SideTitles(
                           showTitles: true,
-                          interval: 1,
-                          getTitlesWidget: (value, _) {
+                          interval: vm.xLabelInterval.toDouble(),
+                          reservedSize: 40,
+                          getTitlesWidget: (value, meta) {
                             final index = value.toInt();
                             if (index < 0 || index >= vm.trendLabels.length) {
                               return const SizedBox.shrink();
                             }
                             return Padding(
                               padding: const EdgeInsets.only(top: 8),
-                              child: Text(
-                                vm.trendLabels[index],
-                                style: AppTextStyles.micro.copyWith(
-                                  color: semantic.textSecondary,
+                              child: SizedBox(
+                                width: 60,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                    vm.trendLabels[index],
+                                    style: AppTextStyles.micro.copyWith(
+                                      color: semantic.textSecondary,
+                                    ),
+                                  ),
                                 ),
                               ),
                             );
@@ -345,6 +356,7 @@ class _RankingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final semantic = context.semanticColors;
+    final visibleItems = items.take(5).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -373,50 +385,64 @@ class _RankingCard extends StatelessWidget {
                   ),
                 )
               : Column(
-                  children: items.take(5).toList().asMap().entries.map((row) {
+                  children: visibleItems.asMap().entries.map((row) {
                     final i = row.key;
                     final item = row.value;
+                    final isLast = i == visibleItems.length - 1;
                     return Padding(
                       padding: EdgeInsets.only(
-                        bottom: i == 4 ? 0 : AppSpace.s10,
+                        bottom: isLast ? 0 : AppSpace.s10,
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 28,
-                            height: 28,
-                            decoration: BoxDecoration(
-                              color: semantic.surfaceRaised,
-                              borderRadius: AppRadius.fullAll,
-                              border: Border.all(color: semantic.borderDefault),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              '${i + 1}',
-                              style: AppTextStyles.caption.copyWith(
-                                color: semantic.textPrimary,
-                                fontWeight: FontWeight.w700,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(minHeight: 44),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: semantic.surfaceRaised,
+                                borderRadius: AppRadius.fullAll,
+                                border: Border.all(
+                                  color: semantic.borderDefault,
+                                ),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '${i + 1}',
+                                style: AppTextStyles.caption.copyWith(
+                                  color: semantic.textPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: AppSpace.s12),
-                          Expanded(
-                            child: Text(
-                              item.key,
-                              style: AppTextStyles.bodyDefault.copyWith(
-                                color: semantic.textPrimary,
-                                fontWeight: FontWeight.w600,
+                            const SizedBox(width: AppSpace.s16),
+                            Expanded(
+                              child: Text(
+                                item.key,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.bodyDefault.copyWith(
+                                  color: semantic.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                          ),
-                          Text(
-                            '${item.value}',
-                            style: AppTextStyles.bodyDefault.copyWith(
-                              color: semantic.textSecondary,
-                              fontWeight: FontWeight.w700,
+                            const SizedBox(width: AppSpace.s12),
+                            SizedBox(
+                              width: 32,
+                              child: Text(
+                                '${item.value}',
+                                textAlign: TextAlign.end,
+                                style: AppTextStyles.bodyDefault.copyWith(
+                                  color: semantic.textSecondary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   }).toList(),
@@ -488,6 +514,7 @@ class _AnalyticsVM {
   final List<String> trendLabels;
   final int maxTrendY;
   final int yInterval;
+  final int xLabelInterval;
   const _AnalyticsVM({
     required this.title,
     required this.date,
@@ -501,6 +528,7 @@ class _AnalyticsVM {
     required this.trendLabels,
     required this.maxTrendY,
     required this.yInterval,
+    required this.xLabelInterval,
   });
 
   factory _AnalyticsVM.from(
@@ -525,13 +553,18 @@ class _AnalyticsVM {
         )
         .toList(growable: false);
     final labels = sortedTrendPoints
-        .map((point) => DateFormat('E').format(point.date))
+        .map((point) => DateFormat('MMM d').format(point.date))
         .toList(growable: false);
     final maxCount = sortedTrendPoints
         .map((point) => point.count)
         .fold<int>(0, (prev, next) => next > prev ? next : prev);
     final axisMax = maxCount <= 0 ? 5 : ((maxCount / 5).ceil() * 5);
     final axisInterval = axisMax <= 5 ? 1 : (axisMax / 5).ceil();
+    // Calculate X-axis label interval: show fewer labels when there are many points
+    final pointCount = sortedTrendPoints.length;
+    final xInterval = pointCount > 15
+        ? (pointCount / 5).ceil()
+        : (pointCount > 10 ? 2 : 1);
 
     return _AnalyticsVM(
       title: event.title,
@@ -550,6 +583,7 @@ class _AnalyticsVM {
       trendLabels: labels,
       maxTrendY: axisMax,
       yInterval: axisInterval,
+      xLabelInterval: xInterval,
     );
   }
 }

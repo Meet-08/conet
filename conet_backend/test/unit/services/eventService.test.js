@@ -1041,6 +1041,7 @@ describe("attendEventService", () => {
     expect(prismaMock.event_registrations.update).toHaveBeenCalledWith({
       where: { id: REGISTRATION_ID },
       data: { registration_status: "attended" },
+      select: { id: true },
     });
     expect(result.message).toBe("Attendance updated successfully");
   });
@@ -1182,6 +1183,20 @@ describe("listPublishedEventsService", () => {
     expect(result.events).toHaveLength(2);
     expect(result.hasMore).toBe(true);
     expect(typeof result.nextCursor).toBe("string");
+  });
+
+  it("excludes events whose registration deadline has passed", async () => {
+    prismaMock.events.findMany.mockResolvedValue([makeSummaryRow()]);
+
+    await listPublishedEventsService({ page_size: 10 });
+
+    const arg = prismaMock.events.findMany.mock.calls[0][0];
+    expect(arg.where.AND).toContainEqual({
+      OR: [
+        { registration_deadline: null },
+        { registration_deadline: { gte: expect.any(Date) } },
+      ],
+    });
   });
 });
 

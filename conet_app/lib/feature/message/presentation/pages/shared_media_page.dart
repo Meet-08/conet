@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:conet_app/core/api/dio_client.dart';
 import 'package:conet_app/core/theme/app_semantic_colors.dart';
+import 'package:conet_app/core/theme/app_tokens.dart';
 import 'package:conet_app/core/theme/app_typography.dart';
 import 'package:conet_app/core/widgets/document_card.dart';
 import 'package:conet_app/feature/message/domain/entities/shared_media_item.dart';
@@ -10,10 +11,11 @@ import 'package:conet_app/init_dependencies.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 class SharedMediaPage extends StatefulWidget {
   final String conversationId;
-  final String type; // 'media' | 'post' | 'docs'
+  final String type;
 
   const SharedMediaPage({
     super.key,
@@ -36,7 +38,7 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
     _selectedType = widget.type;
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
-    // Trigger initial fetch
+
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       if (!mounted) return;
       context.read<MessageBloc>().add(
@@ -93,152 +95,112 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
         elevation: 0,
         leading: IconButton(
           icon: const FaIcon(FontAwesomeIcons.arrowLeft),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => context.pop(),
         ),
         title: Text(
           _titleForType(_selectedType),
           style: AppTextStyles.headingH3.copyWith(color: colors.textPrimary),
         ),
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ChoiceChip(
-                    label: const Text('Media'),
-                    selected: _selectedType == 'media',
-                    onSelected: (_) => _onTypeSelected('media'),
-                    selectedColor: colors.surfaceRaised,
-                    backgroundColor: colors.surfaceBase,
-                    labelStyle: AppTextStyles.bodyDefault.copyWith(
-                      color: _selectedType == 'media'
-                          ? colors.textPrimary
-                          : colors.textSecondary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ChoiceChip(
-                    label: const Text('Posts'),
-                    selected: _selectedType == 'post',
-                    onSelected: (_) => _onTypeSelected('post'),
-                    selectedColor: colors.surfaceRaised,
-                    backgroundColor: colors.surfaceBase,
-                    labelStyle: AppTextStyles.bodyDefault.copyWith(
-                      color: _selectedType == 'post'
-                          ? colors.textPrimary
-                          : colors.textSecondary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ChoiceChip(
-                    label: const Text('Docs'),
-                    selected: _selectedType == 'docs',
-                    onSelected: (_) => _onTypeSelected('docs'),
-                    selectedColor: colors.surfaceRaised,
-                    backgroundColor: colors.surfaceBase,
-                    labelStyle: AppTextStyles.bodyDefault.copyWith(
-                      color: _selectedType == 'docs'
-                          ? colors.textPrimary
-                          : colors.textSecondary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: BlocBuilder<MessageBloc, MessageState>(
-              buildWhen: (prev, cur) =>
-                  prev.sharedContentStatus != cur.sharedContentStatus ||
-                  prev.sharedContentType != cur.sharedContentType ||
-                  prev.sharedContent != cur.sharedContent ||
-                  prev.isFetchingMoreSharedContent !=
-                      cur.isFetchingMoreSharedContent,
-              builder: (context, state) {
-                if (state.sharedContentStatus == MessageStatus.loading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+      body: Padding(
+        padding: const EdgeInsets.all(AppSpace.s4),
+        child: Column(
+          children: [
+            _buildTypeTabs(colors),
+            Expanded(
+              child: BlocBuilder<MessageBloc, MessageState>(
+                buildWhen: (prev, cur) =>
+                    prev.sharedContentStatus != cur.sharedContentStatus ||
+                    prev.sharedContentType != cur.sharedContentType ||
+                    prev.sharedContent != cur.sharedContent ||
+                    prev.isFetchingMoreSharedContent !=
+                        cur.isFetchingMoreSharedContent,
+                builder: (context, state) {
+                  if (state.sharedContentStatus == MessageStatus.loading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
 
-                if (state.sharedContentStatus == MessageStatus.failure) {
-                  return Center(
-                    child: Text(state.errorMessage ?? 'Failed to load items'),
-                  );
-                }
-
-                final items = state.sharedContent;
-
-                if (items.isEmpty) {
-                  // Show placeholders matching selected type
-                  if (_selectedType == 'media') {
-                    return GridView.builder(
-                      padding: const EdgeInsets.all(8),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            crossAxisSpacing: 8,
-                            mainAxisSpacing: 8,
-                            childAspectRatio: 1,
-                          ),
-                      itemCount: 6,
-                      itemBuilder: (ctx, idx) => Container(
-                        decoration: BoxDecoration(
-                          color: colors.surfaceBase,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: colors.borderSubtle),
-                        ),
-                        child: Center(
-                          child: FaIcon(
-                            FontAwesomeIcons.file,
-                            color: colors.iconSecondary,
-                          ),
-                        ),
-                      ),
+                  if (state.sharedContentStatus == MessageStatus.failure) {
+                    return Center(
+                      child: Text(state.errorMessage ?? 'Failed to load items'),
                     );
                   }
 
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        FaIcon(
-                          FontAwesomeIcons.file,
-                          size: 48,
-                          color: colors.iconSecondary,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'No items found',
-                          style: AppTextStyles.bodyDefault.copyWith(
-                            color: colors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
+                  final items = state.sharedContent;
 
-                if (_selectedType == 'media') {
-                  return _buildMediaGrid(context, items, colors);
-                }
+                  if (items.isEmpty) {
+                    return _buildEmptyState(colors);
+                  }
 
-                if (_selectedType == 'post') {
-                  return _buildPostList(context, items, colors, state);
-                }
+                  if (_selectedType == 'media') {
+                    return _buildMediaGrid(context, items, colors);
+                  }
 
-                return _buildDocsList(context, items, colors);
-              },
+                  if (_selectedType == 'post') {
+                    return _buildPostList(context, items, colors, state);
+                  }
+
+                  return _buildDocsList(context, items, colors);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeTabs(AppSemanticColors colors) {
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.symmetric(horizontal: AppSpace.s12),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colors.borderStrong)),
+      ),
+      child: Row(
+        children: [
+          _buildTypeTab(colors, label: 'Media', type: 'media'),
+          const SizedBox(width: 28),
+          _buildTypeTab(colors, label: 'Posts', type: 'post'),
+          const SizedBox(width: 28),
+          _buildTypeTab(colors, label: 'Docs', type: 'docs'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTypeTab(
+    AppSemanticColors colors, {
+    required String label,
+    required String type,
+  }) {
+    final isSelected = _selectedType == type;
+
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      child: InkWell(
+        onTap: () => _onTypeSelected(type),
+        child: Container(
+          height: double.infinity,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.only(top: 2),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: isSelected ? colors.borderFocus : Colors.transparent,
+                width: 1.5,
+              ),
             ),
           ),
-        ],
+          child: Text(
+            label,
+            style: AppTextStyles.bodyLarge.copyWith(
+              color: isSelected ? colors.textPrimary : colors.textSecondary,
+              fontWeight: AppTypographyTokens.weightMedium,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -252,6 +214,35 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
       default:
         return 'Posts';
     }
+  }
+
+  Widget _buildEmptyState(AppSemanticColors colors) {
+    final icon = switch (_selectedType) {
+      'media' => FontAwesomeIcons.photoFilm,
+      'docs' => FontAwesomeIcons.fileLines,
+      _ => FontAwesomeIcons.rectangleList,
+    };
+    final message = switch (_selectedType) {
+      'media' => 'No photos or videos found',
+      'docs' => 'No documents found',
+      _ => 'No posts found',
+    };
+
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FaIcon(icon, size: 48, color: colors.iconSecondary),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: AppTextStyles.bodyDefault.copyWith(
+              color: colors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildMediaGrid(
