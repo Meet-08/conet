@@ -37,6 +37,7 @@ import {
   getPostCommentsService,
   getPostService,
   getUserPostsService,
+  recordImpressionsService,
   toggleLikeService,
   updatePostService,
 } from "../../../services/postService.js";
@@ -385,12 +386,20 @@ describe("addCommentService", () => {
 
     const result = await addCommentService(
       POST_ID,
-      TEST_USER.id,
+      TEST_USER_B.id,
       "Great post!",
     );
 
     expect(result.content).toBe("Great post!");
     expect(result.username).toBe("alice");
+    expect(prismaMock.notifications.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: "POST_COMMENT",
+          receiver_id: mockPost.user_id,
+        }),
+      }),
+    );
   });
 
   it("throws 404 when post does not exist", async () => {
@@ -399,6 +408,73 @@ describe("addCommentService", () => {
     await expect(
       addCommentService("ghost", TEST_USER.id, "hi"),
     ).rejects.toMatchObject({ statusCode: 404 });
+  });
+
+  it("creates a nested reply successfully when parent exists and is top-level", async () => {
+    const parentComment = { ...mockComment, parent_comment_id: null };
+    const replyComment = {
+      ...mockComment,
+      id: "reply-123",
+      parent_comment_id: COMMENT_ID,
+      content: "Nice reply",
+    };
+    prismaMock.posts.findUnique.mockResolvedValue(mockPost);
+    prismaMock.post_comments.findUnique.mockResolvedValue(parentComment);
+    prismaMock.post_comments.create.mockResolvedValue(replyComment);
+
+    const result = await addCommentService(
+      POST_ID,
+      TEST_USER_B.id,
+      "Nice reply",
+      COMMENT_ID,
+    );
+
+    expect(result.id).toBe("reply-123");
+    expect(result.parent_comment_id).toBe(COMMENT_ID);
+    expect(prismaMock.post_comments.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          post_id: POST_ID,
+          user_id: TEST_USER_B.id,
+          content: "Nice reply",
+          parent_comment_id: COMMENT_ID,
+        }),
+      }),
+    );
+    expect(prismaMock.notifications.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: "COMMENT_REPLY",
+          receiver_id: parentComment.user_id,
+        }),
+      }),
+    );
+  });
+
+  it("throws 400 when attempting to reply to a reply comment (2nd level nesting)", async () => {
+    const parentReplyComment = { ...mockComment, parent_comment_id: "another-parent-id" };
+    prismaMock.posts.findUnique.mockResolvedValue(mockPost);
+    prismaMock.post_comments.findUnique.mockResolvedValue(parentReplyComment);
+
+    await expect(
+      addCommentService(POST_ID, TEST_USER.id, "Nested reply too deep", COMMENT_ID),
+    ).rejects.toMatchObject({
+      message: "Only one-level nesting of comments is allowed",
+      statusCode: 400,
+    });
+    expect(prismaMock.post_comments.create).not.toHaveBeenCalled();
+  });
+
+  it("throws 404 when parent comment does not exist", async () => {
+    prismaMock.posts.findUnique.mockResolvedValue(mockPost);
+    prismaMock.post_comments.findUnique.mockResolvedValue(null);
+
+    await expect(
+      addCommentService(POST_ID, TEST_USER.id, "Reply to ghost", COMMENT_ID),
+    ).rejects.toMatchObject({
+      message: "Parent comment not found",
+      statusCode: 404,
+    });
   });
 });
 
@@ -413,6 +489,34 @@ describe("getPostCommentsService", () => {
     expect(result).toHaveLength(1);
     expect(result[0].username).toBe("alice");
     expect(result[0].content).toBe("Great post!");
+  });
+
+  it("returns nested comments inside replies list", async () => {
+    const parentCommentWithReplies = {
+      ...mockComment,
+      parent_comment_id: null,
+      other_post_comments: [
+        {
+          id: "reply-123",
+          post_id: POST_ID,
+          user_id: TEST_USER_B.id,
+          content: "Indeed!",
+          created_at: new Date(),
+          users: { id: TEST_USER_B.id, username: "bob" },
+          parent_comment_id: COMMENT_ID,
+        },
+      ],
+    };
+    prismaMock.posts.findUnique.mockResolvedValue(mockPost);
+    prismaMock.post_comments.findMany.mockResolvedValue([parentCommentWithReplies]);
+
+    const result = await getPostCommentsService(POST_ID);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].replies).toHaveLength(1);
+    expect(result[0].replies[0].id).toBe("reply-123");
+    expect(result[0].replies[0].username).toBe("bob");
+    expect(result[0].replies[0].parent_comment_id).toBe(COMMENT_ID);
   });
 
   it("throws 404 when post does not exist", async () => {
@@ -552,5 +656,32 @@ describe("getLikedPostsService", () => {
     await getLikedPostsService(TEST_USER.id, 1, 20);
 
     expect(prismaMock.$transaction).toHaveBeenCalled();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+describe("recordImpressionsService", () => {
+  it("bulk inserts post impressions successfully", async () => {
+    prismaMock.post_impressions.createMany.mockResolvedValue({ count: 2 });
+
+    const result = await recordImpressionsService(TEST_USER.id, ["post-1", "post-2"]);
+
+    expect(result.count).toBe(2);
+    expect(prismaMock.post_impressions.createMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: [
+          { user_id: TEST_USER.id, post_id: "post-1" },
+          { user_id: TEST_USER.id, post_id: "post-2" },
+        ],
+        skipDuplicates: true,
+      }),
+    );
+  });
+
+  it("handles empty postIds list gracefully", async () => {
+    const result = await recordImpressionsService(TEST_USER.id, []);
+
+    expect(result.count).toBe(0);
+    expect(prismaMock.post_impressions.createMany).not.toHaveBeenCalled();
   });
 });

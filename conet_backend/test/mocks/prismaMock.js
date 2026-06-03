@@ -44,6 +44,7 @@ export const prismaMock = {
   posts: makeMethods(),
   post_likes: makeMethods(),
   post_comments: makeMethods(),
+  post_impressions: makeMethods(),
   events: makeMethods(),
   event_activity: makeMethods(),
   event_prizes: makeMethods(),

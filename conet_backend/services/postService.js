@@ -50,6 +50,8 @@ const mapComment = (comment) => ({
   content: comment.content,
   created_at: comment.created_at,
   user: comment.users ?? comment.user ?? null,
+  parent_comment_id: comment.parent_comment_id ?? null,
+  replies: comment.other_post_comments ? comment.other_post_comments.map(mapComment) : [],
 });
 
 export const postIncludeOptions = (viewerId) => ({
@@ -306,7 +308,7 @@ export const toggleLikeService = async (postId, userId) => {
 
 // ─── Add comment ──────────────────────────────────────────────────────────
 
-export const addCommentService = async (postId, userId, content) => {
+export const addCommentService = async (postId, userId, content, parentCommentId = null) => {
   const post = await prisma.posts.findUnique({ where: { id: postId } });
 
   if (!post) {
@@ -315,19 +317,55 @@ export const addCommentService = async (postId, userId, content) => {
     throw err;
   }
 
+  let parentComment = null;
+  if (parentCommentId) {
+    parentComment = await prisma.post_comments.findUnique({
+      where: { id: parentCommentId },
+    });
+
+    if (!parentComment) {
+      const err = new Error("Parent comment not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (parentComment.parent_comment_id) {
+      const err = new Error("Only one-level nesting of comments is allowed");
+      err.statusCode = 400;
+      throw err;
+    }
+  }
+
   const comment = await prisma.post_comments.create({
-    data: { post_id: postId, user_id: userId, content },
+    data: {
+      post_id: postId,
+      user_id: userId,
+      content,
+      parent_comment_id: parentCommentId || null,
+    },
     include: { users: true },
   });
 
   // Send notification
-  await notificationService.createNotification({
-    receiverId: post.user_id,
-    actorId: userId,
-    type: "POST_COMMENT",
-    referenceId: postId,
-    content: content.substring(0, 100), // Send a snippet of the comment
-  });
+  if (parentComment) {
+    // Send COMMENT_REPLY notification ONLY to the parent comment author (post author not notified)
+    await notificationService.createNotification({
+      receiverId: parentComment.user_id,
+      actorId: userId,
+      type: "COMMENT_REPLY",
+      referenceId: postId,
+      content: content.substring(0, 100),
+    });
+  } else {
+    // Send POST_COMMENT notification to post author
+    await notificationService.createNotification({
+      receiverId: post.user_id,
+      actorId: userId,
+      type: "POST_COMMENT",
+      referenceId: postId,
+      content: content.substring(0, 100),
+    });
+  }
 
   return mapComment(comment);
 };
@@ -344,9 +382,17 @@ export const getPostCommentsService = async (postId) => {
   }
 
   const comments = await prisma.post_comments.findMany({
-    where: { post_id: postId },
+    where: { post_id: postId, parent_comment_id: null },
     orderBy: { created_at: "desc" },
-    include: { users: true },
+    include: {
+      users: true,
+      other_post_comments: {
+        include: {
+          users: true,
+        },
+        orderBy: { created_at: "asc" },
+      },
+    },
   });
 
   return comments.map(mapComment);
@@ -405,4 +451,24 @@ export const deleteCommentService = async (postId, commentId, userId) => {
   }
 
   await prisma.post_comments.delete({ where: { id: commentId } });
+};
+
+// ─── Record post impressions ──────────────────────────────────────────────
+
+export const recordImpressionsService = async (userId, postIds) => {
+  if (!postIds || postIds.length === 0) {
+    return { count: 0 };
+  }
+
+  const data = postIds.map((postId) => ({
+    user_id: userId,
+    post_id: postId,
+  }));
+
+  const result = await prisma.post_impressions.createMany({
+    data,
+    skipDuplicates: true,
+  });
+
+  return result;
 };

@@ -10,6 +10,7 @@ import {
   getPostCommentsService,
   getPostService,
   getUserPostsService,
+  recordImpressionsService,
   toggleLikeService,
   updatePostService,
 } from "../services/postService.js";
@@ -107,14 +108,19 @@ export const toggleLike = asyncHandler(async (req, res) => {
 
 // ADD COMMENT
 export const addComment = asyncHandler(async (req, res) => {
-  const { content } = req.body;
+  const { content, parent_comment_id } = req.body;
 
   if (!content) {
     res.status(400);
     throw new Error("Comment content is required");
   }
 
-  const comment = await addCommentService(req.params.id, req.user.id, content);
+  const comment = await addCommentService(
+    req.params.id,
+    req.user.id,
+    content,
+    parent_comment_id,
+  );
 
   res
     .status(201)
@@ -160,4 +166,18 @@ export const deleteComment = asyncHandler(async (req, res) => {
   res
     .status(200)
     .json({ success: true, message: "Comment deleted successfully" });
+});
+
+// RECORD IMPRESSIONS (BATCH)
+export const recordImpressions = asyncHandler(async (req, res) => {
+  const { post_ids } = req.body;
+
+  if (!post_ids || !Array.isArray(post_ids)) {
+    res.status(400);
+    throw new Error("post_ids array is required");
+  }
+
+  const result = await recordImpressionsService(req.user.id, post_ids);
+
+  res.status(200).json({ success: true, count: result.count });
 });

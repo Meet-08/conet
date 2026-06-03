@@ -10,6 +10,7 @@ import {
   getPost,
   getPostComments,
   getUserPosts,
+  recordImpressions,
   toggleLike,
   updatePost,
 } from "../controllers/postController.js";
@@ -27,6 +28,7 @@ router.get("/user/:userId", getUserPosts);
 router.get("/:id/comments", getPostComments);
 
 router.post("/", createPost);
+router.post("/impressions", recordImpressions);
 router.put("/:id", updatePost);
 router.delete("/:id", deletePost);
 router.put("/like/:id", toggleLike);

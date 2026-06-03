@@ -65,6 +65,8 @@ class NotificationService {
         return "New Like";
       case "POST_COMMENT":
         return "New Comment";
+      case "COMMENT_REPLY":
+        return "New Reply";
       default:
         return "New Notification";
     }
@@ -78,6 +80,8 @@ class NotificationService {
         return "Someone liked your post.";
       case "POST_COMMENT":
         return "Someone commented on your post.";
+      case "COMMENT_REPLY":
+        return "Someone replied to your comment.";
       default:
         return "You have a new notification.";
     }
