@@ -13,7 +13,7 @@ abstract interface class PostRepository {
   Future<Either<AppFailure, Unit>> deletePost(String postId);
   Future<Either<AppFailure, Post>> getPost(String postId);
   Future<Either<AppFailure, Unit>> toggleLikePost(String postId);
-  Future<Either<AppFailure, Unit>> commentPost(String postId, String comment);
+  Future<Either<AppFailure, Unit>> commentPost(String postId, String comment, {String? parentCommentId});
   Future<Either<AppFailure, List<Comment>>> getPostComments(String postId);
   Stream<List<Comment>> watchPostComments(String postId);
 
@@ -38,4 +38,6 @@ abstract interface class PostRepository {
     int page = 1,
     int limit = 20,
   });
+
+  Future<Either<AppFailure, Unit>> recordImpressions(List<String> postIds);
 }

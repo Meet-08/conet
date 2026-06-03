@@ -16,11 +16,14 @@ class EventPage extends StatefulWidget {
 }
 
 class _EventPageState extends State<EventPage> {
+  late final EventBloc _eventBloc;
+
   @override
   void initState() {
     super.initState();
+    _eventBloc = context.read<EventBloc>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<EventBloc>().add(const EventFetchPublishedEventsEvent());
+      _eventBloc.add(const EventFetchPublishedEventsEvent());
     });
   }
 
@@ -53,12 +56,12 @@ class _EventPageState extends State<EventPage> {
               events: state.events,
               hasMore: state.hasMore,
               onRefresh: () async {
-                context.read<EventBloc>().add(
+                _eventBloc.add(
                   const EventFetchPublishedEventsEvent(),
                 );
               },
               onLoadMore: () {
-                context.read<EventBloc>().add(
+                _eventBloc.add(
                   const EventFetchMorePublishedEventsEvent(),
                 );
               },

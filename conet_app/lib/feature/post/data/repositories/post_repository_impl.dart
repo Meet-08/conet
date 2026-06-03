@@ -19,8 +19,8 @@ class PostRepositoryImpl implements PostRepository {
        _bookmarkLocalDataSource = bookmarkLocalDataSource;
 
   @override
-  Future<Either<AppFailure, Unit>> commentPost(String postId, String comment) {
-    return _getResult<Unit>(() => _postDataSource.commentPost(postId, comment));
+  Future<Either<AppFailure, Unit>> commentPost(String postId, String comment, {String? parentCommentId}) {
+    return _getResult<Unit>(() => _postDataSource.commentPost(postId, comment, parentCommentId: parentCommentId));
   }
 
   @override
@@ -137,6 +137,11 @@ class PostRepositoryImpl implements PostRepository {
     return _getResult<List<Post>>(
       () => _postDataSource.getLikedPosts(page: page, limit: limit),
     );
+  }
+
+  @override
+  Future<Either<AppFailure, Unit>> recordImpressions(List<String> postIds) {
+    return _getResult<Unit>(() => _postDataSource.recordImpressions(postIds));
   }
 
   Future<Either<AppFailure, T>> _getResult<T>(Future<T> Function() fn) async {

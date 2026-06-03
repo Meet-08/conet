@@ -26,11 +26,13 @@ class _MessagesPageState extends State<MessagesPage> {
   Timer? _searchDebounce;
   bool _isSearchMode = false;
   String _searchQuery = '';
+  late final MessageBloc _messageBloc;
 
   @override
   void initState() {
     super.initState();
-    context.read<MessageBloc>().add(MessageConversationsRequested());
+    _messageBloc = context.read<MessageBloc>();
+    _messageBloc.add(MessageConversationsRequested());
   }
 
   @override
@@ -41,13 +43,13 @@ class _MessagesPageState extends State<MessagesPage> {
   }
 
   Future<void> _showCreateConversationDialog() async {
-    context.read<MessageBloc>().add(MessageUserSearchCleared());
+    _messageBloc.add(MessageUserSearchCleared());
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => BlocProvider.value(
-        value: context.read<MessageBloc>(),
+        value: _messageBloc,
         child: const NewMessageSheet(),
       ),
     );
@@ -60,7 +62,7 @@ class _MessagesPageState extends State<MessagesPage> {
         _searchDebounce?.cancel();
         _searchController.clear();
         _searchQuery = '';
-        context.read<MessageBloc>().add(
+        _messageBloc.add(
           MessageConversationsRequested(searchQuery: ''),
         );
       }
@@ -76,7 +78,7 @@ class _MessagesPageState extends State<MessagesPage> {
     _searchDebounce?.cancel();
     _searchDebounce = Timer(const Duration(milliseconds: 300), () {
       if (!mounted) return;
-      context.read<MessageBloc>().add(
+      _messageBloc.add(
         MessageConversationsRequested(searchQuery: query),
       );
     });
@@ -108,7 +110,7 @@ class _MessagesPageState extends State<MessagesPage> {
               current.createdConversation != null,
           listener: (context, state) {
             final conversation = state.createdConversation!;
-            context.read<MessageBloc>().add(
+            _messageBloc.add(
               MessageCreatedConversationHandled(),
             );
             context.push('/chat-detail', extra: conversation);

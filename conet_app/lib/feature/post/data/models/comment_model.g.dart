@@ -13,6 +13,12 @@ CommentModel _$CommentModelFromJson(Map<String, dynamic> json) => CommentModel(
   username: json['username'] as String,
   profilePicUrl: json['profile_pic_url'] as String?,
   content: json['content'] as String,
+  parentCommentId: json['parent_comment_id'] as String?,
+  replies:
+      (json['replies'] as List<dynamic>?)
+          ?.map((e) => CommentModel.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const [],
 );
 
 Map<String, dynamic> _$CommentModelToJson(CommentModel instance) =>
@@ -23,4 +29,6 @@ Map<String, dynamic> _$CommentModelToJson(CommentModel instance) =>
       'username': instance.username,
       'profile_pic_url': instance.profilePicUrl,
       'content': instance.content,
+      'parent_comment_id': instance.parentCommentId,
+      'replies': instance.replies,
     };

@@ -66,12 +66,15 @@ class PostDataSourceImpl implements PostDataSource {
   }
 
   @override
-  Future<Unit> commentPost(String postId, String comment) async {
+  Future<Unit> commentPost(String postId, String comment, {String? parentCommentId}) async {
     try {
       logger.i("Commenting on post $postId");
       final res = await dioClient.dio.post(
         "/posts/comment/$postId",
-        data: {"content": comment},
+        data: {
+          "content": comment,
+          "parent_comment_id": parentCommentId,
+        },
       );
       if (res.statusCode != 201) {
         throw ServerException("Failed to comment on post");
@@ -195,6 +198,25 @@ class PostDataSourceImpl implements PostDataSource {
       return posts.map((e) => PostModel.fromJson(e)).toList();
     } catch (e) {
       logger.e("Failed to get liked posts", error: e);
+      throw ServerException(AppErrorHandler.handleException(e), e);
+    }
+  }
+
+  @override
+  Future<Unit> recordImpressions(List<String> postIds) async {
+    try {
+      logger.i("Recording impressions for posts: $postIds");
+      final res = await dioClient.dio.post(
+        "/posts/impressions",
+        data: {"post_ids": postIds},
+      );
+      if (res.statusCode != 200) {
+        throw ServerException("Failed to record impressions");
+      }
+      logger.i("Impressions recorded successfully");
+      return unit;
+    } catch (e) {
+      logger.e("Failed to record impressions", error: e);
       throw ServerException(AppErrorHandler.handleException(e), e);
     }
   }

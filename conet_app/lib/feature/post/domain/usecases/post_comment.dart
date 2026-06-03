@@ -8,7 +8,7 @@ class PostComment {
   PostComment({required PostRepository postRepository})
     : _postRepository = postRepository;
 
-  Future<Either<AppFailure, Unit>> call(String postId, String comment) {
-    return _postRepository.commentPost(postId, comment);
+  Future<Either<AppFailure, Unit>> call(String postId, String comment, {String? parentCommentId}) {
+    return _postRepository.commentPost(postId, comment, parentCommentId: parentCommentId);
   }
 }

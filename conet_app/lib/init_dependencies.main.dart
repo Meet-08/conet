@@ -126,6 +126,9 @@ void _initPost() {
   serviceLocator.registerFactory(
     () => PostWatchPostComments(postRepository: serviceLocator()),
   );
+  serviceLocator.registerFactory(
+    () => PostRecordImpressions(postRepository: serviceLocator()),
+  );
   // Bookmark use cases
   serviceLocator.registerFactory(
     () => PostBookmark(postRepository: serviceLocator()),
@@ -150,6 +153,7 @@ void _initPost() {
       bookmarkPost: serviceLocator(),
       removeBookmark: serviceLocator(),
       getBookmarks: serviceLocator(),
+      recordImpressions: serviceLocator(),
     ),
   );
 

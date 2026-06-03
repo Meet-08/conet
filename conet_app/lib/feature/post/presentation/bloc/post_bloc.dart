@@ -12,6 +12,7 @@ import 'package:conet_app/feature/post/domain/usecases/post_get_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_user_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_remove_bookmark.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_record_impressions.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -37,10 +38,14 @@ class PostBloc extends Bloc<PostEvent, PostState> {
   final PostBookmark _bookmarkPost;
   final PostRemoveBookmark _removeBookmark;
   final PostGetBookmarks _getBookmarks;
-
+  final PostRecordImpressions _recordImpressions;
+ 
   /// Tracks post IDs with an in-flight like API call to prevent duplicates.
   final Set<String> _likingPostIds = {};
 
+  /// Pending post impressions to be flushed to backend.
+  final Set<String> _pendingImpressions = {};
+ 
   PostBloc({
     required PostGetPosts getPosts,
     required PostGetUserPosts getUserPosts,
@@ -52,6 +57,7 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     required PostBookmark bookmarkPost,
     required PostRemoveBookmark removeBookmark,
     required PostGetBookmarks getBookmarks,
+    required PostRecordImpressions recordImpressions,
   }) : _getPosts = getPosts,
        _getUserPosts = getUserPosts,
        _createPost = createPost,
@@ -62,6 +68,7 @@ class PostBloc extends Bloc<PostEvent, PostState> {
        _bookmarkPost = bookmarkPost,
        _removeBookmark = removeBookmark,
        _getBookmarks = getBookmarks,
+       _recordImpressions = recordImpressions,
        super(PostInitial()) {
     on<PostGetPostsEvent>(_onGetPosts);
     on<PostGetUserPostsEvent>(_onGetUserPosts);
@@ -79,6 +86,8 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     on<PostRemoveBookmarkEvent>(_onRemoveBookmark);
     on<PostLoadBookmarkedPostsEvent>(_onLoadBookmarkedPosts);
     on<PostCheckBookmarkStatusEvent>(_onCheckBookmarkStatus);
+    on<PostMarkSeenEvent>(_onMarkSeen);
+    on<PostFlushImpressionsEvent>(_onFlushImpressions);
   }
 
   Future<void> _onGetPosts(
@@ -422,6 +431,29 @@ class PostBloc extends Bloc<PostEvent, PostState> {
     return result.fold(
       (_) => const <String>{},
       (posts) => posts.map((p) => p.id).toSet(),
+    );
+  }
+
+  void _onMarkSeen(PostMarkSeenEvent event, Emitter<PostState> emit) {
+    _pendingImpressions.add(event.postId);
+  }
+
+  Future<void> _onFlushImpressions(
+    PostFlushImpressionsEvent event,
+    Emitter<PostState> emit,
+  ) async {
+    if (_pendingImpressions.isEmpty) return;
+    final copy = _pendingImpressions.toList();
+    _pendingImpressions.clear();
+
+    final result = await _recordImpressions(copy);
+    result.fold(
+      (failure) {
+        debugPrint("Failed to flush impressions: ${failure.message}");
+      },
+      (_) {
+        debugPrint("Impressions flushed successfully");
+      },
     );
   }
 }

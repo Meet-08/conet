@@ -5,6 +5,10 @@ part 'comment_model.g.dart';
 
 @JsonSerializable()
 class CommentModel extends Comment {
+  @override
+  @JsonKey(name: "replies")
+  final List<CommentModel> replies;
+
   CommentModel({
     required super.id,
     required super.postId,
@@ -12,6 +16,8 @@ class CommentModel extends Comment {
     required super.username,
     required super.profilePicUrl,
     required super.content,
+    super.parentCommentId,
+    this.replies = const [],
   });
 
   factory CommentModel.fromJson(Map<String, dynamic> json) =>
@@ -27,6 +33,8 @@ class CommentModel extends Comment {
       username: comment.username,
       profilePicUrl: comment.profilePicUrl,
       content: comment.content,
+      parentCommentId: comment.parentCommentId,
+      replies: comment.replies.map((r) => CommentModel.copyWith(r)).toList(),
     );
   }
 }

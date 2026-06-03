@@ -12,6 +12,7 @@ import 'package:conet_app/feature/post/domain/usecases/post_get_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_get_user_posts.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_remove_bookmark.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_record_impressions.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,6 +39,8 @@ class MockPostRemoveBookmark extends Mock implements PostRemoveBookmark {}
 
 class MockPostGetBookmarks extends Mock implements PostGetBookmarks {}
 
+class MockPostRecordImpressions extends Mock implements PostRecordImpressions {}
+
 class MockPlatformFile extends Mock implements PlatformFile {}
 
 void main() {
@@ -52,6 +55,7 @@ void main() {
   late MockPostBookmark mockBookmarkPost;
   late MockPostRemoveBookmark mockRemoveBookmark;
   late MockPostGetBookmarks mockGetBookmarks;
+  late MockPostRecordImpressions mockRecordImpressions;
 
   const tUser = User(
     id: 'user-123',
@@ -97,6 +101,7 @@ void main() {
     mockBookmarkPost = MockPostBookmark();
     mockRemoveBookmark = MockPostRemoveBookmark();
     mockGetBookmarks = MockPostGetBookmarks();
+    mockRecordImpressions = MockPostRecordImpressions();
 
     // Default stub: no bookmarks (prevents unhandled mock calls)
     when(
@@ -111,6 +116,10 @@ void main() {
       ),
     ).thenAnswer((_) async => const Right(<Post>[]));
 
+    when(
+      () => mockRecordImpressions(any()),
+    ).thenAnswer((_) async => const Right(unit));
+
     postBloc = PostBloc(
       getPosts: mockGetPosts,
       getUserPosts: mockGetUserPosts,
@@ -122,11 +131,13 @@ void main() {
       bookmarkPost: mockBookmarkPost,
       removeBookmark: mockRemoveBookmark,
       getBookmarks: mockGetBookmarks,
+      recordImpressions: mockRecordImpressions,
     );
   });
 
   setUpAll(() {
     registerFallbackValue(<PlatformFile>[]);
+    registerFallbackValue(<String>[]);
   });
 
   tearDown(() {
@@ -593,6 +604,46 @@ void main() {
         const PostSyncCommentCountEvent(postId: 'post-123', commentCount: 9),
       ),
       expect: () => [],
+    );
+  });
+
+  group('Post Impressions Batch Tracking', () {
+    blocTest<PostBloc, PostState>(
+      'PostMarkSeenEvent buffers post IDs without emitting new states or calling usecase',
+      build: () => postBloc,
+      act: (bloc) {
+        bloc.add(const PostMarkSeenEvent(postId: 'post-1'));
+        bloc.add(const PostMarkSeenEvent(postId: 'post-2'));
+      },
+      expect: () => <PostState>[],
+      verify: (_) {
+        verifyNever(() => mockRecordImpressions(any()));
+      },
+    );
+
+    blocTest<PostBloc, PostState>(
+      'PostFlushImpressionsEvent calls usecase with buffered IDs, clears buffer, and does not emit state changes',
+      build: () => postBloc,
+      act: (bloc) async {
+        bloc.add(const PostMarkSeenEvent(postId: 'post-1'));
+        bloc.add(const PostMarkSeenEvent(postId: 'post-2'));
+        bloc.add(const PostFlushImpressionsEvent());
+        await Future<void>.delayed(Duration.zero);
+      },
+      expect: () => <PostState>[],
+      verify: (_) {
+        verify(() => mockRecordImpressions(['post-1', 'post-2'])).called(1);
+      },
+    );
+
+    blocTest<PostBloc, PostState>(
+      'PostFlushImpressionsEvent does not call usecase when pending set is empty',
+      build: () => postBloc,
+      act: (bloc) => bloc.add(const PostFlushImpressionsEvent()),
+      expect: () => <PostState>[],
+      verify: (_) {
+        verifyNever(() => mockRecordImpressions(any()));
+      },
     );
   });
 }

@@ -25,11 +25,13 @@ abstract class PostDataSource {
 
   Future<Unit> toggleLikePost(String postId);
 
-  Future<Unit> commentPost(String postId, String comment);
+  Future<Unit> commentPost(String postId, String comment, {String? parentCommentId});
 
   Future<List<Comment>> getPostComments(String postId);
 
   Stream<List<Comment>> watchPostComments(String postId);
 
   Future<List<Post>> getLikedPosts({int page = 1, int limit = 20});
+
+  Future<Unit> recordImpressions(List<String> postIds);
 }

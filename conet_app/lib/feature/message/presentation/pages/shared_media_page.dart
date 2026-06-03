@@ -31,6 +31,7 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
   late String _selectedType;
   final Map<String, Future<int?>> _fileSizeRequests = {};
   late ScrollController _scrollController;
+  late final MessageBloc _messageBloc;
 
   @override
   void initState() {
@@ -38,10 +39,11 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
     _selectedType = widget.type;
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+    _messageBloc = context.read<MessageBloc>();
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       if (!mounted) return;
-      context.read<MessageBloc>().add(
+      _messageBloc.add(
         MessageFetchSharedContentRequested(
           conversationId: widget.conversationId,
           type: _selectedType,
@@ -61,9 +63,9 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
     if (!_scrollController.hasClients) return;
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 180) {
-      final state = context.read<MessageBloc>().state;
+      final state = _messageBloc.state;
       if (state.hasMoreSharedContent && !state.isFetchingMoreSharedContent) {
-        context.read<MessageBloc>().add(
+        _messageBloc.add(
           MessageFetchMoreSharedContentRequested(
             conversationId: widget.conversationId,
             type: _selectedType,
@@ -76,7 +78,7 @@ class _SharedMediaPageState extends State<SharedMediaPage> {
   void _onTypeSelected(String type) {
     if (_selectedType == type) return;
     setState(() => _selectedType = type);
-    context.read<MessageBloc>().add(
+    _messageBloc.add(
       MessageFetchSharedContentRequested(
         conversationId: widget.conversationId,
         type: _selectedType,

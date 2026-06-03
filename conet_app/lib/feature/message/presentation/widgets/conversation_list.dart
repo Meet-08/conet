@@ -16,12 +16,14 @@ class ConversationList extends StatefulWidget {
 
 class _ConversationListState extends State<ConversationList> {
   late ScrollController _scrollController;
+  late final MessageBloc _messageBloc;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
+    _messageBloc = context.read<MessageBloc>();
   }
 
   @override
@@ -36,13 +38,13 @@ class _ConversationListState extends State<ConversationList> {
     if (_scrollController.position.pixels <=
             _scrollController.position.minScrollExtent &&
         _scrollController.position.extentAfter > 0) {
-      context.read<MessageBloc>().add(MessageConversationsRequested());
+      _messageBloc.add(MessageConversationsRequested());
     }
   }
 
   Future<void> _onRefresh() async {
     // Trigger refetch when user pulls to refresh
-    context.read<MessageBloc>().add(MessageConversationsRequested());
+    _messageBloc.add(MessageConversationsRequested());
 
     // Wait for the state to update
     await Future.delayed(const Duration(milliseconds: 500));

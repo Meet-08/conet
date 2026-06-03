@@ -35,9 +35,12 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
 
   _DashboardFilter get _selectedFilter => _filters[_selectedFilterIndex];
 
+  late final EventBloc _eventBloc;
+
   @override
   void initState() {
     super.initState();
+    _eventBloc = context.read<EventBloc>();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchForSelectedFilter();
@@ -55,7 +58,7 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
 
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 180) {
-      context.read<EventBloc>().add(
+      _eventBloc.add(
         const EventFetchMoreMyOrganizedEventsEvent(),
       );
     }
@@ -65,7 +68,7 @@ class _EventDashboardPageState extends State<EventDashboardPage> {
     final now = DateTime.now();
     final startOfToday = DateTime(now.year, now.month, now.day);
 
-    context.read<EventBloc>().add(
+    _eventBloc.add(
       EventFetchMyOrganizedEventsEvent(
         status: _selectedFilter.status,
         timeline: _selectedFilter.timeline,

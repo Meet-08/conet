@@ -88,10 +88,33 @@ class PostDetailBloc extends Bloc<PostDetailEvent, PostDetailState> {
     // Optimistic Update
     if (state is PostDetailLoaded) {
       final currentComments = (state as PostDetailLoaded).comments;
-      emit(PostDetailLoaded([...currentComments, event.optimisticComment]));
+      if (event.parentCommentId == null) {
+        emit(PostDetailLoaded([...currentComments, event.optimisticComment]));
+      } else {
+        final updatedComments = currentComments.map((c) {
+          if (c.id == event.parentCommentId) {
+            return Comment(
+              id: c.id,
+              postId: c.postId,
+              userId: c.userId,
+              username: c.username,
+              profilePicUrl: c.profilePicUrl,
+              content: c.content,
+              parentCommentId: c.parentCommentId,
+              replies: [...c.replies, event.optimisticComment],
+            );
+          }
+          return c;
+        }).toList();
+        emit(PostDetailLoaded(updatedComments));
+      }
     }
 
-    final result = await _commentPost(event.postId, event.comment);
+    final result = await _commentPost(
+      event.postId,
+      event.comment,
+      parentCommentId: event.parentCommentId,
+    );
 
     if (result.isLeft()) {
       final failure = result.swap().getOrElse(

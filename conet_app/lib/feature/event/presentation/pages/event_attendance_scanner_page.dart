@@ -34,6 +34,13 @@ class _EventAttendanceScannerPageState
   );
 
   bool _isProcessingScan = false;
+  late final EventRegistrationBloc _eventRegistrationBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _eventRegistrationBloc = context.read<EventRegistrationBloc>();
+  }
 
   @override
   void dispose() {
@@ -42,7 +49,7 @@ class _EventAttendanceScannerPageState
   }
 
   void _onDetect(BarcodeCapture capture) {
-    if (_isProcessingScan) return;
+    if (!mounted || _isProcessingScan) return;
 
     final value = capture.barcodes.isNotEmpty
         ? capture.barcodes.first.rawValue
@@ -73,7 +80,7 @@ class _EventAttendanceScannerPageState
       _isProcessingScan = true;
     });
 
-    context.read<EventRegistrationBloc>().add(
+    _eventRegistrationBloc.add(
       EventRegistrationMarkAttendanceEvent(
         eventId: widget.eventId,
         userId: userId,

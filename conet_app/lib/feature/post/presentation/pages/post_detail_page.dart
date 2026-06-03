@@ -125,6 +125,7 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
   final TextEditingController _commentController = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
   late Post _displayPost;
+  Comment? _replyingTo;
 
   @override
   void initState() {
@@ -158,6 +159,7 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
       postId: widget.post.id,
       username: user.username,
       profilePicUrl: user.profilePicUrl,
+      parentCommentId: _replyingTo?.id,
     );
 
     context.read<PostDetailBloc>().add(
@@ -165,13 +167,14 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
         postId: widget.post.id,
         comment: commentText,
         optimisticComment: optimisticComment,
+        parentCommentId: _replyingTo?.id,
       ),
     );
 
     _commentController.clear();
-    // Keep focus or unfocus? User usually expects to stay focused for rapid commenting,
-    // or unfocus if submitting via button. Let's keep it as is (just clear).
-    // Actually typically on mobile you might want to dismiss keyboard, but let's stick to simple clear.
+    setState(() {
+      _replyingTo = null;
+    });
   }
 
   @override
@@ -298,7 +301,15 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
                                   const SizedBox(height: 16),
                               itemBuilder: (context, index) {
                                 final comment = state.comments[index];
-                                return _CommentItem(comment: comment);
+                                return _CommentItem(
+                                  comment: comment,
+                                  onReply: () {
+                                    setState(() {
+                                      _replyingTo = comment;
+                                    });
+                                    _commentFocusNode.requestFocus();
+                                  },
+                                );
                               },
                             );
                           }
@@ -360,61 +371,100 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
                     ),
                   ],
                 ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: Container(
-                            constraints: const BoxConstraints(maxHeight: 120),
-                            decoration: BoxDecoration(
-                              color: semantic.backgroundSecondary,
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: TextField(
-                              controller: _commentController,
-                              focusNode: _commentFocusNode,
-                              maxLines: null,
-                              textInputAction: TextInputAction.newline,
-                              decoration: InputDecoration(
-                                hintText: 'Add a comment...',
-                                hintStyle: textTheme.labelMedium?.copyWith(
-                                  color: semantic.textTertiary,
-                                ),
-                                border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 12,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_replyingTo != null)
+                      Container(
+                        color: semantic.backgroundSecondary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Replying to @${_replyingTo!.username}',
+                                style: textTheme.labelSmall?.copyWith(
+                                  color: semantic.textSecondary,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            icon: FaIcon(
-                              FontAwesomeIcons.paperPlane,
-                              color: semantic.iconOnBrand,
-                              size: 20,
+                            IconButton(
+                              icon: const Icon(
+                                Icons.close,
+                                size: 16,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _replyingTo = null;
+                                });
+                              },
+                              constraints: const BoxConstraints(),
+                              padding: EdgeInsets.zero,
                             ),
-                            onPressed: _submitComment,
-                            padding: const EdgeInsets.all(12),
-                            constraints: const BoxConstraints(),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
+                    SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: Container(
+                                constraints: const BoxConstraints(maxHeight: 120),
+                                decoration: BoxDecoration(
+                                  color: semantic.backgroundSecondary,
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                child: TextField(
+                                  controller: _commentController,
+                                  focusNode: _commentFocusNode,
+                                  maxLines: null,
+                                  textInputAction: TextInputAction.newline,
+                                  decoration: InputDecoration(
+                                    hintText: 'Add a comment...',
+                                    hintStyle: textTheme.labelMedium?.copyWith(
+                                      color: semantic.textTertiary,
+                                    ),
+                                    border: InputBorder.none,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                icon: FaIcon(
+                                  FontAwesomeIcons.paperPlane,
+                                  color: semantic.iconOnBrand,
+                                  size: 20,
+                                ),
+                                onPressed: _submitComment,
+                                padding: const EdgeInsets.all(12),
+                                constraints: const BoxConstraints(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ],
@@ -427,51 +477,89 @@ class _PostDetailPageContentState extends State<_PostDetailPageContent> {
 
 class _CommentItem extends StatelessWidget {
   final Comment comment;
+  final VoidCallback? onReply;
 
-  const _CommentItem({required this.comment});
+  const _CommentItem({required this.comment, this.onReply});
 
   @override
   Widget build(BuildContext context) {
     final semantic = context.semanticColors;
     final textTheme = Theme.of(context).textTheme;
 
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Avatar
-        CustomCircleAvatar(
-          size: CustomCircleAvatarSize.medium,
-          imageUrl: comment.profilePicUrl,
-          displayName: comment.username,
-          backgroundColor: semantic.backgroundDisabled,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Avatar
+            CustomCircleAvatar(
+              size: CustomCircleAvatarSize.medium,
+              imageUrl: comment.profilePicUrl,
+              displayName: comment.username,
+              backgroundColor: semantic.backgroundDisabled,
+            ),
+            const SizedBox(width: 12),
+
+            // Comment Content
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Username
+                  Text(
+                    comment.username,
+                    style: textTheme.labelMedium?.copyWith(
+                      color: semantic.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+
+                  // Comment Text
+                  Text(
+                    comment.content,
+                    style: textTheme.labelMedium?.copyWith(
+                      color: semantic.textPrimary,
+                      height: 1.4,
+                    ),
+                  ),
+                  if (comment.parentCommentId == null) ...[
+                    const SizedBox(height: 4),
+                    GestureDetector(
+                      onTap: onReply,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Text(
+                          'Reply',
+                          style: textTheme.labelSmall?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-
-        // Comment Content
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Username
-              Text(
-                comment.username,
-                style: textTheme.labelMedium?.copyWith(
-                  color: semantic.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 4),
-
-              // Comment Text
-              Text(
-                comment.content,
-                style: textTheme.labelMedium?.copyWith(
-                  color: semantic.textPrimary,
-                  height: 1.4,
-                ),
-              ),
-            ],
+        if (comment.replies.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(left: 48),
+            child: ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: comment.replies.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final reply = comment.replies[index];
+                return _CommentItem(comment: reply);
+              },
+            ),
           ),
-        ),
+        ],
       ],
     );
   }

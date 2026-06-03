@@ -20,6 +20,13 @@ class EventSearchPage extends StatefulWidget {
 class _EventSearchPageState extends State<EventSearchPage> {
   final TextEditingController _searchController = TextEditingController();
   Timer? _debounce;
+  late final EventBloc _eventBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _eventBloc = context.read<EventBloc>();
+  }
 
   @override
   void dispose() {
@@ -32,7 +39,7 @@ class _EventSearchPageState extends State<EventSearchPage> {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 350), () {
       final query = value.trim();
-      context.read<EventBloc>().add(
+      _eventBloc.add(
         EventFetchPublishedEventsEvent(search: query.isEmpty ? null : query),
       );
     });
@@ -40,7 +47,7 @@ class _EventSearchPageState extends State<EventSearchPage> {
 
   void _clearSearch() {
     _searchController.clear();
-    context.read<EventBloc>().add(const EventFetchPublishedEventsEvent());
+    _eventBloc.add(const EventFetchPublishedEventsEvent());
     setState(() {});
   }
 

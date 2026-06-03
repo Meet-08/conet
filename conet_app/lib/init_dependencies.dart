@@ -114,6 +114,7 @@ import 'package:conet_app/feature/post/domain/usecases/post_get_user_posts.dart'
 import 'package:conet_app/feature/post/domain/usecases/post_remove_bookmark.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_toggle_like.dart';
 import 'package:conet_app/feature/post/domain/usecases/post_watch_post_comments.dart';
+import 'package:conet_app/feature/post/domain/usecases/post_record_impressions.dart';
 import 'package:conet_app/feature/post/presentation/bloc/liked_posts_bloc.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_bloc.dart';
 import 'package:conet_app/feature/post/presentation/bloc/post_detail_bloc.dart';

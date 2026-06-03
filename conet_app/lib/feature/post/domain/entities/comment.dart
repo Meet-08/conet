@@ -16,6 +16,11 @@ class Comment {
 
   final String content;
 
+  @JsonKey(name: "parent_comment_id")
+  final String? parentCommentId;
+
+  final List<Comment> replies;
+
   Comment({
     required this.id,
     required this.postId,
@@ -23,5 +28,7 @@ class Comment {
     required this.username,
     required this.profilePicUrl,
     required this.content,
+    this.parentCommentId,
+    this.replies = const [],
   });
 }

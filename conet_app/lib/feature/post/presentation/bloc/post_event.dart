@@ -96,3 +96,13 @@ class PostCheckBookmarkStatusEvent extends PostEvent {
 
   const PostCheckBookmarkStatusEvent({required this.postId});
 }
+
+class PostMarkSeenEvent extends PostEvent {
+  final String postId;
+
+  const PostMarkSeenEvent({required this.postId});
+}
+
+class PostFlushImpressionsEvent extends PostEvent {
+  const PostFlushImpressionsEvent();
+}

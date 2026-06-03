@@ -22,6 +22,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
   late EventType _selectedType;
   final Map<EventType, int> _typeCounts = {};
   final _scrollController = ScrollController();
+  late final EventBloc _eventBloc;
 
   static const _labelByType = {
     EventType.upcoming: 'Upcoming',
@@ -34,6 +35,7 @@ class _MyEventsPageState extends State<MyEventsPage> {
     super.initState();
     _selectedType = widget.eventType;
     _scrollController.addListener(_onScroll);
+    _eventBloc = context.read<EventBloc>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _fetchForType(_selectedType);
     });
@@ -49,12 +51,12 @@ class _MyEventsPageState extends State<MyEventsPage> {
     if (!_scrollController.hasClients) return;
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 180) {
-      context.read<EventBloc>().add(const EventFetchMoreMyEventsEvent());
+      _eventBloc.add(const EventFetchMoreMyEventsEvent());
     }
   }
 
   void _fetchForType(EventType type) {
-    context.read<EventBloc>().add(
+    _eventBloc.add(
       EventFetchMyEventsEvent(type: _apiType(type), limit: 20),
     );
   }

@@ -174,5 +174,78 @@ void main() {
         verify(() => mockWatchPostComments(tPostId)).called(greaterThan(0));
       },
     );
+
+    final tReply = Comment(
+      id: 'reply-123',
+      postId: tPostId,
+      userId: 'user-123',
+      username: 'replyuser',
+      profilePicUrl: '',
+      content: 'This is a nested reply',
+      parentCommentId: 'comment-123',
+    );
+
+    blocTest<PostDetailBloc, PostDetailState>(
+      'emits optimistic reply then refreshed comments on success when adding a reply comment',
+      build: () {
+        when(
+          () => mockCommentPost(
+            any(),
+            any(),
+            parentCommentId: any(named: 'parentCommentId'),
+          ),
+        ).thenAnswer((_) async => const Right(unit));
+        when(
+          () => mockGetPostComments(any()),
+        ).thenAnswer((_) async => Right([
+          Comment(
+            id: tComment.id,
+            postId: tComment.postId,
+            userId: tComment.userId,
+            username: tComment.username,
+            profilePicUrl: tComment.profilePicUrl,
+            content: tComment.content,
+            parentCommentId: tComment.parentCommentId,
+            replies: [tReply],
+          )
+        ]));
+        return postDetailBloc;
+      },
+      seed: () => PostDetailLoaded([tComment]),
+      act: (bloc) => bloc.add(
+        PostDetailAddCommentEvent(
+          postId: tPostId,
+          comment: 'This is a nested reply',
+          optimisticComment: tReply,
+          parentCommentId: 'comment-123',
+        ),
+      ),
+      expect: () => [
+        isA<PostDetailLoaded>().having(
+          (s) => s.comments.first.replies.length,
+          'optimistic replies length',
+          1,
+        ).having(
+          (s) => s.comments.first.replies.first.id,
+          'optimistic reply id',
+          'reply-123',
+        ),
+        isA<PostDetailLoaded>().having(
+          (s) => s.comments.first.replies.length,
+          'refreshed replies length',
+          1,
+        ),
+      ],
+      verify: (_) {
+        verify(
+          () => mockCommentPost(
+            tPostId,
+            'This is a nested reply',
+            parentCommentId: 'comment-123',
+          ),
+        ).called(1);
+        verify(() => mockGetPostComments(tPostId)).called(1);
+      },
+    );
   });
 }

@@ -29,10 +29,12 @@ class PostDetailAddCommentEvent extends PostDetailEvent {
   final String postId;
   final String comment;
   final Comment optimisticComment;
+  final String? parentCommentId;
 
   PostDetailAddCommentEvent({
     required this.postId,
     required this.comment,
     required this.optimisticComment,
+    this.parentCommentId,
   });
 }
