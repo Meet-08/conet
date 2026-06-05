@@ -25,8 +25,11 @@ jobs:
       - uses: flutter-actions/setup-flutter@v4
         with:
           channel: stable
-          version: 3.41.6
+          version: 3.44.1
           cache: true
+
+      - name: Create pub cache directory
+        run: mkdir -p ~/.pub-cache
 
       - name: Cache pub dependencies
         uses: actions/cache@v4
@@ -68,8 +71,11 @@ jobs:
         uses: flutter-actions/setup-flutter@v4
         with:
           channel: stable
-          version: 3.41.6
+          version: 3.44.1
           cache: true
+
+      - name: Create pub cache directory
+        run: mkdir -p ~/.pub-cache
 
       - name: Cache pub dependencies
         uses: actions/cache@v4
