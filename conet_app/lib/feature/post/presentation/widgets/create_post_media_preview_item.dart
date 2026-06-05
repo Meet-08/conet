@@ -127,7 +127,7 @@ class CreatePostMediaPreviewItem extends StatelessWidget {
     );
   }
 
-  IconData _iconForMediaType(MediaType type) {
+  FaIconData _iconForMediaType(MediaType type) {
     return switch (type) {
       MediaType.image => FontAwesomeIcons.image,
       MediaType.video => FontAwesomeIcons.video,

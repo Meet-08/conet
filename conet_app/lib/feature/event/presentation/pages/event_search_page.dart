@@ -296,7 +296,7 @@ class _SearchEventCard extends StatelessWidget {
 
   Widget _metaLine({
     required BuildContext context,
-    required IconData icon,
+    required FaIconData icon,
     required String text,
   }) {
     final theme = Theme.of(context);

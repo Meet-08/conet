@@ -23,7 +23,7 @@ class CreatePostActionsRow extends StatelessWidget {
 
   Widget _actionIcon({
     required BuildContext context,
-    required IconData icon,
+    required FaIconData icon,
     required VoidCallback onTap,
     required bool isActive,
   }) {

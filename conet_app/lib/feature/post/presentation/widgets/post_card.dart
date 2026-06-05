@@ -310,7 +310,7 @@ class _PostCardState extends State<PostCard> {
                         ],
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(8, 6, 4, 6),
-                          child: Icon(
+                          child: FaIcon(
                             FontAwesomeIcons.ellipsisVertical,
                             color: semantic.iconSecondary,
                             size: 16,
@@ -726,7 +726,7 @@ class _FollowButton extends StatelessWidget {
 }
 
 class _ActionItem extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String label;
   final Color? color;
 

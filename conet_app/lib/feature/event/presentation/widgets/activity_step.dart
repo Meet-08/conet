@@ -343,7 +343,7 @@ class _DismissibleCard extends StatelessWidget {
 // ─── Empty hint widget ───────────────────────────────────────────────────────
 
 class _EmptyHint extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String text;
   const _EmptyHint({required this.icon, required this.text});
 

@@ -301,7 +301,7 @@ class _ViewTicketBody extends StatelessWidget {
 }
 
 class _TicketHintRow extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String text;
   final AppSemanticColors semantic;
 

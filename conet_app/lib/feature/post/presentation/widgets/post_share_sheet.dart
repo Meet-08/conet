@@ -306,7 +306,7 @@ class _PostShareSheetState extends State<PostShareSheet> {
 }
 
 class _PostShareActionButton extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String label;
   final VoidCallback onTap;
 

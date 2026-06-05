@@ -20,7 +20,7 @@ class NotificationTypeResolver {
     }
   }
 
-  static IconData icon(String type) {
+  static FaIconData icon(String type) {
     switch (type) {
       case 'POST_LIKE':
         return FontAwesomeIcons.solidHeart;

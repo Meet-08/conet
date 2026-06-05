@@ -402,7 +402,7 @@ class _MyEventCard extends StatelessWidget {
 }
 
 class _MetaLine extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String text;
 
   const _MetaLine({required this.icon, required this.text});
@@ -432,7 +432,7 @@ class _MetaLine extends StatelessWidget {
 
 class _ActionPill extends StatelessWidget {
   final bool filled;
-  final IconData icon;
+  final FaIconData icon;
   final String label;
   final VoidCallback onTap;
 

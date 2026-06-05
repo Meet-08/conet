@@ -2,6 +2,7 @@ import 'package:conet_app/core/utils/app_toast.dart';
 import 'package:conet_app/core/widgets/file_download_open_button.dart';
 import 'package:conet_app/feature/event/domain/entities/event.dart';
 import 'package:conet_app/feature/event/domain/entities/event_attendees.dart';
+import 'package:conet_app/feature/event/domain/entities/event_custom_field.dart';
 import 'package:conet_app/feature/event/presentation/bloc/event_registration_bloc.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -183,7 +184,10 @@ class _EventAttendeesPageState extends State<EventAttendeesPage> {
                   ...attendees.attendees.map(
                     (attendee) => Padding(
                       padding: const EdgeInsets.only(bottom: 10),
-                      child: _IndividualAttendeeCard(attendee: attendee),
+                      child: _IndividualAttendeeCard(
+                        attendee: attendee,
+                        event: widget.event,
+                      ),
                     ),
                   ),
               ],
@@ -263,24 +267,62 @@ class _SummaryCard extends StatelessWidget {
 
 class _IndividualAttendeeCard extends StatelessWidget {
   final EventAttendee attendee;
+  final Event? event;
 
-  const _IndividualAttendeeCard({required this.attendee});
+  const _IndividualAttendeeCard({required this.attendee, this.event});
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         border: Border.all(color: colorScheme.outlineVariant),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: ListTile(
-        leading: const FaIcon(FontAwesomeIcons.user, size: 18),
-        title: Text(attendee.user?.displayName ?? 'Unknown attendee'),
-        subtitle: Text(_subtitle(attendee)),
-        trailing: _StatusPill(status: attendee.registrationStatus),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.only(top: 2),
+                child: FaIcon(FontAwesomeIcons.user, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      attendee.user?.displayName ?? 'Unknown attendee',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      _subtitle(attendee),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              _StatusPill(status: attendee.registrationStatus),
+            ],
+          ),
+          _CustomFieldResponsesSection(
+            responses: attendee.customFieldResponses,
+            fields: event?.customFields ?? const [],
+          ),
+        ],
       ),
     );
   }
@@ -392,11 +434,179 @@ class _TeamAttendeeCard extends StatelessWidget {
                 ),
               ),
             ],
+            _CustomFieldResponsesSection(
+              responses: attendee.customFieldResponses,
+              fields: event?.customFields ?? const [],
+            ),
           ],
         ),
       ),
     );
   }
+}
+
+class _CustomFieldResponsesSection extends StatelessWidget {
+  final Map<String, dynamic> responses;
+  final List<EventCustomField> fields;
+
+  const _CustomFieldResponsesSection({
+    required this.responses,
+    required this.fields,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final items = _orderedResponseItems();
+    if (items.isEmpty) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 12),
+        Divider(color: colorScheme.outlineVariant, height: 1),
+        const SizedBox(height: 10),
+        Text(
+          'Registration Information',
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: items
+              .map(
+                (item) => _CustomFieldResponseChip(
+                  label: item.label,
+                  value: item.value,
+                ),
+              )
+              .toList(growable: false),
+        ),
+      ],
+    );
+  }
+
+  List<_CustomFieldResponseItem> _orderedResponseItems() {
+    if (responses.isEmpty) return const [];
+
+    final labelsByKey = <String, String>{
+      for (final field in fields) field.key: field.label,
+    };
+
+    final orderedKeys = <String>[];
+    for (final field in fields) {
+      if (_hasDisplayValue(responses[field.key])) {
+        orderedKeys.add(field.key);
+      }
+    }
+
+    for (final entry in responses.entries) {
+      if (_hasDisplayValue(entry.value) && !orderedKeys.contains(entry.key)) {
+        orderedKeys.add(entry.key);
+      }
+    }
+
+    return orderedKeys
+        .map(
+          (key) => _CustomFieldResponseItem(
+            label: labelsByKey[key] ?? _humanizeKey(key),
+            value: _formatValue(responses[key]),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  bool _hasDisplayValue(dynamic value) {
+    if (value == null) return false;
+    if (value is List) return value.isNotEmpty;
+    if (value is Map) return value.isNotEmpty;
+    return value.toString().trim().isNotEmpty;
+  }
+
+  String _formatValue(dynamic value) {
+    if (value is List) {
+      return value.map((item) => item.toString()).join(', ');
+    }
+    if (value is Map) {
+      return value.entries
+          .map(
+            (entry) => '${_humanizeKey(entry.key.toString())}: ${entry.value}',
+          )
+          .join(', ');
+    }
+    return value.toString();
+  }
+
+  String _humanizeKey(String key) {
+    return key
+        .replaceAll('_', ' ')
+        .replaceAll('-', ' ')
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .map(
+          (part) =>
+              '${part[0].toUpperCase()}${part.length > 1 ? part.substring(1) : ''}',
+        )
+        .join(' ');
+  }
+}
+
+class _CustomFieldResponseChip extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _CustomFieldResponseChip({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      constraints: const BoxConstraints(minWidth: 120, maxWidth: 260),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CustomFieldResponseItem {
+  final String label;
+  final String value;
+
+  const _CustomFieldResponseItem({required this.label, required this.value});
 }
 
 class _StatusPill extends StatelessWidget {

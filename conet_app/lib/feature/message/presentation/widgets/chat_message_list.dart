@@ -76,10 +76,10 @@ class ChatMessageList extends StatelessWidget {
     final totalCount = sorted.length + (isFetchingHistory ? 1 : 0);
 
     return ListView.builder(
+      scrollCacheExtent: const .pixels(400),
       controller: scrollController,
       reverse: true,
       padding: const EdgeInsets.all(12),
-      cacheExtent: 400,
       itemCount: totalCount,
       itemBuilder: (context, index) {
         if (isFetchingHistory && index == sorted.length) {

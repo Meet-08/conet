@@ -45,7 +45,8 @@ class _FeedPageState extends State<FeedPage> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       _postBloc.add(const PostFlushImpressionsEvent());
     }
   }
@@ -59,7 +60,7 @@ class _FeedPageState extends State<FeedPage> with WidgetsBindingObserver {
     _viewTimers.clear();
     _flushTimer?.cancel();
     _scrollController.dispose();
-    
+
     // Final flush on page dispose using cached bloc reference
     _postBloc.add(const PostFlushImpressionsEvent());
     super.dispose();
@@ -134,13 +135,11 @@ class _FeedPageState extends State<FeedPage> with WidgetsBindingObserver {
                 color: semantic.backgroundBrand,
                 backgroundColor: semantic.surfaceBase,
                 onRefresh: () async {
-                  _postBloc.add(
-                    const PostGetPostsEvent(page: 1, limit: 20),
-                  );
+                  _postBloc.add(const PostGetPostsEvent(page: 1, limit: 20));
                 },
                 child: ListView.separated(
+                  scrollCacheExtent: const .pixels(400),
                   controller: _scrollController,
-                  cacheExtent: 400,
                   physics: const AlwaysScrollableScrollPhysics(),
                   itemCount: posts.length,
                   itemBuilder: (context, index) {
@@ -156,13 +155,18 @@ class _FeedPageState extends State<FeedPage> with WidgetsBindingObserver {
 
                         if (visibleFraction >= 0.5) {
                           if (!_viewTimers.containsKey(postId)) {
-                            _viewTimers[postId] = Timer(const Duration(seconds: 1), () {
-                              if (mounted && !_seenPostIds.contains(postId)) {
-                                _seenPostIds.add(postId);
-                                _postBloc.add(PostMarkSeenEvent(postId: postId));
-                              }
-                              _viewTimers.remove(postId);
-                            });
+                            _viewTimers[postId] = Timer(
+                              const Duration(seconds: 1),
+                              () {
+                                if (mounted && !_seenPostIds.contains(postId)) {
+                                  _seenPostIds.add(postId);
+                                  _postBloc.add(
+                                    PostMarkSeenEvent(postId: postId),
+                                  );
+                                }
+                                _viewTimers.remove(postId);
+                              },
+                            );
                           }
                         } else {
                           _viewTimers[postId]?.cancel();

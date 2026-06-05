@@ -184,7 +184,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 }
 
 class _ProfileSectionTile extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String title;
   final String subtitle;
   final bool isCompleted;

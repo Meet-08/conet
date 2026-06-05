@@ -356,7 +356,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                         decoration: _inputDecoration(
                           context,
                           hint: '2',
-                          prefixIcon: Icon(
+                          prefixIcon: FaIcon(
                             FontAwesomeIcons.userGroup,
                             size: 15,
                             color: semantic.iconTertiary,
@@ -391,7 +391,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                         decoration: _inputDecoration(
                           context,
                           hint: '5',
-                          prefixIcon: Icon(
+                          prefixIcon: FaIcon(
                             FontAwesomeIcons.userGroup,
                             size: 15,
                             color: semantic.iconTertiary,
@@ -418,7 +418,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
             decoration: _inputDecoration(
               context,
               hint: 'No limit (optional)',
-              prefixIcon: Icon(
+              prefixIcon: FaIcon(
                 FontAwesomeIcons.userGroup,
                 size: 15,
                 color: semantic.iconTertiary,
@@ -462,7 +462,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
               decoration: _inputDecoration(
                 context,
                 hint: 'In INR',
-                prefixIcon: Icon(
+                prefixIcon: FaIcon(
                   FontAwesomeIcons.indianRupeeSign,
                   size: 15,
                   color: semantic.iconTertiary,
@@ -584,7 +584,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                     decoration: _inputDecoration(
                       context,
                       hint: 'Email',
-                      prefixIcon: Icon(
+                      prefixIcon: FaIcon(
                         FontAwesomeIcons.tag,
                         size: 15,
                         color: semantic.iconTertiary,
@@ -599,7 +599,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                     decoration: _inputDecoration(
                       context,
                       hint: 'Type',
-                      prefixIcon: Icon(
+                      prefixIcon: FaIcon(
                         FontAwesomeIcons.listCheck,
                         size: 15,
                         color: semantic.iconTertiary,
@@ -629,7 +629,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                     decoration: _inputDecoration(
                       context,
                       hint: 'Optional',
-                      prefixIcon: Icon(
+                      prefixIcon: FaIcon(
                         FontAwesomeIcons.circleCheck,
                         size: 15,
                         color: semantic.iconTertiary,
@@ -677,7 +677,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                       decoration: _inputDecoration(
                         context,
                         hint: 'Optional helper text',
-                        prefixIcon: Icon(
+                        prefixIcon: FaIcon(
                           FontAwesomeIcons.circleInfo,
                           size: 15,
                           color: semantic.iconTertiary,
@@ -740,7 +740,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
                               color: semantic.surfaceOverlay,
                               borderRadius: AppRadius.smAll,
                             ),
-                            child: Icon(
+                            child: FaIcon(
                               imageFile != null
                                   ? FontAwesomeIcons.image
                                   : FontAwesomeIcons.user,
@@ -867,7 +867,7 @@ class _DetailsStepState extends State<ParticipationAndRegistrationStep> {
 }
 
 class _SectionTitle extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String title;
 
   const _SectionTitle({required this.icon, required this.title});

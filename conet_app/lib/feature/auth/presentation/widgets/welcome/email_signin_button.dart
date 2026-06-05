@@ -22,7 +22,7 @@ class EmailSignInButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: AppSpace.s16),
         ),
         onPressed: () => context.push('/email-signup'),
-        icon: const Icon(FontAwesomeIcons.envelope, size: AppSpace.s16),
+        icon: const FaIcon(FontAwesomeIcons.envelope, size: AppSpace.s16),
         label: Text(
           'Sign up with Email',
           style: Theme.of(

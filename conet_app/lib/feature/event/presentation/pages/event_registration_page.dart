@@ -999,7 +999,7 @@ class _EventRegistrationPageState extends State<EventRegistrationPage> {
 InputDecoration _decoration(
   BuildContext context, {
   required String label,
-  required IconData icon,
+  required FaIconData icon,
   String? helperText,
 }) {
   return InputDecoration(
@@ -1019,7 +1019,7 @@ InputDecoration _decoration(
 class _InputField extends StatelessWidget {
   final TextEditingController controller;
   final String label;
-  final IconData icon;
+  final FaIconData icon;
   final String? helperText;
   final TextInputType keyboardType;
   final int maxLines;

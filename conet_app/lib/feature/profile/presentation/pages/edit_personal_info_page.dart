@@ -105,7 +105,7 @@ class _EditPersonalInfoPageState extends State<EditPersonalInfoPage> {
           child: Scaffold(
             appBar: AppBar(
               leading: IconButton(
-                icon: const Icon(FontAwesomeIcons.arrowLeft),
+                icon: const FaIcon(FontAwesomeIcons.arrowLeft),
                 onPressed: () => context.pop(_hasUpdated),
               ),
               title: const Text('Personal Info'),

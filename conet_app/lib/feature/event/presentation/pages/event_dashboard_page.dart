@@ -408,7 +408,7 @@ class _EventDashboardCard extends StatelessWidget {
 }
 
 class _MetaRow extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String text;
 
   const _MetaRow({required this.icon, required this.text});
@@ -439,7 +439,7 @@ class _MetaRow extends StatelessWidget {
 class _ActionPill extends StatelessWidget {
   final String label;
   final bool iconOnly;
-  final IconData? icon;
+  final FaIconData? icon;
   final VoidCallback? onTap;
 
   const _ActionPill({
@@ -449,7 +449,7 @@ class _ActionPill extends StatelessWidget {
     this.onTap,
   });
 
-  IconData _iconForLabel() {
+  FaIconData _iconForLabel() {
     if (icon != null) return icon!;
     switch (label) {
       case 'Analytics':

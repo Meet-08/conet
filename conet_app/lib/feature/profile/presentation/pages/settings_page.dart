@@ -161,7 +161,7 @@ class SettingsPage extends StatelessWidget {
   }
 
   Widget _buildListTile({
-    required IconData icon,
+    required FaIconData icon,
     required String title,
     required VoidCallback onTap,
     bool isDestructive = false,
@@ -192,7 +192,7 @@ class SettingsPage extends StatelessWidget {
               color: iconBgColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: FaIcon(icon, color: color, size: 20),
           ),
           title: Text(
             title,

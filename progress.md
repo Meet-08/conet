@@ -1,6 +1,6 @@
 # CoNet — Feature Progress Tracker
 
-> Last updated: 2026-05-06
+> Last updated: 2026-06-05
 > Auto-update instructions: see [`.github/instructions/update_progress.instructions.md`](.github/instructions/update_progress.instructions.md)
 
 ---
@@ -158,7 +158,7 @@
 - **Event Search Page** — Dedicated search screen with debounced query over published events and quick access to event details
 - **Event Dashboard Page** — Organizer-style dashboard with filter tabs (`All`, `Active`, `Upcoming`, `Past`, `Drafts`) backed by live `/events/organized` data
 - **Attendance QR Scanner** — Organizer/co-host scans attendee QR using mobile camera and marks attendance via backend
-- **Event Attendees Page** — Organizer/co-host views individual attendee list or team roster with status filters (`All`, `Registered`, `Attended`, `Cancelled`)
+- **Event Attendees Page** — Organizer/co-host views individual attendee list or team roster with status filters (`All`, `Registered`, `Attended`, `Cancelled`) and dynamic custom registration responses
 - **Participants XLS Export** — Attendees page downloads and opens event participation XLS with team/individual columns and custom-field responses (excluding image fields), with re-download support
 - **From Your Campus Section** — Reuses event cards to highlight campus-facing event list on top
 - **Discover Section** — Lists discoverable events with filter affordance and empty-state handling

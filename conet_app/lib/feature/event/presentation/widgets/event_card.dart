@@ -283,7 +283,7 @@ class _EventCardState extends State<EventCard> {
   Widget _metaLine({
     required ThemeData theme,
     required ColorScheme colorScheme,
-    required IconData icon,
+    required FaIconData icon,
     required String text,
   }) {
     return Row(
@@ -306,7 +306,7 @@ class _EventCardState extends State<EventCard> {
 
   Widget _iconActionButton({
     required ColorScheme colorScheme,
-    required IconData icon,
+    required FaIconData icon,
     required bool isLoading,
     VoidCallback? onTap,
   }) {
@@ -356,7 +356,7 @@ class _EventCardState extends State<EventCard> {
 }
 
 class _EventUrgencyIndicator {
-  final IconData icon;
+  final FaIconData icon;
   final String text;
   final Color color;
 

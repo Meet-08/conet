@@ -217,7 +217,7 @@ class _NewMessageSheetState extends State<NewMessageSheet> {
 // ---------------------------------------------------------------------------
 
 class _SheetOption extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String label;
   final String subtitle;
   final VoidCallback onTap;

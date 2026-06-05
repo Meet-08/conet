@@ -26,7 +26,7 @@ class AddDetailsHeader extends StatelessWidget {
           onTap: onBack ?? () => context.read<AuthBloc>().add(AuthLogout()),
           child: const Row(
             children: [
-              Icon(FontAwesomeIcons.arrowLeft, size: 20),
+              FaIcon(FontAwesomeIcons.arrowLeft, size: 20),
               SizedBox(width: 6),
               Text('Back'),
             ],

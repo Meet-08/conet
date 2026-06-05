@@ -171,7 +171,7 @@ class _EditSocialLinksPageState extends State<EditSocialLinksPage> {
   Widget _buildLinkField({
     required TextEditingController controller,
     required String label,
-    required IconData icon,
+    required FaIconData icon,
   }) {
     return TextField(
       controller: controller,

@@ -10,7 +10,7 @@ class SocialLinksSection extends StatelessWidget {
 
   const SocialLinksSection({super.key, required this.socialLinks});
 
-  IconData _getIconForLink(String name) {
+  FaIconData _getIconForLink(String name) {
     switch (name.toLowerCase()) {
       case 'linkedin':
         return FontAwesomeIcons.linkedin;
@@ -70,7 +70,7 @@ class SocialLinksSection extends StatelessWidget {
           padding: const EdgeInsets.only(right: 16),
           child: GestureDetector(
             onTap: () => _launchSocialUrl(context, link.link),
-            child: Icon(
+            child: FaIcon(
               _getIconForLink(link.name),
               size: 20,
               color: Theme.of(

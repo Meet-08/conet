@@ -556,7 +556,7 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
                     color: semantic.surfaceOverlay,
                     borderRadius: AppRadius.smAll,
                   ),
-                  child: Icon(
+                  child: FaIcon(
                     FontAwesomeIcons.message,
                     size: 16,
                     color: semantic.iconPrimary,
@@ -641,7 +641,7 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
   InputDecoration _inputDecoration(
     BuildContext context, {
     required String hint,
-    IconData? prefixIcon,
+    FaIconData? prefixIcon,
   }) {
     final semantic = context.semanticColors;
     return InputDecoration(
@@ -675,7 +675,7 @@ class _RewardAndOrganizerStepState extends State<RewardAndOrganizerStep> {
 }
 
 class _SectionTitle extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String title;
   final String? actionLabel;
   final VoidCallback? onTapAction;
@@ -744,7 +744,7 @@ class _PrizeCard extends StatelessWidget {
                   color: semantic.backgroundSecondary,
                   borderRadius: AppRadius.smAll,
                 ),
-                child: Icon(
+                child: FaIcon(
                   FontAwesomeIcons.medal,
                   size: 15,
                   color: semantic.iconBrand,
@@ -828,7 +828,7 @@ class _PrizeEditorCard extends StatelessWidget {
                   color: semantic.surfaceOverlay,
                   borderRadius: AppRadius.smAll,
                 ),
-                child: Icon(
+                child: FaIcon(
                   FontAwesomeIcons.award,
                   size: 15,
                   color: semantic.iconPrimary,
@@ -919,7 +919,7 @@ class _PrizeEditorCard extends StatelessWidget {
     BuildContext context, {
     required AppSemanticColors semantic,
     required String hint,
-    IconData? icon,
+    FaIconData? icon,
   }) {
     return InputDecoration(
       hintText: hint,
@@ -982,7 +982,7 @@ class _FaqEditorCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
+              FaIcon(
                 FontAwesomeIcons.circleQuestion,
                 size: 16,
                 color: semantic.iconPrimary,
@@ -1072,7 +1072,7 @@ class _FaqEditorCard extends StatelessWidget {
   InputDecoration _faqDecoration({
     required AppSemanticColors semantic,
     required String hint,
-    required IconData icon,
+    required FaIconData icon,
   }) {
     return InputDecoration(
       hintText: hint,
@@ -1361,7 +1361,7 @@ class _AddFieldButton extends StatelessWidget {
 
 class _EmptyStateCard extends StatelessWidget {
   final AppSemanticColors semantic;
-  final IconData icon;
+  final FaIconData icon;
   final String text;
 
   const _EmptyStateCard({

@@ -46,7 +46,7 @@ class GoogleAuthButton extends StatelessWidget {
         onPressed: () {
           context.read<AuthBloc>().add(AuthSigninWithGoogle());
         },
-        icon: const Icon(FontAwesomeIcons.google, size: AppSpace.s16),
+        icon: const FaIcon(FontAwesomeIcons.google, size: AppSpace.s16),
         label: Text(
           label ?? 'Continue with Google',
           style: Theme.of(context).textTheme.labelLarge?.copyWith(

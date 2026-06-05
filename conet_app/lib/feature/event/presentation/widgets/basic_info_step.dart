@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class BasicInfoStep extends StatefulWidget {
   final Map<String, dynamic> formData;
@@ -857,7 +857,7 @@ class _BasicInfoStepState extends State<BasicInfoStep> {
 }
 
 class _SectionTitle extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String title;
 
   const _SectionTitle({required this.icon, required this.title});
@@ -1009,7 +1009,7 @@ class _ToolbarAction extends StatelessWidget {
 }
 
 class _ToolbarIcon extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final VoidCallback onTap;
   final bool isActive;
 
@@ -1240,7 +1240,7 @@ class _PickerInputShell extends StatelessWidget {
   final String valueText;
   final String placeholderText;
   final bool isPlaceholder;
-  final IconData icon;
+  final FaIconData icon;
   final VoidCallback? onTap;
 
   const _PickerInputShell({

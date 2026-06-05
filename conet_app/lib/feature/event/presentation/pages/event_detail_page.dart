@@ -435,7 +435,7 @@ class _CategoryChip extends StatelessWidget {
 }
 
 class _InfoTile extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String title;
   final String subtitle;
   final AppSemanticColors semantic;

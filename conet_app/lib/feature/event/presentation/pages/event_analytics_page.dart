@@ -132,7 +132,7 @@ class _HeaderCard extends StatelessWidget {
 }
 
 class _Meta extends StatelessWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String text;
   const _Meta({required this.icon, required this.text});
   @override

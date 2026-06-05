@@ -2,7 +2,7 @@ import 'package:conet_app/core/common/cubit/app_user_cubit.dart';
 import 'package:conet_app/core/theme/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:phosphor_flutter/phosphor_flutter.dart';
+import 'package:phosphoricons_flutter/phosphoricons_flutter.dart';
 
 class AppBottomNav extends StatelessWidget {
   final int currentIndex;
